@@ -1,0 +1,48 @@
+import Joi from 'joi';
+
+export const createSchoolConfigSchema = Joi.object({
+  schoolNameEn: Joi.string().max(255).required().messages({
+    'string.empty': 'School name in English is required',
+    'string.max': 'School name must not exceed 255 characters',
+  }),
+  schoolNameNp: Joi.string().max(255).optional().allow(''),
+  schoolCode: Joi.string().max(50).optional().allow(''),
+  logoUrl: Joi.string().max(500).optional().allow(''),
+  addressEn: Joi.string().optional().allow(''),
+  addressNp: Joi.string().optional().allow(''),
+  phone: Joi.string().max(20).optional().allow(''),
+  email: Joi.string().email().max(255).optional().allow(''),
+  website: Joi.string().uri().max(255).optional().allow(''),
+  academicYearStartMonth: Joi.number().integer().min(1).max(12).optional(),
+  academicYearDurationMonths: Joi.number().integer().min(1).max(12).optional(),
+  termsPerYear: Joi.number().integer().min(1).max(4).optional(),
+  defaultCalendarSystem: Joi.string().valid('BS', 'AD').optional(),
+  defaultLanguage: Joi.string().valid('nepali', 'english').optional(),
+  timezone: Joi.string().max(50).optional(),
+  currency: Joi.string().max(10).optional(),
+  dateFormat: Joi.string().max(50).optional(),
+  timeFormat: Joi.string().max(50).optional(),
+  numberFormat: Joi.string().max(50).optional(),
+});
+
+export const updateSchoolConfigSchema = Joi.object({
+  schoolNameEn: Joi.string().max(255).optional(),
+  schoolNameNp: Joi.string().max(255).optional().allow(''),
+  schoolCode: Joi.string().max(50).optional().allow(''),
+  logoUrl: Joi.string().max(500).optional().allow(''),
+  addressEn: Joi.string().optional().allow(''),
+  addressNp: Joi.string().optional().allow(''),
+  phone: Joi.string().max(20).optional().allow(''),
+  email: Joi.string().email().max(255).optional().allow(''),
+  website: Joi.string().uri().max(255).optional().allow(''),
+  academicYearStartMonth: Joi.number().integer().min(1).max(12).optional(),
+  academicYearDurationMonths: Joi.number().integer().min(1).max(12).optional(),
+  termsPerYear: Joi.number().integer().min(1).max(4).optional(),
+  defaultCalendarSystem: Joi.string().valid('BS', 'AD').optional(),
+  defaultLanguage: Joi.string().valid('nepali', 'english').optional(),
+  timezone: Joi.string().max(50).optional(),
+  currency: Joi.string().max(10).optional(),
+  dateFormat: Joi.string().max(50).optional(),
+  timeFormat: Joi.string().max(50).optional(),
+  numberFormat: Joi.string().max(50).optional(),
+}).min(1);

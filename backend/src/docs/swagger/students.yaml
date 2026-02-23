@@ -1,0 +1,724 @@
+components:
+  schemas:
+    Student:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        studentId:
+          type: string
+          description: School-generated unique student ID
+          example: STU2024001
+        symbolNumber:
+          type: string
+          description: Symbol number for SEE students
+          example: 7501234
+        nebRegistrationNumber:
+          type: string
+          description: NEB registration number for Class 11-12
+          example: NEB2024001
+        firstNameEn:
+          type: string
+          example: Ram
+        middleNameEn:
+          type: string
+          example: Kumar
+        lastNameEn:
+          type: string
+          example: Sharma
+        firstNameNp:
+          type: string
+          example: राम
+        middleNameNp:
+          type: string
+          example: कुमार
+        lastNameNp:
+          type: string
+          example: शर्मा
+        dateOfBirthBS:
+          type: string
+          format: date
+          description: Date of birth in Bikram Sambat
+          example: 2065-05-15
+        dateOfBirthAD:
+          type: string
+          format: date
+          description: Date of birth in AD
+          example: 2008-09-01
+        gender:
+          type: string
+          enum: [male, female, other]
+          example: male
+        bloodGroup:
+          type: string
+          example: O+
+        addressEn:
+          type: string
+          example: Kathmandu, Nepal
+        addressNp:
+          type: string
+          example: काठमाडौं, नेपाल
+        phone:
+          type: string
+          example: +977-9841234567
+        email:
+          type: string
+          format: email
+          example: ram.sharma@example.com
+        fatherName:
+          type: string
+          example: Hari Sharma
+        fatherPhone:
+          type: string
+          example: +977-9841234568
+        fatherCitizenshipNo:
+          type: string
+          example: 12-01-75-12345
+        motherName:
+          type: string
+          example: Sita Sharma
+        motherPhone:
+          type: string
+          example: +977-9841234569
+        motherCitizenshipNo:
+          type: string
+          example: 12-01-75-12346
+        localGuardianName:
+          type: string
+          example: Krishna Sharma
+        localGuardianPhone:
+          type: string
+          example: +977-9841234570
+        localGuardianRelation:
+          type: string
+          example: Uncle
+        admissionDate:
+          type: string
+          format: date
+          example: 2024-04-15
+        admissionClass:
+          type: integer
+          minimum: 1
+          maximum: 12
+          example: 1
+        currentClass:
+          type: integer
+          minimum: 1
+          maximum: 12
+          example: 5
+        currentSection:
+          type: string
+          example: A
+        currentShift:
+          type: string
+          enum: [morning, day, evening]
+          example: morning
+        rollNumber:
+          type: integer
+          example: 15
+        previousSchool:
+          type: string
+          example: ABC School
+        allergies:
+          type: string
+          example: Peanuts
+        medicalConditions:
+          type: string
+          example: Asthma
+        emergencyContact:
+          type: string
+          example: +977-9841234568
+        status:
+          type: string
+          enum: [active, inactive, transferred, graduated]
+          example: active
+        photoUrl:
+          type: string
+          format: uri
+          example: /uploads/students/photo.jpg
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    StudentCreate:
+      type: object
+      required:
+        - firstNameEn
+        - lastNameEn
+        - firstNameNp
+        - lastNameNp
+        - dateOfBirthBS
+        - dateOfBirthAD
+        - gender
+        - addressEn
+        - fatherName
+        - fatherPhone
+        - motherName
+        - motherPhone
+        - admissionDate
+        - admissionClass
+        - currentClass
+        - currentSection
+        - currentShift
+        - emergencyContact
+      properties:
+        firstNameEn:
+          type: string
+        middleNameEn:
+          type: string
+        lastNameEn:
+          type: string
+        firstNameNp:
+          type: string
+        middleNameNp:
+          type: string
+        lastNameNp:
+          type: string
+        dateOfBirthBS:
+          type: string
+          format: date
+        dateOfBirthAD:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female, other]
+        bloodGroup:
+          type: string
+        addressEn:
+          type: string
+        addressNp:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        fatherName:
+          type: string
+        fatherPhone:
+          type: string
+        fatherCitizenshipNo:
+          type: string
+        motherName:
+          type: string
+        motherPhone:
+          type: string
+        motherCitizenshipNo:
+          type: string
+        localGuardianName:
+          type: string
+        localGuardianPhone:
+          type: string
+        localGuardianRelation:
+          type: string
+        admissionDate:
+          type: string
+          format: date
+        admissionClass:
+          type: integer
+          minimum: 1
+          maximum: 12
+        currentClass:
+          type: integer
+          minimum: 1
+          maximum: 12
+        currentSection:
+          type: string
+        currentShift:
+          type: string
+          enum: [morning, day, evening]
+        previousSchool:
+          type: string
+        allergies:
+          type: string
+        medicalConditions:
+          type: string
+        emergencyContact:
+          type: string
+
+paths:
+  /students:
+    get:
+      tags:
+        - Students
+      summary: List all students
+      description: Retrieve a paginated list of students with optional filters
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - in: query
+          name: class
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: Filter by class
+        - in: query
+          name: section
+          schema:
+            type: string
+          description: Filter by section
+        - in: query
+          name: shift
+          schema:
+            type: string
+            enum: [morning, day, evening]
+          description: Filter by shift
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [active, inactive, transferred, graduated]
+          description: Filter by status
+      responses:
+        '200':
+          description: Students retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Student'
+              example:
+                success: true
+                data:
+                  - id: 550e8400-e29b-41d4-a716-446655440000
+                    studentId: STU2024001
+                    firstNameEn: Ram
+                    lastNameEn: Sharma
+                    currentClass: 5
+                    currentSection: A
+                    status: active
+                meta:
+                  page: 1
+                  limit: 10
+                  total: 150
+                  totalPages: 15
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+    post:
+      tags:
+        - Students
+      summary: Create new student
+      description: Create a new student record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentCreate'
+            example:
+              firstNameEn: Ram
+              middleNameEn: Kumar
+              lastNameEn: Sharma
+              firstNameNp: राम
+              middleNameNp: कुमार
+              lastNameNp: शर्मा
+              dateOfBirthBS: 2065-05-15
+              dateOfBirthAD: 2008-09-01
+              gender: male
+              bloodGroup: O+
+              addressEn: Kathmandu, Nepal
+              addressNp: काठमाडौं, नेपाल
+              phone: +977-9841234567
+              email: ram.sharma@example.com
+              fatherName: Hari Sharma
+              fatherPhone: +977-9841234568
+              motherName: Sita Sharma
+              motherPhone: +977-9841234569
+              admissionDate: 2024-04-15
+              admissionClass: 1
+              currentClass: 1
+              currentSection: A
+              currentShift: morning
+              emergencyContact: +977-9841234568
+      responses:
+        '201':
+          description: Student created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Student'
+                  message:
+                    type: string
+                    example: Student created successfully
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /students/{id}:
+    get:
+      tags:
+        - Students
+      summary: Get student by ID
+      description: Retrieve detailed information about a specific student
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Student ID
+      responses:
+        '200':
+          description: Student retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Student'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags:
+        - Students
+      summary: Update student
+      description: Update an existing student record
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Student ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentCreate'
+      responses:
+        '200':
+          description: Student updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Student'
+                  message:
+                    type: string
+                    example: Student updated successfully
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Students
+      summary: Delete student
+      description: Soft delete a student record
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Student ID
+      responses:
+        '200':
+          description: Student deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /students/bulk-import:
+    post:
+      tags:
+        - Students
+      summary: Bulk import students
+      description: Import multiple students from Excel file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Excel file (.xlsx) with student data
+      responses:
+        '200':
+          description: Students imported successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      imported:
+                        type: integer
+                        example: 45
+                      failed:
+                        type: integer
+                        example: 2
+                      errors:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            row:
+                              type: integer
+                            error:
+                              type: string
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /students/{id}/promote:
+    post:
+      tags:
+        - Students
+      summary: Promote student
+      description: Promote student to next class
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Student ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - newClass
+                - newSection
+              properties:
+                newClass:
+                  type: integer
+                  minimum: 1
+                  maximum: 12
+                  example: 6
+                newSection:
+                  type: string
+                  example: B
+                academicYearId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Student promoted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /students/{id}/attendance:
+    get:
+      tags:
+        - Students
+      summary: Get student attendance
+      description: Retrieve attendance records for a specific student
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Student ID
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+          description: Start date for attendance records
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+          description: End date for attendance records
+      responses:
+        '200':
+          description: Attendance records retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      summary:
+                        type: object
+                        properties:
+                          totalDays:
+                            type: integer
+                            example: 100
+                          presentDays:
+                            type: integer
+                            example: 85
+                          absentDays:
+                            type: integer
+                            example: 10
+                          lateDays:
+                            type: integer
+                            example: 3
+                          excusedDays:
+                            type: integer
+                            example: 2
+                          attendancePercentage:
+                            type: number
+                            format: float
+                            example: 85.0
+                      records:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            date:
+                              type: string
+                              format: date
+                            status:
+                              $ref: '#/components/schemas/AttendanceStatus'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /students/{id}/grades:
+    get:
+      tags:
+        - Students
+      summary: Get student grades
+      description: Retrieve grade records for a specific student
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Student ID
+        - in: query
+          name: academicYearId
+          schema:
+            type: string
+            format: uuid
+          description: Filter by academic year
+        - in: query
+          name: termId
+          schema:
+            type: string
+            format: uuid
+          description: Filter by term
+      responses:
+        '200':
+          description: Grades retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        examId:
+                          type: string
+                        examName:
+                          type: string
+                        subjectName:
+                          type: string
+                        totalMarks:
+                          type: number
+                        fullMarks:
+                          type: number
+                        grade:
+                          $ref: '#/components/schemas/NEBGrade'
+                        gradePoint:
+                          type: number
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'

@@ -1,0 +1,96 @@
+Default Login Credentials
+All 13 roles seeded in the system:
+
+1. School Admin
+Username: admin
+Password: Admin@123
+Email: admin@school.edu.np
+Role: School_Admin
+Access: Full system access — all modules, settings, audit logs, role management
+
+2. Subject Teacher
+Username: teacher1
+Password: Teacher@123
+Email: teacher1@school.edu.np
+Role: Subject_Teacher
+Access: Attendance, grades, examinations, academic, communication
+
+3. Class Teacher
+Username: classteacher1
+Password: ClassTeacher@123
+Email: classteacher1@school.edu.np
+Role: Class_Teacher
+Access: Students, attendance, examinations, academic, reports, teacher portal
+
+4. Department Head
+Username: depthead1
+Password: DeptHead@123
+Email: depthead1@school.edu.np
+Role: Department_Head
+Access: Students, academic, attendance, examinations, ECA, sports, reports, teacher portal
+
+5. ECA Coordinator
+Username: ecacoord1
+Password: ECACoord@123
+Email: ecacoord1@school.edu.np
+Role: ECA_Coordinator
+Access: ECA management, reports, documents, communication
+
+6. Sports Coordinator
+Username: sportscoord1
+Password: SportsCoord@123
+Email: sportscoord1@school.edu.np
+Role: Sports_Coordinator
+Access: Sports management, ECA view, reports, documents, communication
+
+7. Student
+Username: student1
+Password: Student@123
+Email: student1@school.edu.np
+Role: Student
+Access: Student portal, grades, attendance, report cards, library catalog, calendar, communication
+
+8. Parent
+Username: parent1
+Password: Parent@123
+Email: parent1@school.edu.np
+Role: Parent
+Access: Parent portal, child grades, attendance, report cards, library catalog, communication
+
+9. Librarian
+Username: librarian1
+Password: Librarian@123
+Email: librarian1@school.edu.np
+Role: Librarian
+Access: Library dashboard, book management, circulation, fines, reports, communication
+
+10. Accountant
+Username: accountant1
+Password: Accountant@123
+Email: accountant1@school.edu.np
+Role: Accountant
+Access: Finance dashboard, fee structures, invoices, payments, financial reports, communication
+
+11. Transport Manager
+Username: transport1
+Password: Transport@123
+Email: transport1@school.edu.np
+Role: Transport_Manager
+Access: Transport portal, student list, documents, calendar, communication
+
+12. Hostel Warden
+Username: hostelwarden1
+Password: Hostel@123
+Email: hostelwarden1@school.edu.np
+Role: Hostel_Warden
+Access: Hostel portal, resident student list, documents, calendar, communication
+
+13. Non-Teaching Staff
+Username: staff1
+Password: Staff@123
+Email: staff1@school.edu.np
+Role: Non_Teaching_Staff
+Access: Staff portal, documents, calendar, communication, announcements
+
+
+go through each pages check if some frontend has missing backend then implement them and if some backend has misisng frontend implement,also check if they are using data from our database and are not using and dummys and hardcoded datas,also make sure they are consisten in data sharing and check the logic they are using are feasibles or are they hallucitings.also check routes they properly defined and used and configured

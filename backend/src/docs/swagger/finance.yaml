@@ -1,0 +1,372 @@
+paths:
+  /finance/invoices:
+    get:
+      tags:
+        - Finance
+      summary: List invoices
+      description: Retrieve paginated list of fee invoices
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - in: query
+          name: studentId
+          schema:
+            type: string
+            format: uuid
+          description: Filter by student ID
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, partial, paid, overdue, cancelled]
+          description: Filter by payment status
+        - in: query
+          name: academicYearId
+          schema:
+            type: string
+            format: uuid
+          description: Filter by academic year
+      responses:
+        '200':
+          description: Invoices retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+    post:
+      tags:
+        - Finance
+      summary: Create invoice
+      description: Generate a new fee invoice for a student
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - studentId
+                - feeStructureId
+                - academicYearId
+                - dueDate
+              properties:
+                studentId:
+                  type: string
+                  format: uuid
+                feeStructureId:
+                  type: string
+                  format: uuid
+                academicYearId:
+                  type: string
+                  format: uuid
+                dueDate:
+                  type: string
+                  format: date
+                discount:
+                  type: number
+                  minimum: 0
+                discountReason:
+                  type: string
+            example:
+              studentId: 550e8400-e29b-41d4-a716-446655440000
+              feeStructureId: 660e8400-e29b-41d4-a716-446655440000
+              academicYearId: 770e8400-e29b-41d4-a716-446655440000
+              dueDate: 2024-05-15
+              discount: 1000
+              discountReason: Scholarship
+      responses:
+        '201':
+          description: Invoice created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      invoiceNumber:
+                        type: string
+                        example: INV-2024-001
+                      totalAmount:
+                        type: number
+                        example: 25000
+                      status:
+                        type: string
+                        example: pending
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /finance/payments:
+    post:
+      tags:
+        - Finance
+      summary: Record payment
+      description: Record a fee payment for an invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - invoiceId
+                - amount
+                - paymentMethod
+                - paymentDate
+              properties:
+                invoiceId:
+                  type: string
+                  format: uuid
+                amount:
+                  type: number
+                  minimum: 0
+                  example: 10000
+                paymentMethod:
+                  $ref: '#/components/schemas/PaymentMethod'
+                paymentDate:
+                  type: string
+                  format: date
+                  example: 2024-04-20
+                transactionId:
+                  type: string
+                  description: Transaction ID for online payments
+                  example: ESEWA123456
+                remarks:
+                  type: string
+                  example: Partial payment
+      responses:
+        '201':
+          description: Payment recorded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      receiptNumber:
+                        type: string
+                        example: RCP-2024-001
+                      amount:
+                        type: number
+                        example: 10000
+                      paymentMethod:
+                        type: string
+                        example: cash
+                      status:
+                        type: string
+                        example: completed
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /finance/payment-gateway/initiate:
+    post:
+      tags:
+        - Finance
+      summary: Initiate online payment
+      description: Initiate payment through Nepal payment gateways (eSewa, Khalti, IME Pay)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - invoiceId
+                - amount
+                - gateway
+                - returnUrl
+                - cancelUrl
+              properties:
+                invoiceId:
+                  type: string
+                  format: uuid
+                amount:
+                  type: number
+                  minimum: 0
+                  example: 25000
+                gateway:
+                  type: string
+                  enum: [esewa, khalti, ime_pay]
+                  example: esewa
+                returnUrl:
+                  type: string
+                  format: uri
+                  example: https://school.com/payment/success
+                cancelUrl:
+                  type: string
+                  format: uri
+                  example: https://school.com/payment/cancel
+      responses:
+        '200':
+          description: Payment initiated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      paymentUrl:
+                        type: string
+                        format: uri
+                        description: Redirect URL for payment gateway
+                        example: https://esewa.com.np/epay/main
+                      transactionId:
+                        type: string
+                        example: TXN-2024-001
+                      formData:
+                        type: object
+                        description: Form data to submit to payment gateway
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /finance/reports/collection:
+    get:
+      tags:
+        - Finance
+      summary: Fee collection report
+      description: Generate fee collection summary report
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+          description: Start date for report
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+          description: End date for report
+        - in: query
+          name: class
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: Filter by class
+        - in: query
+          name: paymentMethod
+          schema:
+            $ref: '#/components/schemas/PaymentMethod'
+          description: Filter by payment method
+      responses:
+        '200':
+          description: Report generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      totalCollected:
+                        type: number
+                        example: 1500000
+                      totalPending:
+                        type: number
+                        example: 500000
+                      collectionRate:
+                        type: number
+                        format: float
+                        example: 75.0
+                      byPaymentMethod:
+                        type: object
+                        properties:
+                          cash:
+                            type: number
+                            example: 800000
+                          esewa:
+                            type: number
+                            example: 400000
+                          khalti:
+                            type: number
+                            example: 300000
+                      byClass:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            class:
+                              type: integer
+                            collected:
+                              type: number
+                            pending:
+                              type: number
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /finance/reports/defaulters:
+    get:
+      tags:
+        - Finance
+      summary: Fee defaulters report
+      description: List students with overdue fee payments
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - in: query
+          name: class
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: Filter by class
+        - in: query
+          name: minOverdueAmount
+          schema:
+            type: number
+            minimum: 0
+          description: Minimum overdue amount
+      responses:
+        '200':
+          description: Defaulters list retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'

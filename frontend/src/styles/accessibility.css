@@ -1,0 +1,232 @@
+/**
+ * Accessibility Styles
+ * 
+ * Provides enhanced focus indicators and high contrast mode support
+ * Requirements: 34.4, 34.5, 34.6
+ */
+
+/* Enhanced focus indicators for keyboard navigation (Requirement 34.5) */
+*:focus-visible {
+  outline: 3px solid #1976d2;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Skip to main content link for screen readers */
+.skip-to-main {
+  position: absolute;
+  left: -9999px;
+  z-index: 999;
+  padding: 1em;
+  background-color: #1976d2;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+}
+
+.skip-to-main:focus {
+  left: 50%;
+  transform: translateX(-50%);
+  top: 1em;
+}
+
+/* High contrast mode styles (Requirement 34.6) */
+.high-contrast {
+  /* Enhanced borders for better visibility */
+  --border-width: 2px;
+  --border-color: currentColor;
+}
+
+.high-contrast * {
+  border-width: var(--border-width) !important;
+}
+
+.high-contrast button,
+.high-contrast a,
+.high-contrast input,
+.high-contrast select,
+.high-contrast textarea {
+  border: var(--border-width) solid var(--border-color) !important;
+}
+
+.high-contrast *:focus-visible {
+  outline: 4px solid currentColor !important;
+  outline-offset: 3px !important;
+}
+
+/* Remove subtle shadows in high contrast mode */
+.high-contrast * {
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+/* Ensure sufficient spacing in high contrast mode */
+.high-contrast button,
+.high-contrast a {
+  padding: 0.5em 1em !important;
+  margin: 0.25em !important;
+}
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Focus trap for modals */
+.focus-trap {
+  position: relative;
+}
+
+.focus-trap:focus {
+  outline: none;
+}
+
+/* Keyboard navigation hints */
+[data-keyboard-hint]::after {
+  content: attr(data-keyboard-hint);
+  position: absolute;
+  bottom: -1.5em;
+  left: 0;
+  font-size: 0.75em;
+  color: #666;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+[data-keyboard-hint]:focus-visible::after {
+  opacity: 1;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Font size adjustments (Requirement 34.7) */
+html[style*="font-size: 14px"] {
+  /* Small font size adjustments */
+  line-height: 1.4;
+}
+
+html[style*="font-size: 16px"] {
+  /* Normal font size */
+  line-height: 1.5;
+}
+
+html[style*="font-size: 18px"] {
+  /* Large font size adjustments */
+  line-height: 1.6;
+}
+
+/* Ensure buttons and interactive elements are large enough */
+button,
+a,
+input,
+select,
+textarea {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Improve link visibility */
+a {
+  text-decoration: underline;
+}
+
+a:hover,
+a:focus {
+  text-decoration: none;
+}
+
+/* Ensure form labels are associated with inputs */
+label {
+  display: block;
+  margin-bottom: 0.25em;
+  font-weight: 500;
+}
+
+/* Error messages should be clearly visible */
+.error-message,
+[role="alert"] {
+  color: #d32f2f;
+  font-weight: 600;
+  padding: 0.5em;
+  border-left: 4px solid #d32f2f;
+  background-color: rgba(211, 47, 47, 0.1);
+}
+
+/* Success messages */
+.success-message,
+[role="status"] {
+  color: #388e3c;
+  font-weight: 600;
+  padding: 0.5em;
+  border-left: 4px solid #388e3c;
+  background-color: rgba(56, 142, 60, 0.1);
+}
+
+/* Loading indicators should be announced to screen readers */
+[aria-busy="true"] {
+  position: relative;
+}
+
+[aria-busy="true"]::after {
+  content: "Loading...";
+  position: absolute;
+  left: -9999px;
+}
+
+/* Ensure tables are accessible */
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th {
+  text-align: left;
+  font-weight: 600;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+td,
+th {
+  padding: 0.75em;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+/* Improve form field visibility */
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+/* Disabled elements should be clearly indicated */
+:disabled,
+[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Required fields indicator */
+[required]::after,
+[aria-required="true"]::after {
+  content: " *";
+  color: #d32f2f;
+}
