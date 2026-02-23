@@ -49,6 +49,45 @@ const startServer = async (): Promise<void> => {
       throw new Error('Database connection failed');
     }
 
+    // Auto-setup: Run migrations and seeding if database is empty
+    try {
+      const [tables] = await sequelize.query("SHOW TABLES LIKE 'users'");
+      if (!tables || tables.length === 0) {
+        logger.info('🔧 Database is empty. Running auto-setup...');
+        
+        // Run migrations
+        logger.info('📦 Running migrations...');
+        const { exec } = require('child_process');
+        const { promisify } = require('util');
+        const execAsync = promisify(exec);
+        
+        try {
+          await execAsync('npm run migrate:up', { cwd: __dirname + '/..' });
+          logger.info('✅ Migrations completed');
+        } catch (migError: any) {
+          logger.warn('Migration warning:', migError.message);
+        }
+        
+        // Seed database
+        logger.info('🌱 Seeding database...');
+        try {
+          await execAsync('npm run seed', { cwd: __dirname + '/..' });
+          logger.info('✅ Database seeded');
+          logger.info('');
+          logger.info('📝 Default Login Credentials:');
+          logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          logger.info('Admin: admin / Admin@123');
+          logger.info('Teacher: teacher1 / Teacher@123');
+          logger.info('Student: student1 / Student@123');
+          logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        } catch (seedError: any) {
+          logger.warn('Seeding warning:', seedError.message);
+        }
+      }
+    } catch (setupError) {
+      logger.warn('Auto-setup check failed, continuing...', setupError);
+    }
+
     // Initialize models that need explicit initialization
     initCirculation(sequelize);
     initLibraryFine(sequelize);
