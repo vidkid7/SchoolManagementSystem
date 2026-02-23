@@ -4,14 +4,33 @@ import { logger } from '../utils/logger';
 /**
  * Database Configuration
  * Handles MySQL connection with connection pooling
+ * Supports both DATABASE_URL (Railway) and individual env vars
  */
 
+// Parse DATABASE_URL if provided (Railway format)
+const parseDatabaseUrl = (url: string) => {
+  const match = url.match(/mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
+  if (match) {
+    return {
+      username: match[1],
+      password: match[2],
+      host: match[3],
+      port: parseInt(match[4]),
+      database: match[5]
+    };
+  }
+  return null;
+};
+
+const databaseUrl = process.env.DATABASE_URL || process.env.MYSQL_URL;
+const parsedUrl = databaseUrl ? parseDatabaseUrl(databaseUrl) : null;
+
 const dbConfig: Options = {
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '3306'),
-  database: process.env.DB_NAME || 'school_management_system',
-  username: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
+  host: parsedUrl?.host || process.env.DB_HOST || 'localhost',
+  port: parsedUrl?.port || parseInt(process.env.DB_PORT || '3306'),
+  database: parsedUrl?.database || process.env.DB_NAME || 'school_management_system',
+  username: parsedUrl?.username || process.env.DB_USER || 'root',
+  password: parsedUrl?.password || process.env.DB_PASSWORD || '',
   dialect: 'mysql',
   
   // Connection Pool Configuration

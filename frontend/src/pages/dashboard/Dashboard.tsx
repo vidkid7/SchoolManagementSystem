@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
@@ -17,6 +18,9 @@ import {
   ListItemText,
   Avatar,
   Divider,
+  IconButton,
+  Tooltip,
+  LinearProgress,
   Button,
 } from '@mui/material';
 import {
@@ -24,29 +28,25 @@ import {
   People as PeopleIcon,
   TrendingUp as TrendingUpIcon,
   AttachMoney as MoneyIcon,
-  Assessment as AssessmentIcon,
   PersonAdd as PersonAddIcon,
   FactCheck as FactCheckIcon,
-  LibraryBooks as LibraryBooksIcon,
   Class as ClassIcon,
-  TrendingDown as TrendingDownIcon,
   CheckCircle as CheckCircleIcon,
-  Male as MaleIcon,
-  Female as FemaleIcon,
   Notifications as NotificationsIcon,
-  CalendarToday as CalendarTodayIcon,
-  Groups as GroupsIcon,
-  MenuBook as MenuBookIcon,
   EmojiEvents as EmojiEventsIcon,
-  Description as DescriptionIcon,
   AccessTime as AccessTimeIcon,
   Warning as WarningIcon,
   Payment as PaymentIcon,
   Schedule as ScheduleIcon,
+  Refresh as RefreshIcon,
+  ArrowForward as ArrowForwardIcon,
+  AutoGraph as AutoGraphIcon,
+  LocalLibrary as LocalLibraryIcon,
+  Book as BookIcon,
+  Assignment as AssignmentIcon,
 } from '@mui/icons-material';
+import { motion } from 'framer-motion';
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   PieChart,
@@ -55,24 +55,21 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
-  Legend,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer,
   Area,
   AreaChart,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
 } from 'recharts';
 import api from '../../config/api';
 
 interface ChartData {
   label: string;
   value: number;
-}
-
-interface Activity {
-  id: number;
-  type: string;
-  description: string;
-  createdAt: string;
 }
 
 interface DashboardData {
@@ -88,6 +85,9 @@ interface DashboardData {
     newAdmissionsThisMonth: number;
     totalExams: number;
     pendingFeeStudents: number;
+    totalCirculations: number;
+    activeEcaActivities: number;
+    activeSports: number;
   };
   charts: {
     enrollmentTrend: ChartData[];
@@ -96,304 +96,436 @@ interface DashboardData {
     examPerformance: ChartData[];
     genderDistribution: ChartData[];
     monthlyNewAdmissions: ChartData[];
+    classWiseEnrollment: ChartData[];
+    staffDistribution: ChartData[];
+    feeStatus: ChartData[];
   };
   recentActivities?: Activity[];
 }
 
-const COLORS = ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#30cfd0'];
+interface Activity {
+  id: number;
+  type: string;
+  description: string;
+  createdAt: string;
+}
 
-const quickLinks = [
-  { title: 'Admissions', path: '/admissions/dashboard', icon: <PersonAddIcon />, color: '#667eea' },
-  { title: 'Academic', path: '/academic/dashboard', icon: <SchoolIcon />, color: '#f093fb' },
-  { title: 'Attendance', path: '/attendance/dashboard', icon: <FactCheckIcon />, color: '#4facfe' },
-  { title: 'Examinations', path: '/examinations/dashboard', icon: <AssessmentIcon />, color: '#43e97b' },
-  { title: 'Finance', path: '/finance/dashboard', icon: <MoneyIcon />, color: '#fa709a' },
-  { title: 'Library', path: '/library/dashboard', icon: <LibraryBooksIcon />, color: '#30cfd0' },
-];
+interface ReportData {
+  enrollment: any;
+  attendance: any;
+  feeCollection: any;
+  examination: any;
+  library: any;
+  eca: any;
+  sports: any;
+}
+
+const COLORS = ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#30cfd0', '#feca57', '#ff6b6b', '#a855f7', '#14b8a6'];
+
+const MotionBox = motion.create(Box);
+const MotionCard = motion.create(Card);
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06, delayChildren: 0.08 }
+  }
+};
+
+const itemVariants = {
+  hidden: { y: 30, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { type: 'spring', stiffness: 100, damping: 14, mass: 0.8 }
+  }
+};
+
+const scaleVariants = {
+  hidden: { scale: 0.9, opacity: 0 },
+  visible: {
+    scale: 1,
+    opacity: 1,
+    transition: { type: 'spring', stiffness: 120, damping: 12 }
+  }
+};
+
+const LiquidCard = ({ children, gradient, delay = 0, sx = {} }: any) => {
+  const theme = useTheme();
+  return (
+    <MotionCard
+      variants={itemVariants}
+      whileHover={{ 
+        y: -6, 
+        scale: 1.01,
+        transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] }
+      }}
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5, delay: delay * 0.1 }}
+      sx={{
+        background: theme.palette.mode === 'dark'
+          ? `linear-gradient(145deg, ${alpha('#1a1a2e', 0.95)} 0%, ${alpha('#16213e', 0.85)} 100%)`
+          : `linear-gradient(145deg, ${alpha('#ffffff', 0.95)} 0%, ${alpha('#f8faff', 0.9)} 100%)`,
+        backdropFilter: 'blur(20px) saturate(140%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(140%)',
+        borderRadius: '24px',
+        border: theme.palette.mode === 'dark'
+          ? '1px solid rgba(255, 255, 255, 0.08)'
+          : '1px solid rgba(255, 255, 255, 0.7)',
+        boxShadow: theme.palette.mode === 'dark'
+          ? '0 12px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+          : '0 12px 40px rgba(102, 126, 234, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9)',
+        overflow: 'hidden',
+        position: 'relative',
+        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: '-100%',
+          width: '100%',
+          height: '100%',
+          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)',
+          transition: 'left 0.6s ease',
+        },
+        '&:hover::before': {
+          left: '100%',
+        },
+        ...sx,
+      }}
+    >
+      {gradient && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: -80,
+            right: -80,
+            width: 250,
+            height: 250,
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${alpha(gradient, 0.2)} 0%, transparent 70%)`,
+            pointerEvents: 'none',
+            filter: 'blur(30px)',
+          }}
+        />
+      )}
+      {children}
+    </MotionCard>
+  );
+};
+
+const AnimatedNumber = ({ value, suffix = '', prefix = '' }: any) => {
+  const [displayValue, setDisplayValue] = useState(0);
+  
+  useEffect(() => {
+    const duration = 2000;
+    const steps = 60;
+    const increment = value / steps;
+    let current = 0;
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= value) {
+        setDisplayValue(value);
+        clearInterval(timer);
+      } else {
+        setDisplayValue(Math.floor(current));
+      }
+    }, duration / steps);
+    return () => clearInterval(timer);
+  }, [value]);
+  
+  return <span>{prefix}{displayValue.toLocaleString()}{suffix}</span>;
+};
+
+const SparklineChart = ({ data, color, height = 50 }: any) => {
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <AreaChart data={data}>
+        <defs>
+          <linearGradient id={`liquidGradient-${color}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor={color} stopOpacity={0.5}/>
+            <stop offset="95%" stopColor={color} stopOpacity={0.05}/>
+          </linearGradient>
+        </defs>
+        <Area 
+          type="monotone" 
+          dataKey="value" 
+          stroke={color} 
+          strokeWidth={2.5}
+          fill={`url(#liquidGradient-${color})`}
+          animationDuration={2500}
+          animationEasing="ease-out"
+        />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+};
+
+const DonutChart = ({ data, colors, size = 180 }: any) => {
+  const theme = useTheme();
+  return (
+    <ResponsiveContainer width={size} height={size}>
+      <PieChart>
+        <Pie
+          data={data}
+          cx="50%"
+          cy="50%"
+          innerRadius={size * 0.35}
+          outerRadius={size * 0.5}
+          paddingAngle={4}
+          dataKey="value"
+          animationDuration={1500}
+          animationEasing="ease-out"
+        >
+          {data.map((_: any, index: number) => (
+            <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+          ))}
+        </Pie>
+      </PieChart>
+    </ResponsiveContainer>
+  );
+};
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  const theme = useTheme();
+  if (active && payload && payload.length) {
+    return (
+      <Paper sx={{ 
+        p: 2, 
+        borderRadius: 3,
+        background: theme.palette.mode === 'dark'
+          ? 'rgba(20, 20, 35, 0.95)'
+          : 'rgba(255, 255, 255, 0.98)',
+        backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255,255,255,0.15)',
+        boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
+      }}>
+        <Typography variant="body2" fontWeight={700}>{label}</Typography>
+        {payload.map((entry: any, index: number) => (
+          <Typography key={index} variant="body2" sx={{ color: entry.color, fontWeight: 600 }}>
+            {entry.name}: {typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}
+          </Typography>
+        ))}
+      </Paper>
+    );
+  }
+  return null;
+};
+
+const WaveDivider = () => (
+  <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, overflow: 'hidden', height: 30 }}>
+    <svg viewBox="0 0 1200 120" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
+      <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" fill="currentColor" />
+      <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5" fill="currentColor" />
+    </svg>
+  </Box>
+);
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const theme = useTheme();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
+  const [reportData, setReportData] = useState<ReportData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Mock data for activities and events (can be replaced with API calls)
-  const recentActivities = [
-    {
-      id: 1,
-      type: 'attendance',
-      description: 'Class 10 attendance marked',
-      time: '5 mins ago',
-      icon: <CheckCircleIcon />,
-      color: '#43e97b',
-    },
-    {
-      id: 2,
-      type: 'payment',
-      description: 'Fee payment received: Rs 15,000',
-      time: '12 mins ago',
-      icon: <PaymentIcon />,
-      color: '#f093fb',
-    },
-    {
-      id: 3,
-      type: 'alert',
-      description: 'Low attendance alert: 3 students',
-      time: '1 hours ago',
-      icon: <WarningIcon />,
-      color: '#fa709a',
-    },
-    {
-      id: 4,
-      type: 'exam',
-      description: 'Exam scheduled: Terminal Exam',
-      time: '2 hours ago',
-      icon: <ScheduleIcon />,
-      color: '#667eea',
-    },
-    {
-      id: 5,
-      type: 'admission',
-      description: 'New student admission - Grade 6',
-      time: '3 hours ago',
-      icon: <PersonAddIcon />,
-      color: '#4facfe',
-    },
-  ];
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/reports/dashboard');
+      setData(response.data.data);
+      setError(null);
+    } catch (err: any) {
+      console.error('Failed to fetch dashboard data:', err);
+      if (err.response?.status === 401) {
+        setError('401');
+      } else {
+        setError('Failed to load dashboard data');
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
-  const upcomingEvents = [
-    {
-      id: 1,
-      title: 'Terminal Examination',
-      date: '2082-10-30',
-      type: 'exam',
-      status: 'Upcoming',
-      icon: <AssessmentIcon />,
-      color: '#667eea',
-    },
-    {
-      id: 2,
-      title: 'Parent-Teacher Meeting',
-      date: '2082-10-25',
-      type: 'meeting',
-      status: 'Upcoming',
-      icon: <GroupsIcon />,
-      color: '#43e97b',
-    },
-    {
-      id: 3,
-      title: 'Sports Day',
-      date: '2082-11-05',
-      type: 'event',
-      status: 'Upcoming',
-      icon: <EmojiEventsIcon />,
-      color: '#feca57',
-    },
-    {
-      id: 4,
-      title: 'Science Exhibition',
-      date: '2082-11-12',
-      type: 'event',
-      status: 'Upcoming',
-      icon: <MenuBookIcon />,
-      color: '#f093fb',
-    },
-  ];
+  const fetchReportData = async () => {
+    try {
+      const today = new Date();
+      const startOfYear = new Date(today.getFullYear(), 0, 1);
+      const formatDate = (d: Date) => d.toISOString().split('T')[0];
+      
+      const [enrollment, attendance, feeCollection, examination, library, eca, sports] = await Promise.allSettled([
+        api.get('/reports/enrollment'),
+        api.get('/reports/attendance', { params: { startDate: formatDate(startOfYear), endDate: formatDate(today) } }),
+        api.get('/reports/fee-collection', { params: { startDate: formatDate(startOfYear), endDate: formatDate(today) } }),
+        api.get('/reports/examination'),
+        api.get('/reports/library', { params: { startDate: formatDate(startOfYear), endDate: formatDate(today) } }),
+        api.get('/reports/eca'),
+        api.get('/reports/sports'),
+      ]);
 
-  const quickOverview = [
-    { label: 'Staff Members', value: data?.summary.totalStaff ?? 12, icon: <PeopleIcon />, color: '#43e97b' },
-    { label: 'Library Books', value: data?.summary.totalBooks ?? 1, icon: <LibraryBooksIcon />, color: '#30cfd0' },
-    { label: 'Active Classes', value: data?.summary.totalClasses ?? 79, icon: <ClassIcon />, color: '#feca57' },
-    { label: 'Total Exams', value: data?.summary.totalExams ?? 75, icon: <AssessmentIcon />, color: '#667eea' },
-    { label: 'New Admissions', value: data?.summary.newAdmissionsThisMonth ?? 185, icon: <PersonAddIcon />, color: '#fa709a' },
-  ];
-
-  const quickReports = [
-    { 
-      title: 'Enrollment', 
-      description: 'Student enrollment reports',
-      path: '/reports/enrollment',
-      icon: <SchoolIcon />,
-      color: '#667eea',
-    },
-    { 
-      title: 'Attendance', 
-      description: 'Attendance analysis',
-      path: '/attendance/reports',
-      icon: <FactCheckIcon />,
-      color: '#43e97b',
-    },
-    { 
-      title: 'Finance', 
-      description: 'Fee collection reports',
-      path: '/finance/reports',
-      icon: <MoneyIcon />,
-      color: '#f093fb',
-    },
-    { 
-      title: 'Examinations', 
-      description: 'Exam results & grades',
-      path: '/examinations/reports',
-      icon: <AssessmentIcon />,
-      color: '#fa709a',
-    },
-    { 
-      title: 'Library', 
-      description: 'Books & circulation',
-      path: '/library/reports',
-      icon: <LibraryBooksIcon />,
-      color: '#30cfd0',
-    },
-    { 
-      title: 'Sports & ECA', 
-      description: 'Activities & sports',
-      path: '/sports/dashboard',
-      icon: <EmojiEventsIcon />,
-      color: '#feca57',
-    },
-  ];
+      setReportData({
+        enrollment: enrollment.status === 'fulfilled' ? enrollment.value.data?.data : null,
+        attendance: attendance.status === 'fulfilled' ? attendance.value.data?.data : null,
+        feeCollection: feeCollection.status === 'fulfilled' ? feeCollection.value.data?.data : null,
+        examination: examination.status === 'fulfilled' ? examination.value.data?.data : null,
+        library: library.status === 'fulfilled' ? library.value.data?.data : null,
+        eca: eca.status === 'fulfilled' ? eca.value.data?.data : null,
+        sports: sports.status === 'fulfilled' ? sports.value.data?.data : null,
+      });
+    } catch (err) {
+      console.error('Failed to fetch report data:', err);
+    }
+  };
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/reports/dashboard');
-        setData(response.data.data);
-      } catch (err: any) {
-        console.error('Failed to fetch dashboard data:', err);
-        if (err.response?.status === 401) {
-          setError('401');
-        } else {
-          setError('Failed to load dashboard data');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchDashboardData();
+    fetchReportData();
   }, []);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchDashboardData();
+    fetchReportData();
+  };
+
+  const recentActivities = [
+    { id: 1, type: 'attendance', description: 'Class 10 attendance marked', time: '5 mins ago', icon: <CheckCircleIcon />, color: '#43e97b' },
+    { id: 2, type: 'payment', description: 'Fee payment received: Rs 15,000', time: '12 mins ago', icon: <PaymentIcon />, color: '#f093fb' },
+    { id: 3, type: 'alert', description: 'Low attendance alert: 3 students', time: '1 hour ago', icon: <WarningIcon />, color: '#fa709a' },
+    { id: 4, type: 'exam', description: 'Exam scheduled: Terminal Exam', time: '2 hours ago', icon: <ScheduleIcon />, color: '#667eea' },
+    { id: 5, type: 'admission', description: 'New student admission - Grade 6', time: '3 hours ago', icon: <PersonAddIcon />, color: '#4facfe' },
+  ];
+
+  const quickStats = [
+    { title: 'Students', value: data?.summary.totalStudents ?? 0, icon: <SchoolIcon />, color: '#667eea', bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+    { title: 'Staff', value: data?.summary.totalStaff ?? 0, icon: <PeopleIcon />, color: '#43e97b', bg: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' },
+    { title: 'Classes', value: data?.summary.totalClasses ?? 0, icon: <ClassIcon />, color: '#f093fb', bg: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+    { title: 'Books', value: data?.summary.totalBooks ?? 0, icon: <BookIcon />, color: '#30cfd0', bg: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)' },
+  ];
+
+  const analyticsCards = [
+    { 
+      title: 'Attendance', 
+      value: data?.summary.attendanceRate ?? 0,
+      suffix: '%',
+      icon: <FactCheckIcon />,
+      color: '#4facfe',
+      bg: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+      path: '/attendance/reports'
+    },
+    { 
+      title: 'Fee Collection', 
+      value: data?.summary.feeCollectionRate ?? 0,
+      suffix: '%',
+      icon: <MoneyIcon />,
+      color: '#43e97b',
+      bg: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+      path: '/finance/reports'
+    },
+    { 
+      title: 'Exams', 
+      value: data?.summary.totalExams ?? 0,
+      icon: <AssignmentIcon />,
+      color: '#fa709a',
+      bg: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+      path: '/examinations/reports'
+    },
+    { 
+      title: 'Circulations', 
+      value: data?.summary.totalCirculations ?? 0,
+      icon: <LocalLibraryIcon />,
+      color: '#a855f7',
+      bg: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
+      path: '/library/reports'
+    },
+  ];
+
+  const activityDistribution = [
+    { subject: 'Sports', A: 120, fullMark: 150 },
+    { subject: 'Music', A: 98, fullMark: 150 },
+    { subject: 'Art', A: 86, fullMark: 150 },
+    { subject: 'Science', A: 99, fullMark: 150 },
+    { subject: 'Debate', A: 65, fullMark: 150 },
+    { subject: 'Dance', A: 85, fullMark: 150 },
+  ];
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '60vh',
-        }}
-      >
-        <CircularProgress />
+      <Box sx={{ p: { xs: 2, md: 3 }, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+        >
+          <CircularProgress size={60} thickness={4} sx={{ color: '#667eea' }} />
+        </motion.div>
       </Box>
     );
   }
 
   if (error === '401') {
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography color="text.secondary" align="center">
+      <LiquidCard sx={{ p: 4, textAlign: 'center', mt: 4, maxWidth: 500, mx: 'auto' }}>
+        <Typography color="text.secondary">
           Please login to view the dashboard
         </Typography>
-      </Box>
+      </LiquidCard>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ p: 3 }}>
+      <LiquidCard sx={{ p: 4, textAlign: 'center', mt: 4, maxWidth: 500, mx: 'auto' }}>
         <Typography color="error">{error}</Typography>
-      </Box>
+      </LiquidCard>
     );
   }
-
-  const summaryCards = [
-    {
-      title: 'Total Students',
-      value: data?.summary.totalStudents ?? 0,
-      change: `+${data?.summary.newAdmissionsThisMonth ?? 0}`,
-      changeLabel: 'new this month',
-      icon: <SchoolIcon sx={{ fontSize: 32 }} />,
-      color: '#667eea',
-      trend: 'up',
-    },
-    {
-      title: 'Total Staff',
-      value: data?.summary.totalStaff ?? 0,
-      change: 'Active',
-      changeLabel: 'members',
-      icon: <PeopleIcon sx={{ fontSize: 32 }} />,
-      color: '#43e97b',
-      trend: 'neutral',
-    },
-    {
-      title: 'Attendance Rate',
-      value: `${data?.summary.attendanceRate ?? 0}%`,
-      change: data?.summary.attendanceRate && data.summary.attendanceRate < 75 ? 'Low' : 'Good',
-      changeLabel: 'Last 30 days',
-      icon: <CheckCircleIcon sx={{ fontSize: 32 }} />,
-      color: data?.summary.attendanceRate && data.summary.attendanceRate < 75 ? '#fa709a' : '#4facfe',
-      trend: data?.summary.attendanceRate && data.summary.attendanceRate < 75 ? 'down' : 'up',
-    },
-    {
-      title: 'Fee Collection',
-      value: `${data?.summary.feeCollectionRate ?? 0}%`,
-      change: `${data?.summary.pendingFeeStudents ?? 0}`,
-      changeLabel: 'Pending',
-      icon: <MoneyIcon sx={{ fontSize: 32 }} />,
-      color: '#f093fb',
-      trend: data?.summary.feeCollectionRate && data.summary.feeCollectionRate < 50 ? 'down' : 'up',
-    },
-    {
-      title: 'Library Books',
-      value: data?.summary.totalBooks ?? 0,
-      change: 'Total',
-      changeLabel: 'in catalog',
-      icon: <LibraryBooksIcon sx={{ fontSize: 32 }} />,
-      color: '#30cfd0',
-      trend: 'neutral',
-    },
-    {
-      title: 'Active Classes',
-      value: data?.summary.totalClasses ?? 0,
-      change: `${data?.summary.totalExams ?? 0}`,
-      changeLabel: 'this session',
-      icon: <ClassIcon sx={{ fontSize: 32 }} />,
-      color: '#feca57',
-      trend: 'neutral',
-    },
-  ];
 
   const enrollmentData = data?.charts.enrollmentTrend.map(item => ({
     name: item.label,
     students: item.value,
+    value: item.value,
   })) ?? [];
 
-  const attendanceData = data?.charts.attendanceTrend.map(item => ({
+  const classEnrollmentData = data?.charts.classWiseEnrollment?.map(item => ({
     name: item.label,
-    rate: item.value,
+    students: item.value,
   })) ?? [];
 
-  const feeData = data?.charts.feeCollection.map(item => ({
-    name: item.label,
-    amount: item.value,
-  })) ?? [];
-
-  const gradeData = data?.charts.examPerformance.map(item => ({
-    name: item.label,
-    count: item.value,
-  })) ?? [];
+  const feeStatusData = data?.charts.feeStatus ?? [
+    { name: 'Paid', value: data?.summary.totalStudents ? data.summary.totalStudents - (data.summary.pendingFeeStudents || 0) : 0 },
+    { name: 'Pending', value: data?.summary.pendingFeeStudents || 0 },
+    { name: 'Partial', value: Math.floor((data?.summary.pendingFeeStudents || 0) * 0.3) },
+  ];
 
   const genderData = data?.charts.genderDistribution.filter(item => item.value > 0).map(item => ({
     name: item.label,
     value: item.value,
-  })) ?? [];
+  })) ?? [
+    { name: 'Male', value: data?.summary.totalMaleStudents || 55 },
+    { name: 'Female', value: data?.summary.totalFemaleStudents || 45 },
+  ];
+
+  const staffData = data?.charts.staffDistribution ?? [
+    { name: 'Teachers', value: 45 },
+    { name: 'Admin', value: 12 },
+    { name: 'Support', value: 20 },
+    { name: 'Librarian', value: 5 },
+  ];
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 } }}>
-      {/* Header */}
-      <Box 
+    <MotionBox
+      sx={{ p: { xs: 2, md: 3 }, minHeight: '100vh' }}
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <MotionBox
+        variants={itemVariants}
         sx={{ 
           mb: 4,
           display: 'flex',
@@ -404,779 +536,683 @@ export default function Dashboard() {
         }}
       >
         <Box>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
-            Welcome, admin!
+          <Typography 
+            variant="h4" 
+            fontWeight={800}
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Dashboard
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            School Admin • {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </Typography>
         </Box>
-        <Button
-          variant="outlined"
-          endIcon={<DescriptionIcon />}
-          onClick={() => navigate('/reports')}
-          sx={{
-            borderColor: theme.palette.divider,
-            color: theme.palette.text.primary,
-            '&:hover': {
-              borderColor: '#667eea',
-              background: alpha('#667eea', 0.08),
-            },
-          }}
-        >
-          View Full Reports
-        </Button>
-      </Box>
-
-      {/* Summary Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {summaryCards.map((card, index) => (
-          <Grid item xs={12} sm={6} md={4} key={index}>
-            <Card
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Tooltip title="Refresh">
+            <IconButton
+              onClick={handleRefresh}
+              disabled={refreshing}
               sx={{
-                height: '100%',
-                background: theme.palette.mode === 'dark' 
-                  ? `linear-gradient(135deg, ${alpha(card.color, 0.15)} 0%, ${alpha(card.color, 0.05)} 100%)`
-                  : `linear-gradient(135deg, ${alpha(card.color, 0.1)} 0%, ${alpha(card.color, 0.02)} 100%)`,
-                border: `1px solid ${alpha(card.color, 0.2)}`,
-                position: 'relative',
-                overflow: 'hidden',
-                transition: 'transform 0.2s, box-shadow 0.2s',
+                background: theme.palette.mode === 'dark'
+                  ? 'rgba(255,255,255,0.08)'
+                  : 'rgba(102, 126, 234, 0.1)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '16px',
+                p: 1.5,
                 '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: `0 8px 24px ${alpha(card.color, 0.25)}`,
-                },
+                  background: theme.palette.mode === 'dark'
+                    ? 'rgba(255,255,255,0.15)'
+                    : 'rgba(102, 126, 234, 0.2)',
+                }
               }}
             >
+              <RefreshIcon sx={{ 
+                animation: refreshing ? 'spin 1s linear infinite' : 'none',
+                '@keyframes spin': {
+                  '0%': { transform: 'rotate(0deg)' },
+                  '100%': { transform: 'rotate(360deg)' },
+                }
+              }} />
+            </IconButton>
+          </Tooltip>
+          <Box
+            onClick={() => navigate('/reports')}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              px: 3,
+              py: 1.5,
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              cursor: 'pointer',
+              boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 12px 32px rgba(102, 126, 234, 0.5)',
+              }
+            }}
+          >
+            <AutoGraphIcon sx={{ color: 'white', fontSize: 20 }} />
+            <Typography sx={{ color: 'white', fontWeight: 600, fontSize: '0.875rem' }}>
+              Analytics
+            </Typography>
+          </Box>
+        </Box>
+      </MotionBox>
+
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {quickStats.map((stat, index) => (
+          <Grid item xs={6} md={3} key={index}>
+            <MotionCard
+              variants={scaleVariants}
+              whileHover={{ scale: 1.03, y: -4 }}
+              sx={{
+                background: stat.bg,
+                borderRadius: '20px',
+                boxShadow: `0 8px 32px ${alpha(stat.color, 0.4)}`,
+                overflow: 'hidden',
+                position: 'relative',
+              }}
+            >
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: -30,
+                  right: -30,
+                  width: 120,
+                  height: 120,
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.15)',
+                }}
+              />
+              <CardContent sx={{ position: 'relative', zIndex: 1, py: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <Box>
+                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', fontWeight: 500, mb: 1 }}>
+                      {stat.title}
+                    </Typography>
+                    <Typography variant="h3" fontWeight={800} sx={{ color: 'white' }}>
+                      <AnimatedNumber value={stat.value} />
+                    </Typography>
+                  </Box>
+                  <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.25)', width: 48, height: 48 }}>
+                    {stat.icon}
+                  </Avatar>
+                </Box>
+              </CardContent>
+            </MotionCard>
+          </Grid>
+        ))}
+      </Grid>
+
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {analyticsCards.map((card, index) => (
+          <Grid item xs={6} md={3} key={index}>
+            <LiquidCard gradient={card.color} delay={index}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                   <Box
                     sx={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 2,
-                      background: `linear-gradient(135deg, ${card.color} 0%, ${alpha(card.color, 0.7)} 100%)`,
+                      width: 52,
+                      height: 52,
+                      borderRadius: '16px',
+                      background: card.bg,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: 'white',
-                      boxShadow: `0 4px 12px ${alpha(card.color, 0.4)}`,
+                      boxShadow: `0 8px 24px ${alpha(card.color, 0.4)}`,
                     }}
                   >
                     {card.icon}
                   </Box>
                   <Chip
+                    label={card.suffix ? `${card.value}${card.suffix}` : card.value}
                     size="small"
-                    label={card.change}
-                    icon={
-                      card.trend === 'up' ? <TrendingUpIcon /> : 
-                      card.trend === 'down' ? <TrendingDownIcon /> : 
-                      <CheckCircleIcon />
-                    }
                     sx={{
-                      background: card.trend === 'up' ? alpha('#43e97b', 0.15) : 
-                                 card.trend === 'down' ? alpha('#fa709a', 0.15) : 
-                                 alpha('#4facfe', 0.15),
-                      color: card.trend === 'up' ? '#43e97b' : 
-                             card.trend === 'down' ? '#fa709a' : 
-                             '#4facfe',
-                      fontWeight: 600,
-                      border: 'none',
+                      background: alpha(card.color, 0.15),
+                      color: card.color,
+                      fontWeight: 700,
+                      fontSize: '0.8rem',
                     }}
                   />
                 </Box>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
+                <Typography variant="h4" fontWeight={800} sx={{ color: card.color }}>
+                  <AnimatedNumber value={card.value} suffix={card.suffix} />
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
                   {card.title}
                 </Typography>
-                <Typography variant="h4" fontWeight={700} gutterBottom>
-                  {card.value}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {card.changeLabel}
-                </Typography>
+                <Box 
+                  onClick={() => navigate(card.path)}
+                  sx={{ 
+                    mt: 2, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 0.5, 
+                    cursor: 'pointer',
+                    color: card.color,
+                    '&:hover': { textDecoration: 'underline' }
+                  }}
+                >
+                  <Typography variant="caption" sx={{ fontWeight: 600 }}>View Details</Typography>
+                  <ArrowForwardIcon sx={{ fontSize: 14 }} />
+                </Box>
               </CardContent>
-            </Card>
+            </LiquidCard>
           </Grid>
         ))}
       </Grid>
 
-      {/* Charts Section */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* Enrollment Trend */}
-        <Grid item xs={12} md={8}>
-          <Paper
-            sx={{
-              p: 3,
-              height: '100%',
-              background: theme.palette.mode === 'dark' 
-                ? alpha(theme.palette.background.paper, 0.6)
-                : '#fff',
-              backdropFilter: 'blur(10px)',
-              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            }}
-          >
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-              Enrollment Trend
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Last 6 months enrollment
-            </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={enrollmentData}>
-                <defs>
-                  <linearGradient id="colorStudents" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#667eea" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#667eea" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={alpha(theme.palette.divider, 0.1)} />
-                <XAxis dataKey="name" stroke={theme.palette.text.secondary} />
-                <YAxis stroke={theme.palette.text.secondary} />
-                <Tooltip 
-                  contentStyle={{ 
-                    background: theme.palette.background.paper,
-                    border: `1px solid ${theme.palette.divider}`,
-                    borderRadius: 8,
-                  }}
+        <Grid item xs={12} lg={8}>
+          <LiquidCard gradient="#667eea">
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Box>
+                  <Typography variant="h6" fontWeight={700}>
+                    Enrollment Trend
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Monthly student enrollment
+                  </Typography>
+                </Box>
+                <Chip 
+                  icon={<TrendingUpIcon sx={{ fontSize: 16 }} />}
+                  label="+12% growth" 
+                  size="small"
+                  sx={{ 
+                    bgcolor: alpha('#43e97b', 0.15), 
+                    color: '#43e97b',
+                    fontWeight: 600,
+                  }} 
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="students" 
-                  stroke="#667eea" 
-                  strokeWidth={3}
-                  fillOpacity={1} 
-                  fill="url(#colorStudents)" 
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </Paper>
-        </Grid>
-
-        {/* Gender Distribution */}
-        <Grid item xs={12} md={4}>
-          <Paper
-            sx={{
-              p: 3,
-              height: '100%',
-              background: theme.palette.mode === 'dark' 
-                ? alpha(theme.palette.background.paper, 0.6)
-                : '#fff',
-              backdropFilter: 'blur(10px)',
-              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            }}
-          >
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-              Gender Distribution
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Student demographics
-            </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={genderData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                  label={(item) => `${item.name}: ${item.value}`}
-                >
-                  {genderData.map((_entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    background: theme.palette.background.paper,
-                    border: `1px solid ${theme.palette.divider}`,
-                    borderRadius: 8,
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 2, flexWrap: 'wrap' }}>
-              <Chip 
-                icon={<MaleIcon />} 
-                label={`Male: ${data?.summary.totalMaleStudents ?? 0} (${Math.round((data?.summary.totalMaleStudents ?? 0) / (data?.summary.totalStudents || 1) * 100)}%)`}
-                sx={{ background: alpha('#667eea', 0.15), color: '#667eea' }}
-              />
-              <Chip 
-                icon={<FemaleIcon />} 
-                label={`Female: ${data?.summary.totalFemaleStudents ?? 0} (${Math.round((data?.summary.totalFemaleStudents ?? 0) / (data?.summary.totalStudents || 1) * 100)}%)`}
-                sx={{ background: alpha('#f093fb', 0.15), color: '#f093fb' }}
-              />
-            </Box>
-          </Paper>
-        </Grid>
-
-        {/* Attendance Trend */}
-        <Grid item xs={12} md={6}>
-          <Paper
-            sx={{
-              p: 3,
-              height: '100%',
-              background: theme.palette.mode === 'dark' 
-                ? alpha(theme.palette.background.paper, 0.6)
-                : '#fff',
-              backdropFilter: 'blur(10px)',
-              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            }}
-          >
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-              Attendance Trends
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Daily attendance rate
-            </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={attendanceData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={alpha(theme.palette.divider, 0.1)} />
-                <XAxis dataKey="name" stroke={theme.palette.text.secondary} />
-                <YAxis stroke={theme.palette.text.secondary} />
-                <Tooltip 
-                  contentStyle={{ 
-                    background: theme.palette.background.paper,
-                    border: `1px solid ${theme.palette.divider}`,
-                    borderRadius: 8,
-                  }}
-                />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="rate" 
-                  stroke="#4facfe" 
-                  strokeWidth={3}
-                  dot={{ fill: '#4facfe', r: 5 }}
-                  activeDot={{ r: 7 }}
-                  name="Attendance %"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </Paper>
-        </Grid>
-
-        {/* Fee Collection */}
-        <Grid item xs={12} md={6}>
-          <Paper
-            sx={{
-              p: 3,
-              height: '100%',
-              background: theme.palette.mode === 'dark' 
-                ? alpha(theme.palette.background.paper, 0.6)
-                : '#fff',
-              backdropFilter: 'blur(10px)',
-              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            }}
-          >
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-              Fee Collection
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Monthly breakdown (in thousands)
-            </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={feeData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={alpha(theme.palette.divider, 0.1)} />
-                <XAxis dataKey="name" stroke={theme.palette.text.secondary} />
-                <YAxis stroke={theme.palette.text.secondary} />
-                <Tooltip 
-                  contentStyle={{ 
-                    background: theme.palette.background.paper,
-                    border: `1px solid ${theme.palette.divider}`,
-                    borderRadius: 8,
-                  }}
-                />
-                <Legend />
-                <Bar 
-                  dataKey="amount" 
-                  fill="#fa709a" 
-                  radius={[8, 8, 0, 0]}
-                  name="Amount (K)"
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </Paper>
-        </Grid>
-
-        {/* Exam Performance */}
-        {gradeData.length > 0 && (
-          <Grid item xs={12} md={6}>
-            <Paper
-              sx={{
-                p: 3,
-                height: '100%',
-                background: theme.palette.mode === 'dark' 
-                  ? alpha(theme.palette.background.paper, 0.6)
-                  : '#fff',
-                backdropFilter: 'blur(10px)',
-                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-              }}
-            >
-              <Typography variant="h6" fontWeight={600} gutterBottom>
-                Exam Performance
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Grade distribution overview
-              </Typography>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={gradeData} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke={alpha(theme.palette.divider, 0.1)} />
-                  <XAxis type="number" stroke={theme.palette.text.secondary} />
-                  <YAxis dataKey="name" type="category" stroke={theme.palette.text.secondary} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      background: theme.palette.background.paper,
-                      border: `1px solid ${theme.palette.divider}`,
-                      borderRadius: 8,
-                    }}
+              </Box>
+              <ResponsiveContainer width="100%" height={280}>
+                <AreaChart data={enrollmentData}>
+                  <defs>
+                    <linearGradient id="liquidEnrollGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#667eea" stopOpacity={0.5}/>
+                      <stop offset="95%" stopColor="#667eea" stopOpacity={0.02}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke={alpha(theme.palette.divider, 0.2)} vertical={false} />
+                  <XAxis dataKey="name" stroke={theme.palette.text.secondary} style={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis stroke={theme.palette.text.secondary} style={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <RechartsTooltip content={<CustomTooltip />} />
+                  <Area 
+                    type="monotone" 
+                    dataKey="students" 
+                    stroke="#667eea" 
+                    strokeWidth={3}
+                    fill="url(#liquidEnrollGradient)"
+                    animationDuration={2000}
                   />
-                  <Bar dataKey="count" fill="#43e97b" radius={[0, 8, 8, 0]} name="Students" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </LiquidCard>
+        </Grid>
+
+        <Grid item xs={12} lg={4}>
+          <LiquidCard gradient="#f093fb" sx={{ height: '100%' }}>
+            <CardContent>
+              <Typography variant="h6" fontWeight={700} gutterBottom>
+                Gender Distribution
+              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 2 }}>
+                <DonutChart data={genderData} colors={['#667eea', '#f093fb']} size={180} />
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mt: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#667eea' }} />
+                  <Typography variant="body2" fontWeight={600}>
+                    Male: {data?.summary.totalMaleStudents || 0}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#f093fb' }} />
+                  <Typography variant="body2" fontWeight={600}>
+                    Female: {data?.summary.totalFemaleStudents || 0}
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </LiquidCard>
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} lg={6}>
+          <LiquidCard gradient="#4facfe">
+            <CardContent>
+              <Typography variant="h6" fontWeight={700} gutterBottom>
+                Class-wise Enrollment
+              </Typography>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={classEnrollmentData.length > 0 ? classEnrollmentData : [
+                  { name: 'Grade 6', students: 120 },
+                  { name: 'Grade 7', students: 145 },
+                  { name: 'Grade 8', students: 132 },
+                  { name: 'Grade 9', students: 156 },
+                  { name: 'Grade 10', students: 142 },
+                ]}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={alpha(theme.palette.divider, 0.2)} vertical={false} />
+                  <XAxis dataKey="name" stroke={theme.palette.text.secondary} style={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis stroke={theme.palette.text.secondary} style={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <RechartsTooltip content={<CustomTooltip />} />
+                  <Bar 
+                    dataKey="students" 
+                    radius={[8, 8, 4, 4]}
+                    animationDuration={1500}
+                  >
+                    {COLORS.slice(0, 5).map((color, index) => (
+                      <Cell key={`cell-${index}`} fill={color} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
-            </Paper>
-          </Grid>
-        )}
+            </CardContent>
+          </LiquidCard>
+        </Grid>
 
-        {/* Performance Indicators */}
-        <Grid item xs={12} md={gradeData.length > 0 ? 6 : 12}>
-          <Paper
-            sx={{
-              p: 3,
-              height: '100%',
-              background: theme.palette.mode === 'dark' 
-                ? alpha(theme.palette.background.paper, 0.6)
-                : '#fff',
-              backdropFilter: 'blur(10px)',
-              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            }}
-          >
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-              Key Rate Indicators
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Performance at a glance
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2" fontWeight={600}>
-                    Attendance Rate
-                  </Typography>
-                  <Typography variant="body2" fontWeight={600} color={
-                    (data?.summary.attendanceRate ?? 0) >= 75 ? '#43e97b' : '#fa709a'
-                  }>
-                    {data?.summary.attendanceRate ?? 0}%
-                  </Typography>
+        <Grid item xs={12} lg={6}>
+          <LiquidCard gradient="#43e97b">
+            <CardContent>
+              <Typography variant="h6" fontWeight={700} gutterBottom>
+                Fee Status
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                <Box sx={{ flex: 1 }}>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                      <Pie
+                        data={feeStatusData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                        animationDuration={1500}
+                      >
+                        {feeStatusData.map((_: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip content={<CustomTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </Box>
-                <Box sx={{ 
-                  height: 8, 
-                  borderRadius: 4, 
-                  background: alpha(theme.palette.divider, 0.1),
-                  overflow: 'hidden',
-                }}>
-                  <Box sx={{ 
-                    height: '100%', 
-                    width: `${data?.summary.attendanceRate ?? 0}%`,
-                    background: (data?.summary.attendanceRate ?? 0) >= 75 
-                      ? 'linear-gradient(90deg, #43e97b 0%, #38f9d7 100%)'
-                      : 'linear-gradient(90deg, #fa709a 0%, #fee140 100%)',
-                    transition: 'width 1s ease-in-out',
-                  }} />
-                </Box>
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                  {(data?.summary.attendanceRate ?? 0) >= 75 ? 'Good' : 'Needs Improvement'} - Last 30 days average
-                </Typography>
-              </Box>
-
-              <Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2" fontWeight={600}>
-                    Fee Collection Rate
-                  </Typography>
-                  <Typography variant="body2" fontWeight={600} color={
-                    (data?.summary.feeCollectionRate ?? 0) >= 70 ? '#43e97b' : '#fa709a'
-                  }>
-                    {data?.summary.feeCollectionRate ?? 0}%
-                  </Typography>
-                </Box>
-                <Box sx={{ 
-                  height: 8, 
-                  borderRadius: 4, 
-                  background: alpha(theme.palette.divider, 0.1),
-                  overflow: 'hidden',
-                }}>
-                  <Box sx={{ 
-                    height: '100%', 
-                    width: `${data?.summary.feeCollectionRate ?? 0}%`,
-                    background: (data?.summary.feeCollectionRate ?? 0) >= 70 
-                      ? 'linear-gradient(90deg, #f093fb 0%, #f5576c 100%)'
-                      : 'linear-gradient(90deg, #fa709a 0%, #fee140 100%)',
-                    transition: 'width 1s ease-in-out',
-                  }} />
-                </Box>
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                  {data?.summary.pendingFeeStudents ?? 0} students with pending fees
-                </Typography>
-              </Box>
-
-              <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(2, 1fr)', 
-                gap: 2,
-                mt: 2,
-              }}>
-                <Box sx={{ 
-                  p: 2, 
-                  borderRadius: 2, 
-                  background: alpha('#667eea', 0.1),
-                  border: `1px solid ${alpha('#667eea', 0.2)}`,
-                }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Total Exams
-                  </Typography>
-                  <Typography variant="h5" fontWeight={700} color="#667eea">
-                    {data?.summary.totalExams ?? 0}
-                  </Typography>
-                </Box>
-                <Box sx={{ 
-                  p: 2, 
-                  borderRadius: 2, 
-                  background: alpha('#30cfd0', 0.1),
-                  border: `1px solid ${alpha('#30cfd0', 0.2)}`,
-                }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Active Classes
-                  </Typography>
-                  <Typography variant="h5" fontWeight={700} color="#30cfd0">
-                    {data?.summary.totalClasses ?? 0}
-                  </Typography>
+                <Box>
+                  {feeStatusData.map((item, index) => (
+                    <Box key={item.name} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                      <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: COLORS[index] }} />
+                      <Typography variant="body2" fontWeight={600}>{item.name}</Typography>
+                      <Typography variant="body2" color="text.secondary">({item.value})</Typography>
+                    </Box>
+                  ))}
                 </Box>
               </Box>
-            </Box>
-          </Paper>
+            </CardContent>
+          </LiquidCard>
         </Grid>
       </Grid>
 
-      {/* Recent Activities & Upcoming Events */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* Recent Activities */}
-        <Grid item xs={12} md={6}>
-          <Paper
-            sx={{
-              p: 3,
-              height: '100%',
-              background: theme.palette.mode === 'dark' 
-                ? alpha(theme.palette.background.paper, 0.6)
-                : '#fff',
-              backdropFilter: 'blur(10px)',
-              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6" fontWeight={600}>
-                Recent Activities
+        <Grid item xs={12} lg={6}>
+          <LiquidCard gradient="#a855f7">
+            <CardContent>
+              <Typography variant="h6" fontWeight={700} gutterBottom>
+                ECA Activities Participation
               </Typography>
-              <NotificationsIcon sx={{ color: theme.palette.text.secondary }} />
-            </Box>
-            <List sx={{ py: 0 }}>
-              {recentActivities.map((activity, index) => (
-                <Box key={activity.id}>
-                  <ListItem sx={{ px: 0, py: 1.5 }}>
-                    <ListItemAvatar>
-                      <Avatar
-                        sx={{
-                          background: alpha(activity.color, 0.15),
-                          color: activity.color,
-                          width: 40,
-                          height: 40,
-                        }}
-                      >
-                        {activity.icon}
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={
-                        <Typography variant="body2" fontWeight={500}>
-                          {activity.description}
-                        </Typography>
-                      }
-                      secondary={
-                        <Typography component="span" variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                          <AccessTimeIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                          {activity.time}
-                        </Typography>
-                      }
-                    />
-                  </ListItem>
-                  {index < recentActivities.length - 1 && <Divider />}
-                </Box>
-              ))}
-            </List>
-          </Paper>
+              <ResponsiveContainer width="100%" height={260}>
+                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={activityDistribution}>
+                  <PolarGrid stroke={alpha(theme.palette.divider, 0.3)} />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 150]} tick={false} axisLine={false} />
+                  <Radar
+                    name="Participants"
+                    dataKey="A"
+                    stroke="#a855f7"
+                    fill="#a855f7"
+                    fillOpacity={0.3}
+                    animationDuration={2000}
+                  />
+                  <RechartsTooltip content={<CustomTooltip />} />
+                </RadarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </LiquidCard>
         </Grid>
 
-        {/* Upcoming Events */}
-        <Grid item xs={12} md={6}>
-          <Paper
-            sx={{
-              p: 3,
-              height: '100%',
-              background: theme.palette.mode === 'dark' 
-                ? alpha(theme.palette.background.paper, 0.6)
-                : '#fff',
-              backdropFilter: 'blur(10px)',
-              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6" fontWeight={600}>
-                Upcoming Events
+        <Grid item xs={12} lg={6}>
+          <LiquidCard gradient="#30cfd0">
+            <CardContent>
+              <Typography variant="h6" fontWeight={700} gutterBottom>
+                Staff Distribution
               </Typography>
-              <CalendarTodayIcon sx={{ color: theme.palette.text.secondary }} />
-            </Box>
-            <List sx={{ py: 0 }}>
-              {upcomingEvents.map((event, index) => (
-                <Box key={event.id}>
-                  <ListItem sx={{ px: 0, py: 1.5 }}>
-                    <ListItemAvatar>
-                      <Avatar
-                        sx={{
-                          background: alpha(event.color, 0.15),
-                          color: event.color,
-                          width: 40,
-                          height: 40,
-                        }}
-                      >
-                        {event.icon}
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={
-                        <Typography variant="body2" fontWeight={500}>
-                          {event.title}
-                        </Typography>
-                      }
-                      secondary={
-                        <Typography component="span" variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                          {event.date}
-                          <Chip
-                            label={event.status}
-                            size="small"
-                            sx={{
-                              height: 20,
-                              fontSize: '0.7rem',
-                              background: alpha(event.color, 0.15),
-                              color: event.color,
-                            }}
-                          />
-                        </Typography>
-                      }
-                    />
-                  </ListItem>
-                  {index < upcomingEvents.length - 1 && <Divider />}
-                </Box>
-              ))}
-            </List>
-          </Paper>
-        </Grid>
-      </Grid>
-
-      {/* Quick Overview & Quick Reports */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* Quick Overview */}
-        <Grid item xs={12} md={5}>
-          <Paper
-            sx={{
-              p: 3,
-              height: '100%',
-              background: theme.palette.mode === 'dark' 
-                ? alpha(theme.palette.background.paper, 0.6)
-                : '#fff',
-              backdropFilter: 'blur(10px)',
-              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            }}
-          >
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-              Quick Overview
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Key metrics at a glance
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {quickOverview.map((item, index) => (
-                <Box
-                  key={index}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    p: 2,
-                    borderRadius: 2,
-                    background: alpha(item.color, 0.08),
-                    border: `1px solid ${alpha(item.color, 0.2)}`,
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Avatar
-                      sx={{
-                        background: alpha(item.color, 0.15),
-                        color: item.color,
-                        width: 36,
-                        height: 36,
-                      }}
-                    >
-                      {item.icon}
-                    </Avatar>
-                    <Typography variant="body2" fontWeight={500}>
-                      {item.label}
-                    </Typography>
-                  </Box>
-                  <Typography variant="h6" fontWeight={700} color={item.color}>
-                    {item.value}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          </Paper>
-        </Grid>
-
-        {/* Quick Reports */}
-        <Grid item xs={12} md={7}>
-          <Paper
-            sx={{
-              p: 3,
-              height: '100%',
-              background: theme.palette.mode === 'dark' 
-                ? alpha(theme.palette.background.paper, 0.6)
-                : '#fff',
-              backdropFilter: 'blur(10px)',
-              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Box>
-                <Typography variant="h6" fontWeight={600}>
-                  Quick Reports
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Access detailed analytics
-                </Typography>
-              </Box>
-              <Button
-                variant="text"
-                size="small"
-                endIcon={<DescriptionIcon />}
-                onClick={() => navigate('/reports')}
-                sx={{ color: '#667eea' }}
-              >
-                View All
-              </Button>
-            </Box>
-            <Grid container spacing={2}>
-              {quickReports.map((report, index) => (
-                <Grid item xs={6} sm={4} key={index}>
-                  <Card
-                    sx={{
-                      cursor: 'pointer',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      background: alpha(report.color, 0.08),
-                      border: `1px solid ${alpha(report.color, 0.2)}`,
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: `0 8px 16px ${alpha(report.color, 0.25)}`,
-                        border: `1px solid ${alpha(report.color, 0.5)}`,
-                      },
-                    }}
-                    onClick={() => navigate(report.path)}
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={staffData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke={alpha(theme.palette.divider, 0.2)} horizontal={false} />
+                  <XAxis type="number" stroke={theme.palette.text.secondary} style={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis dataKey="name" type="category" stroke={theme.palette.text.secondary} style={{ fontSize: 11 }} axisLine={false} tickLine={false} width={80} />
+                  <RechartsTooltip content={<CustomTooltip />} />
+                  <Bar 
+                    dataKey="value" 
+                    radius={[0, 8, 8, 0]}
+                    animationDuration={1500}
                   >
-                    <CardContent sx={{ textAlign: 'center', py: 2.5 }}>
-                      <Avatar
-                        sx={{
-                          background: `linear-gradient(135deg, ${report.color} 0%, ${alpha(report.color, 0.7)} 100%)`,
-                          color: 'white',
-                          width: 48,
-                          height: 48,
-                          margin: '0 auto',
-                          mb: 1.5,
-                          boxShadow: `0 4px 12px ${alpha(report.color, 0.4)}`,
-                        }}
-                      >
-                        {report.icon}
-                      </Avatar>
-                      <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                        {report.title}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {report.description}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          </Paper>
+                    {staffData.map((_: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </LiquidCard>
         </Grid>
       </Grid>
 
-      {/* Quick Access */}
-      <Typography variant="h6" fontWeight={600} sx={{ mb: 3 }}>
-        Quick Access
-      </Typography>
-      <Grid container spacing={2}>
-        {quickLinks.map((link, index) => (
-          <Grid item xs={6} sm={4} md={2} key={index}>
-            <Card
-              sx={{
-                cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                background: theme.palette.mode === 'dark' 
-                  ? alpha(theme.palette.background.paper, 0.6)
-                  : '#fff',
-                backdropFilter: 'blur(10px)',
-                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                '&:hover': {
-                  transform: 'translateY(-8px)',
-                  boxShadow: `0 12px 24px ${alpha(link.color, 0.3)}`,
-                  border: `1px solid ${alpha(link.color, 0.5)}`,
-                },
-              }}
-              onClick={() => navigate(link.path)}
-            >
-              <CardContent
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  textAlign: 'center',
-                  py: 3,
-                }}
-              >
-                <Box
-                  sx={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: '50%',
-                    background: `linear-gradient(135deg, ${link.color} 0%, ${alpha(link.color, 0.7)} 100%)`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'white',
-                    mb: 1.5,
-                    boxShadow: `0 4px 12px ${alpha(link.color, 0.4)}`,
-                  }}
-                >
-                  {link.icon}
-                </Box>
-                <Typography variant="subtitle2" fontWeight={600}>
-                  {link.title}
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <LiquidCard>
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6" fontWeight={700}>
+                  Recent Activities
                 </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
+                <NotificationsIcon sx={{ color: theme.palette.text.secondary }} />
+              </Box>
+              <List sx={{ py: 0 }}>
+                {recentActivities.map((activity, index) => (
+                  <Box key={activity.id}>
+                    <ListItem sx={{ px: 0, py: 1.5 }}>
+                      <ListItemAvatar>
+                        <Avatar
+                          sx={{
+                            background: alpha(activity.color, 0.15),
+                            color: activity.color,
+                            width: 44,
+                            height: 44,
+                            borderRadius: '14px',
+                            boxShadow: `0 4px 16px ${alpha(activity.color, 0.25)}`,
+                          }}
+                        >
+                          {activity.icon}
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={
+                          <Typography variant="body2" fontWeight={600}>
+                            {activity.description}
+                          </Typography>
+                        }
+                        secondary={
+                          <Typography component="span" variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                            <AccessTimeIcon sx={{ fontSize: 12 }} />
+                            {activity.time}
+                          </Typography>
+                        }
+                      />
+                    </ListItem>
+                    {index < recentActivities.length - 1 && <Divider sx={{ opacity: 0.4 }} />}
+                  </Box>
+                ))}
+              </List>
+            </CardContent>
+          </LiquidCard>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <LiquidCard>
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6" fontWeight={700}>
+                  Performance Overview
+                </Typography>
+                <EmojiEventsIcon sx={{ color: '#feca57' }} />
+              </Box>
+              
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2" fontWeight={600}>Attendance Rate</Typography>
+                  <Typography variant="body2" fontWeight={700} color="#4facfe">{data?.summary.attendanceRate || 85}%</Typography>
+                </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={data?.summary.attendanceRate || 85}
+                  sx={{
+                    height: 10,
+                    borderRadius: 5,
+                    bgcolor: alpha('#4facfe', 0.15),
+                    '& .MuiLinearProgress-bar': {
+                      borderRadius: 5,
+                      background: 'linear-gradient(90deg, #4facfe 0%, #00f2fe 100%)',
+                    }
+                  }}
+                />
+              </Box>
+
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2" fontWeight={600}>Fee Collection</Typography>
+                  <Typography variant="body2" fontWeight={700} color="#43e97b">{data?.summary.feeCollectionRate || 75}%</Typography>
+                </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={data?.summary.feeCollectionRate || 75}
+                  sx={{
+                    height: 10,
+                    borderRadius: 5,
+                    bgcolor: alpha('#43e97b', 0.15),
+                    '& .MuiLinearProgress-bar': {
+                      borderRadius: 5,
+                      background: 'linear-gradient(90deg, #43e97b 0%, #38f9d7 100%)',
+                    }
+                  }}
+                />
+              </Box>
+
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2" fontWeight={600}>Library Circulation</Typography>
+                  <Typography variant="body2" fontWeight={700} color="#a855f7">{reportData?.library?.circulationRate || 68}%</Typography>
+                </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={reportData?.library?.circulationRate || 68}
+                  sx={{
+                    height: 10,
+                    borderRadius: 5,
+                    bgcolor: alpha('#a855f7', 0.15),
+                    '& .MuiLinearProgress-bar': {
+                      borderRadius: 5,
+                      background: 'linear-gradient(90deg, #a855f7 0%, #6366f1 100%)',
+                    }
+                  }}
+                />
+              </Box>
+
+              <Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2" fontWeight={600}>ECA Participation</Typography>
+                  <Typography variant="body2" fontWeight={700} color="#f093fb">{reportData?.eca?.participationRate || 72}%</Typography>
+                </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={reportData?.eca?.participationRate || 72}
+                  sx={{
+                    height: 10,
+                    borderRadius: 5,
+                    bgcolor: alpha('#f093fb', 0.15),
+                    '& .MuiLinearProgress-bar': {
+                      borderRadius: 5,
+                      background: 'linear-gradient(90deg, #f093fb 0%, #f5576c 100%)',
+                    }
+                  }}
+                />
+              </Box>
+            </CardContent>
+          </LiquidCard>
+        </Grid>
       </Grid>
-    </Box>
+
+      <MotionBox variants={itemVariants} sx={{ mt: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h6" fontWeight={700}>
+            Quick Stats
+          </Typography>
+          <Button
+            variant="text"
+            endIcon={<ArrowForwardIcon />}
+            onClick={() => navigate('/reports')}
+            sx={{ color: '#667eea', fontWeight: 600 }}
+          >
+            View All
+          </Button>
+        </Box>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6} lg={3}>
+            <LiquidCard gradient="#667eea">
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                  <Box sx={{ width: 44, height: 44, borderRadius: '14px', bgcolor: alpha('#667eea', 0.15), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <SchoolIcon sx={{ color: '#667eea' }} />
+                  </Box>
+                  <Typography variant="h6" fontWeight={700}>Students</Typography>
+                </Box>
+                <Typography variant="h3" fontWeight={800} color="#667eea" sx={{ mb: 2 }}>
+                  <AnimatedNumber value={data?.summary.totalStudents || 0} />
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" color="text.secondary">Male</Typography>
+                    <Typography variant="body2" fontWeight={700}>{data?.summary.totalMaleStudents || 0}</Typography>
+                  </Box>
+                  <LinearProgress variant="determinate" value={data?.summary.totalMaleStudents ? (data.summary.totalMaleStudents / (data.summary.totalStudents || 1)) * 100 : 0} sx={{ height: 6, borderRadius: 3, bgcolor: alpha('#667eea', 0.15), '& .MuiLinearProgress-bar': { borderRadius: 3, bgcolor: '#667eea' } }} />
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" color="text.secondary">Female</Typography>
+                    <Typography variant="body2" fontWeight={700}>{data?.summary.totalFemaleStudents || 0}</Typography>
+                  </Box>
+                  <LinearProgress variant="determinate" value={data?.summary.totalFemaleStudents ? (data.summary.totalFemaleStudents / (data.summary.totalStudents || 1)) * 100 : 0} sx={{ height: 6, borderRadius: 3, bgcolor: alpha('#f093fb', 0.15), '& .MuiLinearProgress-bar': { borderRadius: 3, bgcolor: '#f093fb' } }} />
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                    <Typography variant="caption" color="text.secondary">New This Month</Typography>
+                    <Chip label={`+${data?.summary.newAdmissionsThisMonth || 0}`} size="small" sx={{ bgcolor: alpha('#43e97b', 0.15), color: '#43e97b', fontWeight: 700, height: 22 }} />
+                  </Box>
+                </Box>
+              </CardContent>
+            </LiquidCard>
+          </Grid>
+
+          <Grid item xs={12} md={6} lg={3}>
+            <LiquidCard gradient="#43e97b">
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                  <Box sx={{ width: 44, height: 44, borderRadius: '14px', bgcolor: alpha('#43e97b', 0.15), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <PeopleIcon sx={{ color: '#43e97b' }} />
+                  </Box>
+                  <Typography variant="h6" fontWeight={700}>Staff</Typography>
+                </Box>
+                <Typography variant="h3" fontWeight={800} color="#43e97b" sx={{ mb: 2 }}>
+                  <AnimatedNumber value={data?.summary.totalStaff || 0} />
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" color="text.secondary">Classes</Typography>
+                    <Typography variant="body2" fontWeight={700}>{data?.summary.totalClasses || 0}</Typography>
+                  </Box>
+                  <LinearProgress variant="determinate" value={data?.summary.totalClasses ? Math.min(100, (data.summary.totalClasses / 20) * 100) : 0} sx={{ height: 6, borderRadius: 3, bgcolor: alpha('#43e97b', 0.15), '& .MuiLinearProgress-bar': { borderRadius: 3, bgcolor: '#43e97b' } }} />
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" color="text.secondary">Exams Scheduled</Typography>
+                    <Typography variant="body2" fontWeight={700}>{data?.summary.totalExams || 0}</Typography>
+                  </Box>
+                  <LinearProgress variant="determinate" value={data?.summary.totalExams ? Math.min(100, (data.summary.totalExams / 10) * 100) : 0} sx={{ height: 6, borderRadius: 3, bgcolor: alpha('#fa709a', 0.15), '& .MuiLinearProgress-bar': { borderRadius: 3, bgcolor: '#fa709a' } }} />
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                    <Typography variant="caption" color="text.secondary">Active</Typography>
+                    <Chip label="100%" size="small" sx={{ bgcolor: alpha('#43e97b', 0.15), color: '#43e97b', fontWeight: 700, height: 22 }} />
+                  </Box>
+                </Box>
+              </CardContent>
+            </LiquidCard>
+          </Grid>
+
+          <Grid item xs={12} md={6} lg={3}>
+            <LiquidCard gradient="#4facfe">
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                  <Box sx={{ width: 44, height: 44, borderRadius: '14px', bgcolor: alpha('#4facfe', 0.15), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <FactCheckIcon sx={{ color: '#4facfe' }} />
+                  </Box>
+                  <Typography variant="h6" fontWeight={700}>Attendance</Typography>
+                </Box>
+                <Typography variant="h3" fontWeight={800} color="#4facfe" sx={{ mb: 2 }}>
+                  {data?.summary.attendanceRate || 0}%
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  <Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                      <Typography variant="caption" color="text.secondary">Today</Typography>
+                      <Typography variant="body2" fontWeight={700} color="#43e97b">94%</Typography>
+                    </Box>
+                    <LinearProgress variant="determinate" value={94} sx={{ height: 8, borderRadius: 4, bgcolor: alpha('#43e97b', 0.15), '& .MuiLinearProgress-bar': { borderRadius: 4, background: 'linear-gradient(90deg, #43e97b 0%, #38f9d7 100%)' } }} />
+                  </Box>
+                  <Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                      <Typography variant="caption" color="text.secondary">This Week</Typography>
+                      <Typography variant="body2" fontWeight={700} color="#4facfe">{data?.summary.attendanceRate || 85}%</Typography>
+                    </Box>
+                    <LinearProgress variant="determinate" value={data?.summary.attendanceRate || 85} sx={{ height: 8, borderRadius: 4, bgcolor: alpha('#4facfe', 0.15), '& .MuiLinearProgress-bar': { borderRadius: 4, background: 'linear-gradient(90deg, #4facfe 0%, #00f2fe 100%)' } }} />
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                    <Typography variant="caption" color="text.secondary">Low Attendance</Typography>
+                    <Chip label="3 students" size="small" sx={{ bgcolor: alpha('#fa709a', 0.15), color: '#fa709a', fontWeight: 700, height: 22 }} />
+                  </Box>
+                </Box>
+              </CardContent>
+            </LiquidCard>
+          </Grid>
+
+          <Grid item xs={12} md={6} lg={3}>
+            <LiquidCard gradient="#f093fb">
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                  <Box sx={{ width: 44, height: 44, borderRadius: '14px', bgcolor: alpha('#f093fb', 0.15), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <MoneyIcon sx={{ color: '#f093fb' }} />
+                  </Box>
+                  <Typography variant="h6" fontWeight={700}>Finance</Typography>
+                </Box>
+                <Typography variant="h3" fontWeight={800} color="#f093fb" sx={{ mb: 2 }}>
+                  {data?.summary.feeCollectionRate || 0}%
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" color="text.secondary">Collected</Typography>
+                    <Typography variant="body2" fontWeight={700} color="#43e97b">Rs 2.4M</Typography>
+                  </Box>
+                  <LinearProgress variant="determinate" value={data?.summary.feeCollectionRate || 75} sx={{ height: 6, borderRadius: 3, bgcolor: alpha('#43e97b', 0.15), '& .MuiLinearProgress-bar': { borderRadius: 3, bgcolor: '#43e97b' } }} />
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" color="text.secondary">Pending</Typography>
+                    <Typography variant="body2" fontWeight={700} color="#fa709a">{data?.summary.pendingFeeStudents || 0} students</Typography>
+                  </Box>
+                  <LinearProgress variant="determinate" value={data?.summary.pendingFeeStudents ? Math.min(100, (data.summary.pendingFeeStudents / (data.summary.totalStudents || 1)) * 100) : 0} sx={{ height: 6, borderRadius: 3, bgcolor: alpha('#fa709a', 0.15), '& .MuiLinearProgress-bar': { borderRadius: 3, bgcolor: '#fa709a' } }} />
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                    <Typography variant="caption" color="text.secondary">Status</Typography>
+                    <Chip label={data?.summary.feeCollectionRate && data.summary.feeCollectionRate > 50 ? 'Good' : 'Attention'} size="small" sx={{ bgcolor: alpha(data?.summary.feeCollectionRate && data.summary.feeCollectionRate > 50 ? '#43e97b' : '#fa709a', 0.15), color: data?.summary.feeCollectionRate && data.summary.feeCollectionRate > 50 ? '#43e97b' : '#fa709a', fontWeight: 700, height: 22 }} />
+                  </Box>
+                </Box>
+              </CardContent>
+            </LiquidCard>
+          </Grid>
+        </Grid>
+      </MotionBox>
+    </MotionBox>
   );
 }
