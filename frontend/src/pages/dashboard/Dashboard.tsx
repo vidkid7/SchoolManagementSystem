@@ -94,9 +94,9 @@ interface DashboardData {
     newAdmissionsThisMonth: number;
     totalExams: number;
     pendingFeeStudents: number;
-    totalCirculations: number;
-    activeEcaActivities: number;
-    activeSports: number;
+    totalCirculations?: number;
+    activeEcaActivities?: number;
+    activeSports?: number;
   };
   charts: {
     enrollmentTrend: ChartData[];
@@ -105,9 +105,9 @@ interface DashboardData {
     examPerformance: ChartData[];
     genderDistribution: ChartData[];
     monthlyNewAdmissions: ChartData[];
-    classWiseEnrollment: ChartData[];
-    staffDistribution: ChartData[];
-    feeStatus: ChartData[];
+    classWiseEnrollment?: ChartData[];
+    staffDistribution?: ChartData[];
+    feeStatus?: ChartData[];
   };
   recentActivities?: Activity[];
 }
@@ -294,25 +294,23 @@ const AnimatedNumber = ({ value, suffix = '', prefix = '' }: any) => {
 
 const DonutChart = ({ data, colors, size = 180 }: any) => {
   return (
-    <ResponsiveContainer width={size} height={size}>
-      <PieChart>
-        <Pie
-          data={data}
-          cx="50%"
-          cy="50%"
-          innerRadius={size * 0.35}
-          outerRadius={size * 0.5}
-          paddingAngle={4}
-          dataKey="value"
-          animationDuration={1500}
-          animationEasing="ease-out"
-        >
-          {data.map((_: any, index: number) => (
-            <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-          ))}
-        </Pie>
-      </PieChart>
-    </ResponsiveContainer>
+    <PieChart width={size} height={size}>
+      <Pie
+        data={data}
+        cx="50%"
+        cy="50%"
+        innerRadius={size * 0.35}
+        outerRadius={size * 0.5}
+        paddingAngle={4}
+        dataKey="value"
+        animationDuration={1500}
+        animationEasing="ease-out"
+      >
+        {data.map((_: any, index: number) => (
+          <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+        ))}
+      </Pie>
+    </PieChart>
   );
 };
 
@@ -556,7 +554,11 @@ export default function Dashboard() {
     { name: 'Female', value: data?.summary.totalFemaleStudents || 45 },
   ];
 
-  const staffData = data?.charts.staffDistribution ?? [
+  const staffData = (data?.charts.staffDistribution ?? []).map(item => ({
+    name: (item as any).label || (item as any).name || 'Other',
+    value: item.value,
+  }));
+  const staffDataFinal = staffData.length > 0 ? staffData : [
     { name: 'Teachers', value: 45 },
     { name: 'Admin', value: 12 },
     { name: 'Support', value: 20 },

@@ -5,7 +5,19 @@
     "noUnusedParameters": false,
     "noImplicitAny": false,
     "strict": false,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": false,
+    "noEmitOnError": false
   },
-  "exclude": ["node_modules", "dist", "**/*.test.tsx", "**/*.test.ts", "**/__tests__/**", "e2e"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.tsx",
+    "**/*.test.ts",
+    "**/__tests__/**",
+    "**/__mocks__/**",
+    "e2e",
+    "src/tests",
+    "src/services/__mocks__"
+  ]
 }

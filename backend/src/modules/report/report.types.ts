@@ -128,8 +128,8 @@ export interface SportsReport {
 export interface DashboardSummary {
   totalStudents: number;
   totalStaff: number;
-  totalClasses?: number;
-  totalBooks?: number;
+  totalClasses: number;
+  totalBooks: number;
   attendanceRate: number;
   feeCollectionRate: number;
   totalMaleStudents: number;
@@ -137,6 +137,9 @@ export interface DashboardSummary {
   newAdmissionsThisMonth: number;
   totalExams: number;
   pendingFeeStudents: number;
+  totalCirculations: number;
+  activeEcaActivities: number;
+  activeSports: number;
 }
 
 export interface ChartData {
@@ -154,8 +157,9 @@ export interface DashboardData {
     feeCollection: ChartData[];
     examPerformance: ChartData[];
     genderDistribution: ChartData[];
-    staffByDepartment: ChartData[];
-    feeByClass: ChartData[];
+    classWiseEnrollment: ChartData[];
+    staffDistribution: ChartData[];
+    feeStatus: ChartData[];
     monthlyNewAdmissions: ChartData[];
   };
   recentActivities: Array<{

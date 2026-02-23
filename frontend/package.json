@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -p tsconfig.prod.json && vite build",
+    "build": "node build.js",
     "build:strict": "tsc && vite build",
     "preview": "vite preview",
     "test": "jest --coverage",

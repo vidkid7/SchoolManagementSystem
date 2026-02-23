@@ -491,9 +491,23 @@ class ReportService {
     const totalClasses = await Class.count();
     const totalBooks = await Book.count();
 
+    // Circulation, ECA, Sports counts (handle missing tables)
+    let totalCirculations = 0;
+    try { totalCirculations = await Circulation.count(); } catch { /* table may not exist */ }
+
+    let activeEcaActivities = 0;
+    try { activeEcaActivities = await ECA.count({ where: { status: 'active' } }); } catch {
+      try { activeEcaActivities = await ECA.count(); } catch { /* table may not exist */ }
+    }
+
+    let activeSports = 0;
+    try { activeSports = await Sport.count({ where: { status: 'active' } }); } catch {
+      try { activeSports = await Sport.count(); } catch { /* table may not exist */ }
+    }
+
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
+
     const recentAttendance = await AttendanceRecord.findAll({
       where: {
         date: { [Op.gte]: thirtyDaysAgo }
@@ -507,15 +521,12 @@ class ReportService {
       raw: true
     }) as any[];
 
-    const avgAttendance = recentAttendance.length > 0 
+    const avgAttendance = recentAttendance.length > 0
       ? Math.round(recentAttendance.reduce((sum, r) => sum + (parseInt(r.present) || 0) / (parseInt(r.total) || 1) * 100, 0) / recentAttendance.length)
       : 0;
 
     // Fee collection data (handle missing tables gracefully)
-    let totalExpected = 0;
-    let totalCollected = 0;
     let feeCollectionRate = 0;
-    
     try {
       const invoices = await Invoice.findAll({
         attributes: [
@@ -524,14 +535,11 @@ class ReportService {
         ],
         raw: true
       }) as any[];
-      
-      totalExpected = parseFloat(invoices[0]?.total || 0);
-      totalCollected = parseFloat(invoices[0]?.paid || 0);
+
+      const totalExpected = parseFloat(invoices[0]?.total || 0);
+      const totalCollected = parseFloat(invoices[0]?.paid || 0);
       feeCollectionRate = totalExpected > 0 ? Math.round((totalCollected / totalExpected) * 100) : 0;
-    } catch (error) {
-      // Silently handle missing table - this is expected if finance migrations haven't been run
-      // logger.warn('Could not fetch invoice data, table may not exist', { error });
-    }
+    } catch { /* table may not exist */ }
 
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const enrollmentTrend = [];
@@ -574,15 +582,12 @@ class ReportService {
         const d = new Date();
         d.setMonth(d.getMonth() - i);
         const monthData = paymentData.find((p: any) => parseInt(p.month) === d.getMonth() + 1);
-        feeCollection.push({ 
-          label: months[d.getMonth()], 
-          value: monthData ? Math.round(parseFloat(monthData.amount) / 1000) : 0 
+        feeCollection.push({
+          label: months[d.getMonth()],
+          value: monthData ? Math.round(parseFloat(monthData.amount) / 1000) : 0
         });
       }
-    } catch (error) {
-      // Silently handle missing table - this is expected if finance migrations haven't been run
-      // logger.warn('Could not fetch payment data, table may not exist', { error });
-      // Fill with zeros
+    } catch {
       for (let i = 5; i >= 0; i--) {
         const d = new Date();
         d.setMonth(d.getMonth() - i);
@@ -612,11 +617,108 @@ class ReportService {
         .filter(g => gradeMap[g] > 0)
         .slice(0, 6)
         .map(g => ({ label: g, value: gradeMap[g] }));
-    } catch (error) {
-      // Silently handle missing table - this is expected if exam migrations haven't been run
-      // logger.warn('Could not fetch grade data, table may not exist', { error });
-      examPerformance = [];
+    } catch { examPerformance = []; }
+
+    // Class-wise enrollment
+    let classWiseEnrollment: { label: string; value: number }[] = [];
+    try {
+      const classCounts = await Student.findAll({
+        where: { status: 'active' },
+        attributes: [
+          [Student.sequelize!.col('currentClass.grade_level'), 'gradeLevel'],
+          [Student.sequelize!.fn('COUNT', Student.sequelize!.col('Student.student_id')), 'count'],
+        ],
+        include: [{
+          model: Class,
+          as: 'currentClass',
+          attributes: [],
+        }],
+        group: ['currentClass.grade_level'],
+        order: [[Student.sequelize!.col('currentClass.grade_level'), 'ASC']],
+        raw: true,
+      }) as any[];
+      classWiseEnrollment = classCounts.map((c: any) => ({
+        label: `Grade ${c.gradeLevel}`,
+        value: parseInt(c.count),
+      }));
+    } catch { classWiseEnrollment = []; }
+
+    // Staff distribution by role
+    let staffDistribution: { label: string; value: number }[] = [];
+    try {
+      const staffByRole = await Staff.findAll({
+        where: { status: 'active' },
+        attributes: [
+          'role',
+          [Staff.sequelize!.fn('COUNT', Staff.sequelize!.col('staff_id')), 'count'],
+        ],
+        group: ['role'],
+        raw: true,
+      }) as any[];
+      staffDistribution = staffByRole.map((s: any) => ({
+        label: s.role || 'Other',
+        value: parseInt(s.count),
+      }));
+    } catch {
+      // Fallback: try by department
+      try {
+        const staffByDept = await Staff.findAll({
+          where: { status: 'active' },
+          attributes: [
+            'department',
+            [Staff.sequelize!.fn('COUNT', Staff.sequelize!.col('staff_id')), 'count'],
+          ],
+          group: ['department'],
+          raw: true,
+        }) as any[];
+        staffDistribution = staffByDept.map((s: any) => ({
+          label: s.department || 'Other',
+          value: parseInt(s.count),
+        }));
+      } catch { staffDistribution = []; }
     }
+
+    // Fee status (paid/pending/partial)
+    let feeStatus: { label: string; value: number }[] = [];
+    try {
+      const invoicesByStatus = await Invoice.findAll({
+        attributes: [
+          'status',
+          [Invoice.sequelize!.fn('COUNT', Invoice.sequelize!.col('invoice_id')), 'count'],
+        ],
+        group: ['status'],
+        raw: true,
+      }) as any[];
+      feeStatus = invoicesByStatus.map((inv: any) => ({
+        label: (inv.status || 'unknown').charAt(0).toUpperCase() + (inv.status || 'unknown').slice(1),
+        value: parseInt(inv.count),
+      }));
+    } catch { feeStatus = []; }
+
+    // Monthly new admissions (actual new students per month)
+    const monthlyNewAdmissions: { label: string; value: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const startOfMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+      const endOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
+      const count = await Student.count({
+        where: {
+          status: 'active',
+          admissionDate: {
+            [Op.between]: [startOfMonth, endOfMonth]
+          }
+        }
+      });
+      monthlyNewAdmissions.push({ label: months[d.getMonth()], value: count });
+    }
+
+    // Pending fee students (handle missing table)
+    let pendingFeeStudents = 0;
+    try { pendingFeeStudents = await Invoice.count({ where: { status: 'pending' } }); } catch { /* table may not exist */ }
+
+    const totalMaleStudents = await Student.count({ where: { status: 'active', gender: 'male' } });
+    const totalFemaleStudents = await Student.count({ where: { status: 'active', gender: 'female' } });
 
     return {
       summary: {
@@ -626,8 +728,8 @@ class ReportService {
         totalBooks,
         attendanceRate: avgAttendance,
         feeCollectionRate,
-        totalMaleStudents: await Student.count({ where: { status: 'active', gender: 'male' } }),
-        totalFemaleStudents: await Student.count({ where: { status: 'active', gender: 'female' } }),
+        totalMaleStudents,
+        totalFemaleStudents,
         newAdmissionsThisMonth: await Student.count({
           where: {
             status: 'active',
@@ -637,7 +739,10 @@ class ReportService {
           }
         }),
         totalExams: await Exam.count(),
-        pendingFeeStudents: await Invoice.count({ where: { status: 'pending' } }),
+        pendingFeeStudents,
+        totalCirculations,
+        activeEcaActivities,
+        activeSports,
       },
       charts: {
         enrollmentTrend,
@@ -645,13 +750,14 @@ class ReportService {
         feeCollection,
         examPerformance,
         genderDistribution: [
-          { label: 'Male', value: await Student.count({ where: { status: 'active', gender: 'male' } }) },
-          { label: 'Female', value: await Student.count({ where: { status: 'active', gender: 'female' } }) },
+          { label: 'Male', value: totalMaleStudents },
+          { label: 'Female', value: totalFemaleStudents },
           { label: 'Other', value: await Student.count({ where: { status: 'active', gender: 'other' } }) },
         ],
-        staffByDepartment: [],
-        feeByClass: [],
-        monthlyNewAdmissions: enrollmentTrend,
+        classWiseEnrollment,
+        staffDistribution,
+        feeStatus,
+        monthlyNewAdmissions,
       },
       recentActivities: [],
     };
