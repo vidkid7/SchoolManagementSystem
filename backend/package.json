@@ -25,7 +25,8 @@
     "optimize:db": "ts-node src/scripts/optimize-database.ts",
     "update:admin-password": "ts-node -r tsconfig-paths/register src/scripts/update-admin-password.ts",
     "reset:admin-direct": "ts-node -r tsconfig-paths/register src/scripts/reset-admin-direct.ts",
-    "seed:roles": "ts-node -r tsconfig-paths/register src/scripts/seed-roles-permissions.ts"
+    "seed:roles": "ts-node -r tsconfig-paths/register src/scripts/seed-roles-permissions.ts",
+    "railway:setup": "ts-node -r tsconfig-paths/register src/scripts/railway-setup.ts"
   },
   "keywords": [
     "school-management",
