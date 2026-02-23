@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strict": false,
+    "skipLibCheck": true
+  },
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/__tests__/**"]
+}

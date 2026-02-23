@@ -25,3 +25,18 @@ body {
     transform: translate(-20px, 20px) scale(0.95);
   }
 }
+
+@keyframes liquidFloat {
+  0%, 100% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  25% {
+    transform: translate(10px, -15px) scale(1.05) rotate(2deg);
+  }
+  50% {
+    transform: translate(-5px, 10px) scale(0.98) rotate(-1deg);
+  }
+  75% {
+    transform: translate(15px, 5px) scale(1.02) rotate(1deg);
+  }
+}

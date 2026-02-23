@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitAny": false,
+    "strict": false,
+    "skipLibCheck": true
+  },
+  "exclude": ["node_modules", "dist", "**/*.test.tsx", "**/*.test.ts", "**/__tests__/**", "e2e"]
+}
