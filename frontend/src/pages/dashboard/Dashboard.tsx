@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
@@ -138,7 +137,7 @@ const itemVariants = {
   visible: {
     y: 0,
     opacity: 1,
-    transition: { type: 'spring', stiffness: 100, damping: 14, mass: 0.8 }
+    transition: { type: 'spring' as const, stiffness: 100, damping: 14, mass: 0.8 }
   }
 };
 
@@ -147,7 +146,7 @@ const scaleVariants = {
   visible: {
     scale: 1,
     opacity: 1,
-    transition: { type: 'spring', stiffness: 120, damping: 12 }
+    transition: { type: 'spring' as const, stiffness: 120, damping: 12 }
   }
 };
 
@@ -239,32 +238,7 @@ const AnimatedNumber = ({ value, suffix = '', prefix = '' }: any) => {
   return <span>{prefix}{displayValue.toLocaleString()}{suffix}</span>;
 };
 
-const SparklineChart = ({ data, color, height = 50 }: any) => {
-  return (
-    <ResponsiveContainer width="100%" height={height}>
-      <AreaChart data={data}>
-        <defs>
-          <linearGradient id={`liquidGradient-${color}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor={color} stopOpacity={0.5}/>
-            <stop offset="95%" stopColor={color} stopOpacity={0.05}/>
-          </linearGradient>
-        </defs>
-        <Area 
-          type="monotone" 
-          dataKey="value" 
-          stroke={color} 
-          strokeWidth={2.5}
-          fill={`url(#liquidGradient-${color})`}
-          animationDuration={2500}
-          animationEasing="ease-out"
-        />
-      </AreaChart>
-    </ResponsiveContainer>
-  );
-};
-
 const DonutChart = ({ data, colors, size = 180 }: any) => {
-  const theme = useTheme();
   return (
     <ResponsiveContainer width={size} height={size}>
       <PieChart>
@@ -314,19 +288,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-const WaveDivider = () => (
-  <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, overflow: 'hidden', height: 30 }}>
-    <svg viewBox="0 0 1200 120" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
-      <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" fill="currentColor" />
-      <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5" fill="currentColor" />
-    </svg>
-  </Box>
-);
-
 export default function Dashboard() {
   const navigate = useNavigate();
   const theme = useTheme();
-  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
   const [reportData, setReportData] = useState<ReportData | null>(null);
@@ -496,7 +460,10 @@ export default function Dashboard() {
     students: item.value,
   })) ?? [];
 
-  const feeStatusData = data?.charts.feeStatus ?? [
+  const feeStatusData: { name: string; value: number }[] = data?.charts.feeStatus?.map((item: any) => ({
+    name: item.label || item.name,
+    value: item.value,
+  })) ?? [
     { name: 'Paid', value: data?.summary.totalStudents ? data.summary.totalStudents - (data.summary.pendingFeeStudents || 0) : 0 },
     { name: 'Pending', value: data?.summary.pendingFeeStudents || 0 },
     { name: 'Partial', value: Math.floor((data?.summary.pendingFeeStudents || 0) * 0.3) },
