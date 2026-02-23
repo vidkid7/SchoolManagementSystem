@@ -19,6 +19,10 @@ COPY . .
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
+# Create .env.production file with the API URL
+RUN echo "VITE_API_URL=${VITE_API_URL}" > .env.production && \
+    cat .env.production
+
 # Build application
 RUN npm run build
 
