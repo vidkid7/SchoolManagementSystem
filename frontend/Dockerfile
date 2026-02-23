@@ -15,20 +15,7 @@ RUN npm ci && \
 # Copy source code
 COPY . .
 
-# Accept build argument for API URL
-ARG VITE_API_URL
-ENV VITE_API_URL=$VITE_API_URL
-
-# Debug: Print environment variables
-RUN echo "=== Build Environment ===" && \
-    echo "VITE_API_URL: ${VITE_API_URL}" && \
-    echo "========================="
-
-# Create .env.production file with the API URL
-RUN echo "VITE_API_URL=${VITE_API_URL}" > .env.production && \
-    cat .env.production
-
-# Build application
+# Build application (will use default localhost:3000, replaced at runtime)
 RUN npm run build
 
 # Stage 2: Production with Nginx
@@ -40,6 +27,10 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# Copy environment injection script
+COPY inject-env.sh /docker-entrypoint.d/40-inject-env.sh
+RUN chmod +x /docker-entrypoint.d/40-inject-env.sh
+
 # Expose port
 EXPOSE 80
 
@@ -47,5 +38,5 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
 
-# Start nginx
+# Start nginx (the inject-env.sh script will run automatically via docker-entrypoint.d)
 CMD ["nginx", "-g", "daemon off;"]
