@@ -140,6 +140,11 @@ class JWTService {
   async storeRefreshToken(userId: number, refreshToken: string, rememberMe = false): Promise<void> {
     try {
       const redis = getRedisClient();
+      if (!redis) {
+        logger.warn('Redis not available, refresh token not stored (will rely on JWT expiry only)');
+        return;
+      }
+
       const key = this.getRefreshTokenKey(userId);
       const expirySeconds = rememberMe 
         ? this.EXTENDED_REFRESH_TOKEN_EXPIRY_SECONDS 
@@ -155,7 +160,8 @@ class JWTService {
       });
     } catch (error) {
       logger.error('Error storing refresh token in Redis', { error, userId });
-      throw new Error('Failed to store refresh token');
+      // Don't throw - app can work without Redis
+      logger.warn('Continuing without Redis token storage');
     }
   }
 
@@ -236,6 +242,11 @@ class JWTService {
   async getRefreshToken(userId: number): Promise<string | null> {
     try {
       const redis = getRedisClient();
+      if (!redis) {
+        logger.debug('Redis not available, cannot retrieve refresh token');
+        return null;
+      }
+
       const key = this.getRefreshTokenKey(userId);
       const token = await redis.get(key);
 
@@ -247,7 +258,7 @@ class JWTService {
       return token;
     } catch (error) {
       logger.error('Error retrieving refresh token from Redis', { error, userId });
-      throw new Error('Failed to retrieve refresh token');
+      return null;
     }
   }
 
@@ -312,13 +323,18 @@ class JWTService {
   async invalidateRefreshToken(userId: number): Promise<void> {
     try {
       const redis = getRedisClient();
+      if (!redis) {
+        logger.debug('Redis not available, cannot invalidate refresh token');
+        return;
+      }
+
       const key = this.getRefreshTokenKey(userId);
       await redis.del(key);
 
       logger.info('Refresh token invalidated', { userId });
     } catch (error) {
       logger.error('Error invalidating refresh token', { error, userId });
-      throw new Error('Failed to invalidate refresh token');
+      // Don't throw - app can work without Redis
     }
   }
 
@@ -357,6 +373,9 @@ class JWTService {
   async isRedisAvailable(): Promise<boolean> {
     try {
       const redis = getRedisClient();
+      if (!redis) {
+        return false;
+      }
       await redis.ping();
       return true;
     } catch (error) {
