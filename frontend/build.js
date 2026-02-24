@@ -22,6 +22,17 @@ try {
   console.log('Running Vite build...');
   execSync('vite build', { stdio: 'inherit' });
   
+  // Copy config.js to dist folder
+  const configSource = path.join(__dirname, 'public', 'config.js');
+  const configDest = path.join(__dirname, 'dist', 'config.js');
+  
+  if (fs.existsSync(configSource)) {
+    fs.copyFileSync(configSource, configDest);
+    console.log('✅ Copied config.js to dist folder');
+  } else {
+    console.warn('⚠️  config.js not found in public folder');
+  }
+  
   // Check if dist folder was created
   if (fs.existsSync(path.join(__dirname, 'dist'))) {
     console.log('✅ Build completed successfully!');
