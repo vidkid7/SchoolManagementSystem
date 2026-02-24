@@ -49,6 +49,28 @@ const startServer = async (): Promise<void> => {
       throw new Error('Database connection failed');
     }
 
+    // Fix missing columns from failed migrations (Railway compatibility)
+    try {
+      const [columns] = await sequelize.query(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME IN ('password_reset_token', 'password_reset_expires')"
+      );
+      
+      const existingColumns = (columns as any[]).map(c => c.COLUMN_NAME);
+      
+      if (!existingColumns.includes('password_reset_token')) {
+        await sequelize.query('ALTER TABLE users ADD COLUMN password_reset_token VARCHAR(255) NULL');
+        logger.info('✅ Added missing password_reset_token column');
+      }
+      
+      if (!existingColumns.includes('password_reset_expires')) {
+        await sequelize.query('ALTER TABLE users ADD COLUMN password_reset_expires DATETIME NULL');
+        logger.info('✅ Added missing password_reset_expires column');
+      }
+    } catch (fixError) {
+      // Ignore errors if table doesn't exist yet or columns already exist
+      logger.debug('Column fix check:', fixError);
+    }
+
     // Auto-setup: Run migrations and seeding if database is empty
     try {
       const [tables] = await sequelize.query("SHOW TABLES LIKE 'users'");
