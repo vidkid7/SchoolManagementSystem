@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { sequelize } from '@config/database';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { logger } from '@utils/logger';
 
 const router = Router();
