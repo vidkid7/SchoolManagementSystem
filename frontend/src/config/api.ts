@@ -6,7 +6,19 @@
 
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
+// Get API URL from runtime config or fallback to build-time env var
+const getApiBaseUrl = () => {
+  // @ts-ignore - window.ENV is injected at runtime
+  if (typeof window !== 'undefined' && window.ENV && window.ENV.API_BASE_URL) {
+    // @ts-ignore
+    return window.ENV.API_BASE_URL;
+  }
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+console.log('API Base URL:', API_BASE_URL); // Debug log
 
 // Create axios instance
 export const api = axios.create({

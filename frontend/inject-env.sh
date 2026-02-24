@@ -1,7 +1,7 @@
 #!/bin/sh
-# This script replaces the placeholder API URL with the actual one at runtime
+# This script replaces the runtime config with actual environment variables
 
-echo "Injecting environment variables into built files..."
+echo "Injecting environment variables..."
 
 # Support both VITE_API_BASE_URL and VITE_API_URL for backwards compatibility
 API_URL="${VITE_API_BASE_URL:-${VITE_API_URL}}"
@@ -13,8 +13,13 @@ if [ -z "$API_URL" ]; then
   exit 0
 fi
 
-# Find all JS files in the dist directory and replace the localhost URL
-# Replace the full API base URL (with /api/v1)
-find /usr/share/nginx/html/assets -type f -name "*.js" -exec sed -i "s|http://localhost:3000/api/v1|${API_URL}|g" {} +
+# Replace the config.js file with actual values
+cat > /usr/share/nginx/html/config.js << EOF
+// Runtime configuration - injected by Railway
+window.ENV = {
+  API_BASE_URL: '${API_URL}'
+};
+EOF
 
 echo "Environment variables injected successfully!"
+echo "Config file created with API_BASE_URL: ${API_URL}"
