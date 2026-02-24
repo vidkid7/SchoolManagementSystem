@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "🚀 Starting Railway deployment setup..."
+echo "🚀 Starting Railway deployment setup (v2)..."
 
 # Wait for database to be ready
 echo "⏳ Waiting for database connection..."
@@ -41,9 +41,26 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
 
 async function fix() {
   try {
-    await sequelize.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token VARCHAR(255) NULL');
-    await sequelize.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires DATETIME NULL');
-    console.log('✅ Database columns verified/fixed');
+    // Check if columns exist first
+    const [columns] = await sequelize.query(
+      \"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME IN ('password_reset_token', 'password_reset_expires')\"
+    );
+    
+    const existingColumns = columns.map(c => c.COLUMN_NAME);
+    
+    if (!existingColumns.includes('password_reset_token')) {
+      await sequelize.query('ALTER TABLE users ADD COLUMN password_reset_token VARCHAR(255) NULL');
+      console.log('✅ Added password_reset_token column');
+    }
+    
+    if (!existingColumns.includes('password_reset_expires')) {
+      await sequelize.query('ALTER TABLE users ADD COLUMN password_reset_expires DATETIME NULL');
+      console.log('✅ Added password_reset_expires column');
+    }
+    
+    if (existingColumns.length === 2) {
+      console.log('✅ All columns already exist');
+    }
   } catch (err) {
     console.log('⚠️  Column fix warning:', err.message);
   } finally {
