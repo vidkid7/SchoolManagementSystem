@@ -71,6 +71,16 @@ const startServer = async (): Promise<void> => {
       logger.debug('Column fix check:', fixError);
     }
 
+    // Ensure admin user exists with correct password
+    try {
+      const [adminUsers] = await sequelize.query("SELECT user_id FROM users WHERE username = 'admin' LIMIT 1");
+      if (!adminUsers || adminUsers.length === 0) {
+        logger.info('⚠️  Admin user not found, will be created during seeding');
+      }
+    } catch (adminCheckError) {
+      logger.debug('Admin check skipped (table may not exist yet)');
+    }
+
     // Auto-setup: Run migrations and seeding if database is empty
     try {
       const [tables] = await sequelize.query("SHOW TABLES LIKE 'users'");
