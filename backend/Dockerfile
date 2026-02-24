@@ -40,6 +40,10 @@ RUN npm ci --only=production && \
 # Copy built application from builder
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 
+# Copy entrypoint script
+COPY --chown=nodejs:nodejs railway-entrypoint.sh ./
+RUN chmod +x railway-entrypoint.sh
+
 # Create necessary directories
 RUN mkdir -p uploads logs && \
     chown -R nodejs:nodejs uploads logs
@@ -57,5 +61,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
 
-# Start application
-CMD ["node", "dist/server.js"]
+# Start application with entrypoint script
+CMD ["sh", "railway-entrypoint.sh"]
