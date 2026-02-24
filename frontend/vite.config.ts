@@ -37,8 +37,9 @@ export default defineConfig({
         ]
       },
       workbox: {
-        // Cache all static assets during build
+        // Cache all static assets during build (exclude config.js - it must always be fresh)
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,ttf,eot}'],
+        globIgnores: ['config.js'],
         
         // Maximum cache size
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
