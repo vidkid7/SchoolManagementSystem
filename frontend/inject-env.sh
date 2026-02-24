@@ -14,7 +14,12 @@ if [ -z "$API_URL" ]; then
 fi
 
 # Replace the config.js file with actual values
-printf 'window.ENV = {\n  API_BASE_URL: "%s"\n};\n' "$API_URL" > /usr/share/nginx/html/config.js
+# Use echo with -n to avoid trailing newline in the URL
+cat > /usr/share/nginx/html/config.js << EOF
+window.ENV = {
+  API_BASE_URL: "${API_URL}"
+};
+EOF
 
 echo "Environment variables injected successfully!"
 echo "Config file created with API_BASE_URL: ${API_URL}"
