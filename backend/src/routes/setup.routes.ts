@@ -74,4 +74,54 @@ router.post('/reset-admin', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * SEED DATABASE ENDPOINT
+ * Seeds basic data for Railway deployment
+ */
+router.post('/seed-database', async (req: Request, res: Response) => {
+  try {
+    // Only allow in production for Railway setup
+    if (process.env.NODE_ENV !== 'production') {
+      return res.status(403).json({ error: 'Only available in production for initial setup' });
+    }
+
+    logger.info('🌱 Seeding database...');
+
+    // Run the seed script
+    const { exec } = require('child_process');
+    const { promisify } = require('util');
+    const execAsync = promisify(exec);
+
+    try {
+      const result = await execAsync('node dist/scripts/seed-database.js', {
+        cwd: process.cwd(),
+        timeout: 60000
+      });
+
+      logger.info('✅ Database seeded successfully');
+      logger.info(result.stdout);
+
+      return res.json({
+        success: true,
+        message: 'Database seeded successfully',
+        output: result.stdout
+      });
+    } catch (seedError: any) {
+      logger.error('Seeding error:', seedError);
+      return res.status(500).json({
+        error: 'Seeding failed',
+        details: seedError.message,
+        stderr: seedError.stderr,
+        stdout: seedError.stdout
+      });
+    }
+  } catch (error: any) {
+    logger.error('Setup error:', error);
+    return res.status(500).json({
+      error: 'Setup failed',
+      details: error.message
+    });
+  }
+});
+
 export default router;

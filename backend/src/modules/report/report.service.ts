@@ -508,22 +508,31 @@ class ReportService {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const recentAttendance = await AttendanceRecord.findAll({
-      where: {
-        date: { [Op.gte]: thirtyDaysAgo }
-      },
-      attributes: [
-        [AttendanceRecord.sequelize!.fn('DATE', AttendanceRecord.sequelize!.col('date')), 'date'],
-        [AttendanceRecord.sequelize!.fn('COUNT', AttendanceRecord.sequelize!.col('attendance_id')), 'total'],
-        [AttendanceRecord.sequelize!.fn('SUM', AttendanceRecord.sequelize!.literal("CASE WHEN status = 'present' THEN 1 ELSE 0 END")), 'present']
-      ],
-      group: [AttendanceRecord.sequelize!.fn('DATE', AttendanceRecord.sequelize!.col('date'))],
-      raw: true
-    }) as any[];
+    let recentAttendance: any[] = [];
+    let avgAttendance = 0;
+    
+    try {
+      recentAttendance = await AttendanceRecord.findAll({
+        where: {
+          date: { [Op.gte]: thirtyDaysAgo }
+        },
+        attributes: [
+          [AttendanceRecord.sequelize!.fn('DATE', AttendanceRecord.sequelize!.col('date')), 'date'],
+          [AttendanceRecord.sequelize!.fn('COUNT', AttendanceRecord.sequelize!.col('attendance_id')), 'total'],
+          [AttendanceRecord.sequelize!.fn('SUM', AttendanceRecord.sequelize!.literal("CASE WHEN status = 'present' THEN 1 ELSE 0 END")), 'present']
+        ],
+        group: [AttendanceRecord.sequelize!.fn('DATE', AttendanceRecord.sequelize!.col('date'))],
+        raw: true
+      }) as any[];
 
-    const avgAttendance = recentAttendance.length > 0
-      ? Math.round(recentAttendance.reduce((sum, r) => sum + (parseInt(r.present) || 0) / (parseInt(r.total) || 1) * 100, 0) / recentAttendance.length)
-      : 0;
+      avgAttendance = recentAttendance.length > 0
+        ? Math.round(recentAttendance.reduce((sum, r) => sum + (parseInt(r.present) || 0) / (parseInt(r.total) || 1) * 100, 0) / recentAttendance.length)
+        : 0;
+    } catch (error) {
+      logger.warn('Failed to fetch attendance data:', error);
+      recentAttendance = [];
+      avgAttendance = 0;
+    }
 
     // Fee collection data (handle missing tables gracefully)
     let feeCollectionRate = 0;
@@ -543,18 +552,27 @@ class ReportService {
 
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const enrollmentTrend = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const count = await Student.count({
-        where: {
-          status: 'active',
-          admissionDate: {
-            [Op.lte]: d
+    try {
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        const count = await Student.count({
+          where: {
+            status: 'active',
+            admissionDate: {
+              [Op.lte]: d
+            }
           }
-        }
-      });
-      enrollmentTrend.push({ label: months[d.getMonth()], value: count });
+        });
+        enrollmentTrend.push({ label: months[d.getMonth()], value: count });
+      }
+    } catch (error) {
+      logger.warn('Failed to fetch enrollment trend:', error);
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        enrollmentTrend.push({ label: months[d.getMonth()], value: 0 });
+      }
     }
 
     const attendanceTrend = recentAttendance.slice(-6).map((r: any) => ({
