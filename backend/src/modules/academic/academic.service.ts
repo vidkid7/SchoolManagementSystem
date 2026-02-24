@@ -109,30 +109,14 @@ class AcademicService {
     }
     return Class.findAll({
       where,
-      attributes: {
-        include: [
-          // Count students in this class
-          [
-            literal(`(
-              SELECT COUNT(*)
-              FROM students
-              WHERE students.current_class_id = \`Class\`.class_id
-              AND students.deleted_at IS NULL
-            )`),
-            'currentStrength'
-          ],
-          // Get class teacher name
-          [
-            literal(`(
-              SELECT CONCAT(first_name_en, ' ', last_name_en)
-              FROM staff
-              WHERE staff.staff_id = \`Class\`.class_teacher_id
-              AND staff.deleted_at IS NULL
-            )`),
-            'classTeacherName'
-          ]
-        ]
-      },
+      include: [
+        {
+          model: Staff,
+          as: 'classTeacher',
+          attributes: ['staffId', 'firstNameEn', 'lastNameEn'],
+          required: false
+        }
+      ],
       order: [['gradeLevel', 'ASC'], ['section', 'ASC']]
     });
   }
@@ -147,31 +131,15 @@ class AcademicService {
       where.academicYearId = academicYearId;
     }
     return Class.findAll({ 
-      where, 
-      attributes: {
-        include: [
-          // Count students in this class
-          [
-            literal(`(
-              SELECT COUNT(*)
-              FROM students
-              WHERE students.current_class_id = \`Class\`.class_id
-              AND students.deleted_at IS NULL
-            )`),
-            'currentStrength'
-          ],
-          // Get class teacher name
-          [
-            literal(`(
-              SELECT CONCAT(first_name_en, ' ', last_name_en)
-              FROM staff
-              WHERE staff.staff_id = \`Class\`.class_teacher_id
-              AND staff.deleted_at IS NULL
-            )`),
-            'classTeacherName'
-          ]
-        ]
-      },
+      where,
+      include: [
+        {
+          model: Staff,
+          as: 'classTeacher',
+          attributes: ['staffId', 'firstNameEn', 'lastNameEn'],
+          required: false
+        }
+      ],
       order: [['section', 'ASC']] 
     });
   }
