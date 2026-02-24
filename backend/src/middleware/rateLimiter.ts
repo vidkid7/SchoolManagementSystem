@@ -19,6 +19,10 @@ import { getRedisClient } from '@config/redis';
 const getRedisStore = (): RedisStore | undefined => {
   try {
     const redisClient = getRedisClient();
+    if (!redisClient) {
+      logger.info('Redis not available for rate limiting, using memory store');
+      return undefined;
+    }
     return new RedisStore({
       sendCommand: (...args: string[]) => redisClient.sendCommand(args),
       prefix: 'rl:' // Rate limit prefix for Redis keys
