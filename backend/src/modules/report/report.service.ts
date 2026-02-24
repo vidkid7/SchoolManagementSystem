@@ -489,7 +489,14 @@ class ReportService {
     const totalStudents = await Student.count({ where: { status: 'active' } });
     const totalStaff = await Staff.count({ where: { status: 'active' } });
     const totalClasses = await Class.count();
-    const totalBooks = await Book.count();
+    
+    let totalBooks = 0;
+    try {
+      totalBooks = await Book.count();
+    } catch (error) {
+      logger.warn('Failed to fetch books count:', error);
+      totalBooks = 0;
+    }
 
     // Circulation, ECA, Sports counts (handle missing tables)
     let totalCirculations = 0;

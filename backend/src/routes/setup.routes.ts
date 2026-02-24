@@ -75,6 +75,56 @@ router.post('/reset-admin', async (req: Request, res: Response) => {
 });
 
 /**
+ * RUN MIGRATIONS ENDPOINT
+ * Runs all pending migrations on Railway database
+ */
+router.post('/run-migrations', async (req: Request, res: Response) => {
+  try {
+    // Only allow in production for Railway setup
+    if (process.env.NODE_ENV !== 'production') {
+      return res.status(403).json({ error: 'Only available in production for initial setup' });
+    }
+
+    logger.info('🔧 Running database migrations...');
+
+    // Run migrations
+    const { exec } = require('child_process');
+    const { promisify } = require('util');
+    const execAsync = promisify(exec);
+
+    try {
+      const result = await execAsync('node dist/scripts/run-migrations.js up', {
+        cwd: process.cwd(),
+        timeout: 180000 // 3 minutes
+      });
+
+      logger.info('✅ Migrations completed successfully');
+      logger.info(result.stdout);
+
+      return res.json({
+        success: true,
+        message: 'Migrations completed successfully',
+        output: result.stdout
+      });
+    } catch (migError: any) {
+      logger.error('Migration error:', migError);
+      return res.status(500).json({
+        error: 'Migration failed',
+        details: migError.message,
+        stderr: migError.stderr,
+        stdout: migError.stdout
+      });
+    }
+  } catch (error: any) {
+    logger.error('Setup error:', error);
+    return res.status(500).json({
+      error: 'Setup failed',
+      details: error.message
+    });
+  }
+});
+
+/**
  * SEED DATABASE ENDPOINT
  * Seeds basic data for Railway deployment
  */
