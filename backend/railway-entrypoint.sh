@@ -30,6 +30,29 @@ else
   echo "⚠️  Migration warnings (tables may already exist)"
 fi
 
+# Fix any missing columns from failed migrations
+echo "🔧 Fixing any missing database columns..."
+node -e "
+const { Sequelize } = require('sequelize');
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: 'mysql',
+  logging: false
+});
+
+async function fix() {
+  try {
+    await sequelize.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token VARCHAR(255) NULL');
+    await sequelize.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires DATETIME NULL');
+    console.log('✅ Database columns verified/fixed');
+  } catch (err) {
+    console.log('⚠️  Column fix warning:', err.message);
+  } finally {
+    await sequelize.close();
+  }
+}
+fix();
+" 2>&1 || echo "⚠️  Column fix completed with warnings"
+
 # Seed initial data if needed
 echo "🌱 Checking if initial data needs to be seeded..."
 if node -e "
