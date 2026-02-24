@@ -126,6 +126,10 @@ import hostelRoutes from '@modules/hostel/hostel.routes';
 import nonTeachingStaffRoutes from '@modules/nonTeachingStaff/nonTeachingStaff.routes';
 import parentRoutes from '@modules/parent/parent.routes';
 import teacherRoutes from '@modules/teacher/teacher.routes';
+import setupRoutes from './routes/setup.routes';
+
+// Setup route (for initial Railway deployment)
+app.use('/api/v1/setup', setupRoutes);
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/students', studentRoutes);
