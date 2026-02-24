@@ -62,16 +62,16 @@ const startServer = async (): Promise<void> => {
         const execAsync = promisify(exec);
         
         try {
-          await execAsync('npm run migrate:up', { cwd: __dirname + '/..' });
+          await execAsync('node dist/scripts/run-migrations.js up', { cwd: __dirname + '/..' });
           logger.info('✅ Migrations completed');
         } catch (migError: any) {
-          logger.warn('Migration warning:', migError.message);
+          logger.warn('Migration warning:', migError.stderr || migError.message);
         }
         
         // Seed database
         logger.info('🌱 Seeding database...');
         try {
-          await execAsync('npm run seed', { cwd: __dirname + '/..' });
+          await execAsync('node dist/scripts/seed-database.js', { cwd: __dirname + '/..' });
           logger.info('✅ Database seeded');
           logger.info('');
           logger.info('📝 Default Login Credentials:');
