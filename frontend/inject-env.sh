@@ -14,12 +14,7 @@ if [ -z "$API_URL" ]; then
 fi
 
 # Replace the config.js file with actual values
-cat > /usr/share/nginx/html/config.js << EOF
-// Runtime configuration - injected by Railway
-window.ENV = {
-  API_BASE_URL: '${API_URL}'
-};
-EOF
+printf 'window.ENV = {\n  API_BASE_URL: "%s"\n};\n' "$API_URL" > /usr/share/nginx/html/config.js
 
 echo "Environment variables injected successfully!"
 echo "Config file created with API_BASE_URL: ${API_URL}"
