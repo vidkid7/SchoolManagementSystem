@@ -110,6 +110,12 @@ export const EnhancedStudentPortal: React.FC = () => {
         apiClient.get('/api/v1/students/me/profile'),
       ]);
 
+      // Check if all requests failed
+      const allFailed = results.every(result => result.status === 'rejected');
+      if (allFailed) {
+        setError('Unable to connect to server. Please check your connection and try again.');
+      }
+
       if (results[0].status === 'fulfilled') {
         setAttendance(results[0].value.data.data);
       }

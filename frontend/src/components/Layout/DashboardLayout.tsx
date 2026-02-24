@@ -87,7 +87,7 @@ export const DashboardLayout = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const menuItems: MenuItem[] = [
-    { text: t('menu.dashboard'), icon: <DashboardIcon />, path: '/dashboard', roles: ['school_admin', 'class_teacher', 'subject_teacher', 'department_head', 'eca_coordinator', 'sports_coordinator', 'librarian', 'accountant', 'transport_manager', 'hostel_warden', 'non_teaching_staff'] },
+    { text: t('menu.dashboard'), icon: <DashboardIcon />, path: '/dashboard', roles: ['school_admin', 'eca_coordinator', 'sports_coordinator', 'librarian', 'accountant', 'transport_manager', 'hostel_warden', 'non_teaching_staff'] },
     { text: t('menu.students'), icon: <PeopleIcon />, path: '/students', roles: ['school_admin', 'class_teacher', 'subject_teacher', 'department_head'] },
     { text: t('menu.admissions'), icon: <PersonAddIcon />, path: '/admissions', roles: ['school_admin', 'accountant'] },
     { text: t('menu.staff'), icon: <StaffIcon />, path: '/staff', roles: ['school_admin'] },

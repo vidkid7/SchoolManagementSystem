@@ -108,6 +108,7 @@ const UserManagement = React.lazy(() => import('./pages/users/UserManagement').t
 
 const StudentPortal = React.lazy(() => import('./pages/portals/EnhancedStudentPortal'));
 const ParentPortal = React.lazy(() => import('./pages/portals/ParentPortal'));
+const TeacherPortal = React.lazy(() => import('./pages/portals/TeacherPortal'));
 const AdminSettings = React.lazy(() => import('./pages/portals/AdminSettings'));
 const TransportPortal = React.lazy(() => import('./pages/portals/TransportPortal'));
 const HostelPortal = React.lazy(() => import('./pages/portals/HostelPortal'));
@@ -246,6 +247,12 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
             <Route element={<ProtectedRoute allowedRoles={[PARENT]} />}>
               <Route element={<DashboardLayout />}>
                 <Route path="/portal/parent" element={<ParentPortal />} />
+              </Route>
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={[CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD]} />}>
+              <Route element={<DashboardLayout />}>
+                <Route path="/portal/teacher" element={<TeacherPortal />} />
               </Route>
             </Route>
 

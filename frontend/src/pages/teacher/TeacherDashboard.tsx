@@ -320,12 +320,13 @@ export const TeacherDashboard = () => {
                   <ListItemText
                     primary={task.title}
                     secondary={
-                      <Chip
-                        label={task.priority}
-                        size="small"
-                        color={getPriorityColor(task.priority)}
-                        sx={{ mt: 0.5 }}
-                      />
+                      <Box component="span" sx={{ display: 'inline-block', mt: 0.5 }}>
+                        <Chip
+                          label={task.priority}
+                          size="small"
+                          color={getPriorityColor(task.priority)}
+                        />
+                      </Box>
                     }
                   />
                 </ListItem>
