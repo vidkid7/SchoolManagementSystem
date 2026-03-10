@@ -130,8 +130,6 @@ import teacherRoutes from '@modules/teacher/teacher.routes';
 import assignmentRoutes from '@modules/assignment/assignment.routes';
 import departmentRoutes from '@modules/department/department.routes';
 import lessonPlanRoutes from '@modules/lessonPlan/lessonPlan.routes';
-import setupRoutes from '@modules/config/setup.routes';
-import lessonPlanRoutes from '@modules/lessonPlan/lessonPlan.routes';
 import setupRoutes from './routes/setup.routes';
 
 // Setup route (for initial Railway deployment)
