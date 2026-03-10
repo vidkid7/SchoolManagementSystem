@@ -32,6 +32,8 @@ import {
   CheckCircle as CheckIcon,
   Warning as WarningIcon,
   Schedule as ScheduleIcon,
+  MenuBook as LibraryIcon,
+  Campaign as AnnouncementIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 
@@ -70,6 +72,8 @@ const ParentPortal: React.FC = () => {
   }>({ invoices: [], totalPaid: 0, totalPending: 0 });
   const [notifications, setNotifications] = useState<Array<{ id: number; title: string; type: string; date: string }>>([]);
   const [grades, setGrades] = useState<Array<{ subject: string; midterm?: string; final?: string; gpa?: number }>>([]);
+  const [libraryData, setLibraryData] = useState<any[]>([]);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
 
   useEffect(() => {
     apiClient.get('/api/v1/parents/children').then((res) => {
@@ -89,10 +93,17 @@ const ParentPortal: React.FC = () => {
         if (d.fees) setFeeData({ invoices: d.fees.invoices ?? [], totalPaid: d.fees.totalPaid ?? 0, totalPending: d.fees.totalPending ?? 0 });
         if (d.notifications) setNotifications(d.notifications);
         if (d.grades) setGrades(d.grades);
+        if (d.library) setLibraryData(d.library);
       })
       .catch(() => { setAttendanceData({ present: 0, total: 0, percentage: 0 }); setFeeData({ invoices: [], totalPaid: 0, totalPending: 0 }); setNotifications([]); setGrades([]); })
       .finally(() => setLoading(false));
   }, [selectedChild?.id]);
+
+  useEffect(() => {
+    apiClient.get('/api/v1/communication/announcements', { params: { limit: 20 } })
+      .then((res) => { setAnnouncements(res.data?.data || []); })
+      .catch(() => { setAnnouncements([]); });
+  }, []);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -198,6 +209,8 @@ const ParentPortal: React.FC = () => {
           <Tab icon={<ReceiptIcon />} label="Fees" />
           <Tab icon={<SchoolIcon />} label="Grades" />
           <Tab icon={<NotificationIcon />} label="Notifications" />
+          <Tab icon={<LibraryIcon />} label="Library" />
+          <Tab icon={<AnnouncementIcon />} label="Announcements" />
         </Tabs>
 
         <Box sx={{ p: 2 }}>
@@ -263,6 +276,62 @@ const ParentPortal: React.FC = () => {
                 <Typography variant="caption" color="textSecondary">{n.date}</Typography>
               </Alert>
             ))}
+          </TabPanel>
+
+          <TabPanel value={tabValue} index={3}>
+            {libraryData.length > 0 ? (
+              <List>
+                {libraryData.map((book: any, idx: number) => (
+                  <ListItem key={idx} divider>
+                    <ListItemIcon>
+                      <LibraryIcon color="primary" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={book.title || book.bookTitle || 'Unknown Book'}
+                      secondary={`Borrowed: ${book.borrowDate || book.issuedDate || '—'} | Due: ${book.dueDate || book.returnDate || '—'}${book.fine ? ` | Fine: Rs. ${book.fine}` : ''}`}
+                    />
+                    <Chip
+                      label={book.status || 'Borrowed'}
+                      size="small"
+                      color={book.status === 'returned' ? 'success' : book.status === 'overdue' ? 'error' : 'warning'}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            ) : (
+              <Alert severity="info">Library information coming soon</Alert>
+            )}
+          </TabPanel>
+
+          <TabPanel value={tabValue} index={4}>
+            {announcements.length > 0 ? (
+              <List>
+                {announcements.map((ann: any, idx: number) => (
+                  <ListItem key={ann.id || idx} divider>
+                    <ListItemIcon>
+                      <AnnouncementIcon color="info" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={ann.title || 'Announcement'}
+                      secondary={
+                        <>
+                          <Typography variant="caption" color="textSecondary" component="span">
+                            {ann.date || ann.createdAt ? new Date(ann.date || ann.createdAt).toLocaleDateString() : ''}
+                          </Typography>
+                          {(ann.content || ann.message) && (
+                            <Typography variant="body2" color="textSecondary" component="p" sx={{ mt: 0.5 }}>
+                              {(ann.content || ann.message).substring(0, 150)}{(ann.content || ann.message).length > 150 ? '...' : ''}
+                            </Typography>
+                          )}
+                        </>
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            ) : (
+              <Alert severity="info">No announcements at this time.</Alert>
+            )}
           </TabPanel>
         </Box>
       </Paper>

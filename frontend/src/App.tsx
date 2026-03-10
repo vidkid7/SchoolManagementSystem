@@ -118,6 +118,12 @@ const MunicipalityAdminPortal = React.lazy(() => import('./pages/portals/Municip
 const TransportPortal = React.lazy(() => import('./pages/portals/TransportPortal'));
 const HostelPortal = React.lazy(() => import('./pages/portals/HostelPortal'));
 const NonTeachingStaffPortal = React.lazy(() => import('./pages/portals/NonTeachingStaffPortal'));
+const AccountantPortal = React.lazy(() => import('./pages/portals/AccountantPortal'));
+const ClassTeacherPortal = React.lazy(() => import('./pages/portals/ClassTeacherPortal'));
+const DepartmentHeadPortal = React.lazy(() => import('./pages/portals/DepartmentHeadPortal'));
+const SportsCoordinatorPortal = React.lazy(() => import('./pages/portals/SportsCoordinatorPortal'));
+const ECACoordinatorPortal = React.lazy(() => import('./pages/portals/ECACoordinatorPortal'));
+const LibrarianPortal = React.lazy(() => import('./pages/portals/LibrarianPortal'));
 
 const RoleManagement = React.lazy(() => import('./pages/settings/RoleManagement').then(m => ({ default: m.RoleManagement })));
 const SystemSettings = React.lazy(() => import('./pages/settings/SystemSettings').then(m => ({ default: m.SystemSettings })));
@@ -288,6 +294,42 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
             <Route element={<ProtectedRoute allowedRoles={[NON_TEACHING]} />}>
               <Route element={<DashboardLayout />}>
                 <Route path="/portal/non-teaching-staff" element={<NonTeachingStaffPortal />} />
+              </Route>
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={[ACCOUNTANT]} />}>
+              <Route element={<DashboardLayout />}>
+                <Route path="/portal/accountant" element={<AccountantPortal />} />
+              </Route>
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={[CLASS_TEACHER]} />}>
+              <Route element={<DashboardLayout />}>
+                <Route path="/portal/class-teacher" element={<ClassTeacherPortal />} />
+              </Route>
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={[DEPT_HEAD]} />}>
+              <Route element={<DashboardLayout />}>
+                <Route path="/portal/department-head" element={<DepartmentHeadPortal />} />
+              </Route>
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={[SPORTS_COORD]} />}>
+              <Route element={<DashboardLayout />}>
+                <Route path="/portal/sports-coordinator" element={<SportsCoordinatorPortal />} />
+              </Route>
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={[ECA_COORD]} />}>
+              <Route element={<DashboardLayout />}>
+                <Route path="/portal/eca-coordinator" element={<ECACoordinatorPortal />} />
+              </Route>
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={[LIBRARIAN]} />}>
+              <Route element={<DashboardLayout />}>
+                <Route path="/portal/librarian" element={<LibrarianPortal />} />
               </Route>
             </Route>
 

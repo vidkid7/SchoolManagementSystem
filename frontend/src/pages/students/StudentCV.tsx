@@ -57,7 +57,9 @@ import {
   Email as EmailIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { useSelector } from 'react-redux';
 import { apiClient } from '../../services/apiClient';
+import type { RootState } from '../../store';
 import { motion } from 'framer-motion';
 
 const MotionCard = motion.create(Card);
@@ -321,6 +323,8 @@ export const StudentCV = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const theme = useTheme();
+  const { accessToken } = useSelector((state: RootState) => state.auth);
+  const authHdr = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
   
   const [tabValue, setTabValue] = useState(0);
   const [cvData, setCvData] = useState<FullCVData | null>(null);
@@ -334,15 +338,11 @@ export const StudentCV = () => {
   const [hobbyInput, setHobbyInput] = useState('');
   const [previewMode, setPreviewMode] = useState(false);
 
-  const CV_FEATURE_ENABLED = true;
-
   useEffect(() => {
-    if (id && CV_FEATURE_ENABLED) {
+    if (id) {
       fetchCVData();
       fetchCustomization();
       checkNeedsRegeneration();
-    } else if (id && !CV_FEATURE_ENABLED) {
-      setLoading(false);
     }
   }, [id]);
 
@@ -522,6 +522,21 @@ export const StudentCV = () => {
     }
   };
 
+  const handleCreateCV = async () => {
+    if (!id) return;
+    try {
+      setLoading(true);
+      setError(null);
+      await apiClient.post('/api/v1/cv/', { studentId: Number(id) }, accessToken ? authHdr(accessToken) : {});
+      await fetchCVData();
+      await fetchCustomization();
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to create CV. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
@@ -531,37 +546,41 @@ export const StudentCV = () => {
     );
   }
 
-  if (!CV_FEATURE_ENABLED) {
+  if (!cvData && !loading) {
     return (
-      <Box sx={{ p: 4, maxWidth: 800, mx: 'auto' }}>
-        <Alert severity="info" sx={{ mb: 3, borderRadius: 3 }}>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>
-            {t('students.cvComingSoon') || 'CV Feature Coming Soon'}
-          </Typography>
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            {t('students.cvComingSoonMessage') || 
-              'The Student CV generation feature is currently under development. This feature will allow you to generate professional CVs for students including their academic records, achievements, and activities.'}
-          </Typography>
-        </Alert>
-        <Button 
-          startIcon={<BackIcon />} 
-          onClick={() => navigate('/students')} 
-          variant="outlined"
-          sx={{ borderRadius: 3 }}
-        >
-          {t('common.back') || 'Back to List'}
-        </Button>
-      </Box>
-    );
-  }
-
-  if (error && !cvData) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>
-        <Button startIcon={<BackIcon />} onClick={() => navigate('/students')} sx={{ mt: 2 }}>
-          {t('common.back') || 'Back to List'}
-        </Button>
+      <Box sx={{ p: 4, maxWidth: 800, mx: 'auto', textAlign: 'center' }}>
+        {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 3 }}>{error}</Alert>}
+        <PersonIcon sx={{ fontSize: 80, color: alpha(theme.palette.primary.main, 0.3), mb: 2 }} />
+        <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>
+          {t('No CV data available')}
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+          {t('Create your CV to get started. Your academic records, achievements, and activities will be compiled into a professional CV.')}
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreateCV}
+            sx={{
+              borderRadius: 3,
+              fontWeight: 600,
+              px: 4,
+              py: 1.5,
+              boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.35)}`,
+            }}
+          >
+            {t('Create CV')}
+          </Button>
+          <Button
+            startIcon={<BackIcon />}
+            onClick={() => navigate('/students')}
+            variant="outlined"
+            sx={{ borderRadius: 3 }}
+          >
+            {t('common.back') || 'Back to List'}
+          </Button>
+        </Box>
       </Box>
     );
   }

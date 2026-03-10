@@ -1148,6 +1148,78 @@ class StudentController {
     sendSuccess(res, student, 'Profile retrieved successfully');
   });
 
+  getMyTimetable = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'User not authenticated' } });
+      return;
+    }
+
+    const student = await Student.findOne({
+      where: { userId },
+      include: [{ model: Class, as: 'currentClass' }],
+    });
+
+    const studentData = student?.get({ plain: true }) as any;
+
+    if (!studentData || !studentData.currentClass) {
+      sendSuccess(res, { timetable: [], className: 'N/A' }, 'No timetable available');
+      return;
+    }
+
+    let timetable: any[] = [];
+    try {
+      const TimetableModel = require('@models/Timetable.model');
+      const Timetable = TimetableModel.Timetable || TimetableModel.default;
+      if (Timetable) {
+        timetable = await Timetable.findAll({
+          where: { classId: studentData.currentClass.id },
+          order: [['dayOfWeek', 'ASC'], ['periodNumber', 'ASC']],
+        });
+      }
+    } catch {
+      // Timetable model may not exist yet
+    }
+
+    sendSuccess(res, {
+      className: studentData.currentClass.name || 'N/A',
+      section: studentData.currentClass.section || '',
+      timetable: timetable.length > 0 ? timetable : [],
+    }, 'Timetable retrieved successfully');
+  });
+
+  getMyAssignments = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'User not authenticated' } });
+      return;
+    }
+
+    const student = await Student.findOne({
+      where: { userId },
+      include: [{ model: Class, as: 'currentClass' }],
+    });
+
+    const studentData = student?.get({ plain: true }) as any;
+
+    try {
+      const assignmentController = require('@modules/assignment/assignment.controller').default;
+      const allAssignments = assignmentController.getAllAssignmentsForStudent
+        ? assignmentController.getAllAssignmentsForStudent(studentData?.currentClass?.name)
+        : [];
+
+      sendSuccess(res, {
+        assignments: allAssignments,
+        total: allAssignments.length,
+      }, 'Assignments retrieved successfully');
+    } catch {
+      sendSuccess(res, {
+        assignments: [],
+        total: 0,
+      }, 'Assignments retrieved successfully');
+    }
+  });
+
   getNextRollNumber = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const classId = Number(req.query.classId);
 

@@ -127,6 +127,8 @@ import hostelRoutes from '@modules/hostel/hostel.routes';
 import nonTeachingStaffRoutes from '@modules/nonTeachingStaff/nonTeachingStaff.routes';
 import parentRoutes from '@modules/parent/parent.routes';
 import teacherRoutes from '@modules/teacher/teacher.routes';
+import assignmentRoutes from '@modules/assignment/assignment.routes';
+import lessonPlanRoutes from '@modules/lessonPlan/lessonPlan.routes';
 import setupRoutes from './routes/setup.routes';
 
 // Setup route (for initial Railway deployment)
@@ -167,6 +169,8 @@ app.use('/api/v1/hostel', hostelRoutes);
 app.use('/api/v1/non-teaching-staff', nonTeachingStaffRoutes);
 app.use('/api/v1/parents', parentRoutes);
 app.use('/api/v1/teachers', teacherRoutes);
+app.use('/api/v1/assignments', assignmentRoutes);
+app.use('/api/v1/lesson-plans', lessonPlanRoutes);
 
 // Serve uploaded files statically
 app.use('/uploads', express.static('uploads'));

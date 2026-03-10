@@ -93,6 +93,8 @@ export const EnhancedStudentPortal: React.FC = () => {
   const [eca, setECA] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [remarks, setRemarks] = useState<any[]>([]);
+  const [timetable, setTimetable] = useState<any>(null);
+  const [assignments, setAssignments] = useState<any[]>([]);
 
   useEffect(() => {
     fetchAllData();
@@ -108,6 +110,8 @@ export const EnhancedStudentPortal: React.FC = () => {
         apiClient.get('/api/v1/students/me/grades'),
         apiClient.get('/api/v1/students/me/fees/summary'),
         apiClient.get('/api/v1/students/me/profile'),
+        apiClient.get('/api/v1/students/me/timetable').catch(() => ({ data: { data: null } })),
+        apiClient.get('/api/v1/students/me/assignments').catch(() => ({ data: { data: { assignments: [] } } })),
       ]);
 
       // Check if all requests failed
@@ -131,6 +135,13 @@ export const EnhancedStudentPortal: React.FC = () => {
         if (profileData?.studentId) {
           setStudentId(profileData.studentId);
         }
+      }
+      if (results[4].status === 'fulfilled') {
+        setTimetable(results[4].value.data.data);
+      }
+      if (results[5].status === 'fulfilled') {
+        const assignmentData = results[5].value.data.data;
+        setAssignments(Array.isArray(assignmentData) ? assignmentData : assignmentData?.assignments || []);
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load data');
@@ -191,11 +202,11 @@ export const EnhancedStudentPortal: React.FC = () => {
 
   useEffect(() => {
     if (!studentId) return;
-    if (tabValue === 4 && certificates.length === 0) fetchCertificates();
-    if (tabValue === 5 && library.length === 0) fetchLibrary();
-    if (tabValue === 6 && eca.length === 0) fetchECA();
-    if (tabValue === 7 && history.length === 0) fetchHistory();
-    if (tabValue === 8 && remarks.length === 0) fetchRemarks();
+    if (tabValue === 5 && certificates.length === 0) fetchCertificates();
+    if (tabValue === 6 && library.length === 0) fetchLibrary();
+    if (tabValue === 7 && eca.length === 0) fetchECA();
+    if (tabValue === 8 && history.length === 0) fetchHistory();
+    if (tabValue === 9 && remarks.length === 0) fetchRemarks();
   }, [tabValue, studentId]);
 
   const attendancePercentage = attendance?.percentage || 0;
@@ -355,6 +366,7 @@ export const EnhancedStudentPortal: React.FC = () => {
           <Tab icon={<SchoolIcon />} iconPosition="start" label="Attendance" />
           <Tab icon={<ReceiptIcon />} iconPosition="start" label="Fees" />
           <Tab icon={<CalendarIcon />} iconPosition="start" label="Timetable" />
+          <Tab icon={<AssignmentIcon />} iconPosition="start" label="Assignments" />
           <Tab icon={<CertificateIcon />} iconPosition="start" label="Certificates" />
           <Tab icon={<BookIcon />} iconPosition="start" label="Library" />
           <Tab icon={<TrophyIcon />} iconPosition="start" label="ECA & Sports" />
@@ -509,19 +521,101 @@ export const EnhancedStudentPortal: React.FC = () => {
 
           {/* Timetable Tab */}
           <TabPanel value={tabValue} index={3}>
-            <Box sx={{ textAlign: 'center', py: 6 }}>
-              <CalendarIcon sx={{ fontSize: 64, color: alpha(theme.palette.primary.main, 0.3), mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" gutterBottom>Timetable Coming Soon</Typography>
-              <Typography variant="body2" color="text.secondary">Your class timetable will be available here once set by your teacher.</Typography>
-              <Button variant="contained" sx={{ mt: 3, borderRadius: 3, textTransform: 'none', fontWeight: 700, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
-                onClick={() => navigate('/calendar')}>
-                View School Calendar
-              </Button>
-            </Box>
+            {(() => {
+              const entries = timetable?.entries || timetable?.periods || timetable?.timetable || (Array.isArray(timetable) ? timetable : []);
+              if (!timetable || entries.length === 0) {
+                return (
+                  <Box sx={{ textAlign: 'center', py: 6 }}>
+                    <CalendarIcon sx={{ fontSize: 64, color: alpha(theme.palette.primary.main, 0.3), mb: 2 }} />
+                    <Typography variant="h6" color="text.secondary" gutterBottom>No timetable data available yet.</Typography>
+                    <Typography variant="body2" color="text.secondary">Your class timetable will appear here once set by your teacher.</Typography>
+                    <Button variant="contained" sx={{ mt: 3, borderRadius: 3, textTransform: 'none', fontWeight: 700, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                      onClick={() => navigate('/calendar')}>
+                      View School Calendar
+                    </Button>
+                  </Box>
+                );
+              }
+              return (
+                <TableContainer sx={{ borderRadius: 3, overflow: 'hidden' }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow sx={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        '& th': { color: '#fff', fontWeight: 700, border: 'none' },
+                      }}>
+                        <TableCell>Day</TableCell>
+                        <TableCell>Period</TableCell>
+                        <TableCell>Subject</TableCell>
+                        <TableCell>Time</TableCell>
+                        <TableCell>Teacher</TableCell>
+                        <TableCell>Room</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {entries.map((entry: any, idx: number) => (
+                        <TableRow key={idx} sx={{ '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.05) }, transition: 'background 0.2s' }}>
+                          <TableCell sx={{ fontWeight: 600 }}>{entry.day || entry.dayOfWeek || '—'}</TableCell>
+                          <TableCell>{entry.period || entry.periodNumber || idx + 1}</TableCell>
+                          <TableCell>{entry.subject || entry.subjectName || '—'}</TableCell>
+                          <TableCell>{entry.time || (entry.startTime && entry.endTime ? `${entry.startTime} - ${entry.endTime}` : '—')}</TableCell>
+                          <TableCell>{entry.teacher || entry.teacherName || '—'}</TableCell>
+                          <TableCell>{entry.room || entry.roomNumber || entry.location || '—'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              );
+            })()}
+          </TabPanel>
+
+          {/* Assignments Tab */}
+          <TabPanel value={tabValue} index={4}>
+            <TableContainer sx={{ borderRadius: 3, overflow: 'hidden' }}>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    '& th': { color: '#fff', fontWeight: 700, border: 'none' },
+                  }}>
+                    <TableCell>Title</TableCell>
+                    <TableCell>Subject</TableCell>
+                    <TableCell>Due Date</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Total Marks</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {assignments.map((item: any, idx: number) => (
+                    <TableRow key={idx} sx={{ '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.05) }, transition: 'background 0.2s' }}>
+                      <TableCell sx={{ fontWeight: 600 }}>{item.title || item.name || '—'}</TableCell>
+                      <TableCell>{item.subject || item.subjectName || '—'}</TableCell>
+                      <TableCell>{item.dueDate ? new Date(item.dueDate).toLocaleDateString() : '—'}</TableCell>
+                      <TableCell>
+                        <Chip label={item.status || 'pending'} size="small" sx={{
+                          fontWeight: 600,
+                          bgcolor: item.status === 'submitted' || item.status === 'completed' ? alpha('#10b981', 0.1) : item.status === 'overdue' ? alpha('#ef4444', 0.1) : alpha('#f59e0b', 0.1),
+                          color: item.status === 'submitted' || item.status === 'completed' ? '#10b981' : item.status === 'overdue' ? '#ef4444' : '#f59e0b',
+                        }} />
+                      </TableCell>
+                      <TableCell>{item.totalMarks || item.marks || '—'}</TableCell>
+                    </TableRow>
+                  ))}
+                  {assignments.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} align="center" sx={{ py: 6, color: 'text.secondary' }}>
+                        No assignments available yet
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </TabPanel>
 
           {/* Certificates Tab */}
-          <TabPanel value={tabValue} index={4}>
+          <TabPanel value={tabValue} index={5}>
             {!studentId ? (
               <Alert severity="info" sx={{ borderRadius: 3 }}>Student profile not fully set up. Contact your administrator.</Alert>
             ) : (
@@ -549,7 +643,7 @@ export const EnhancedStudentPortal: React.FC = () => {
           </TabPanel>
 
           {/* Library Tab */}
-          <TabPanel value={tabValue} index={5}>
+          <TabPanel value={tabValue} index={6}>
             {!studentId ? (
               <Alert severity="info" sx={{ borderRadius: 3 }}>Student profile not fully set up. Contact your administrator.</Alert>
             ) : (
@@ -576,7 +670,7 @@ export const EnhancedStudentPortal: React.FC = () => {
           </TabPanel>
 
           {/* ECA & Sports Tab */}
-          <TabPanel value={tabValue} index={6}>
+          <TabPanel value={tabValue} index={7}>
             {!studentId ? (
               <Alert severity="info" sx={{ borderRadius: 3 }}>Student profile not fully set up. Contact your administrator.</Alert>
             ) : (
@@ -603,7 +697,7 @@ export const EnhancedStudentPortal: React.FC = () => {
           </TabPanel>
 
           {/* History Tab */}
-          <TabPanel value={tabValue} index={7}>
+          <TabPanel value={tabValue} index={8}>
             {!studentId ? (
               <Alert severity="info" sx={{ borderRadius: 3 }}>Student profile not fully set up. Contact your administrator.</Alert>
             ) : (
@@ -629,7 +723,7 @@ export const EnhancedStudentPortal: React.FC = () => {
           </TabPanel>
 
           {/* Remarks Tab */}
-          <TabPanel value={tabValue} index={8}>
+          <TabPanel value={tabValue} index={9}>
             {!studentId ? (
               <Alert severity="info" sx={{ borderRadius: 3 }}>Student profile not fully set up. Contact your administrator.</Alert>
             ) : (

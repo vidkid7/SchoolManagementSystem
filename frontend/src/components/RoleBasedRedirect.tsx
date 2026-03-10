@@ -19,12 +19,15 @@ export const RoleBasedRedirect = () => {
       case 'Parent':
         return '/portal/parent';
       case 'Subject_Teacher':
-      case 'Class_Teacher':
         return '/portal/teacher';
+      case 'Class_Teacher':
+        return '/portal/class-teacher';
+      case 'Department_Head':
+        return '/portal/department-head';
       case 'Accountant':
-        return '/finance';
+        return '/portal/accountant';
       case 'Librarian':
-        return '/library';
+        return '/portal/librarian';
       case 'Municipality_Admin':
         return '/admin/municipality/dashboard';
       case 'Transport_Manager':
@@ -34,11 +37,10 @@ export const RoleBasedRedirect = () => {
       case 'Non_Teaching_Staff':
         return '/portal/non-teaching-staff';
       case 'ECA_Coordinator':
-        return '/eca';
+        return '/portal/eca-coordinator';
       case 'Sports_Coordinator':
-        return '/sports';
+        return '/portal/sports-coordinator';
       case 'School_Admin':
-      case 'Department_Head':
       default:
         return '/dashboard';
     }

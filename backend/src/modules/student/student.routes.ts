@@ -193,6 +193,30 @@ router.get(
 );
 
 /**
+ * @route   GET /api/v1/students/me/timetable
+ * @desc    Get my class timetable
+ * @access  Private (Student)
+ */
+router.get(
+  '/me/timetable',
+  authenticate,
+  authorize(UserRole.STUDENT),
+  studentController.getMyTimetable
+);
+
+/**
+ * @route   GET /api/v1/students/me/assignments
+ * @desc    Get my assignments
+ * @access  Private (Student)
+ */
+router.get(
+  '/me/assignments',
+  authenticate,
+  authorize(UserRole.STUDENT),
+  studentController.getMyAssignments
+);
+
+/**
  * @route   GET /api/v1/students/:id
  * @desc    Get student by ID
  * @access  Private (School_Admin, Class_Teacher, Subject_Teacher)
