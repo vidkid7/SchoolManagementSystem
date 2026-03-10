@@ -22,9 +22,11 @@ export const RoleBasedRedirect = () => {
       case 'Class_Teacher':
         return '/portal/teacher';
       case 'Accountant':
-        return '/portal/accountant';
+        return '/finance';
       case 'Librarian':
-        return '/portal/librarian';
+        return '/library';
+      case 'Municipality_Admin':
+        return '/admin/municipality/dashboard';
       case 'Transport_Manager':
         return '/portal/transport';
       case 'Hostel_Warden':

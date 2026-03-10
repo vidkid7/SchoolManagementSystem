@@ -45,16 +45,17 @@ export function FinancialReports() {
           startDate,
           endDate,
         },
-        responseType: 'blob',
       });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const reportData = response.data?.data ?? response.data;
+      const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `financial_report_${reportType}_${Date.now()}.pdf`);
+      link.setAttribute('download', `financial_report_${reportType}_${Date.now()}.json`);
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Failed to generate report:', error);
     } finally {

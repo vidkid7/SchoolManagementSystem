@@ -1,4 +1,5 @@
 export interface SchoolConfigData {
+  municipalityId?: string;
   schoolNameEn: string;
   schoolNameNp?: string;
   schoolCode?: string;
@@ -22,6 +23,7 @@ export interface SchoolConfigData {
 
 export interface SchoolConfigResponse {
   id: string;
+  municipalityId?: string;
   schoolNameEn: string;
   schoolNameNp?: string;
   schoolCode?: string;

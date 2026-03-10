@@ -115,7 +115,7 @@ export const GradeEntry = () => {
       const apiStudents = response.data?.data || [];
       
       // Initialize students with empty grades
-      const studentsWithGrades = apiStudents.map((student: any) => ({
+      const studentsWithGrades: Student[] = apiStudents.map((student: any) => ({
         id: student.studentId || student.id,
         student_id: student.studentId || student.id,
         roll_number: student.rollNumber || student.roll_number || 0,
@@ -131,23 +131,16 @@ export const GradeEntry = () => {
 
       setStudents(studentsWithGrades);
 
-      // Fetch existing grades if any
+      // Fetch existing grades from grade-entry API if any
       if (selectedExam) {
         try {
-          const gradesResponse = await api.get(`/examinations/${selectedExam}/grades`, {
-            params: {
-              classId: selectedClass,
-              section: selectedSection,
-              subjectId: selectedSubject,
-            },
-          });
-
-          // Merge existing grades
+          const gradesResponse = await api.get(`/grades/exam/${selectedExam}`);
+          const gradeList = gradesResponse.data?.data || [];
           const gradesMap = new Map(
-            gradesResponse.data.data.map((g: any) => [g.studentId || g.student_id, g])
+            gradeList.map((g: any) => [g.studentId || g.student_id, g])
           );
 
-          setStudents(studentsWithGrades.map((student) => {
+          setStudents(studentsWithGrades.map((student: Student) => {
             const existingGrade: any = gradesMap.get(student.id);
             if (existingGrade) {
               return {
@@ -236,8 +229,9 @@ export const GradeEntry = () => {
         return;
       }
 
-      // Save grades via API
-      await api.post(`/examinations/${selectedExam}/grades`, {
+      // Save grades via grade-entry API
+      await api.post('/grades/bulk', {
+        examId: Number(selectedExam),
         grades: gradesData,
       });
 

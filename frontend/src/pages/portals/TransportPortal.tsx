@@ -40,27 +40,53 @@ interface DashboardData {
   quickLinks: Array<{ label: string; path: string }>;
 }
 
+interface ProfileData {
+  id: number;
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber?: string;
+  role: string;
+  status: string;
+}
+
+interface TransportStudent {
+  id?: number;
+  studentId?: number;
+  firstNameEn?: string;
+  lastNameEn?: string;
+  studentCode?: string;
+}
+
 const TransportPortal: React.FC = () => {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [students, setStudents] = useState<TransportStudent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user, accessToken } = useSelector((state: RootState) => state.auth);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchDashboard = async () => {
+    const fetchAll = async () => {
       try {
-        const response = await apiClient.get('/api/v1/transport/dashboard', {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
-        setData(response.data.data);
+        const [dashboardRes, profileRes, studentsRes] = await Promise.all([
+          apiClient.get('/api/v1/transport/dashboard', { headers: { Authorization: `Bearer ${accessToken}` } }),
+          apiClient.get('/api/v1/transport/profile', { headers: { Authorization: `Bearer ${accessToken}` } }).catch(() => ({ data: { data: null } })),
+          apiClient.get('/api/v1/transport/students', { params: { limit: 10 }, headers: { Authorization: `Bearer ${accessToken}` } }).catch(() => ({ data: { data: { rows: [] } } })),
+        ]);
+        setData(dashboardRes.data.data);
+        setProfile(profileRes.data?.data ?? null);
+        const list = studentsRes.data?.data;
+        setStudents(Array.isArray(list) ? list : list?.students ?? []);
       } catch {
         setError('Failed to load transport dashboard');
       } finally {
         setLoading(false);
       }
     };
-    fetchDashboard();
+    fetchAll();
   }, [accessToken]);
 
   if (loading) {
@@ -139,12 +165,12 @@ const TransportPortal: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid item xs={12} md={6}>
           <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
                 <Typography variant="h6" fontWeight={600}>My Profile</Typography>
-                <Chip label="Transport Manager" color="primary" size="small" />
+                <Chip label={profile?.role || 'Transport Manager'} color="primary" size="small" />
               </Box>
               <Divider sx={{ mb: 2 }} />
               <Grid container spacing={2}>
@@ -153,7 +179,7 @@ const TransportPortal: React.FC = () => {
                     <PersonIcon color="action" />
                     <Box>
                       <Typography variant="caption" color="text.secondary">Name</Typography>
-                      <Typography variant="body1">{user?.firstName} {user?.lastName}</Typography>
+                      <Typography variant="body1">{(profile?.firstName && profile?.lastName) ? `${profile.firstName} ${profile.lastName}` : (user?.firstName && user?.lastName) ? `${user.firstName} ${user.lastName}` : user?.username}</Typography>
                     </Box>
                   </Box>
                 </Grid>
@@ -161,8 +187,8 @@ const TransportPortal: React.FC = () => {
                   <Box display="flex" alignItems="center" gap={1}>
                     <BusIcon color="action" />
                     <Box>
-                      <Typography variant="caption" color="text.secondary">Role</Typography>
-                      <Typography variant="body1">Transport Manager</Typography>
+                      <Typography variant="caption" color="text.secondary">Email</Typography>
+                      <Typography variant="body1">{profile?.email ?? user?.email ?? '—'}</Typography>
                     </Box>
                   </Box>
                 </Grid>
@@ -172,6 +198,29 @@ const TransportPortal: React.FC = () => {
                   Contact Admin
                 </Button>
               </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
+            <CardContent>
+              <Typography variant="h6" fontWeight={600} gutterBottom>Students on Transport</Typography>
+              <Divider sx={{ mb: 1 }} />
+              {students.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">No students listed. Use dashboard totals above.</Typography>
+              ) : (
+                <List dense>
+                  {students.slice(0, 5).map((s) => (
+                    <ListItem key={(s as { studentId?: number }).studentId ?? s.id} dense>
+                      <ListItemIcon><PersonIcon fontSize="small" color="action" /></ListItemIcon>
+                      <ListItemText primary={`${s.firstNameEn ?? ''} ${s.lastNameEn ?? ''}`.trim() || s.studentCode || `#${(s as { studentId?: number }).studentId ?? s.id}`} />
+                    </ListItem>
+                  ))}
+                  {students.length > 5 && <ListItem><ListItemText primary={`+${students.length - 5} more`} /></ListItem>}
+                </List>
+              )}
+              <Button size="small" sx={{ mt: 1 }} onClick={() => navigate('/students')}>View all students</Button>
             </CardContent>
           </Card>
         </Grid>

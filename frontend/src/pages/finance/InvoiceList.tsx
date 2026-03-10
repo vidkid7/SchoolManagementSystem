@@ -84,7 +84,7 @@ export const InvoiceList = () => {
         ...(statusFilter && { status: statusFilter }),
       });
 
-      const response = await apiClient.get(`/finance/invoices?${params}`);
+      const response = await apiClient.get(`/api/v1/finance/invoices?${params}`);
       setInvoices(response.data.data || []);
       setTotal(response.data.total || 0);
     } catch (error) {
@@ -125,7 +125,7 @@ export const InvoiceList = () => {
     if (!selectedInvoice) return;
 
     try {
-      await apiClient.post('/finance/payments', {
+      await apiClient.post('/api/v1/finance/payments', {
         invoice_id: selectedInvoice.id,
         amount: parseFloat(paymentAmount),
         payment_method: paymentMethod,
@@ -141,7 +141,7 @@ export const InvoiceList = () => {
 
   const handleSendReminder = async (invoiceId: number) => {
     try {
-      await apiClient.post(`/finance/invoices/${invoiceId}/send-reminder`);
+      await apiClient.post(`/api/v1/finance/invoices/${invoiceId}/send-reminder`);
       alert('Reminder sent successfully / रिमाइन्डर सफलतापूर्वक पठाइयो');
     } catch (error) {
       console.error('Failed to send reminder:', error);

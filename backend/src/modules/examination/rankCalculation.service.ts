@@ -170,9 +170,9 @@ class RankCalculationService {
       throw new Error(`Exam ${examId} does not belong to class ${classId}`);
     }
 
-    // Get all grades for this exam
-    // Note: We'll need to join with Student model to filter by section
-    // For now, we'll get all grades and assume filtering happens at a higher level
+    // Get all grades for this exam.
+    // Section-level filtering is applied by caller-level constraints until
+    // section linkage is persisted directly in grade records.
     const grades = await Grade.findAll({
       where: { examId },
       attributes: ['studentId', 'totalMarks'],

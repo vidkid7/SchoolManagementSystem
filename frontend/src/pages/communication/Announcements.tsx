@@ -68,21 +68,17 @@ export const Announcements: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Check if user can create announcements
-  const canCreateAnnouncement = user?.role === 'School_Admin' || 
-    user?.role === 'Class_Teacher' || 
-    user?.role === 'Subject_Teacher' ||
-    user?.role === 'Department_Head';
+  const canCreateAnnouncement = [
+    'School_Admin',
+    'Municipality_Admin',
+    'Class_Teacher',
+    'Subject_Teacher',
+    'Department_Head',
+  ].includes(user?.role || '');
 
   // Check if user is a student
   const isStudent = user?.role === 'Student';
   const isParent = user?.role === 'Parent';
-
-  // Auto-set filter based on user role
-  const getDefaultFilter = () => {
-    if (isStudent) return 'students';
-    if (isParent) return 'parents';
-    return 'all';
-  };
 
   // Load announcements
   const loadAnnouncements = useCallback(async () => {
@@ -352,7 +348,7 @@ export const Announcements: React.FC = () => {
                   )}
                 </CardContent>
 
-                {(user?.userId === announcement.publishedBy || user?.role === 'school_admin') && (
+                {(user?.userId === announcement.publishedBy || user?.role === 'School_Admin' || user?.role === 'Municipality_Admin') && (
                   <>
                     <Divider />
                     <CardActions>

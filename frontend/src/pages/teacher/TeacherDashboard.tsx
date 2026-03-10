@@ -4,7 +4,8 @@
  * Main dashboard for teachers with today's schedule, pending tasks, and class performance
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import apiClient from '../../services/apiClient';
 import {
   Box,
   Grid,
@@ -49,8 +50,7 @@ import {
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 
-// Sample data for today's schedule
-const todaySchedule = [
+const todayScheduleDefault = [
   { period: 1, time: '08:00-08:45', subject: 'Mathematics', class: 'Class 10 A', room: 'Room 201', status: 'completed' },
   { period: 2, time: '08:45-09:30', subject: 'Mathematics', class: 'Class 10 B', room: 'Room 201', status: 'completed' },
   { period: 3, time: '09:30-10:15', subject: 'Physics', class: 'Class 11 Science', room: 'Lab 1', status: 'ongoing' },
@@ -58,32 +58,29 @@ const todaySchedule = [
   { period: 5, time: '11:15-12:00', subject: 'Physics', class: 'Class 12 Science', room: 'Lab 1', status: 'upcoming' },
 ];
 
-// Sample pending tasks
-const pendingTasks = [
+const pendingTasksDefault = [
   { type: 'attendance', title: 'Mark attendance for Class 10 A', priority: 'high', count: 1 },
   { type: 'grading', title: 'Grade assignments for Class 11 Science', priority: 'medium', count: 25 },
   { type: 'lesson', title: 'Prepare lesson plan for tomorrow', priority: 'medium', count: 3 },
   { type: 'exam', title: 'Create exam questions for Terminal', priority: 'low', count: 1 },
 ];
 
-// Sample class performance data
-const classPerformanceData = [
+const classPerformanceDataDefault = [
   { class: 'Class 10 A', attendance: 92, avgGrade: 3.5, assignments: 85 },
   { class: 'Class 10 B', attendance: 88, avgGrade: 3.2, assignments: 78 },
   { class: 'Class 11 Sci', attendance: 85, avgGrade: 3.8, assignments: 90 },
   { class: 'Class 12 Sci', attendance: 90, avgGrade: 3.6, assignments: 88 },
 ];
 
-// Sample attendance trend
-const attendanceTrend = [
+const attendanceTrendDefault = [
   { week: 'Week 1', rate: 88 },
   { week: 'Week 2', rate: 90 },
   { week: 'Week 3', rate: 87 },
   { week: 'Week 4', rate: 92 },
 ];
 
-// Sample notifications
-const notifications = [
+// Default sample notifications (used when API returns empty)
+const defaultNotifications = [
   { icon: <EventIcon color="primary" />, text: 'Parent-Teacher meeting scheduled for 2081-11-10', time: '2 hours ago' },
   { icon: <WarningIcon color="warning" />, text: '3 students with low attendance in Class 10 A', time: '5 hours ago' },
   { icon: <CheckCircleIcon color="success" />, text: 'Lesson plan approved by principal', time: '1 day ago' },
@@ -91,7 +88,23 @@ const notifications = [
 
 export const TeacherDashboard = () => {
   const navigate = useNavigate();
-  const [currentPeriod] = useState(3); // Current period number
+  const [currentPeriod] = useState(3);
+  const [todaySchedule, setTodaySchedule] = useState(todayScheduleDefault);
+  const [pendingTasks, setPendingTasks] = useState(pendingTasksDefault);
+  const [classPerformanceData, setClassPerformanceData] = useState(classPerformanceDataDefault);
+  const [attendanceTrend, setAttendanceTrend] = useState(attendanceTrendDefault);
+  const [notifications, setNotifications] = useState(defaultNotifications);
+
+  useEffect(() => {
+    apiClient.get('/api/v1/teachers/dashboard').then((res) => {
+      const d = res.data?.data || {};
+      if (d.schedule?.length) setTodaySchedule(d.schedule);
+      if (d.tasks?.length) setPendingTasks(d.tasks);
+      if (d.performances?.length) setClassPerformanceData(d.performances);
+      if (d.trend?.length) setAttendanceTrend(d.trend);
+      if (d.notifications?.length) setNotifications(d.notifications.map((n: any) => ({ icon: <EventIcon color="primary" />, text: n.title || n.text, time: n.time || n.date || '' })));
+    }).catch(() => {});
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {

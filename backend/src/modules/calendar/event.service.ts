@@ -426,7 +426,7 @@ class EventService {
       // Validate update data
       if (updateData.startDate || updateData.endDate || updateData.recurrenceEndDate) {
         this.validateEventData({
-          title: 'temp',  // Placeholder, won't be used in update
+          title: updateData.title || 'Untitled event',
           category: updateData.category || 'other',
           startDate: updateData.startDate || new Date(),
           ...updateData

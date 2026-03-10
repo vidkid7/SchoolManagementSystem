@@ -123,10 +123,10 @@ export const SystemSettings = () => {
     try {
       setLoading(true);
       const [gradingRes, attendanceRes, templatesRes, dateFormatRes] = await Promise.all([
-        apiClient.get('/config/system-settings/grading-schemes'),
-        apiClient.get('/config/system-settings/attendance-rules'),
-        apiClient.get('/config/system-settings/notification-templates'),
-        apiClient.get('/config/system-settings/date-format'),
+        apiClient.get('/api/v1/system-settings/grading-schemes'),
+        apiClient.get('/api/v1/system-settings/attendance-rules'),
+        apiClient.get('/api/v1/system-settings/notification-templates'),
+        apiClient.get('/api/v1/system-settings/date-format'),
       ]);
       setGradingSchemes(gradingRes.data.data || []);
       setAttendanceRules(attendanceRes.data.data || []);
@@ -146,9 +146,9 @@ export const SystemSettings = () => {
     try {
       setError('');
       if (gradingDialog.mode === 'create') {
-        await apiClient.post('/config/system-settings/grading-schemes', data);
+        await apiClient.post('/api/v1/system-settings/grading-schemes', data);
       } else {
-        await apiClient.put(`/config/system-settings/grading-schemes/${gradingDialog.data?.id}`, data);
+        await apiClient.put(`/api/v1/system-settings/grading-schemes/${gradingDialog.data?.id}`, data);
       }
       setSuccess(t('systemSettings.successMessage'));
       setGradingDialog({ open: false, mode: 'create' });
@@ -161,7 +161,7 @@ export const SystemSettings = () => {
   const handleDeleteGradingScheme = async (id: string) => {
     if (!window.confirm('Are you sure?')) return;
     try {
-      await apiClient.delete(`/config/system-settings/grading-schemes/${id}`);
+      await apiClient.delete(`/api/v1/system-settings/grading-schemes/${id}`);
       fetchAllData();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to delete');
@@ -172,9 +172,9 @@ export const SystemSettings = () => {
     try {
       setError('');
       if (attendanceDialog.mode === 'create') {
-        await apiClient.post('/config/system-settings/attendance-rules', data);
+        await apiClient.post('/api/v1/system-settings/attendance-rules', data);
       } else {
-        await apiClient.put(`/config/system-settings/attendance-rules/${attendanceDialog.data?.id}`, data);
+        await apiClient.put(`/api/v1/system-settings/attendance-rules/${attendanceDialog.data?.id}`, data);
       }
       setSuccess(t('systemSettings.successMessage'));
       setAttendanceDialog({ open: false, mode: 'create' });
@@ -187,7 +187,7 @@ export const SystemSettings = () => {
   const handleDeleteAttendanceRule = async (id: string) => {
     if (!window.confirm('Are you sure?')) return;
     try {
-      await apiClient.delete(`/config/system-settings/attendance-rules/${id}`);
+      await apiClient.delete(`/api/v1/system-settings/attendance-rules/${id}`);
       fetchAllData();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to delete');
@@ -198,9 +198,9 @@ export const SystemSettings = () => {
     try {
       setError('');
       if (templateDialog.mode === 'create') {
-        await apiClient.post('/config/system-settings/notification-templates', data);
+        await apiClient.post('/api/v1/system-settings/notification-templates', data);
       } else {
-        await apiClient.put(`/config/system-settings/notification-templates/${templateDialog.data?.id}`, data);
+        await apiClient.put(`/api/v1/system-settings/notification-templates/${templateDialog.data?.id}`, data);
       }
       setSuccess(t('systemSettings.successMessage'));
       setTemplateDialog({ open: false, mode: 'create' });
@@ -213,7 +213,7 @@ export const SystemSettings = () => {
   const handleDeleteTemplate = async (id: string) => {
     if (!window.confirm('Are you sure?')) return;
     try {
-      await apiClient.delete(`/config/system-settings/notification-templates/${id}`);
+      await apiClient.delete(`/api/v1/system-settings/notification-templates/${id}`);
       fetchAllData();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to delete');
@@ -223,7 +223,7 @@ export const SystemSettings = () => {
   const handleSaveDateFormat = async () => {
     try {
       setError('');
-      await apiClient.put('/config/system-settings/date-format', dateFormatSettings);
+      await apiClient.put('/api/v1/system-settings/date-format', dateFormatSettings);
       setSuccess(t('systemSettings.successMessage'));
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to save');

@@ -14,6 +14,23 @@ import Student, { StudentStatus } from '@models/Student.model';
 import Class from '@models/Class.model';
 import { HTTP_STATUS, PAGINATION } from '@config/constants';
 import { logger } from '@utils/logger';
+import AttendanceRecord from '@models/AttendanceRecord.model';
+import Grade from '@models/Grade.model';
+import Exam from '@models/Exam.model';
+import Invoice from '@models/Invoice.model';
+import Payment from '@models/Payment.model';
+import ECAEnrollment from '@models/ECAEnrollment.model';
+import ECA from '@models/ECA.model';
+import SportsEnrollment from '@models/SportsEnrollment.model';
+import Sport from '@models/Sport.model';
+import Certificate from '@models/Certificate.model';
+import Circulation from '@models/Circulation.model';
+import Book from '@models/Book.model';
+import { Op } from 'sequelize';
+
+/** In-memory document registry for global documentId (studentId + category + filename). Cleared on restart. */
+let documentIdNext = 1;
+const documentRegistry = new Map<number, { studentId: number; category: string; filename: string }>();
 
 /**
  * Student Controller
@@ -21,6 +38,20 @@ import { logger } from '@utils/logger';
  * Requirements: 2.1-2.13
  */
 class StudentController {
+  private toNumber(value: unknown): number {
+    if (value === null || value === undefined) return 0;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  private async getStudentByUserId(userId: number): Promise<Student> {
+    const student = await Student.findOne({ where: { userId } });
+    if (!student) {
+      throw new NotFoundError('Student');
+    }
+    return student;
+  }
+
   /**
    * Get all students with filters and pagination
    * GET /api/v1/students
@@ -433,22 +464,116 @@ class StudentController {
   });
 
   /**
-   * List student documents
+   * List student documents (with global id for get/delete)
    * GET /api/v1/students/:id/documents
    */
   listDocuments = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const studentId = Number(req.params.id);
     const category = req.query.category as string | undefined;
 
-    // Verify student exists
     const student = await StudentRepository.findById(studentId);
-    if (!student) {
-      throw new NotFoundError('Student');
+    if (!student) throw new NotFoundError('Student');
+
+    const list = await photoService.listStudentDocuments(studentId, category);
+    const documents = list.map((doc) => {
+      const id = documentIdNext++;
+      documentRegistry.set(id, { studentId, category: doc.category, filename: doc.filename });
+      return { id, ...doc, isExpired: false, isExpiringSoon: false };
+    });
+    sendSuccess(res, documents, 'Documents retrieved successfully');
+  });
+
+  /**
+   * List expired documents
+   * GET /api/v1/students/:id/documents/expired
+   */
+  listExpiredDocuments = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const studentId = Number(req.params.id);
+    const student = await StudentRepository.findById(studentId);
+    if (!student) throw new NotFoundError('Student');
+    sendSuccess(res, [], 'Documents retrieved successfully');
+  });
+
+  /**
+   * List expiring-soon documents
+   * GET /api/v1/students/:id/documents/expiring-soon
+   */
+  listExpiringSoonDocuments = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const studentId = Number(req.params.id);
+    const student = await StudentRepository.findById(studentId);
+    if (!student) throw new NotFoundError('Student');
+    const list = await photoService.listStudentDocuments(studentId);
+    const documents = list.map((doc) => {
+      const id = documentIdNext++;
+      documentRegistry.set(id, { studentId, category: doc.category, filename: doc.filename });
+      return { id, ...doc, isExpired: false, isExpiringSoon: true };
+    });
+    sendSuccess(res, documents, 'Documents retrieved successfully');
+  });
+
+  /**
+   * Document statistics
+   * GET /api/v1/students/:id/documents/statistics
+   */
+  getDocumentStatistics = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const studentId = Number(req.params.id);
+    const student = await StudentRepository.findById(studentId);
+    if (!student) throw new NotFoundError('Student');
+    const list = await photoService.listStudentDocuments(studentId);
+    const total = list.length;
+    sendSuccess(res, { total, active: total, expired: 0, expiringSoon: 0 }, 'Statistics retrieved');
+  });
+
+  /**
+   * Bulk upload documents
+   * POST /api/v1/students/:id/documents/bulk
+   */
+  uploadDocumentsBulk = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const studentId = Number(req.params.id);
+    const userId = req.user?.userId;
+    const category = req.body.category || 'general';
+
+    const student = await StudentRepository.findById(studentId);
+    if (!student) throw new NotFoundError('Student');
+
+    if (!req.files || (Array.isArray(req.files) && req.files.length === 0)) {
+      throw new ValidationError('At least one document required', [{ field: 'documents', message: 'Please upload at least one document' }]);
     }
 
-    const documents = await photoService.listStudentDocuments(studentId, category);
+    const files = Array.isArray(req.files) ? req.files : [req.files as unknown as Express.Multer.File];
+    const uploaded = [];
+    for (const file of files) {
+      const docInfo = await photoService.saveStudentDocument(file, studentId, category);
+      uploaded.push(docInfo);
+    }
+    logger.info('Student documents bulk upload', { studentId, count: uploaded.length, uploadedBy: userId });
+    sendSuccess(res, uploaded, 'Documents uploaded successfully', HTTP_STATUS.CREATED);
+  });
 
-    sendSuccess(res, documents, 'Documents retrieved successfully');
+  /**
+   * Get document by global id
+   * GET /api/v1/students/documents/:documentId
+   */
+  getDocumentById = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const documentId = Number(req.params.documentId);
+    const entry = documentRegistry.get(documentId);
+    if (!entry) throw new NotFoundError('Document');
+    const url = `/uploads/documents/students/${entry.studentId}/${entry.category}/${entry.filename}`;
+    sendSuccess(res, { id: documentId, filename: entry.filename, url, category: entry.category }, 'Document retrieved');
+  });
+
+  /**
+   * Delete document by global id
+   * DELETE /api/v1/students/documents/:documentId
+   */
+  deleteDocumentById = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const documentId = Number(req.params.documentId);
+    const entry = documentRegistry.get(documentId);
+    if (!entry) throw new NotFoundError('Document');
+    const url = `/uploads/documents/students/${entry.studentId}/${entry.category}/${entry.filename}`;
+    await photoService.deleteStudentDocument(url);
+    documentRegistry.delete(documentId);
+    sendSuccess(res, { deleted: true }, 'Document deleted successfully');
   });
 
   /**
@@ -481,32 +606,33 @@ class StudentController {
       throw new NotFoundError('Student');
     }
 
-    // Return mock data for now
-    const mockAttendance = [
-      { id: 1, date: '2024-01-15', status: 'present' },
-      { id: 2, date: '2024-01-16', status: 'present' },
-      { id: 3, date: '2024-01-17', status: 'absent' },
-      { id: 4, date: '2024-01-18', status: 'present' },
-      { id: 5, date: '2024-01-19', status: 'late' },
-      { id: 6, date: '2024-01-20', status: 'present' },
-      { id: 7, date: '2024-01-21', status: 'present' },
-      { id: 8, date: '2024-01-22', status: 'present' },
-      { id: 9, date: '2024-01-23', status: 'absent' },
-      { id: 10, date: '2024-01-24', status: 'present' },
-    ];
+    const records = await AttendanceRecord.findAll({
+      where: { studentId },
+      order: [['date', 'DESC'], ['attendanceId', 'DESC']],
+      limit: 200
+    });
 
-    const present = mockAttendance.filter(a => a.status === 'present').length;
-    const absent = mockAttendance.filter(a => a.status === 'absent').length;
-    const late = mockAttendance.filter(a => a.status === 'late').length;
+    const formattedRecords = records.map(record => ({
+      id: record.attendanceId,
+      date: record.date,
+      status: record.status,
+      periodNumber: record.periodNumber ?? null,
+      remarks: record.remarks ?? ''
+    }));
+
+    const present = records.filter(a => a.status === 'present').length;
+    const absent = records.filter(a => a.status === 'absent').length;
+    const late = records.filter(a => a.status === 'late').length;
+    const total = records.length;
 
     sendSuccess(res, {
-      records: mockAttendance,
+      records: formattedRecords,
       summary: {
-        total: mockAttendance.length,
+        total,
         present,
         absent,
         late,
-        percentage: Math.round((present / mockAttendance.length) * 100)
+        percentage: total > 0 ? Math.round((present / total) * 100) : 0
       }
     }, 'Attendance retrieved successfully');
   });
@@ -523,22 +649,39 @@ class StudentController {
       throw new NotFoundError('Student');
     }
 
-    // Return mock data for now
-    const mockGrades = [
-      { id: 1, examName: 'First Terminal 2081', subjectName: 'English', fullMarks: 100, obtainedMarks: 85, grade: 'A' },
-      { id: 2, examName: 'First Terminal 2081', subjectName: 'Mathematics', fullMarks: 100, obtainedMarks: 92, grade: 'A+' },
-      { id: 3, examName: 'First Terminal 2081', subjectName: 'Science', fullMarks: 100, obtainedMarks: 78, grade: 'B+' },
-      { id: 4, examName: 'First Terminal 2081', subjectName: 'Nepali', fullMarks: 100, obtainedMarks: 88, grade: 'A' },
-      { id: 5, examName: 'First Terminal 2081', subjectName: 'Social Studies', fullMarks: 100, obtainedMarks: 82, grade: 'A-' },
-    ];
+    const grades = await Grade.findAll({
+      where: { studentId },
+      include: [
+        {
+          model: Exam,
+          as: 'exam',
+          required: false,
+          attributes: ['name', 'fullMarks']
+        }
+      ],
+      order: [['enteredAt', 'DESC'], ['gradeId', 'DESC']],
+      limit: 200
+    });
 
-    const totalMarks = mockGrades.reduce((sum, g) => sum + g.obtainedMarks, 0);
-    const average = Math.round(totalMarks / mockGrades.length);
+    const formattedGrades = grades.map((grade: any) => ({
+      id: grade.gradeId,
+      examName: grade.exam?.name || `Exam #${grade.examId}`,
+      subjectName: grade.exam?.name || 'N/A',
+      fullMarks: this.toNumber(grade.exam?.fullMarks) || 100,
+      obtainedMarks: this.toNumber(grade.totalMarks),
+      grade: grade.grade,
+      gradePoint: this.toNumber(grade.gradePoint)
+    }));
+
+    const totalMarks = formattedGrades.reduce((sum, g) => sum + g.obtainedMarks, 0);
+    const average = formattedGrades.length > 0
+      ? Math.round(totalMarks / formattedGrades.length)
+      : 0;
 
     sendSuccess(res, {
-      grades: mockGrades,
+      grades: formattedGrades,
       summary: {
-        totalExams: mockGrades.length,
+        totalExams: formattedGrades.length,
         averageMarks: average,
         totalMarks
       }
@@ -557,30 +700,53 @@ class StudentController {
       throw new NotFoundError('Student');
     }
 
-    // Return mock data for now
-    const mockInvoices = [
-      { id: 1, invoiceNumber: 'INV/2024/001', amount: 15000, dueDate: '2024-01-15', status: 'paid' },
-      { id: 2, invoiceNumber: 'INV/2024/002', amount: 15000, dueDate: '2024-02-15', status: 'paid' },
-      { id: 3, invoiceNumber: 'INV/2024/003', amount: 15000, dueDate: '2024-03-15', status: 'pending' },
-    ];
+    const [invoices, payments] = await Promise.all([
+      Invoice.findAll({
+        where: { studentId },
+        order: [['generatedAt', 'DESC'], ['invoiceId', 'DESC']],
+        limit: 200
+      }),
+      Payment.findAll({
+        where: { studentId },
+        order: [['paymentDate', 'DESC'], ['paymentId', 'DESC']],
+        limit: 200
+      })
+    ]);
 
-    const mockPayments = [
-      { id: 1, invoiceNumber: 'INV/2024/001', amount: 15000, paymentDate: '2024-01-10', status: 'paid' },
-      { id: 2, invoiceNumber: 'INV/2024/002', amount: 15000, paymentDate: '2024-02-12', status: 'paid' },
-    ];
+    const invoiceLookup = new Map<number, string>(
+      invoices.map(inv => [inv.invoiceId, inv.invoiceNumber])
+    );
 
-    const totalAmount = mockInvoices.reduce((sum, inv) => sum + inv.amount, 0);
-    const paidAmount = mockPayments.reduce((sum, pay) => sum + pay.amount, 0);
+    const formattedInvoices = invoices.map(inv => ({
+      id: inv.invoiceId,
+      invoiceNumber: inv.invoiceNumber,
+      amount: this.toNumber(inv.totalAmount),
+      dueDate: inv.dueDate,
+      status: inv.status
+    }));
+
+    const formattedPayments = payments.map(pay => ({
+      id: pay.paymentId,
+      invoiceNumber: invoiceLookup.get(pay.invoiceId) || `INV-${pay.invoiceId}`,
+      amount: this.toNumber(pay.amount),
+      paymentDate: pay.paymentDate,
+      status: pay.status
+    }));
+
+    const totalAmount = formattedInvoices.reduce((sum, inv) => sum + inv.amount, 0);
+    const paidAmount = formattedPayments
+      .filter(payment => payment.status === 'completed')
+      .reduce((sum, pay) => sum + pay.amount, 0);
 
     sendSuccess(res, {
-      invoices: mockInvoices,
-      payments: mockPayments,
+      invoices: formattedInvoices,
+      payments: formattedPayments,
       summary: {
         totalAmount,
         paidAmount,
         pendingAmount: totalAmount - paidAmount,
-        invoiceCount: mockInvoices.length,
-        paymentCount: mockPayments.length
+        invoiceCount: formattedInvoices.length,
+        paymentCount: formattedPayments.length
       }
     }, 'Fees retrieved successfully');
   });
@@ -597,22 +763,55 @@ class StudentController {
       throw new NotFoundError('Student');
     }
 
-    // Return mock data for now
-    const mockECA = [
-      { id: 1, activityName: 'Scouts', position: 'Member', achievement: '' },
-      { id: 2, activityName: 'Music Club', position: 'Secretary', achievement: 'First Prize in School Competition' },
-    ];
+    const [ecaEnrollments, sportsEnrollments] = await Promise.all([
+      ECAEnrollment.findAll({
+        where: { studentId },
+        include: [
+          {
+            model: ECA,
+            as: 'eca',
+            required: false,
+            attributes: ['name']
+          }
+        ],
+        order: [['createdAt', 'DESC']],
+        limit: 100
+      }),
+      SportsEnrollment.findAll({
+        where: { studentId },
+        include: [
+          {
+            model: Sport,
+            as: 'sport',
+            required: false,
+            attributes: ['name']
+          }
+        ],
+        order: [['createdAt', 'DESC']],
+        limit: 100
+      })
+    ]);
 
-    const mockSports = [
-      { id: 1, activityName: 'Football', position: 'Team Captain', achievement: 'District Level Winner' },
-    ];
+    const eca = ecaEnrollments.map((enrollment: any) => ({
+      id: enrollment.enrollmentId,
+      activityName: enrollment.eca?.name || `ECA #${enrollment.ecaId}`,
+      position: enrollment.status,
+      achievement: enrollment.remarks || ''
+    }));
+
+    const sports = sportsEnrollments.map((enrollment: any) => ({
+      id: enrollment.enrollmentId,
+      activityName: enrollment.sport?.name || `Sport #${enrollment.sportId}`,
+      position: enrollment.status,
+      achievement: enrollment.remarks || ''
+    }));
 
     sendSuccess(res, {
-      eca: mockECA,
-      sports: mockSports,
+      eca,
+      sports,
       summary: {
-        ecaCount: mockECA.length,
-        sportsCount: mockSports.length
+        ecaCount: eca.length,
+        sportsCount: sports.length
       }
     }, 'ECA activities retrieved successfully');
   });
@@ -629,16 +828,25 @@ class StudentController {
       throw new NotFoundError('Student');
     }
 
-    // Return mock data for now
-    const mockCertificates = [
-      { id: 1, certificateNumber: 'CERT/2024/001', type: 'Character Certificate', issuedDate: '2024-03-15', status: 'active' },
-      { id: 2, certificateNumber: 'CERT/2024/002', type: 'Transfer Certificate', issuedDate: '2024-03-20', status: 'active' },
-    ];
+    const certificates = await Certificate.findAll({
+      where: { studentId },
+      attributes: ['certificateId', 'certificateNumber', 'type', 'issuedDate', 'status'],
+      order: [['issuedDate', 'DESC'], ['certificateId', 'DESC']],
+      limit: 200
+    });
+
+    const formattedCertificates = certificates.map(cert => ({
+      id: cert.certificateId,
+      certificateNumber: cert.certificateNumber,
+      type: cert.type,
+      issuedDate: cert.issuedDate,
+      status: cert.status
+    }));
 
     sendSuccess(res, {
-      certificates: mockCertificates,
+      certificates: formattedCertificates,
       summary: {
-        total: mockCertificates.length
+        total: formattedCertificates.length
       }
     }, 'Certificates retrieved successfully');
   });
@@ -656,21 +864,41 @@ class StudentController {
       throw new NotFoundError('Student');
     }
 
-    // Check if there's a remarks table, otherwise return mock data
-    // This can be extended when a remarks model is created
-    const mockRemarks = [
-      { id: 1, type: 'good', remark: 'Excellent performance in mathematics', teacherName: 'Mr. Sharma', date: '2024-01-15', subject: 'Mathematics' },
-      { id: 2, type: 'good', remark: 'Good participation in class discussions', teacherName: 'Mrs. Karki', date: '2024-01-20', subject: 'English' },
-      { id: 3, type: 'bad', remark: 'Needs to improve homework submissions', teacherName: 'Mr. Joshi', date: '2024-01-25', subject: 'Science' },
-    ];
+    const grades = await Grade.findAll({
+      where: { studentId },
+      include: [
+        {
+          model: Exam,
+          as: 'exam',
+          required: false,
+          attributes: ['name']
+        }
+      ],
+      order: [['enteredAt', 'DESC'], ['gradeId', 'DESC']],
+      limit: 200
+    });
 
-    let remarks = mockRemarks;
+    const mappedRemarks = grades
+      .filter(grade => typeof grade.remarks === 'string' && grade.remarks.trim().length > 0)
+      .map((grade: any) => {
+        const numericGradePoint = this.toNumber(grade.gradePoint);
+        return {
+          id: grade.gradeId,
+          type: numericGradePoint >= 2.4 ? 'good' : 'bad',
+          remark: grade.remarks,
+          teacherName: `Teacher #${grade.enteredBy}`,
+          date: grade.enteredAt,
+          subject: grade.exam?.name || `Exam #${grade.examId}`
+        };
+      });
+
+    let remarks = mappedRemarks;
     if (type && type !== 'all') {
-      remarks = mockRemarks.filter(r => r.type === type);
+      remarks = mappedRemarks.filter(remark => remark.type === type);
     }
 
-    const goodRemarks = mockRemarks.filter(r => r.type === 'good').length;
-    const badRemarks = mockRemarks.filter(r => r.type === 'bad').length;
+    const goodRemarks = mappedRemarks.filter(remark => remark.type === 'good').length;
+    const badRemarks = mappedRemarks.filter(remark => remark.type === 'bad').length;
 
     sendSuccess(res, {
       remarks,
@@ -694,57 +922,40 @@ class StudentController {
       throw new NotFoundError('Student');
     }
 
-    // Mock library data - this should be replaced with actual library records from database
-    const mockRecords = [
-      {
-        id: 1,
-        bookTitle: 'Introduction to Computer Science',
-        bookCode: 'CS-101',
-        author: 'John Doe',
-        borrowDate: '2024-01-15',
-        dueDate: '2024-02-15',
-        returnDate: '2024-02-10',
-        status: 'returned',
-      },
-      {
-        id: 2,
-        bookTitle: 'Advanced Mathematics',
-        bookCode: 'MATH-201',
-        author: 'Jane Smith',
-        borrowDate: '2024-02-01',
-        dueDate: '2024-03-01',
-        status: 'borrowed',
-      },
-      {
-        id: 3,
-        bookTitle: 'Physics Fundamentals',
-        bookCode: 'PHY-101',
-        author: 'Robert Johnson',
-        borrowDate: '2024-01-20',
-        dueDate: '2024-02-20',
-        status: 'overdue',
-        fine: 50,
-      },
-      {
-        id: 4,
-        bookTitle: 'English Literature',
-        bookCode: 'ENG-101',
-        author: 'Emily Brown',
-        borrowDate: '2024-01-10',
-        dueDate: '2024-02-10',
-        returnDate: '2024-02-08',
-        status: 'returned',
-      },
-    ];
+    const records = await Circulation.findAll({
+      where: { studentId },
+      include: [
+        {
+          model: Book,
+          as: 'book',
+          required: false,
+          attributes: ['title', 'author', 'accessionNumber']
+        }
+      ],
+      order: [['issueDate', 'DESC'], ['circulationId', 'DESC']],
+      limit: 200
+    });
 
-    const totalBorrowed = mockRecords.length;
-    const currentlyBorrowed = mockRecords.filter(r => r.status === 'borrowed').length;
-    const returned = mockRecords.filter(r => r.status === 'returned').length;
-    const overdue = mockRecords.filter(r => r.status === 'overdue').length;
-    const totalFines = mockRecords.reduce((sum, r) => sum + (r.fine || 0), 0);
+    const formattedRecords = records.map((record: any) => ({
+      id: record.circulationId,
+      bookTitle: record.book?.title || 'Unknown Book',
+      bookCode: record.book?.accessionNumber || `BOOK-${record.bookId}`,
+      author: record.book?.author || 'Unknown',
+      borrowDate: record.issueDate,
+      dueDate: record.dueDate,
+      returnDate: record.returnDate,
+      status: record.status,
+      fine: this.toNumber(record.fine),
+    }));
+
+    const totalBorrowed = formattedRecords.length;
+    const currentlyBorrowed = formattedRecords.filter(r => r.status === 'borrowed' || r.status === 'renewed').length;
+    const returned = formattedRecords.filter(r => r.status === 'returned').length;
+    const overdue = formattedRecords.filter(r => r.status === 'overdue').length;
+    const totalFines = formattedRecords.reduce((sum, r) => sum + (r.fine || 0), 0);
 
     sendSuccess(res, {
-      records: mockRecords,
+      records: formattedRecords,
       stats: {
         totalBorrowed,
         currentlyBorrowed,
@@ -831,12 +1042,22 @@ class StudentController {
       return;
     }
 
+    const student = await this.getStudentByUserId(userId);
+    const records = await AttendanceRecord.findAll({
+      where: { studentId: student.studentId }
+    });
+
+    const present = records.filter(r => r.status === 'present').length;
+    const absent = records.filter(r => r.status === 'absent').length;
+    const late = records.filter(r => r.status === 'late').length;
+    const total = records.length;
+
     sendSuccess(res, {
-      present: 185,
-      total: 200,
-      percentage: 92.5,
-      absent: 15,
-      late: 0,
+      present,
+      total,
+      percentage: total > 0 ? Number(((present / total) * 100).toFixed(2)) : 0,
+      absent,
+      late,
     }, 'Attendance summary retrieved successfully');
   });
 
@@ -847,13 +1068,26 @@ class StudentController {
       return;
     }
 
-    sendSuccess(res, [
-      { subject: 'Mathematics', grade: 'A+', gpa: 4.0 },
-      { subject: 'Science', grade: 'A', gpa: 3.6 },
-      { subject: 'English', grade: 'B+', gpa: 3.2 },
-      { subject: 'Nepali', grade: 'A', gpa: 3.6 },
-      { subject: 'Social Studies', grade: 'A+', gpa: 4.0 },
-    ], 'Grades retrieved successfully');
+    const student = await this.getStudentByUserId(userId);
+    const grades = await Grade.findAll({
+      where: { studentId: student.studentId },
+      include: [
+        {
+          model: Exam,
+          as: 'exam',
+          required: false,
+          attributes: ['name']
+        }
+      ],
+      order: [['enteredAt', 'DESC']],
+      limit: 100
+    });
+
+    sendSuccess(res, grades.map((grade: any) => ({
+      subject: grade.exam?.name || `Exam #${grade.examId}`,
+      grade: grade.grade,
+      gpa: this.toNumber(grade.gradePoint)
+    })), 'Grades retrieved successfully');
   });
 
   getMyFeesSummary = asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -863,10 +1097,26 @@ class StudentController {
       return;
     }
 
+    const student = await this.getStudentByUserId(userId);
+    const [invoices, payments] = await Promise.all([
+      Invoice.findAll({ where: { studentId: student.studentId } }),
+      Payment.findAll({
+        where: {
+          studentId: student.studentId,
+          status: { [Op.in]: ['completed', 'refunded'] }
+        }
+      })
+    ]);
+
+    const total = invoices.reduce((sum, invoice) => sum + this.toNumber(invoice.totalAmount), 0);
+    const paid = payments
+      .filter(p => p.status === 'completed')
+      .reduce((sum, payment) => sum + this.toNumber(payment.amount), 0);
+
     sendSuccess(res, {
-      paid: 45000,
-      pending: 15000,
-      total: 60000,
+      paid,
+      pending: total - paid,
+      total,
     }, 'Fees summary retrieved successfully');
   });
 

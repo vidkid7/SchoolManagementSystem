@@ -4,6 +4,7 @@
  */
 
 export const ROLES = {
+  MUNICIPALITY_ADMIN: 'Municipality_Admin',
   SCHOOL_ADMIN: 'School_Admin',
   CLASS_TEACHER: 'Class_Teacher',
   SUBJECT_TEACHER: 'Subject_Teacher',

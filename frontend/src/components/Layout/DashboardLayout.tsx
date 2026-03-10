@@ -39,6 +39,7 @@ import {
   Assessment as ReportIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
+  Lock as LockIcon,
   Group as StaffIcon,
   Class as ClassIcon,
   Message as MessageIcon,
@@ -57,6 +58,7 @@ import {
   Person as PersonIcon,
   FamilyRestroom as FamilyIcon,
   SupervisorAccount as TeacherPortalIcon,
+  LocationCity as MunicipalityIcon,
 } from '@mui/icons-material';
 import { AppDispatch, RootState } from '../../store';
 import { logout } from '../../store/slices/authSlice';
@@ -87,6 +89,7 @@ export const DashboardLayout = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const menuItems: MenuItem[] = [
+    { text: 'Municipality Admin', icon: <MunicipalityIcon />, path: '/admin/municipality/dashboard', roles: ['municipality_admin'] },
     { text: t('menu.dashboard'), icon: <DashboardIcon />, path: '/dashboard', roles: ['school_admin', 'eca_coordinator', 'sports_coordinator', 'librarian', 'accountant', 'transport_manager', 'hostel_warden', 'non_teaching_staff'] },
     { text: t('menu.students'), icon: <PeopleIcon />, path: '/students', roles: ['school_admin', 'class_teacher', 'subject_teacher', 'department_head'] },
     { text: t('menu.admissions'), icon: <PersonAddIcon />, path: '/admissions', roles: ['school_admin', 'accountant'] },
@@ -465,6 +468,12 @@ export const DashboardLayout = () => {
               </ListItemIcon>
               {t('menu.settings')}
             </MenuItem>
+            <MenuItem onClick={() => { handleMenuClose(); navigate('/change-password'); }} sx={{ fontSize: '0.85rem', position: 'relative', zIndex: 1 }}>
+              <ListItemIcon>
+                <LockIcon fontSize="small" />
+              </ListItemIcon>
+              Change password
+            </MenuItem>
             <Divider />
             <MenuItem onClick={handleLogout} sx={{ fontSize: '0.85rem', position: 'relative', zIndex: 1 }}>
               <ListItemIcon>
@@ -546,4 +555,3 @@ export const DashboardLayout = () => {
     </Box>
   );
 };
-

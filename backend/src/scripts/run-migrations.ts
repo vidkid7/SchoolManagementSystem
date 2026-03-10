@@ -17,6 +17,11 @@ import * as createMessagingTables from '../migrations/028-create-messaging-table
 import * as createGroupMessagingTables from '../migrations/029-create-group-messaging-tables';
 import * as createCertificateTemplatesTable from '../migrations/030-create-certificate-templates-table';
 import * as createCertificatesTable from '../migrations/030-create-certificates-table';
+import * as createDocumentsTable from '../migrations/031-create-documents-table';
+import * as createSchoolConfigTable from '../migrations/032-create-school-config-table';
+import * as addMunicipalityArchitecture from '../migrations/20260308000001-add-municipality-architecture';
+import * as addSchoolTenantIsolation from '../migrations/20260308000002-add-school-tenant-isolation';
+import * as addSchoolConfigFormatColumns from '../migrations/20260308000003-add-school-config-format-columns';
 
 /**
  * Migration Runner
@@ -86,6 +91,31 @@ const migrations: Migration[] = [
     name: '030-create-certificates-table',
     up: createCertificatesTable.up,
     down: createCertificatesTable.down
+  },
+  {
+    name: '031-create-documents-table',
+    up: createDocumentsTable.up,
+    down: createDocumentsTable.down
+  },
+  {
+    name: '032-create-school-config-table',
+    up: createSchoolConfigTable.up,
+    down: createSchoolConfigTable.down
+  },
+  {
+    name: '20260308000001-add-municipality-architecture',
+    up: addMunicipalityArchitecture.up,
+    down: addMunicipalityArchitecture.down
+  },
+  {
+    name: '20260308000002-add-school-tenant-isolation',
+    up: addSchoolTenantIsolation.up,
+    down: addSchoolTenantIsolation.down
+  },
+  {
+    name: '20260308000003-add-school-config-format-columns',
+    up: addSchoolConfigFormatColumns.up,
+    down: addSchoolConfigFormatColumns.down
   }
 ];
 

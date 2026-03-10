@@ -10,6 +10,10 @@ import { WhereOptions } from 'sequelize';
  * Requirements: 5.8, 5.9
  */
 class SyllabusService {
+  private asSyllabusWithTopics(syllabus: Syllabus | null): (Syllabus & { topics?: SyllabusTopic[] }) | null {
+    return syllabus as (Syllabus & { topics?: SyllabusTopic[] }) | null;
+  }
+
   /**
    * Create a new syllabus
    */
@@ -97,11 +101,12 @@ class SyllabusService {
   ): Promise<Syllabus | null> {
     const syllabus = await Syllabus.findByPk(syllabusId);
     if (!syllabus) return null;
+    const oldValue = syllabus.toJSON();
 
     await syllabus.update(updateData);
     logger.info('Syllabus updated', { syllabusId, updatedFields: Object.keys(updateData) });
 
-    await auditLogger.logUpdate('syllabus', syllabusId, syllabus.toJSON(), userId, req);
+    await auditLogger.logUpdate('syllabus', syllabusId, oldValue, syllabus.toJSON(), userId, req);
     return syllabus;
   }
 
@@ -111,11 +116,12 @@ class SyllabusService {
   async deleteSyllabus(syllabusId: number, userId?: number, req?: Request): Promise<boolean> {
     const syllabus = await Syllabus.findByPk(syllabusId);
     if (!syllabus) return false;
+    const oldValue = syllabus.toJSON();
 
     await syllabus.destroy();
     logger.info('Syllabus deleted', { syllabusId });
 
-    await auditLogger.logDelete('syllabus', syllabusId, userId, req);
+    await auditLogger.logDelete('syllabus', syllabusId, oldValue, userId, req);
     return true;
   }
 
@@ -155,11 +161,12 @@ class SyllabusService {
   ): Promise<SyllabusTopic | null> {
     const topic = await SyllabusTopic.findByPk(topicId);
     if (!topic) return null;
+    const oldValue = topic.toJSON();
 
     await topic.update(updateData);
     logger.info('Syllabus topic updated', { topicId, updatedFields: Object.keys(updateData) });
 
-    await auditLogger.logUpdate('syllabus_topic', topicId, topic.toJSON(), userId, req);
+    await auditLogger.logUpdate('syllabus_topic', topicId, oldValue, topic.toJSON(), userId, req);
     return topic;
   }
 
@@ -169,11 +176,12 @@ class SyllabusService {
   async deleteTopic(topicId: number, userId?: number, req?: Request): Promise<boolean> {
     const topic = await SyllabusTopic.findByPk(topicId);
     if (!topic) return false;
+    const oldValue = topic.toJSON();
 
     await topic.destroy();
     logger.info('Syllabus topic deleted', { topicId });
 
-    await auditLogger.logDelete('syllabus_topic', topicId, userId, req);
+    await auditLogger.logDelete('syllabus_topic', topicId, oldValue, userId, req);
     return true;
   }
 
@@ -181,9 +189,10 @@ class SyllabusService {
    * Recalculate syllabus completion percentage
    */
   async recalculateSyllabusCompletion(syllabusId: number): Promise<Syllabus | null> {
-    const syllabus = await Syllabus.findByPk(syllabusId, {
+    const syllabusModel = await Syllabus.findByPk(syllabusId, {
       include: [{ model: SyllabusTopic, as: 'topics' }]
     });
+    const syllabus = this.asSyllabusWithTopics(syllabusModel);
 
     if (!syllabus) return null;
 
@@ -214,9 +223,10 @@ class SyllabusService {
     totalCompletedHours: number;
     completionPercentage: number;
   } | null> {
-    const syllabus = await Syllabus.findByPk(syllabusId, {
+    const syllabusModel = await Syllabus.findByPk(syllabusId, {
       include: [{ model: SyllabusTopic, as: 'topics' }]
     });
+    const syllabus = this.asSyllabusWithTopics(syllabusModel);
 
     if (!syllabus) return null;
 

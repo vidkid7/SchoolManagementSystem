@@ -52,6 +52,23 @@ interface ClassTeacher {
   specialization?: string;
 }
 
+interface AcademicYearRow {
+  academicYearId?: number;
+  academic_year_id?: number;
+  id?: number;
+  isCurrent?: boolean;
+  is_current?: boolean;
+}
+
+interface ClassRow {
+  classId?: number;
+  class_id?: number;
+  id?: number;
+  gradeLevel?: number;
+  grade_level?: number;
+  section?: string;
+}
+
 export const ClassTeacherView = () => {
   const { t, i18n } = useTranslation();
   const { classId } = useParams();
@@ -72,16 +89,40 @@ export const ClassTeacherView = () => {
     try {
       setLoading(true);
       setError('');
-      
-      // Get current academic year (you might want to fetch this from an API)
-      const academicYearId = 1; // Default to 1 for now
-      
+
+      const [yearsResponse, classesResponse] = await Promise.all([
+        apiClient.get('/api/v1/academic/years'),
+        apiClient.get('/api/v1/academic/classes')
+      ]);
+
+      const years: AcademicYearRow[] = yearsResponse.data?.data || [];
+      const currentYear = years.find((year) => year.isCurrent || year.is_current) || years[0];
+      const academicYearId = currentYear?.academicYearId || currentYear?.academic_year_id || currentYear?.id;
+
+      if (!academicYearId) {
+        setError('No academic year found');
+        setTeacher(null);
+        return;
+      }
+
       const response = await apiClient.get(
         `/api/v1/staff/class/${classId}/teacher?academicYearId=${academicYearId}`
       );
-      
+
       setTeacher(response.data.data);
-      setClassName(`Class ${classId}`); // You might want to fetch actual class name
+
+      const classes: ClassRow[] = classesResponse.data?.data || [];
+      const classInfo = classes.find((cls) => {
+        const id = cls.classId || cls.class_id || cls.id;
+        return id === Number(classId);
+      });
+
+      if (classInfo) {
+        const gradeLevel = classInfo.gradeLevel ?? classInfo.grade_level ?? classId;
+        setClassName(`Grade ${gradeLevel}${classInfo.section ? ` - ${classInfo.section}` : ''}`);
+      } else {
+        setClassName(`Class ${classId}`);
+      }
     } catch (error: any) {
       console.error('Failed to fetch class teacher:', error);
       if (error.response?.status === 404) {

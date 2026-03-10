@@ -3,7 +3,7 @@
  */
 
 import { useState, FormEvent, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import {
@@ -87,9 +87,11 @@ export const Login = () => {
       case 'Class_Teacher':
         return '/portal/teacher';
       case 'Accountant':
-        return '/portal/accountant';
+        return '/finance';
       case 'Librarian':
-        return '/portal/librarian';
+        return '/library';
+      case 'Municipality_Admin':
+        return '/admin/municipality/dashboard';
       case 'Transport_Manager':
         return '/portal/transport';
       case 'Hostel_Warden':
@@ -583,6 +585,15 @@ export const Login = () => {
                   t('auth.signIn')
                 )}
               </Button>
+
+              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                <Button component={Link} to="/forgot-password" size="small" sx={{ textTransform: 'none' }}>
+                  Forgot password?
+                </Button>
+                <Button component={Link} to="/register" size="small" sx={{ textTransform: 'none' }}>
+                  Register
+                </Button>
+              </Box>
             </Box>
 
             {/* Footer */}

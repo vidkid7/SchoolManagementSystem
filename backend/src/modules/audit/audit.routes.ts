@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import auditController from './audit.controller';
 import { authenticate, authorize } from '@middleware/auth';
-import { validate } from '@middleware/validation';
+import { validateRequest } from '@middleware/validation';
+import { UserRole } from '@models/User.model';
 import {
   getAuditLogsValidation,
   getAuditLogByIdValidation,
@@ -19,7 +20,7 @@ const router = Router();
 
 // All audit routes require authentication and admin role
 router.use(authenticate);
-router.use(authorize(['school_admin']));
+router.use(authorize(UserRole.SCHOOL_ADMIN));
 
 /**
  * @route   GET /api/v1/audit/logs
@@ -28,7 +29,7 @@ router.use(authorize(['school_admin']));
  */
 router.get(
   '/logs',
-  validate(getAuditLogsValidation),
+  validateRequest(getAuditLogsValidation),
   auditController.getAuditLogs
 );
 
@@ -39,7 +40,7 @@ router.get(
  */
 router.get(
   '/logs/:id',
-  validate(getAuditLogByIdValidation),
+  validateRequest(getAuditLogByIdValidation),
   auditController.getAuditLogById
 );
 
@@ -50,7 +51,7 @@ router.get(
  */
 router.get(
   '/entity/:entityType/:entityId',
-  validate(getEntityAuditLogsValidation),
+  validateRequest(getEntityAuditLogsValidation),
   auditController.getEntityAuditLogs
 );
 
@@ -61,7 +62,7 @@ router.get(
  */
 router.get(
   '/user/:userId',
-  validate(getUserAuditLogsValidation),
+  validateRequest(getUserAuditLogsValidation),
   auditController.getUserAuditLogs
 );
 
@@ -82,7 +83,7 @@ router.get(
  */
 router.post(
   '/rotate',
-  validate(rotateAuditLogsValidation),
+  validateRequest(rotateAuditLogsValidation),
   auditController.rotateAuditLogs
 );
 
@@ -93,7 +94,7 @@ router.post(
  */
 router.get(
   '/export',
-  validate(getAuditLogsValidation),
+  validateRequest(getAuditLogsValidation),
   auditController.exportAuditLogs
 );
 

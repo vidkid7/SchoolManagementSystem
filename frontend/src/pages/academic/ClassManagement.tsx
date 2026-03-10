@@ -196,9 +196,15 @@ export const ClassManagement = () => {
 
   const handleSaveClass = async () => {
     try {
-      // Get the current academic year (you might want to fetch this from an API or state)
-      // For now, we'll use academicYearId = 1 as default
-      const academicYearId = 1; // TODO: Get from context or API
+      const yearsResponse = await api.get('/academic/years');
+      const years = yearsResponse.data?.data || [];
+      const currentYear = years.find((year: any) => year.isCurrent || year.is_current);
+      const fallbackYear = years[0];
+      const academicYearId = currentYear?.academicYearId || currentYear?.academic_year_id || fallbackYear?.academicYearId || fallbackYear?.academic_year_id;
+
+      if (!academicYearId) {
+        throw new Error('No academic year available. Please create an academic year first.');
+      }
       
       const payload = {
         academicYearId,

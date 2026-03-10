@@ -550,7 +550,7 @@ export const BackupManagement = () => {
                 {config.externalPath && (
                   <ListItem>
                     <ListItemIcon>
-                      <CloudDownloadIcon />
+                      <DownloadIcon />
                     </ListItemIcon>
                     <ListItemText
                       primary="External Backup Path"

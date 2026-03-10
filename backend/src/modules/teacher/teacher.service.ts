@@ -4,9 +4,7 @@ import StaffAssignment from '@models/StaffAssignment.model';
 import Class from '@models/Class.model';
 import Student from '@models/Student.model';
 import AttendanceRecord from '@models/AttendanceRecord.model';
-import Timetable from '@models/Timetable.model';
-import { Subject, ClassSubject } from '@models/Subject.model';
-import { logger } from '@utils/logger';
+import { Period, Timetable } from '@models/Timetable.model';
 import { StudentStatus } from '@models/Student.model';
 
 interface ScheduleItem {
@@ -50,6 +48,10 @@ interface Notification {
   time: string;
 }
 
+type ClassSummary = Pick<Class, 'gradeLevel' | 'section'>;
+type AssignmentWithClass = StaffAssignment & { class?: ClassSummary };
+type PeriodWithTimetable = Period & { timetable?: Pick<Timetable, 'classId'> };
+
 class TeacherService {
   async getStaffFromUserId(userId: number): Promise<Staff | null> {
     return Staff.findOne({
@@ -60,8 +62,6 @@ class TeacherService {
   async getTodaySchedule(staffId: number): Promise<ScheduleItem[]> {
     const today = new Date();
     const dayOfWeek = today.getDay();
-    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const dayName = dayNames[dayOfWeek];
 
     const assignments = await StaffAssignment.findAll({
       where: {
@@ -77,17 +77,25 @@ class TeacherService {
       ],
     });
 
-    const classIds = assignments.map((a) => a.classId).filter(Boolean);
+    const classLabelMap = new Map<number, string>();
+    for (const assignment of assignments as AssignmentWithClass[]) {
+      if (assignment.classId && assignment.class) {
+        classLabelMap.set(
+          assignment.classId,
+          `${assignment.class.gradeLevel} ${assignment.class.section || ''}`.trim()
+        );
+      }
+    }
 
-    const timetables = await Timetable.findAll({
+    const periods = await Period.findAll({
       where: {
-        classId: { [Op.in]: classIds },
-        day: dayName,
+        teacherId: staffId,
       },
       include: [
         {
-          model: Class,
-          as: 'class',
+          model: Timetable,
+          as: 'timetable',
+          where: { dayOfWeek: dayOfWeek },
         },
       ],
       order: [['periodNumber', 'ASC']],
@@ -96,7 +104,7 @@ class TeacherService {
     const currentHour = today.getHours();
     const currentMinute = today.getMinutes();
 
-    return timetables.map((tt, index) => {
+    return (periods as PeriodWithTimetable[]).map((tt, index) => {
       const periodStart = this.parseTime(tt.startTime);
       let status = 'upcoming';
 
@@ -114,9 +122,9 @@ class TeacherService {
       return {
         period: tt.periodNumber || index + 1,
         time: tt.startTime && tt.endTime ? `${tt.startTime} - ${tt.endTime}` : 'N/A',
-        subject: tt.subjectName || 'N/A',
-        class: tt.class ? `${tt.class.className} ${tt.class.section || ''}`.trim() : 'N/A',
-        room: tt.room || 'N/A',
+        subject: 'N/A',
+        class: tt.timetable?.classId ? (classLabelMap.get(tt.timetable.classId) || 'N/A') : 'N/A',
+        room: tt.roomNumber || 'N/A',
         status,
       };
     });
@@ -156,7 +164,7 @@ class TeacherService {
           const classInfo = await Class.findByPk(classId);
           tasks.push({
             type: 'attendance',
-            title: `Mark attendance for ${classInfo?.className || 'Class'}`,
+            title: `Mark attendance for Grade ${classInfo?.gradeLevel || ''} ${classInfo?.section || ''}`.trim(),
             priority: 'high',
             count: studentsInClass - markedToday,
           });
@@ -189,7 +197,7 @@ class TeacherService {
 
     const performances: ClassPerformance[] = [];
 
-    for (const assignment of assignments) {
+    for (const assignment of assignments as AssignmentWithClass[]) {
       if (!assignment.classId || !assignment.class) continue;
 
       const students = await Student.findAll({
@@ -222,7 +230,7 @@ class TeacherService {
       const attendanceRate = totalRecords > 0 ? Math.round((attendanceRecords / totalRecords) * 100) : 0;
 
       performances.push({
-        class: `${assignment.class.className} ${assignment.class.section || ''}`.trim(),
+        class: `${assignment.class.gradeLevel} ${assignment.class.section || ''}`.trim(),
         attendance: attendanceRate,
         avgGrade: 3.5,
         assignments: 85,

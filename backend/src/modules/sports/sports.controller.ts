@@ -209,6 +209,31 @@ class SportsController {
   }
 
   /**
+   * Delete sport
+   * DELETE /api/v1/sports/:sportId
+   */
+  async deleteSport(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const sportId = parseInt(req.params.sportId);
+      const sport = await Sport.findByPk(sportId);
+      if (!sport) {
+        res.status(404).json({
+          success: false,
+          error: { code: 'SPORT_NOT_FOUND', message: `Sport with ID ${sportId} not found` },
+        });
+        return;
+      }
+      await sport.destroy();
+      res.status(200).json({
+        success: true,
+        message: 'Sport deleted successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Get all teams with filters
    * GET /api/v1/sports/teams
    * 
@@ -397,6 +422,24 @@ class SportsController {
         success: true,
         data: team,
         message: 'Team updated successfully'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get enrollments for a sport
+   * GET /api/v1/sports/:sportId/enrollments
+   */
+  async getSportEnrollments(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const sportId = parseInt(req.params.sportId);
+      const status = (req.query.status as 'active' | 'withdrawn' | 'completed') || 'active';
+      const enrollments = await sportsEnrollmentService.getSportEnrollments(sportId, status);
+      res.status(200).json({
+        success: true,
+        data: enrollments,
       });
     } catch (error) {
       next(error);

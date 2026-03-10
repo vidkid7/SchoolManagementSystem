@@ -3,6 +3,9 @@ import Grade, { NEBGrade } from '@models/Grade.model';
 import Exam from '@models/Exam.model';
 import Student from '@models/Student.model';
 import AttendanceRecord, { AttendanceStatus } from '@models/AttendanceRecord.model';
+import { Subject } from '@models/Subject.model';
+import Class from '@models/Class.model';
+import { AcademicYear, Term } from '@models/AcademicYear.model';
 import { calculateNEBGrade } from '@services/nebGrading.service';
 import rankCalculationService from './rankCalculation.service';
 import { Op } from 'sequelize';
@@ -214,6 +217,29 @@ class ReportCardService {
       throw new Error(`No exams found for term ${termId} and academic year ${academicYearId}`);
     }
 
+    const term = await Term.findOne({
+      where: {
+        termId,
+        academicYearId
+      }
+    });
+    const academicYear = await AcademicYear.findByPk(academicYearId);
+    const firstExam = exams[0];
+    const classInfo = await Class.findByPk(firstExam.classId);
+
+    const subjectIds = Array.from(new Set(exams.map(exam => exam.subjectId)));
+    const subjectsById = new Map<number, any>();
+    if (subjectIds.length > 0) {
+      const subjects = await Subject.findAll({
+        where: {
+          subjectId: {
+            [Op.in]: subjectIds
+          }
+        }
+      });
+      subjects.forEach(subject => subjectsById.set(subject.subjectId, subject));
+    }
+
     // Get all grades for this student in this term
     const examIds = exams.map(e => e.examId);
     const grades = await Grade.findAll({
@@ -234,12 +260,14 @@ class ReportCardService {
 
       const subjectId = exam.subjectId;
       
+      const subjectMeta = subjectsById.get(subjectId);
       if (!subjectGrades.has(subjectId)) {
         // Initialize subject grade info
         subjectGrades.set(subjectId, {
           subjectId,
-          subjectName: `Subject ${subjectId}`, // TODO: Get from Subject model
-          creditHours: 0, // TODO: Get from Subject model
+          subjectName: subjectMeta?.nameEn || `Subject ${subjectId}`,
+          subjectNameNp: subjectMeta?.nameNp,
+          creditHours: subjectMeta?.creditHours || 1,
           theoryMarks: 0,
           practicalMarks: 0,
           totalMarks: 0,
@@ -279,17 +307,24 @@ class ReportCardService {
     const termGPA = this.calculateTermGPA(subjects);
 
     // Get rank information
-    // For simplicity, we'll use the first exam's class for rank calculation
-    const firstExam = exams[0];
     const rankInfo = await rankCalculationService.getStudentRank(
       firstExam.examId,
       studentId
     );
 
     // Calculate attendance summary
-    // TODO: Get term dates from Term model
-    const termStartDate = new Date(); // Placeholder
-    const termEndDate = new Date(); // Placeholder
+    const termStartDate = term
+      ? new Date(term.startDate)
+      : exams.reduce((min, exam) => {
+          const examDate = new Date(exam.examDate);
+          return examDate < min ? examDate : min;
+        }, new Date(exams[0].examDate));
+    const termEndDate = term
+      ? new Date(term.endDate)
+      : exams.reduce((max, exam) => {
+          const examDate = new Date(exam.examDate);
+          return examDate > max ? examDate : max;
+        }, new Date(exams[0].examDate));
     const attendance = await this.calculateAttendanceSummary(
       studentId,
       termStartDate,
@@ -313,10 +348,11 @@ class ReportCardService {
       
       // Academic Information
       academicYearId,
-      academicYearName: 'Academic Year', // TODO: Get from AcademicYear model
+      academicYearName: academicYear?.name || `Academic Year ${academicYearId}`,
       termId,
-      termName: 'Term', // TODO: Get from Term model
-      className: 'Class', // TODO: Get from Class model
+      termName: term?.name || `Term ${termId}`,
+      className: classInfo ? `Grade ${classInfo.gradeLevel}` : `Class ${firstExam.classId}`,
+      sectionName: classInfo?.section,
       
       // Grades
       subjects,
@@ -324,7 +360,7 @@ class ReportCardService {
       
       // Rank
       rank: rankInfo?.rank || 0,
-      totalStudents: rankInfo ? subjects.length : 0,
+      totalStudents: rankInfo ? await Grade.count({ where: { examId: firstExam.examId } }) : 0,
       percentile: rankInfo?.percentile || 0,
       
       // Attendance
@@ -332,7 +368,7 @@ class ReportCardService {
       
       // Metadata
       generatedAt: new Date(),
-      generatedBy: 0 // TODO: Get from context
+      generatedBy: grades[0]?.enteredBy || 0
     };
 
     return reportCardData;

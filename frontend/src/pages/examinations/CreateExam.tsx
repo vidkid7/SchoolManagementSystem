@@ -101,7 +101,7 @@ export function CreateExam() {
           }
           return { data: { data: fallbackClasses } }; 
         }),
-        api.get('/academic/academic-years').catch(() => { 
+        api.get('/academic/years').catch(() => { 
           // Silently use fallback data
           return { data: { data: [
             { academicYearId: 1, yearName: '2025-2026' },

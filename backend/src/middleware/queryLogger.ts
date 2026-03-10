@@ -9,7 +9,7 @@ export function enableSlowQueryLogging(sequelize: Sequelize): void {
   (sequelize as any).query = async function (...args: any[]) {
     const start = Date.now();
     try {
-      const result = await originalQuery(...args);
+      const result = await (originalQuery as (...queryArgs: any[]) => Promise<unknown>)(...args);
       const duration = Date.now() - start;
 
       if (duration >= SLOW_QUERY_THRESHOLD_MS) {

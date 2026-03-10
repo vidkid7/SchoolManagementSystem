@@ -112,6 +112,7 @@ const TAB_ICONS = [
   <Assessment key="exam" />,
   <LibraryBooks key="library" />,
   <SportsScore key="sports" />,
+  <School key="teacherPerf" />,
 ];
 
 const GRADIENTS = {
@@ -170,6 +171,16 @@ interface SportsData {
   bySport: Array<{ sportName: string; participantCount: number }>;
 }
 
+interface TeacherPerformanceData {
+  teacherId: number;
+  teacherName: string;
+  attendanceRate?: number;
+  totalClasses?: number;
+  classesAttended?: number;
+  syllabusCompletion?: number;
+  subjects?: unknown[];
+}
+
   const ReportsAnalytics: React.FC = () => {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
@@ -183,6 +194,7 @@ interface SportsData {
     endDate: '',
     classId: '',
     section: '',
+    teacherId: '',
   });
 
   const [enrollmentData, setEnrollmentData] = useState<EnrollmentData | null>(null);
@@ -192,22 +204,38 @@ interface SportsData {
   const [libraryData, setLibraryData] = useState<LibraryData | null>(null);
   const [ecaData, setEcaData] = useState<ECAData | null>(null);
   const [sportsData, setSportsData] = useState<SportsData | null>(null);
+  const [teacherPerformanceData, setTeacherPerformanceData] = useState<TeacherPerformanceData | null>(null);
 
   useEffect(() => {
     fetchAllData();
   }, []);
 
+  const getDateRangeParams = () => {
+    if (filters.startDate && filters.endDate) {
+      return { startDate: filters.startDate, endDate: filters.endDate };
+    }
+
+    const now = new Date();
+    const startDate = `${now.getFullYear()}-01-01`;
+    const endDate = `${now.getFullYear()}-12-31`;
+    return { startDate, endDate };
+  };
+
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const [enrollmentRes, attendanceRes, feeRes, examRes, libraryRes, ecaRes, sportsRes] = await Promise.allSettled([
+      const dateRangeParams = getDateRangeParams();
+      const teacherParams = filters.teacherId ? { teacherId: filters.teacherId } : {};
+
+      const [enrollmentRes, attendanceRes, feeRes, examRes, libraryRes, ecaRes, sportsRes, teacherPerfRes] = await Promise.allSettled([
         apiClient.get('/api/v1/reports/enrollment'),
-        apiClient.get('/api/v1/reports/attendance', { params: { startDate: '2024-01-01', endDate: '2024-12-31' } }),
-        apiClient.get('/api/v1/reports/fee-collection', { params: { startDate: '2024-01-01', endDate: '2024-12-31' } }),
+        apiClient.get('/api/v1/reports/attendance', { params: dateRangeParams }),
+        apiClient.get('/api/v1/reports/fee-collection', { params: dateRangeParams }),
         apiClient.get('/api/v1/reports/examination'),
-        apiClient.get('/api/v1/reports/library', { params: { startDate: '2024-01-01', endDate: '2024-12-31' } }),
+        apiClient.get('/api/v1/reports/library', { params: dateRangeParams }),
         apiClient.get('/api/v1/reports/eca'),
         apiClient.get('/api/v1/reports/sports'),
+        apiClient.get('/api/v1/reports/teacher-performance', { params: teacherParams }),
       ]);
 
       if (enrollmentRes.status === 'fulfilled' && enrollmentRes.value.data.success) {
@@ -230,6 +258,9 @@ interface SportsData {
       }
       if (sportsRes.status === 'fulfilled' && sportsRes.value.data.success) {
         setSportsData(sportsRes.value.data.data);
+      }
+      if (teacherPerfRes.status === 'fulfilled' && teacherPerfRes.value.data.success) {
+        setTeacherPerformanceData(teacherPerfRes.value.data.data);
       }
     } catch (error) {
       console.error('Error fetching reports:', error);
@@ -751,6 +782,18 @@ interface SportsData {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {t('reports.ecaSports')}
                   <Chip label={formatNumber((ecaData?.totalActivities || 0) + (sportsData?.totalSports || 0))} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha('#ec4899', 0.15), color: '#ec4899' }} />
+                </Box>
+              } 
+            />
+            <Tab 
+              icon={TAB_ICONS[6]} 
+              iconPosition="start"
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {t('reports.teacherPerformance') || 'Teacher performance'}
+                  {teacherPerformanceData && (
+                    <Chip label={formatPercentage(teacherPerformanceData.attendanceRate || 0)} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha('#8b5cf6', 0.15), color: '#8b5cf6' }} />
+                  )}
                 </Box>
               } 
             />
@@ -1844,6 +1887,67 @@ interface SportsData {
                 </MotionCard>
               </Grid>
             </Grid>
+          </motion.div>
+        </TabPanel>
+
+        {/* TEACHER PERFORMANCE TAB */}
+        <TabPanel value={tabValue} index={6}>
+          <motion.div variants={containerVariants} initial="hidden" animate="visible">
+            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+              <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <School sx={{ color: '#8b5cf6' }} />
+                {t('reports.teacherPerformance') || 'Teacher performance'} {t('reports.overview')}
+              </Typography>
+              <TextField
+                size="small"
+                label="Teacher ID"
+                value={filters.teacherId}
+                onChange={(e) => handleFilterChange('teacherId', e.target.value)}
+                placeholder="1"
+                sx={{ width: 120 }}
+              />
+              <Button variant="outlined" size="small" startIcon={<Refresh />} onClick={fetchAllData}>Refresh</Button>
+            </Box>
+            {teacherPerformanceData ? (
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6} lg={3}>
+                  <Card sx={{ borderRadius: 3, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
+                    <CardContent sx={{ textAlign: 'center' }}>
+                      <Typography variant="body2" color="text.secondary">{t('reports.teacher') || 'Teacher'}</Typography>
+                      <Typography variant="h6" fontWeight={700}>{teacherPerformanceData.teacherName}</Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} md={6} lg={3}>
+                  <Card sx={{ borderRadius: 3, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
+                    <CardContent sx={{ textAlign: 'center' }}>
+                      <Typography variant="body2" color="text.secondary">{t('reports.attendanceRate') || 'Attendance rate'}</Typography>
+                      <Typography variant="h5" fontWeight={700} color="primary">{formatPercentage(teacherPerformanceData.attendanceRate ?? 0)}</Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} md={6} lg={3}>
+                  <Card sx={{ borderRadius: 3, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
+                    <CardContent sx={{ textAlign: 'center' }}>
+                      <Typography variant="body2" color="text.secondary">{t('reports.classesAttended') || 'Classes attended'}</Typography>
+                      <Typography variant="h5" fontWeight={700}>{teacherPerformanceData.classesAttended ?? 0} / {teacherPerformanceData.totalClasses ?? 0}</Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} md={6} lg={3}>
+                  <Card sx={{ borderRadius: 3, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
+                    <CardContent sx={{ textAlign: 'center' }}>
+                      <Typography variant="body2" color="text.secondary">{t('reports.syllabusCompletion') || 'Syllabus completion'}</Typography>
+                      <Typography variant="h5" fontWeight={700} color="success.main">{formatPercentage(teacherPerformanceData.syllabusCompletion ?? 0)}</Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+            ) : (
+              <Alert severity="info">
+                {t('reports.teacherPerformanceHint') || 'Enter a Teacher ID and click Refresh to load teacher performance.'}
+              </Alert>
+            )}
           </motion.div>
         </TabPanel>
       </Paper>

@@ -1,6 +1,7 @@
 import { logger } from '@utils/logger';
 import StaffAssignment, { AssignmentType } from '@models/StaffAssignment.model';
 import Staff from '@models/Staff.model';
+import { Subject } from '@models/Subject.model';
 
 /**
  * Staff Assignment Validation Service
@@ -107,14 +108,16 @@ class StaffAssignmentValidationService {
         return { isValid: false, errors, warnings };
       }
 
-      // Get subject category (would need Subject model)
-      // const subject = await Subject.findByPk(subjectId);
-      // const score = this.calculateSpecializationMatch(
-      //   staff.specialization,
-      //   subject.category
-      // );
+      const subject = await Subject.findByPk(subjectId);
+      if (!subject) {
+        errors.push('Subject not found');
+        return { isValid: false, errors, warnings };
+      }
 
-      const score = 75; // Placeholder
+      const score = this.calculateSpecializationMatch(
+        staff.specialization,
+        subject.nameEn
+      );
 
       if (score < 50) {
         warnings.push(

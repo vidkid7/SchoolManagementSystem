@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -20,9 +20,7 @@ import {
   FormControl,
   InputLabel,
   Alert,
-  Card,
-  CardContent,
-  Chip,
+  CircularProgress,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -51,19 +49,21 @@ function TabPanel({ children, value, index }: TabPanelProps) {
 
 const AdminSettings: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [schoolConfig, setSchoolConfig] = useState({
-    name: 'Nepal Model Secondary School',
-    nameNp: 'नेपाल मोडल माध्यमिक विद्यालय',
-    address: 'Kathmandu, Nepal',
-    phone: '+977-01-4XXXXXX',
-    email: 'info@school.edu.np',
-    website: 'https://school.edu.np',
-    principalName: 'Mr. Ram Bahadur Thapa',
-    establishedYear: '2045',
-    schoolCode: 'SCH001',
+    name: '',
+    nameNp: '',
+    address: '',
+    phone: '',
+    email: '',
+    website: '',
+    principalName: '',
+    establishedYear: '',
+    schoolCode: '',
   });
 
   const [systemSettings, setSystemSettings] = useState({
@@ -83,23 +83,175 @@ const AdminSettings: React.FC = () => {
     backupEnabled: true,
     backupSchedule: 'daily',
     backupRetention: 30,
+    communication: {
+      sms: {
+        provider: 'sparrow',
+        apiKey: '',
+        senderId: '',
+        enabled: true,
+      },
+      email: {
+        host: '',
+        port: 587,
+        username: '',
+        password: '',
+        fromEmail: '',
+        fromName: '',
+        enabled: true,
+      },
+      smsBalance: { balance: 0, used: 0 },
+    },
   });
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [schoolResult, dateFormatResult, communicationResult] = await Promise.allSettled([
+          apiClient.get('/api/v1/config/school'),
+          apiClient.get('/api/v1/system-settings/date-format'),
+          apiClient.get('/api/v1/communication/settings'),
+        ]);
+
+        const schoolData =
+          schoolResult.status === 'fulfilled'
+            ? (schoolResult.value.data?.data ?? null)
+            : null;
+        const dateData =
+          dateFormatResult.status === 'fulfilled'
+            ? (dateFormatResult.value.data?.data ?? null)
+            : null;
+        const communicationData =
+          communicationResult.status === 'fulfilled'
+            ? (communicationResult.value.data?.data ?? null)
+            : null;
+
+        if (schoolData) {
+          setSchoolConfig((prev) => ({
+            ...prev,
+            name: schoolData.schoolNameEn || '',
+            nameNp: schoolData.schoolNameNp || '',
+            address: schoolData.addressEn || '',
+            phone: schoolData.phone || '',
+            email: schoolData.email || '',
+            website: schoolData.website || '',
+            schoolCode: schoolData.schoolCode || '',
+          }));
+        }
+
+        setSystemSettings((prev) => {
+          const portalSettings = communicationData?.portalSettings || {};
+          return {
+            ...prev,
+            ...portalSettings,
+            dateFormat:
+              portalSettings.dateFormat ||
+              (schoolData?.defaultCalendarSystem || (dateData?.dateFormat?.toUpperCase?.() === 'AD' ? 'AD' : 'BS')),
+            currency: portalSettings.currency || dateData?.currency || schoolData?.currency || prev.currency,
+            timezone: portalSettings.timezone || schoolData?.timezone || prev.timezone,
+            language:
+              portalSettings.language ||
+              (schoolData?.defaultLanguage === 'english' ? 'en' : 'ne'),
+            enableSMS: communicationData?.sms?.enabled ?? portalSettings.enableSMS ?? prev.enableSMS,
+            enableEmail: communicationData?.email?.enabled ?? portalSettings.enableEmail ?? prev.enableEmail,
+            communication: {
+              sms: {
+                ...prev.communication.sms,
+                ...(communicationData?.sms || {}),
+              },
+              email: {
+                ...prev.communication.email,
+                ...(communicationData?.email || {}),
+              },
+              smsBalance: communicationData?.smsBalance || prev.communication.smsBalance,
+            },
+          };
+        });
+      } catch (loadError: any) {
+        setError(loadError?.response?.data?.error?.message || 'Failed to load settings');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadSettings();
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
+    setError(null);
     try {
-      await Promise.allSettled([
-        apiClient.put('/api/v1/config/school', schoolConfig),
-        apiClient.put('/api/v1/system-settings', systemSettings),
+      const schoolPayload = {
+        schoolNameEn: schoolConfig.name,
+        schoolNameNp: schoolConfig.nameNp,
+        addressEn: schoolConfig.address,
+        phone: schoolConfig.phone || undefined,
+        email: schoolConfig.email || undefined,
+        website: schoolConfig.website || undefined,
+        schoolCode: schoolConfig.schoolCode || undefined,
+        defaultCalendarSystem: systemSettings.dateFormat === 'AD' ? 'AD' : 'BS',
+        defaultLanguage: systemSettings.language === 'en' ? 'english' : 'nepali',
+        timezone: systemSettings.timezone,
+        currency: systemSettings.currency,
+      };
+
+      const dateFormatPayload = {
+        dateFormat: systemSettings.dateFormat,
+        currency: systemSettings.currency,
+      };
+
+      const communicationPayload = {
+        sms: {
+          ...systemSettings.communication.sms,
+          enabled: systemSettings.enableSMS,
+        },
+        email: {
+          ...systemSettings.communication.email,
+          enabled: systemSettings.enableEmail,
+        },
+        smsBalance: systemSettings.communication.smsBalance,
+        portalSettings: {
+          academicYearStart: systemSettings.academicYearStart,
+          dateFormat: systemSettings.dateFormat,
+          currency: systemSettings.currency,
+          timezone: systemSettings.timezone,
+          language: systemSettings.language,
+          attendanceThreshold: systemSettings.attendanceThreshold,
+          gradingSystem: systemSettings.gradingSystem,
+          maxLoginAttempts: systemSettings.maxLoginAttempts,
+          sessionTimeout: systemSettings.sessionTimeout,
+          enableSMS: systemSettings.enableSMS,
+          enableEmail: systemSettings.enableEmail,
+          enableOfflineMode: systemSettings.enableOfflineMode,
+          enablePaymentGateway: systemSettings.enablePaymentGateway,
+          backupEnabled: systemSettings.backupEnabled,
+          backupSchedule: systemSettings.backupSchedule,
+          backupRetention: systemSettings.backupRetention,
+        },
+      };
+
+      await Promise.all([
+        apiClient.put('/api/v1/config/school', schoolPayload),
+        apiClient.put('/api/v1/system-settings/date-format', dateFormatPayload),
+        apiClient.put('/api/v1/communication/settings', communicationPayload),
       ]);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch {
-      // Handle error
+    } catch (saveError: any) {
+      setError(saveError?.response?.data?.error?.message || 'Failed to save settings');
     } finally {
       setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 3, display: 'flex', justifyContent: 'center' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3 }}>
@@ -118,6 +270,11 @@ const AdminSettings: React.FC = () => {
       {saved && (
         <Alert severity="success" sx={{ mb: 2 }}>
           Settings saved successfully!
+        </Alert>
+      )}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
         </Alert>
       )}
 

@@ -12,6 +12,10 @@ import { conversationService } from './conversation.service';
 import { groupConversationService } from './groupConversation.service';
 import { groupMessageService } from './groupMessage.service';
 import { attachmentService } from './attachment.service';
+import AuditLog, { AuditAction } from '@models/AuditLog.model';
+import NotificationTemplate from '@models/NotificationTemplate.model';
+import User from '@models/User.model';
+import { Op } from 'sequelize';
 
 export class CommunicationController {
   /**
@@ -1118,6 +1122,149 @@ export class CommunicationController {
     }
   }
 
+  private getRequestMeta(req: Request): { ipAddress: string | null; userAgent: string | null } {
+    const forwardedFor = req.get('x-forwarded-for');
+    const ipAddress = forwardedFor ? forwardedFor.split(',')[0].trim() : req.ip || req.socket.remoteAddress || null;
+    return {
+      ipAddress,
+      userAgent: req.get('user-agent') || null,
+    };
+  }
+
+  private getAudienceForRole(role?: string): string | null {
+    switch (role) {
+      case 'Student':
+        return 'students';
+      case 'Parent':
+        return 'parents';
+      case 'Class_Teacher':
+      case 'Subject_Teacher':
+      case 'Department_Head':
+        return 'teachers';
+      case 'Librarian':
+      case 'Accountant':
+      case 'Transport_Manager':
+      case 'Hostel_Warden':
+      case 'Non_Teaching_Staff':
+        return 'staff';
+      default:
+        return null;
+    }
+  }
+
+  private normalizeRoleFilters(targetRoles: string[]): string[] {
+    const roleMap: Record<string, string[]> = {
+      student: ['Student'],
+      parent: ['Parent'],
+      teacher: ['Class_Teacher', 'Subject_Teacher', 'Department_Head'],
+      staff: ['School_Admin', 'Librarian', 'Accountant', 'Transport_Manager', 'Hostel_Warden', 'Non_Teaching_Staff'],
+      admin: ['School_Admin', 'Municipality_Admin'],
+      Student: ['Student'],
+      Parent: ['Parent'],
+      Class_Teacher: ['Class_Teacher'],
+      Subject_Teacher: ['Subject_Teacher'],
+      Department_Head: ['Department_Head'],
+      School_Admin: ['School_Admin'],
+      Municipality_Admin: ['Municipality_Admin'],
+      Librarian: ['Librarian'],
+      Accountant: ['Accountant'],
+      Transport_Manager: ['Transport_Manager'],
+      Hostel_Warden: ['Hostel_Warden'],
+      Non_Teaching_Staff: ['Non_Teaching_Staff'],
+    };
+
+    const normalized = new Set<string>();
+    for (const role of targetRoles) {
+      const mapped = roleMap[role];
+      if (mapped && mapped.length) {
+        mapped.forEach(value => normalized.add(value));
+      }
+    }
+
+    return Array.from(normalized);
+  }
+
+  private canManageAnnouncement(userRole?: string, publishedBy?: number, userId?: number): boolean {
+    if (!userId) {
+      return false;
+    }
+
+    const privilegedRoles = ['School_Admin', 'Municipality_Admin'];
+    if (userRole && privilegedRoles.includes(userRole)) {
+      return true;
+    }
+
+    return typeof publishedBy === 'number' && publishedBy === userId;
+  }
+
+  private buildAnnouncementFromLog(log: AuditLog): Record<string, any> | null {
+    if (log.action === AuditAction.DELETE) {
+      return null;
+    }
+
+    const payload = (log.newValue || {}) as Record<string, any>;
+    if (!payload || Object.keys(payload).length === 0) {
+      return null;
+    }
+
+    return {
+      id: log.entityId,
+      title: payload.title || '',
+      content: payload.content || '',
+      targetAudience: payload.targetAudience || 'all',
+      targetClasses: payload.targetClasses || [],
+      priority: payload.priority || 'medium',
+      publishedBy: payload.publishedBy ?? log.userId,
+      publishedByName: payload.publishedByName || 'Administrator',
+      publishedAt: payload.publishedAt || log.timestamp,
+      expiresAt: payload.expiresAt || null,
+    };
+  }
+
+  private async getCurrentAnnouncements(): Promise<Array<Record<string, any>>> {
+    const logs = await AuditLog.findAll({
+      where: { entityType: 'announcement' },
+      order: [['timestamp', 'ASC']],
+    });
+
+    const announcements = new Map<number, Record<string, any>>();
+
+    for (const log of logs) {
+      const currentState = this.buildAnnouncementFromLog(log);
+      if (!currentState) {
+        announcements.delete(log.entityId);
+        continue;
+      }
+
+      announcements.set(log.entityId, currentState);
+    }
+
+    return Array.from(announcements.values()).sort(
+      (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+    );
+  }
+
+  private async getAnnouncementByIdFromLogs(announcementId: number): Promise<Record<string, any> | null> {
+    const logs = await AuditLog.findAll({
+      where: {
+        entityType: 'announcement',
+        entityId: announcementId,
+      },
+      order: [['timestamp', 'ASC']],
+    });
+
+    if (logs.length === 0) {
+      return null;
+    }
+
+    let state: Record<string, any> | null = null;
+    for (const log of logs) {
+      state = this.buildAnnouncementFromLog(log);
+    }
+
+    return state;
+  }
+
   // ==================== ANNOUNCEMENT METHODS ====================
 
   /**
@@ -1127,60 +1274,45 @@ export class CommunicationController {
   async getAnnouncements(req: Request, res: Response): Promise<void> {
     try {
       const { targetAudience, page = 1, limit = 20 } = req.query;
-      const userId = req.user?.userId;
       const userRole = req.user?.role;
+      const roleAudience = this.getAudienceForRole(userRole);
+      const pageNumber = Number(page) || 1;
+      const pageLimit = Number(limit) || 20;
 
-      // Mock announcements data - in production, fetch from database
-      const announcements = [
-        {
-          id: 1,
-          title: 'School Annual Day Celebration',
-          content: 'We are pleased to announce the Annual Day celebration on 15th March 2025. All parents are cordially invited.',
-          targetAudience: 'all',
-          priority: 'high',
-          publishedBy: 1,
-          publishedByName: 'Principal',
-          publishedAt: new Date().toISOString(),
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: 2,
-          title: 'Parent-Teacher Meeting',
-          content: 'PTM scheduled for 20th March 2025 from 9 AM to 1 PM. Please attend to discuss your child\'s progress.',
-          targetAudience: 'parents',
-          priority: 'medium',
-          publishedBy: 1,
-          publishedByName: 'Vice Principal',
-          publishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: 3,
-          title: 'Science Exhibition',
-          content: 'Science exhibition will be held on 25th March. Students are encouraged to participate with innovative projects.',
-          targetAudience: 'students',
-          priority: 'low',
-          publishedBy: 2,
-          publishedByName: 'Science HOD',
-          publishedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-      ];
+      const announcements = await this.getCurrentAnnouncements();
 
       let filteredAnnouncements = announcements;
-      if (targetAudience && targetAudience !== 'all') {
-        filteredAnnouncements = announcements.filter(a => 
-          a.targetAudience === targetAudience || a.targetAudience === 'all'
+      if (roleAudience) {
+        filteredAnnouncements = filteredAnnouncements.filter(
+          announcement =>
+            announcement.targetAudience === 'all' || announcement.targetAudience === roleAudience
         );
       }
+
+      if (targetAudience && targetAudience !== 'all') {
+        filteredAnnouncements = filteredAnnouncements.filter(
+          announcement =>
+            announcement.targetAudience === targetAudience || announcement.targetAudience === 'all'
+        );
+      }
+
+      const now = new Date();
+      filteredAnnouncements = filteredAnnouncements.filter(
+        announcement => !announcement.expiresAt || new Date(announcement.expiresAt) > now
+      );
+
+      const offset = (pageNumber - 1) * pageLimit;
+      const paginatedAnnouncements = filteredAnnouncements.slice(offset, offset + pageLimit);
 
       res.status(200).json({
         success: true,
         data: {
-          announcements: filteredAnnouncements,
+          announcements: paginatedAnnouncements,
           meta: {
-            page: Number(page),
-            limit: Number(limit),
+            page: pageNumber,
+            limit: pageLimit,
             total: filteredAnnouncements.length,
-            totalPages: 1,
+            totalPages: Math.max(1, Math.ceil(filteredAnnouncements.length / pageLimit)),
           },
         },
       });
@@ -1201,29 +1333,30 @@ export class CommunicationController {
    */
   async getAnnouncementById(req: Request, res: Response): Promise<void> {
     try {
-      const { announcementId } = req.params;
+      const announcementId = parseInt(req.params.announcementId, 10);
+      const announcement = await this.getAnnouncementByIdFromLogs(announcementId);
 
-      const announcement = {
-        id: Number(announcementId),
-        title: 'Sample Announcement',
-        content: 'This is a sample announcement content.',
-        targetAudience: 'all',
-        priority: 'medium',
-        publishedBy: 1,
-        publishedByName: 'Administrator',
-        publishedAt: new Date().toISOString(),
-      };
+      if (!announcement) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Announcement not found',
+          },
+        });
+        return;
+      }
 
       res.status(200).json({
         success: true,
         data: announcement,
       });
     } catch (error) {
-      res.status(404).json({
+      res.status(400).json({
         success: false,
         error: {
-          code: 'NOT_FOUND',
-          message: 'Announcement not found',
+          code: 'FETCH_FAILED',
+          message: error instanceof Error ? error.message : 'Failed to fetch announcement',
         },
       });
     }
@@ -1237,20 +1370,54 @@ export class CommunicationController {
     try {
       const { title, content, targetAudience, targetClasses, priority, expiresAt } = req.body;
       const userId = req.user?.userId;
-      const userName = req.user?.firstName || 'Administrator';
+      const userName = req.user?.username || 'Administrator';
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'User not authenticated',
+          },
+        });
+        return;
+      }
+
+      const maxEntityId = await AuditLog.max('entityId', {
+        where: { entityType: 'announcement' },
+      });
+      const announcementId = (typeof maxEntityId === 'number' ? maxEntityId : 0) + 1;
 
       const announcement = {
-        id: Date.now(),
+        id: announcementId,
         title,
         content,
         targetAudience: targetAudience || 'all',
-        targetClasses: targetClasses || [],
+        targetClasses: Array.isArray(targetClasses) ? targetClasses : [],
         priority: priority || 'medium',
         publishedBy: userId,
         publishedByName: userName,
         publishedAt: new Date().toISOString(),
         expiresAt: expiresAt || null,
       };
+
+      const requestMeta = this.getRequestMeta(req);
+      await AuditLog.create({
+        userId,
+        entityType: 'announcement',
+        entityId: announcementId,
+        action: AuditAction.CREATE,
+        oldValue: null,
+        newValue: announcement,
+        changedFields: null,
+        ipAddress: requestMeta.ipAddress,
+        userAgent: requestMeta.userAgent,
+        metadata: {
+          module: 'communication',
+          source: 'announcement',
+        },
+        timestamp: new Date(),
+      });
 
       res.status(201).json({
         success: true,
@@ -1274,23 +1441,73 @@ export class CommunicationController {
    */
   async updateAnnouncement(req: Request, res: Response): Promise<void> {
     try {
-      const { announcementId } = req.params;
+      const announcementId = parseInt(req.params.announcementId, 10);
       const { title, content, targetAudience, targetClasses, priority, expiresAt } = req.body;
       const userId = req.user?.userId;
-      const userName = req.user?.firstName || 'Administrator';
+      const userName = req.user?.username || 'Administrator';
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'User not authenticated',
+          },
+        });
+        return;
+      }
+
+      const existingAnnouncement = await this.getAnnouncementByIdFromLogs(announcementId);
+      if (!existingAnnouncement) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Announcement not found',
+          },
+        });
+        return;
+      }
+
+      if (!this.canManageAnnouncement(req.user?.role, existingAnnouncement.publishedBy, userId)) {
+        res.status(403).json({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to update this announcement',
+          },
+        });
+        return;
+      }
 
       const announcement = {
-        id: Number(announcementId),
-        title: title || 'Updated Announcement',
-        content: content || 'Updated content',
-        targetAudience: targetAudience || 'all',
-        targetClasses: targetClasses || [],
-        priority: priority || 'medium',
-        publishedBy: userId,
-        publishedByName: userName,
-        publishedAt: new Date().toISOString(),
-        expiresAt: expiresAt || null,
+        ...existingAnnouncement,
+        title: title ?? existingAnnouncement.title,
+        content: content ?? existingAnnouncement.content,
+        targetAudience: targetAudience ?? existingAnnouncement.targetAudience,
+        targetClasses: Array.isArray(targetClasses) ? targetClasses : existingAnnouncement.targetClasses || [],
+        priority: priority ?? existingAnnouncement.priority,
+        publishedByName: existingAnnouncement.publishedByName || userName,
+        expiresAt: expiresAt ?? existingAnnouncement.expiresAt ?? null,
       };
+
+      const requestMeta = this.getRequestMeta(req);
+      await AuditLog.create({
+        userId,
+        entityType: 'announcement',
+        entityId: announcementId,
+        action: AuditAction.UPDATE,
+        oldValue: existingAnnouncement,
+        newValue: announcement,
+        changedFields: null,
+        ipAddress: requestMeta.ipAddress,
+        userAgent: requestMeta.userAgent,
+        metadata: {
+          module: 'communication',
+          source: 'announcement',
+        },
+        timestamp: new Date(),
+      });
 
       res.status(200).json({
         success: true,
@@ -1314,7 +1531,60 @@ export class CommunicationController {
    */
   async deleteAnnouncement(req: Request, res: Response): Promise<void> {
     try {
-      const { announcementId } = req.params;
+      const announcementId = parseInt(req.params.announcementId, 10);
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'User not authenticated',
+          },
+        });
+        return;
+      }
+
+      const existingAnnouncement = await this.getAnnouncementByIdFromLogs(announcementId);
+      if (!existingAnnouncement) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Announcement not found',
+          },
+        });
+        return;
+      }
+
+      if (!this.canManageAnnouncement(req.user?.role, existingAnnouncement.publishedBy, userId)) {
+        res.status(403).json({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to delete this announcement',
+          },
+        });
+        return;
+      }
+
+      const requestMeta = this.getRequestMeta(req);
+      await AuditLog.create({
+        userId,
+        entityType: 'announcement',
+        entityId: announcementId,
+        action: AuditAction.DELETE,
+        oldValue: existingAnnouncement,
+        newValue: null,
+        changedFields: null,
+        ipAddress: requestMeta.ipAddress,
+        userAgent: requestMeta.userAgent,
+        metadata: {
+          module: 'communication',
+          source: 'announcement',
+        },
+        timestamp: new Date(),
+      });
 
       res.status(200).json({
         success: true,
@@ -1337,15 +1607,66 @@ export class CommunicationController {
    */
   async sendBulkNotification(req: Request, res: Response): Promise<void> {
     try {
-      const { title, message, targetAudience, targetClasses, channels } = req.body;
+      const { title, message, targetAudience, channels } = req.body;
       const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'User not authenticated',
+          },
+        });
+        return;
+      }
 
-      // In production, this would queue notifications for sending
+      const audienceRoleMap: Record<string, string[]> = {
+        students: ['Student'],
+        parents: ['Parent'],
+        teachers: ['Class_Teacher', 'Subject_Teacher', 'Department_Head'],
+        staff: ['School_Admin', 'Librarian', 'Accountant', 'Transport_Manager', 'Hostel_Warden', 'Non_Teaching_Staff'],
+      };
+
+      const userWhere: Record<string, any> = {};
+      if (targetAudience && targetAudience !== 'all' && audienceRoleMap[targetAudience]) {
+        userWhere.role = { [Op.in]: audienceRoleMap[targetAudience] };
+      }
+
+      const recipientCount = await User.count({
+        where: userWhere,
+      });
+
+      const notificationPayload = {
+        type: 'push',
+        recipient: targetAudience || 'all',
+        subject: title || 'Bulk Notification',
+        message,
+        status: 'sent',
+        channels: channels || ['in-app', 'email'],
+        recipientCount,
+        sentAt: new Date().toISOString(),
+      };
+
+      const requestMeta = this.getRequestMeta(req);
+      await AuditLog.create({
+        userId,
+        entityType: 'communication_notification',
+        entityId: 0,
+        action: AuditAction.CREATE,
+        oldValue: null,
+        newValue: notificationPayload,
+        changedFields: null,
+        ipAddress: requestMeta.ipAddress,
+        userAgent: requestMeta.userAgent,
+        metadata: { module: 'communication', source: 'bulk-notification' },
+        timestamp: new Date(),
+      });
+
       const result = {
         sent: true,
-        recipientCount: targetAudience === 'all' ? 500 : targetAudience === 'students' ? 300 : targetAudience === 'parents' ? 280 : 50,
-        channels: channels || ['in-app', 'email'],
-        sentAt: new Date().toISOString(),
+        recipientCount,
+        channels: notificationPayload.channels,
+        sentAt: notificationPayload.sentAt,
       };
 
       res.status(200).json({
@@ -1378,33 +1699,29 @@ export class CommunicationController {
         return;
       }
 
-      const history = [
-        {
-          id: 1,
-          type: 'sms',
-          recipient: '9800000001',
-          message: 'Your fee payment is due.',
-          status: 'sent',
-          sentAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      const logs = await AuditLog.findAll({
+        where: {
+          entityType: 'communication_notification',
+          userId,
+          action: AuditAction.CREATE,
         },
-        {
-          id: 2,
-          type: 'email',
-          recipient: 'parent@example.com',
-          subject: 'Exam Results',
-          message: 'Please check the exam results.',
-          status: 'sent',
-          sentAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: 3,
-          type: 'push',
-          recipient: 'All Students',
-          message: 'School closed tomorrow due to public holiday.',
-          status: 'sent',
-          sentAt: new Date().toISOString(),
-        },
-      ];
+        order: [['timestamp', 'DESC']],
+        limit: 200,
+      });
+
+      const history = logs.map(log => {
+        const payload = (log.newValue || {}) as Record<string, any>;
+        return {
+          id: log.auditLogId,
+          type: payload.type || 'push',
+          recipient: payload.recipient || payload.targetAudience || 'N/A',
+          subject: payload.subject,
+          message: payload.message || '',
+          status: payload.status || 'sent',
+          sentAt: (payload.sentAt as string) || log.timestamp.toISOString(),
+          error: payload.error || undefined,
+        };
+      });
 
       res.status(200).json({ success: true, data: history });
     } catch (error) {
@@ -1424,19 +1741,41 @@ export class CommunicationController {
         return;
       }
 
-      const type = req.query.type as string;
+      const type = req.query.type as 'sms' | 'email' | undefined;
+      const where: Record<string, any> = { isActive: true };
+      if (type === 'sms') {
+        where.channel = 'sms';
+      } else if (type === 'email') {
+        where.channel = 'email';
+      } else {
+        where.channel = { [Op.in]: ['sms', 'email'] };
+      }
 
-      const smsTemplates = [
-        { id: 1, name: 'Fee Reminder', content: 'Dear {name}, your fee of Rs. {amount} is due on {date}. Please pay on time.', variables: ['name', 'amount', 'date'] },
-        { id: 2, name: 'Exam Notice', content: 'Dear {name}, your exam is scheduled on {date} at {time}.', variables: ['name', 'date', 'time'] },
-      ];
+      const templates = await NotificationTemplate.findAll({
+        where,
+        order: [['updatedAt', 'DESC']],
+      });
 
-      const emailTemplates = [
-        { id: 3, name: 'Fee Receipt', subject: 'Fee Receipt - {studentName}', body: 'Dear {parentName},\n\nWe confirm receipt of Rs. {amount} for {studentName}.\n\nThank you.', variables: ['parentName', 'studentName', 'amount'] },
-        { id: 4, name: 'Result Notification', subject: 'Exam Results - {studentName}', body: 'Dear {parentName},\n\nThe exam results for {studentName} are now available.\n\nRegards,\nSchool Administration', variables: ['parentName', 'studentName'] },
-      ];
+      const data = templates.map(template => {
+        const base = {
+          id: template.id,
+          name: template.name,
+          variables: template.variables || [],
+        };
 
-      const data = type === 'sms' ? smsTemplates : type === 'email' ? emailTemplates : [...smsTemplates, ...emailTemplates];
+        if (template.channel === 'sms') {
+          return {
+            ...base,
+            content: template.templateEn,
+          };
+        }
+
+        return {
+          ...base,
+          subject: template.subject || '',
+          body: template.templateEn,
+        };
+      });
 
       res.status(200).json({ success: true, data });
     } catch (error) {
@@ -1456,11 +1795,19 @@ export class CommunicationController {
         return;
       }
 
-      const settings = {
+      const settingsLog = await AuditLog.findOne({
+        where: {
+          entityType: 'communication_settings',
+          action: { [Op.in]: [AuditAction.CREATE, AuditAction.UPDATE] },
+        },
+        order: [['timestamp', 'DESC']],
+      });
+
+      const settings = (settingsLog?.newValue as Record<string, any>) || {
         sms: {
           provider: 'sparrow',
           apiKey: '',
-          senderId: 'SCHOOL',
+          senderId: '',
           enabled: true,
         },
         email: {
@@ -1469,10 +1816,10 @@ export class CommunicationController {
           username: '',
           password: '',
           fromEmail: '',
-          fromName: 'School Management System',
+          fromName: '',
           enabled: true,
         },
-        smsBalance: { balance: 500, used: 120 },
+        smsBalance: { balance: 0, used: 0 },
       };
 
       res.status(200).json({ success: true, data: settings });
@@ -1493,7 +1840,26 @@ export class CommunicationController {
         return;
       }
 
-      res.status(200).json({ success: true, message: 'Settings saved successfully' });
+      const settings = req.body || {};
+      const requestMeta = this.getRequestMeta(req);
+      await AuditLog.create({
+        userId,
+        entityType: 'communication_settings',
+        entityId: 1,
+        action: AuditAction.UPDATE,
+        oldValue: null,
+        newValue: settings,
+        changedFields: null,
+        ipAddress: requestMeta.ipAddress,
+        userAgent: requestMeta.userAgent,
+        metadata: {
+          module: 'communication',
+          source: 'settings',
+        },
+        timestamp: new Date(),
+      });
+
+      res.status(200).json({ success: true, data: settings, message: 'Settings saved successfully' });
     } catch (error) {
       res.status(500).json({ success: false, error: { code: 'SAVE_FAILED', message: 'Failed to save settings' } });
     }
@@ -1518,7 +1884,30 @@ export class CommunicationController {
         return;
       }
 
-      res.status(200).json({ success: true, message: `SMS sent to ${Array.isArray(recipients) ? recipients.length : 1} recipient(s)` });
+      const recipientList = Array.isArray(recipients) ? recipients : [recipients];
+      const requestMeta = this.getRequestMeta(req);
+      await AuditLog.create({
+        userId,
+        entityType: 'communication_notification',
+        entityId: 0,
+        action: AuditAction.CREATE,
+        oldValue: null,
+        newValue: {
+          type: 'sms',
+          recipient: recipientList.join(', '),
+          message,
+          status: 'sent',
+          scheduleTime: scheduleTime || null,
+          sentAt: new Date().toISOString(),
+        },
+        changedFields: null,
+        ipAddress: requestMeta.ipAddress,
+        userAgent: requestMeta.userAgent,
+        metadata: { module: 'communication', source: 'sms' },
+        timestamp: new Date(),
+      });
+
+      res.status(200).json({ success: true, message: `SMS sent to ${recipientList.length} recipient(s)` });
     } catch (error) {
       res.status(500).json({ success: false, error: { code: 'SEND_FAILED', message: 'Failed to send SMS' } });
     }
@@ -1543,7 +1932,39 @@ export class CommunicationController {
         return;
       }
 
-      res.status(200).json({ success: true, message: 'Bulk SMS queued successfully' });
+      const roles = Array.isArray(targetRoles) && targetRoles.length > 0
+        ? this.normalizeRoleFilters(targetRoles)
+        : null;
+      const userWhere: Record<string, any> = {};
+      if (roles) {
+        userWhere.role = { [Op.in]: roles };
+      }
+
+      const recipientCount = await User.count({ where: userWhere });
+      const requestMeta = this.getRequestMeta(req);
+      await AuditLog.create({
+        userId,
+        entityType: 'communication_notification',
+        entityId: 0,
+        action: AuditAction.CREATE,
+        oldValue: null,
+        newValue: {
+          type: 'sms',
+          recipient: roles ? roles.join(', ') : 'all',
+          message,
+          status: 'sent',
+          scheduleTime: scheduleTime || null,
+          recipientCount,
+          sentAt: new Date().toISOString(),
+        },
+        changedFields: null,
+        ipAddress: requestMeta.ipAddress,
+        userAgent: requestMeta.userAgent,
+        metadata: { module: 'communication', source: 'sms-bulk' },
+        timestamp: new Date(),
+      });
+
+      res.status(200).json({ success: true, data: { recipientCount }, message: 'Bulk SMS queued successfully' });
     } catch (error) {
       res.status(500).json({ success: false, error: { code: 'SEND_FAILED', message: 'Failed to send bulk SMS' } });
     }
@@ -1568,7 +1989,31 @@ export class CommunicationController {
         return;
       }
 
-      res.status(200).json({ success: true, message: `Email sent to ${Array.isArray(recipients) ? recipients.length : 1} recipient(s)` });
+      const recipientList = Array.isArray(recipients) ? recipients : [recipients];
+      const requestMeta = this.getRequestMeta(req);
+      await AuditLog.create({
+        userId,
+        entityType: 'communication_notification',
+        entityId: 0,
+        action: AuditAction.CREATE,
+        oldValue: null,
+        newValue: {
+          type: 'email',
+          recipient: recipientList.join(', '),
+          subject,
+          message: body,
+          status: 'sent',
+          scheduleTime: scheduleTime || null,
+          sentAt: new Date().toISOString(),
+        },
+        changedFields: null,
+        ipAddress: requestMeta.ipAddress,
+        userAgent: requestMeta.userAgent,
+        metadata: { module: 'communication', source: 'email' },
+        timestamp: new Date(),
+      });
+
+      res.status(200).json({ success: true, message: `Email sent to ${recipientList.length} recipient(s)` });
     } catch (error) {
       res.status(500).json({ success: false, error: { code: 'SEND_FAILED', message: 'Failed to send email' } });
     }
@@ -1593,7 +2038,40 @@ export class CommunicationController {
         return;
       }
 
-      res.status(200).json({ success: true, message: 'Push notification sent successfully' });
+      const roles = Array.isArray(targetRoles) && targetRoles.length > 0
+        ? this.normalizeRoleFilters(targetRoles)
+        : null;
+      const userWhere: Record<string, any> = {};
+      if (roles) {
+        userWhere.role = { [Op.in]: roles };
+      }
+
+      const recipientCount = await User.count({ where: userWhere });
+      const requestMeta = this.getRequestMeta(req);
+      await AuditLog.create({
+        userId,
+        entityType: 'communication_notification',
+        entityId: 0,
+        action: AuditAction.CREATE,
+        oldValue: null,
+        newValue: {
+          type: 'push',
+          recipient: roles ? roles.join(', ') : 'all',
+          subject: title,
+          message,
+          status: 'sent',
+          scheduleTime: scheduleTime || null,
+          recipientCount,
+          sentAt: new Date().toISOString(),
+        },
+        changedFields: null,
+        ipAddress: requestMeta.ipAddress,
+        userAgent: requestMeta.userAgent,
+        metadata: { module: 'communication', source: 'push' },
+        timestamp: new Date(),
+      });
+
+      res.status(200).json({ success: true, data: { recipientCount }, message: 'Push notification sent successfully' });
     } catch (error) {
       res.status(500).json({ success: false, error: { code: 'SEND_FAILED', message: 'Failed to send push notification' } });
     }

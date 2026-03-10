@@ -112,9 +112,10 @@ export const LibraryManagement = () => {
         ...(search && { search }),
       });
 
-      const response = await apiClient.get(`/library/books?${params}`);
-      setBooks(response.data?.data || []);
-      setTotal(response.data?.total || 0);
+      const response = await apiClient.get(`/api/v1/library/books?${params}`);
+      const result = response.data?.data;
+      setBooks(result?.books || []);
+      setTotal(result?.total || 0);
     } catch (error) {
       // Silently handle error - set empty arrays as fallback
       setBooks([]);
@@ -133,9 +134,9 @@ export const LibraryManagement = () => {
         status: 'issued',
       });
 
-      const response = await apiClient.get(`/library/issued?${params}`);
+      const response = await apiClient.get(`/api/v1/library/circulation?${params}`);
       setCirculations(response.data?.data || []);
-      setTotal(response.data?.total || 0);
+      setTotal(response.data?.meta?.total || response.data?.total || 0);
     } catch (error) {
       // Silently handle error - set empty arrays as fallback
       setCirculations([]);
@@ -166,7 +167,7 @@ export const LibraryManagement = () => {
 
   const handleIssueBook = async () => {
     try {
-      await apiClient.post('/library/issue', {
+      await apiClient.post('/api/v1/library/issue', {
         student_id: selectedStudentId,
         book_id: selectedBookId,
       });
@@ -183,7 +184,7 @@ export const LibraryManagement = () => {
 
   const handleReturnBook = async (circulationId: number) => {
     try {
-      await apiClient.post('/library/return', {
+      await apiClient.post('/api/v1/library/return', {
         circulation_id: circulationId,
       });
 

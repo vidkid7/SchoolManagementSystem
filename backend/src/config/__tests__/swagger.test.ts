@@ -78,10 +78,11 @@ describe('Swagger Configuration', () => {
     it('should have UserRole enum', () => {
       expect(spec.components.schemas.UserRole).toBeDefined();
       expect(spec.components.schemas.UserRole.type).toBe('string');
+      expect(spec.components.schemas.UserRole.enum).toContain('municipality_admin');
       expect(spec.components.schemas.UserRole.enum).toContain('school_admin');
       expect(spec.components.schemas.UserRole.enum).toContain('student');
       expect(spec.components.schemas.UserRole.enum).toContain('parent');
-      expect(spec.components.schemas.UserRole.enum.length).toBe(13);
+      expect(spec.components.schemas.UserRole.enum.length).toBe(14);
     });
 
     it('should have NEBGrade enum', () => {

@@ -43,7 +43,6 @@ import {
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import apiClient from '../../services/apiClient';
-import apiClient from '../../services/apiClient';
 import { motion } from 'framer-motion';
 
 const MotionCard = motion.create(Card);
@@ -73,6 +72,7 @@ interface StaffFormData {
 
 const FormSection = ({ icon, title, children, color = 'primary' }: { icon: React.ReactNode; title: string; children: React.ReactNode; color?: string }) => {
   const theme = useTheme();
+  const paletteColor = (theme.palette as any)[color]?.main || theme.palette.primary.main;
   return (
     <Paper 
       elevation={0}
@@ -84,7 +84,7 @@ const FormSection = ({ icon, title, children, color = 'primary' }: { icon: React
         transition: 'all 0.3s ease',
         '&:hover': {
           boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
-          borderColor: alpha(theme.palette[color as keyof typeof theme.palette]?.main || theme.palette.primary.main, 0.15),
+          borderColor: alpha(paletteColor, 0.15),
         }
       }}
     >
@@ -96,7 +96,7 @@ const FormSection = ({ icon, title, children, color = 'primary' }: { icon: React
           width: 40, 
           height: 40, 
           borderRadius: 2.5,
-          bgcolor: alpha(theme.palette[color as keyof typeof theme.palette]?.main || theme.palette.primary.main, 0.1),
+          bgcolor: alpha(paletteColor, 0.1),
         }}>
           {icon}
         </Box>

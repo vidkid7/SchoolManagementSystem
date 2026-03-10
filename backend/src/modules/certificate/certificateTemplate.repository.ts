@@ -41,7 +41,7 @@ async findAll(filters: CertificateTemplateFilters = {}): Promise<CertificateTemp
     }
 
     if (filters.isActive !== undefined) {
-      where.is_active = filters.isActive;
+      where.isActive = filters.isActive;
     }
 
     if (filters.search) {
@@ -63,7 +63,7 @@ async findAll(filters: CertificateTemplateFilters = {}): Promise<CertificateTemp
     return await CertificateTemplate.findAll({
       where: {
         type,
-        is_active: true,
+        isActive: true,
       },
       order: [['name', 'ASC']],
     });

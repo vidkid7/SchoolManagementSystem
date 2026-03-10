@@ -22,6 +22,7 @@
     "seed:holidays": "ts-node -r tsconfig-paths/register src/scripts/seed-nepal-holidays.ts",
     "seed:academic": "ts-node -r tsconfig-paths/register src/scripts/seed-academic-module.ts",
     "seed:examinations": "ts-node -r tsconfig-paths/register src/scripts/seed-examinations.ts",
+    "seed:municipality-tenancy": "ts-node -r tsconfig-paths/register src/scripts/assign-municipality-tenancy.ts",
     "optimize:db": "ts-node src/scripts/optimize-database.ts",
     "update:admin-password": "ts-node -r tsconfig-paths/register src/scripts/update-admin-password.ts",
     "reset:admin-direct": "ts-node -r tsconfig-paths/register src/scripts/reset-admin-direct.ts",

@@ -30,7 +30,8 @@ const ENTITY_TYPE_MAP: Record<string, string> = {
   '/api/v1/library/circulation': 'circulation',
   '/api/v1/eca': 'eca',
   '/api/v1/sports': 'sport',
-  '/api/v1/config/system-settings': 'system_setting',
+  '/api/v1/system-settings': 'system_setting',
+  '/api/v1/config/system-settings': 'system_setting', // legacy alias
   '/api/v1/config/roles': 'role',
   '/api/v1/config/permissions': 'permission',
   '/api/v1/certificates/templates': 'certificate_template',

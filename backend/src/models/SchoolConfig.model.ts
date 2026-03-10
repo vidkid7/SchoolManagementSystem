@@ -3,6 +3,7 @@ import sequelize from '@config/database';
 
 export interface SchoolConfigAttributes {
   id: string;
+  municipalityId?: string;
   // School Information
   schoolNameEn: string;
   schoolNameNp?: string;
@@ -35,6 +36,7 @@ export interface SchoolConfigCreationAttributes
   extends Optional<
     SchoolConfigAttributes,
     | 'id'
+    | 'municipalityId'
     | 'schoolNameNp'
     | 'schoolCode'
     | 'logoUrl'
@@ -63,6 +65,7 @@ export class SchoolConfig
   implements SchoolConfigAttributes
 {
   public id!: string;
+  public municipalityId?: string;
   public schoolNameEn!: string;
   public schoolNameNp?: string;
   public schoolCode?: string;
@@ -93,6 +96,11 @@ SchoolConfig.init(
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
+    },
+    municipalityId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'municipality_id',
     },
     schoolNameEn: {
       type: DataTypes.STRING(255),

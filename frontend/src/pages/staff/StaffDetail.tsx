@@ -46,7 +46,6 @@ import {
   Badge as BadgeIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
-import apiClient from '../../services/apiClient';
 import { motion } from 'framer-motion';
 import StaffDocuments from './StaffDocuments';
 
@@ -85,6 +84,7 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; labelKey: strin
 
 const InfoCard = ({ icon, title, children, color = 'primary' }: { icon: React.ReactNode; title: string; children: React.ReactNode; color?: string }) => {
   const theme = useTheme();
+  const paletteColor = (theme.palette as any)[color]?.main || theme.palette.primary.main;
   return (
     <Paper 
       elevation={0}
@@ -108,7 +108,7 @@ const InfoCard = ({ icon, title, children, color = 'primary' }: { icon: React.Re
           width: 36, 
           height: 36, 
           borderRadius: 2,
-          bgcolor: alpha(theme.palette[color as keyof typeof theme.palette]?.main || theme.palette.primary.main, 0.1),
+          bgcolor: alpha(paletteColor, 0.1),
         }}>
           {icon}
         </Box>

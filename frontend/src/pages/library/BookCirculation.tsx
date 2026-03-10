@@ -32,6 +32,9 @@ import {
   Assignment as IssueIcon,
   AssignmentReturn as ReturnIcon,
   Payment as PaymentIcon,
+  Update as RenewIcon,
+  Bookmark as ReserveIcon,
+  Cancel as CancelIcon,
 } from '@mui/icons-material';
 import api from '../../config/api';
 
@@ -88,9 +91,23 @@ export function BookCirculation() {
   const [selectedCirculation, setSelectedCirculation] = useState<Circulation | null>(null);
   const [fineAmount, setFineAmount] = useState(0);
 
+  // Reservations
+  const [reservations, setReservations] = useState<any[]>([]);
+  const [reservationBookId, setReservationBookId] = useState('');
+  const [reservationsLoading, setReservationsLoading] = useState(false);
+  const [reserveDialog, setReserveDialog] = useState(false);
+  const [reserveForm, setReserveForm] = useState({ bookId: '', studentId: '' });
+
+  // Fines by student
+  const [finesStudentId, setFinesStudentId] = useState('');
+  const [finesList, setFinesList] = useState<any[]>([]);
+  const [finesLoading, setFinesLoading] = useState(false);
+
   useEffect(() => {
-    fetchCirculations();
-  }, [tabValue, page, rowsPerPage]);
+    if (tabValue < 3) fetchCirculations();
+    else if (tabValue === 3 && reservationBookId) fetchReservations();
+    else if (tabValue === 4 && finesStudentId) fetchFines();
+  }, [tabValue, page, rowsPerPage, reservationBookId, finesStudentId]);
 
   const fetchCirculations = async () => {
     try {
@@ -159,6 +176,84 @@ export function BookCirculation() {
     }
   };
 
+  const handleRenew = async (circulationId: number) => {
+    try {
+      await api.post('/library/renew', { circulationId });
+      setSuccess('Book renewed successfully');
+      fetchCirculations();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to renew book');
+    }
+  };
+
+  const fetchReservations = async () => {
+    if (!reservationBookId) return;
+    setReservationsLoading(true);
+    try {
+      const res = await api.get('/library/reservations', { params: { bookId: reservationBookId } });
+      setReservations(res.data?.data ?? []);
+    } catch {
+      setReservations([]);
+    } finally {
+      setReservationsLoading(false);
+    }
+  };
+
+  const handleCancelReservation = async (reservationId: number) => {
+    try {
+      await api.put(`/library/reservations/${reservationId}/cancel`, { reason: 'Cancelled by staff' });
+      setSuccess('Reservation cancelled');
+      fetchReservations();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to cancel reservation');
+    }
+  };
+
+  const handleReserveBook = async () => {
+    try {
+      await api.post('/library/reserve', {
+        bookId: parseInt(reserveForm.bookId, 10),
+        studentId: parseInt(reserveForm.studentId, 10),
+      });
+      setSuccess('Book reserved successfully');
+      setReserveDialog(false);
+      setReserveForm({ bookId: '', studentId: '' });
+      if (reservationBookId) fetchReservations();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to reserve book');
+    }
+  };
+
+  const fetchFines = async () => {
+    if (!finesStudentId) return;
+    setFinesLoading(true);
+    try {
+      const res = await api.get(`/library/fines/${finesStudentId}`);
+      setFinesList(Array.isArray(res.data?.data) ? res.data.data : []);
+    } catch {
+      setFinesList([]);
+    } finally {
+      setFinesLoading(false);
+    }
+  };
+
+  const handlePayFineById = async (fineId: number, amount: number) => {
+    try {
+      await api.post(`/library/fines/${fineId}/pay`, {
+        amount: Math.max(0.01, amount),
+        paymentMethod: 'cash',
+      });
+      setSuccess('Fine paid successfully');
+      fetchFines();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to pay fine');
+    }
+  };
+
   const openReturnDialog = (circulation: Circulation) => {
     setSelectedCirculation(circulation);
     // Calculate fine if overdue
@@ -179,13 +274,22 @@ export function BookCirculation() {
         <Typography variant="h5" fontWeight={600}>
           Book Circulation
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<IssueIcon />}
-          onClick={() => setIssueDialog(true)}
-        >
-          Issue Book
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="outlined"
+            startIcon={<ReserveIcon />}
+            onClick={() => setReserveDialog(true)}
+          >
+            Reserve Book
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<IssueIcon />}
+            onClick={() => setIssueDialog(true)}
+          >
+            Issue Book
+          </Button>
+        </Box>
       </Box>
 
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
@@ -196,6 +300,8 @@ export function BookCirculation() {
           <Tab label="Issued Books" />
           <Tab label="Overdue Books" />
           <Tab label="Return History" />
+          <Tab label="Reservations" />
+          <Tab label="Fines by Student" />
         </Tabs>
 
         <TabPanel value={tabValue} index={0}>
@@ -244,6 +350,15 @@ export function BookCirculation() {
                         />
                       </TableCell>
                       <TableCell align="center">
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<RenewIcon />}
+                          onClick={() => handleRenew(circulation.circulationId)}
+                          sx={{ mr: 0.5 }}
+                        >
+                          Renew
+                        </Button>
                         <Button
                           size="small"
                           variant="outlined"
@@ -375,16 +490,125 @@ export function BookCirculation() {
           </TableContainer>
         </TabPanel>
 
+        <TabPanel value={tabValue} index={3}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+            <TextField
+              size="small"
+              label="Book ID"
+              value={reservationBookId}
+              onChange={(e) => setReservationBookId(e.target.value)}
+              placeholder="Enter book ID"
+              sx={{ width: 160 }}
+            />
+            <Button variant="contained" onClick={fetchReservations} disabled={!reservationBookId || reservationsLoading}>
+              Load Reservations
+            </Button>
+          </Box>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>ID</TableCell>
+                  <TableCell>Book</TableCell>
+                  <TableCell>Student</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Date</TableCell>
+                  <TableCell align="center">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {reservationsLoading ? (
+                  <TableRow><TableCell colSpan={6} align="center">Loading...</TableCell></TableRow>
+                ) : reservations.length === 0 ? (
+                  <TableRow><TableCell colSpan={6} align="center">No reservations (enter Book ID and Load)</TableCell></TableRow>
+                ) : (
+                  reservations.map((r: any) => (
+                    <TableRow key={r.reservationId ?? r.id}>
+                      <TableCell>{r.reservationId ?? r.id}</TableCell>
+                      <TableCell>{r.Book?.title ?? r.bookTitle ?? r.bookId}</TableCell>
+                      <TableCell>{r.Student ? `${r.Student.firstNameEn ?? ''} ${r.Student.lastNameEn ?? ''}`.trim() : r.studentId}</TableCell>
+                      <TableCell><Chip label={r.status ?? 'pending'} size="small" /></TableCell>
+                      <TableCell>{r.reservationDate ? new Date(r.reservationDate).toLocaleDateString() : '-'}</TableCell>
+                      <TableCell align="center">
+                        {r.status !== 'cancelled' && r.status !== 'fulfilled' && (
+                          <Button size="small" color="error" startIcon={<CancelIcon />} onClick={() => handleCancelReservation(r.reservationId ?? r.id)}>
+                            Cancel
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={4}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+            <TextField
+              size="small"
+              label="Student ID"
+              value={finesStudentId}
+              onChange={(e) => setFinesStudentId(e.target.value)}
+              placeholder="Enter student ID"
+              sx={{ width: 160 }}
+            />
+            <Button variant="contained" onClick={fetchFines} disabled={!finesStudentId || finesLoading}>
+              Load Fines
+            </Button>
+          </Box>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Fine ID</TableCell>
+                  <TableCell>Amount</TableCell>
+                  <TableCell>Balance</TableCell>
+                  <TableCell>Reason</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell align="center">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {finesLoading ? (
+                  <TableRow><TableCell colSpan={6} align="center">Loading...</TableCell></TableRow>
+                ) : finesList.length === 0 ? (
+                  <TableRow><TableCell colSpan={6} align="center">No fines (enter Student ID and Load)</TableCell></TableRow>
+                ) : (
+                  finesList.map((f: any) => {
+                    const balance = parseFloat(f.balance ?? f.fineAmount ?? 0);
+                    const paid = (f.status ?? '').toLowerCase() === 'paid';
+                    return (
+                      <TableRow key={f.fineId ?? f.id}>
+                        <TableCell>{f.fineId ?? f.id}</TableCell>
+                        <TableCell>NPR {parseFloat(f.fineAmount ?? 0).toLocaleString()}</TableCell>
+                        <TableCell>NPR {balance.toLocaleString()}</TableCell>
+                        <TableCell>{f.fineReason ?? '-'}</TableCell>
+                        <TableCell><Chip label={f.status ?? 'pending'} size="small" color={paid ? 'success' : 'warning'} /></TableCell>
+                        <TableCell align="center">
+                          {!paid && balance > 0 && (
+                            <Button size="small" variant="outlined" startIcon={<PaymentIcon />} onClick={() => handlePayFineById(f.fineId ?? f.id, balance)}>
+                              Pay
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </TabPanel>
+
         <TablePagination
           component="div"
-          count={total}
-          page={page}
-          onPageChange={(_, newPage) => setPage(newPage)}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={(e) => {
-            setRowsPerPage(parseInt(e.target.value, 10));
-            setPage(0);
-          }}
+          count={tabValue < 3 ? total : (tabValue === 3 ? reservations.length : finesList.length)}
+          page={tabValue < 3 ? page : 0}
+          onPageChange={(_, newPage) => tabValue < 3 && setPage(newPage)}
+          rowsPerPage={tabValue < 3 ? rowsPerPage : 10}
+          onRowsPerPageChange={(e) => { if (tabValue < 3) { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); } }}
         />
       </Paper>
 
@@ -481,6 +705,41 @@ export function BookCirculation() {
           <Button onClick={() => setReturnDialog(false)}>Cancel</Button>
           <Button onClick={handleReturnBook} variant="contained" color="success">
             Confirm Return
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Reserve Book Dialog */}
+      <Dialog open={reserveDialog} onClose={() => setReserveDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Reserve Book</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12}>
+              <TextField
+                label="Book ID"
+                value={reserveForm.bookId}
+                onChange={(e) => setReserveForm({ ...reserveForm, bookId: e.target.value })}
+                required
+                fullWidth
+                type="number"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Student ID"
+                value={reserveForm.studentId}
+                onChange={(e) => setReserveForm({ ...reserveForm, studentId: e.target.value })}
+                required
+                fullWidth
+                type="number"
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReserveDialog(false)}>Cancel</Button>
+          <Button onClick={handleReserveBook} variant="contained" disabled={!reserveForm.bookId || !reserveForm.studentId}>
+            Reserve
           </Button>
         </DialogActions>
       </Dialog>

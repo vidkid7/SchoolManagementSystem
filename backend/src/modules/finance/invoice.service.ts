@@ -3,6 +3,8 @@ import feeStructureRepository from './feeStructure.repository';
 import { Invoice, InvoiceStatus } from '@models/Invoice.model';
 import sequelize from '@config/database';
 import { Transaction } from 'sequelize';
+import { AcademicYear } from '@models/AcademicYear.model';
+import Student, { StudentStatus } from '@models/Student.model';
 
 /**
  * Invoice Service
@@ -40,9 +42,21 @@ class InvoiceService {
    * Example: INV-2081-00001
    */
   private async generateInvoiceNumber(academicYearId: number): Promise<string> {
-    // Get academic year to extract year
-    // For now, use current year - in production, fetch from academic year
-    const year = new Date().getFullYear();
+    const academicYear: any = await AcademicYear.findByPk(academicYearId, {
+      attributes: ['name', 'startDateBS']
+    });
+    const year = (() => {
+      const name = academicYear?.name as string | undefined;
+      if (name) {
+        const match = name.match(/(\d{4})/);
+        if (match) return match[1];
+      }
+      const startDateBS = academicYear?.startDateBS as string | undefined;
+      if (startDateBS && /^\d{4}-\d{2}-\d{2}$/.test(startDateBS)) {
+        return startDateBS.slice(0, 4);
+      }
+      return new Date().getFullYear().toString();
+    })();
     
     // Find the last invoice number for this year
     const lastInvoice = await Invoice.findOne({
@@ -388,14 +402,26 @@ class InvoiceService {
    * Note: This requires Student model integration
    */
   async generateInvoicesForClass(
-    _classId: number,
-    _feeStructureId: number,
-    _academicYearId: number,
-    _dueDate: string
+    classId: number,
+    feeStructureId: number,
+    academicYearId: number,
+    dueDate: string
   ): Promise<BulkGenerateResult> {
-    // In a real implementation, we would fetch all students in the class
-    // For now, this is a placeholder that would need to be integrated with Student model
-    throw new Error('Not implemented: generateInvoicesForClass requires Student model integration');
+    const students = await Student.findAll({
+      where: {
+        currentClassId: classId,
+        status: StudentStatus.ACTIVE
+      },
+      attributes: ['studentId']
+    });
+
+    const studentIds = students.map(student => student.studentId);
+    return this.bulkGenerateInvoices({
+      studentIds,
+      feeStructureId,
+      academicYearId,
+      dueDate
+    });
   }
 
   /**

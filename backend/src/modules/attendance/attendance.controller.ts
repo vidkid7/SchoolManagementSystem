@@ -454,16 +454,6 @@ class AttendanceController {
       dateTo
     } = req.query;
 
-    // Note: Staff attendance is not yet implemented in the system
-    // This is a placeholder for future implementation
-    // For now, return empty data with appropriate message
-
-    logger.warn('Staff attendance report requested but not yet implemented', {
-      staffId,
-      dateFrom,
-      dateTo
-    });
-
     const report = await attendanceService.getStaffAttendanceReport({
       staffId: staffId ? Number(staffId) : undefined,
       dateFrom: dateFrom ? new Date(dateFrom as string) : undefined,

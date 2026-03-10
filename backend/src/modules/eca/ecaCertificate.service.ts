@@ -14,6 +14,7 @@
 import ECAEnrollment from '@models/ECAEnrollment.model';
 import ECAAchievement from '@models/ECAAchievement.model';
 import ECA from '@models/ECA.model';
+import { AcademicYear } from '@models/AcademicYear.model';
 import { logger } from '@utils/logger';
 
 export interface ParticipationCertificateData {
@@ -579,9 +580,11 @@ class ECACertificateService {
 
   private async getAcademicYearName(academicYearId: number): Promise<string> {
     try {
-      // This would typically query the AcademicYear model
-      // For now, return a placeholder
-      return `Academic Year ${academicYearId}`;
+      const academicYear: any = await AcademicYear.findByPk(academicYearId);
+      if (!academicYear) {
+        return `Academic Year ${academicYearId}`;
+      }
+      return academicYear.name || `Academic Year ${academicYearId}`;
     } catch (error) {
       logger.warn('Error getting academic year name', { error, academicYearId });
       return 'Unknown Academic Year';

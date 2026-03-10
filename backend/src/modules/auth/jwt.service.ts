@@ -15,6 +15,8 @@ export interface JWTPayload {
   username: string;
   email: string;
   role: UserRole;
+  municipalityId?: string;
+  schoolConfigId?: string;
   permissions?: string[];
   iat?: number;
   exp?: number;
@@ -294,6 +296,8 @@ class JWTService {
         username: decoded.username,
         email: decoded.email,
         role: decoded.role,
+        municipalityId: decoded.municipalityId,
+        schoolConfigId: decoded.schoolConfigId,
         permissions: decoded.permissions
       };
 

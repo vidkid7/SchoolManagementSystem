@@ -282,6 +282,30 @@ router.post(
 );
 
 /**
+ * @route   GET /api/v1/students/documents/:documentId
+ * @desc    Get document by id (global id from list)
+ * @access  Private (School_Admin, Class_Teacher)
+ */
+router.get(
+  '/documents/:documentId',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.CLASS_TEACHER),
+  studentController.getDocumentById
+);
+
+/**
+ * @route   DELETE /api/v1/students/documents/:documentId
+ * @desc    Delete document by id
+ * @access  Private (School_Admin)
+ */
+router.delete(
+  '/documents/:documentId',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN),
+  studentController.deleteDocumentById
+);
+
+/**
  * @route   POST /api/v1/students/:id/documents
  * @desc    Upload student documents
  * @access  Private (School_Admin)
@@ -293,6 +317,42 @@ router.post(
   validate(studentIdParamSchema, 'params'),
   documentUpload.array('documents', 5),
   studentController.uploadDocuments
+);
+
+/**
+ * @route   GET /api/v1/students/:id/documents/expired
+ * @route   GET /api/v1/students/:id/documents/expiring-soon
+ * @route   GET /api/v1/students/:id/documents/statistics
+ * @route   POST /api/v1/students/:id/documents/bulk
+ */
+router.get(
+  '/:id/documents/expired',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.CLASS_TEACHER),
+  validate(studentIdParamSchema, 'params'),
+  studentController.listExpiredDocuments
+);
+router.get(
+  '/:id/documents/expiring-soon',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.CLASS_TEACHER),
+  validate(studentIdParamSchema, 'params'),
+  studentController.listExpiringSoonDocuments
+);
+router.get(
+  '/:id/documents/statistics',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.CLASS_TEACHER),
+  validate(studentIdParamSchema, 'params'),
+  studentController.getDocumentStatistics
+);
+router.post(
+  '/:id/documents/bulk',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN),
+  validate(studentIdParamSchema, 'params'),
+  documentUpload.array('documents', 10),
+  studentController.uploadDocumentsBulk
 );
 
 /**
@@ -449,7 +509,8 @@ router.get(
     UserRole.SCHOOL_ADMIN,
     UserRole.CLASS_TEACHER,
     UserRole.PARENT,
-    UserRole.STUDENT
+    UserRole.STUDENT,
+    UserRole.LIBRARIAN
   ),
   validate(studentIdParamSchema, 'params'),
   studentController.getLibrary

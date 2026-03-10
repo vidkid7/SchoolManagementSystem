@@ -47,6 +47,7 @@ export const OfflineIndicator: React.FC = () => {
     if (!pwaState.isOnline) {
       setShowOfflineAlert(true);
       setShowOnlineAlert(false);
+      return undefined;
     } else {
       setShowOfflineAlert(false);
       setShowOnlineAlert(true);

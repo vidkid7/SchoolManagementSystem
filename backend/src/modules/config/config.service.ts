@@ -162,6 +162,7 @@ class ConfigService {
   private formatConfigResponse(config: SchoolConfig): SchoolConfigResponse {
     return {
       id: config.id,
+      municipalityId: config.municipalityId,
       schoolNameEn: config.schoolNameEn,
       schoolNameNp: config.schoolNameNp,
       schoolCode: config.schoolCode,

@@ -1,5 +1,5 @@
 Default Login Credentials
-All 13 roles seeded in the system:
+All 14 roles seeded in the system:
 
 1. School Admin
 Username: admin
@@ -92,5 +92,25 @@ Email: staff1@school.edu.np
 Role: Non_Teaching_Staff
 Access: Staff portal, documents, calendar, communication, announcements
 
+14. Municipality Admin (Default)
+Username: municipalityadmin
+Password: Municipality@123
+Email: municipality.admin@school.edu.np
+Role: Municipality_Admin
+Access: Municipality portal, municipality dashboard, school management, school-admin assignment
+
+Additional Municipality Admin (KMC)
+Username: kmcadmin
+Password: ChangeMe@123
+Email: kmc.admin@local.gov.np
+Role: Municipality_Admin
+Access: Municipality portal, municipality dashboard, school management, school-admin assignment
+
 
 go through each pages check if some frontend has missing backend then implement them and if some backend has misisng frontend implement,also check if they are using data from our database and are not using and dummys and hardcoded datas,also make sure they are consisten in data sharing and check the logic they are using are feasibles or are they hallucitings.also check routes they properly defined and used and configured
+
+
+Admin user (admin / Admin@123)
+- Sample teacher (teacher1 / Teacher@123)
+- Sample student (student1 / Student@123)
+- Sample parent (parent1 / Parent@123)

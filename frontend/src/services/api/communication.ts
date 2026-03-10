@@ -183,18 +183,27 @@ async getConversationMessages(
    * Send a message
    */
   async sendMessage(request: SendMessageRequest): Promise<Message> {
-    const formData = new FormData();
-    formData.append('recipientId', String(request.recipientId));
-    formData.append('content', request.content);
+    let attachmentUrls: string[] | undefined;
 
-    if (request.attachments) {
+    if (request.attachments && request.attachments.length > 0) {
+      const formData = new FormData();
       request.attachments.forEach((file) => {
-        formData.append('attachments', file);
+        formData.append('files', file);
       });
+
+      const uploadResponse = await apiClient.post(`${this.baseUrl}/attachments`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      attachmentUrls = (uploadResponse.data?.data?.attachments || [])
+        .map((attachment: { url?: string }) => attachment.url)
+        .filter((url: string | undefined): url is string => Boolean(url));
     }
 
-    const response = await apiClient.post(`${this.baseUrl}/messages`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    const response = await apiClient.post(`${this.baseUrl}/messages`, {
+      recipientId: request.recipientId,
+      content: request.content,
+      attachments: attachmentUrls,
     });
     return response.data.data;
   }
@@ -237,7 +246,10 @@ async getConversationMessages(
     const response = await apiClient.get(`${this.baseUrl}/messages/search`, {
       params: { q: query, page, limit },
     });
-    return response.data;
+    return {
+      messages: response.data.data || [],
+      meta: response.data.meta || { page, limit, total: 0, totalPages: 0 },
+    };
   }
 
   /**
@@ -333,21 +345,28 @@ async getGroupMessages(
    * Send group message
    */
   async sendGroupMessage(request: SendGroupMessageRequest): Promise<GroupMessage> {
-    const formData = new FormData();
-    formData.append('groupConversationId', String(request.groupConversationId));
-    formData.append('content', request.content);
+    let attachmentUrls: string[] | undefined;
 
-    if (request.attachments) {
+    if (request.attachments && request.attachments.length > 0) {
+      const formData = new FormData();
       request.attachments.forEach((file) => {
-        formData.append('attachments', file);
+        formData.append('files', file);
       });
+
+      const uploadResponse = await apiClient.post(`${this.baseUrl}/attachments`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      attachmentUrls = (uploadResponse.data?.data?.attachments || [])
+        .map((attachment: { url?: string }) => attachment.url)
+        .filter((url: string | undefined): url is string => Boolean(url));
     }
 
-    const response = await apiClient.post(
-      `${this.baseUrl}/groups/messages`,
-      formData,
-      { headers: { 'Content-Type': 'multipart/form-data' } }
-    );
+    const response = await apiClient.post(`${this.baseUrl}/groups/messages`, {
+      groupConversationId: request.groupConversationId,
+      content: request.content,
+      attachments: attachmentUrls,
+    });
     return response.data.data;
   }
 
@@ -431,7 +450,11 @@ async getGroupMessages(
     const response = await apiClient.get(`${this.baseUrl}/announcements`, {
       params,
     });
-    return response.data;
+    const payload = response.data?.data || response.data || {};
+    return {
+      announcements: payload.announcements || [],
+      meta: payload.meta || { page: params?.page || 1, limit: params?.limit || 20, total: 0, totalPages: 0 },
+    };
   }
 
   /**

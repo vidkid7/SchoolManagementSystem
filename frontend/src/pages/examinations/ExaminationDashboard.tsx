@@ -44,10 +44,27 @@ export function ExaminationDashboard() {
     pendingGrades: 0,
     publishedResults: 0,
   });
+  const [scheduleCount, setScheduleCount] = useState<number | null>(null);
 
   useEffect(() => {
     fetchStats();
+    fetchScheduleCount();
   }, []);
+
+  const fetchScheduleCount = async () => {
+    try {
+      const start = new Date();
+      const end = new Date();
+      end.setMonth(end.getMonth() + 2);
+      const res = await api.get('/exam-schedules/by-date-range', {
+        params: { startDate: start.toISOString().split('T')[0], endDate: end.toISOString().split('T')[0] },
+      });
+      const list = res.data?.data || [];
+      setScheduleCount(Array.isArray(list) ? list.length : 0);
+    } catch {
+      setScheduleCount(null);
+    }
+  };
 
   const fetchStats = async () => {
     setLoading(true);

@@ -17,6 +17,8 @@ import SportsAchievement, { SportsAchievementCreationAttributes } from '@models/
 import SportsEnrollment from '@models/SportsEnrollment.model';
 import Sport from '@models/Sport.model';
 import Tournament from '@models/Tournament.model';
+import Student from '@models/Student.model';
+import { AcademicYear } from '@models/AcademicYear.model';
 import { logger } from '@utils/logger';
 
 export interface ParticipationCertificateData {
@@ -153,16 +155,39 @@ class SportsAchievementService {
   async getSchoolRecords(sportId?: number): Promise<SchoolRecord[]> {
     try {
       const records = await sportsAchievementRepository.getSchoolRecords(sportId);
+      if (records.length === 0) {
+        return [];
+      }
 
-      // TODO: Populate student names from Student model
-      // For now, records will have empty studentName field
+      const studentNameById = new Map<number, string>();
+      const uniqueStudentIds = [...new Set(records.map(record => record.studentId))];
+      try {
+        const students = await Student.findAll({
+          where: { studentId: uniqueStudentIds },
+          attributes: ['studentId', 'firstNameEn', 'middleNameEn', 'lastNameEn']
+        });
+
+        students.forEach(student => {
+          studentNameById.set(student.studentId, student.getFullNameEn());
+        });
+      } catch (lookupError) {
+        logger.warn('Failed to enrich school records with student names', {
+          error: lookupError,
+          requestedStudentIds: uniqueStudentIds.length
+        });
+      }
+
+      const enrichedRecords = records.map(record => ({
+        ...record,
+        studentName: studentNameById.get(record.studentId) || record.studentName
+      }));
 
       logger.info('School records retrieved', {
         sportId,
-        count: records.length
+        count: enrichedRecords.length
       });
 
-      return records;
+      return enrichedRecords;
     } catch (error) {
       logger.error('Error getting school records', { error, sportId });
       throw error;
@@ -733,9 +758,10 @@ class SportsAchievementService {
 
   private async getAcademicYearName(academicYearId: number): Promise<string> {
     try {
-      // TODO: Query the AcademicYear model
-      // For now, return a placeholder
-      return `Academic Year ${academicYearId}`;
+      const academicYear = await AcademicYear.findByPk(academicYearId, {
+        attributes: ['name']
+      });
+      return academicYear?.name || `Academic Year ${academicYearId}`;
     } catch (error) {
       logger.warn('Error getting academic year name', { error, academicYearId });
       return 'Unknown Academic Year';

@@ -111,6 +111,19 @@ router.put(
   financeController.updateFeeStructure
 );
 
+/**
+ * @route   DELETE /api/v1/finance/fee-structures/:id
+ * @desc    Delete fee structure
+ * @access  Private (School_Admin)
+ */
+router.delete(
+  '/fee-structures/:id',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN),
+  validate(feeStructureIdParamSchema, 'params'),
+  financeController.deleteFeeStructure
+);
+
 // ==================== Invoices ====================
 
 /**
@@ -189,6 +202,19 @@ router.put(
   financeController.updateInvoice
 );
 
+/**
+ * @route   POST /api/v1/finance/invoices/:id/send-reminder
+ * @desc    Send fee reminder for an invoice
+ * @access  Private (School_Admin, Accountant)
+ */
+router.post(
+  '/invoices/:id/send-reminder',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.ACCOUNTANT),
+  validate(invoiceIdParamSchema, 'params'),
+  financeController.sendInvoiceReminder
+);
+
 // ==================== Payments ====================
 
 /**
@@ -253,6 +279,68 @@ router.post(
   financeController.processPayment
 );
 
+/**
+ * @route   POST /api/v1/finance/payments/:paymentId/refund
+ * @desc    Process refund for a payment (frontend-friendly alias)
+ * @access  Private (School_Admin, Accountant)
+ */
+router.post(
+  '/payments/:paymentId/refund',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.ACCOUNTANT),
+  financeController.refundPaymentById
+);
+
+// ==================== Payment Gateways ====================
+
+/**
+ * @route   GET /api/v1/finance/payment-gateways/config
+ * @desc    Get payment gateway configurations
+ * @access  Private (School_Admin, Accountant)
+ */
+router.get(
+  '/payment-gateways/config',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.ACCOUNTANT),
+  financeController.getPaymentGatewayConfigs
+);
+
+/**
+ * @route   GET /api/v1/finance/payment-gateways/transactions
+ * @desc    List payment gateway transactions
+ * @access  Private (School_Admin, Accountant)
+ */
+router.get(
+  '/payment-gateways/transactions',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.ACCOUNTANT),
+  financeController.getPaymentGatewayTransactions
+);
+
+/**
+ * @route   PUT /api/v1/finance/payment-gateways/:gatewayKey
+ * @desc    Update payment gateway config
+ * @access  Private (School_Admin)
+ */
+router.put(
+  '/payment-gateways/:gatewayKey',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN),
+  financeController.updatePaymentGatewayConfig
+);
+
+/**
+ * @route   POST /api/v1/finance/payment-gateways/:gatewayKey/test
+ * @desc    Test gateway connection
+ * @access  Private (School_Admin)
+ */
+router.post(
+  '/payment-gateways/:gatewayKey/test',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN),
+  financeController.testPaymentGatewayConnection
+);
+
 // ==================== Refunds ====================
 
 /**
@@ -269,6 +357,18 @@ router.post(
 );
 
 // ==================== Reports ====================
+
+/**
+ * @route   GET /api/v1/finance/reports
+ * @desc    Get report by type (type=collection|pending|defaulters|outstanding)
+ * @access  Private (School_Admin, Accountant)
+ */
+router.get(
+  '/reports',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.ACCOUNTANT),
+  financeController.getReportByType
+);
 
 /**
  * @route   GET /api/v1/finance/reports/collection

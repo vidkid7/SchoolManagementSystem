@@ -64,11 +64,18 @@ router.get(
 
 /**
  * @route   GET /api/v1/eca
+ * @route   GET /api/v1/eca/list (alias for frontend)
  * @desc    List ECAs with filters and pagination
  * @access  Private (All authenticated)
  */
 router.get(
   '/',
+  authorize(...readRoles),
+  getECAsValidation,
+  ecaController.getECAs
+);
+router.get(
+  '/list',
   authorize(...readRoles),
   getECAsValidation,
   ecaController.getECAs

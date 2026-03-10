@@ -15,6 +15,8 @@ import ecaEventRepository from './ecaEvent.repository';
 import ecaEnrollmentRepository from './ecaEnrollment.repository';
 import ECA from '@models/ECA.model';
 import ECAEvent, { ECAEventCreationAttributes } from '@models/ECAEvent.model';
+import Notification from '@models/Notification.model';
+import Student from '@models/Student.model';
 import { logger } from '@utils/logger';
 import { Request } from 'express';
 
@@ -137,14 +139,37 @@ class ECAEventService {
 
       // 3. Extract student IDs
       const studentIds = enrollments.map(e => e.studentId);
+      const students = await Student.findAll({
+        where: { studentId: studentIds },
+        attributes: ['studentId', 'userId']
+      });
 
-      // TODO: Integrate with notification service to send actual notifications
-      // For now, we'll just log the notification intent
-      logger.info('Notifications sent to enrolled students', {
+      const notificationPayload = students
+        .filter(student => student.userId)
+        .map(student => ({
+          userId: student.userId as number,
+          type: 'info' as const,
+          category: 'announcement' as const,
+          title: `ECA Event: ${event.name}`,
+          message: `A new event "${event.name}" has been scheduled on ${new Date(event.eventDate).toLocaleDateString('en-GB')}.`,
+          data: {
+            eventId: event.eventId,
+            ecaId: event.ecaId,
+            studentId: student.studentId
+          },
+          isRead: false
+        }));
+
+      if (notificationPayload.length > 0) {
+        await Notification.bulkCreate(notificationPayload);
+      }
+
+      logger.info('Notifications created for enrolled students', {
         eventId,
         ecaId: event.ecaId,
         eventName: event.name,
         studentCount: studentIds.length,
+        notificationCount: notificationPayload.length,
         studentIds
       });
 

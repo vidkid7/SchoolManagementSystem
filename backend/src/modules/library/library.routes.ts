@@ -9,7 +9,7 @@
 import { Router } from 'express';
 import { libraryController } from './library.controller';
 import { authenticate, authorize } from '../../middleware/auth';
-import { validate } from '../../middleware/validation';
+import { validateRequest } from '../../middleware/validation';
 import { UserRole } from '../../models/User.model';
 import { libraryValidation } from './library.validation';
 
@@ -60,30 +60,60 @@ router.get(
 router.post(
   '/books',
   authorize(...manageRoles),
-  validate(libraryValidation.createBook),
+  validateRequest(libraryValidation.createBook),
   libraryController.createBook.bind(libraryController)
+);
+
+router.put(
+  '/books/:id',
+  authorize(...manageRoles),
+  libraryController.updateBook.bind(libraryController)
+);
+
+router.delete(
+  '/books/:id',
+  authorize(...manageRoles),
+  libraryController.deleteBook.bind(libraryController)
 );
 
 // ==================== Circulation Routes ====================
 
+router.get(
+  '/circulation',
+  authorize(...manageRoles),
+  libraryController.getCirculation.bind(libraryController)
+);
+
+router.post(
+  '/return/:id',
+  authorize(...manageRoles),
+  libraryController.returnBookById.bind(libraryController)
+);
+
+router.post(
+  '/pay-fine/:id',
+  authorize(...manageRoles),
+  libraryController.payFineByCirculationId.bind(libraryController)
+);
+
 router.post(
   '/issue',
   authorize(...manageRoles),
-  validate(libraryValidation.issueBook),
+  validateRequest(libraryValidation.issueBook),
   libraryController.issueBook.bind(libraryController)
 );
 
 router.post(
   '/return',
   authorize(...manageRoles),
-  validate(libraryValidation.returnBook),
+  validateRequest(libraryValidation.returnBook),
   libraryController.returnBook.bind(libraryController)
 );
 
 router.post(
   '/renew',
   authorize(...readRoles),
-  validate(libraryValidation.renewBook),
+  validateRequest(libraryValidation.renewBook),
   libraryController.renewBook.bind(libraryController)
 );
 
@@ -104,7 +134,7 @@ router.get(
 router.post(
   '/reserve',
   authorize(...readRoles),
-  validate(libraryValidation.reserveBook),
+  validateRequest(libraryValidation.reserveBook),
   libraryController.reserveBook.bind(libraryController)
 );
 
@@ -120,6 +150,32 @@ router.put(
   libraryController.cancelReservation.bind(libraryController)
 );
 
+// ==================== Categories ====================
+
+router.get(
+  '/categories',
+  authorize(...readRoles),
+  libraryController.getCategories.bind(libraryController)
+);
+
+router.post(
+  '/categories',
+  authorize(...manageRoles),
+  libraryController.createCategory.bind(libraryController)
+);
+
+router.put(
+  '/categories/:id',
+  authorize(...manageRoles),
+  libraryController.updateCategory.bind(libraryController)
+);
+
+router.delete(
+  '/categories/:id',
+  authorize(...manageRoles),
+  libraryController.deleteCategory.bind(libraryController)
+);
+
 // ==================== Fine Management Routes ====================
 
 router.get(
@@ -131,7 +187,7 @@ router.get(
 router.post(
   '/fines/:id/pay',
   authorize(...manageRoles),
-  validate(libraryValidation.payFine),
+  validateRequest(libraryValidation.payFine),
   libraryController.payFine.bind(libraryController)
 );
 

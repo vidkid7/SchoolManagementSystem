@@ -51,7 +51,6 @@ import {
   Refresh as RefreshIcon,
   Delete as DeleteIcon,
   Schedule as ScheduleIcon,
-  Template as TemplateIcon,
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
 } from '@mui/icons-material';
@@ -84,14 +83,14 @@ interface NotificationHistory {
 }
 
 interface SMSTemplate {
-  id: number;
+  id: string;
   name: string;
   content: string;
   variables: string[];
 }
 
 interface EmailTemplate {
-  id: number;
+  id: string;
   name: string;
   subject: string;
   body: string;
@@ -353,8 +352,9 @@ export const NotificationCenter = () => {
                       value={smsForm.templateId}
                       label="Template (Optional)"
                       onChange={(e) => {
-                        const template = templates.find(t => t.id === e.target.value) as SMSTemplate;
-                        setSmsForm({ ...smsForm, templateId: e.target.value, message: template?.content || '' });
+                        const templateId = String(e.target.value);
+                        const template = templates.find(t => String(t.id) === templateId) as SMSTemplate;
+                        setSmsForm({ ...smsForm, templateId, message: template?.content || '' });
                       }}
                     >
                       <MenuItem value="">None</MenuItem>
@@ -431,10 +431,11 @@ export const NotificationCenter = () => {
                   value={emailForm.templateId}
                   label="Template (Optional)"
                   onChange={(e) => {
-                    const template = templates.find(t => t.id === e.target.value) as EmailTemplate;
+                    const templateId = String(e.target.value);
+                    const template = templates.find(t => String(t.id) === templateId) as EmailTemplate;
                     setEmailForm({ 
                       ...emailForm, 
-                      templateId: e.target.value, 
+                      templateId, 
                       subject: template?.subject || '',
                       body: template?.body || ''
                     });

@@ -114,6 +114,7 @@ import reportRoutes from '@modules/report/report.routes';
 import configRoutes from '@modules/config/config.routes';
 import rolePermissionRoutes from '@modules/config/rolePermission.routes';
 import systemSettingsRoutes from '@modules/config/systemSettings.routes';
+import municipalityAdminRoutes from '@modules/config/municipalityAdmin.routes';
 import auditRoutes from '@modules/audit/audit.routes';
 import archiveRoutes from '@modules/archive/archive.routes';
 import backupRoutes from '@modules/backup/backup.routes';
@@ -151,6 +152,8 @@ app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/config', configRoutes);
 app.use('/api/v1/config', rolePermissionRoutes);
 app.use('/api/v1/system-settings', systemSettingsRoutes);
+app.use('/api/v1/municipality-admin', municipalityAdminRoutes);
+app.use('/api/v1/admin/municipality', municipalityAdminRoutes);
 app.use('/api/v1/audit', auditRoutes);
 app.use('/api/v1/archive', archiveRoutes);
 app.use('/api/v1/backup', backupRoutes);
@@ -175,4 +178,3 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 export default app;
-

@@ -3,17 +3,22 @@ import { AuthenticationError, AuthorizationError } from './errorHandler';
 import authService from '@modules/auth/auth.service';
 import { logger } from '@utils/logger';
 import { UserRole } from '@models/User.model';
+import {
+  resolveTenantContext,
+  runWithTenantContext,
+  TenantContextStore,
+} from './tenantContext';
 
 /**
  * Authentication Middleware
  * Verifies JWT token and attaches user data to request
  * Requirements: 1.4, 36.7
  */
-export const authenticate = (
+export const authenticate = async (
   req: Request,
   _res: Response,
   next: NextFunction
-): void => {
+): Promise<void> => {
   try {
     // Get token from Authorization header
     const authHeader = req.headers.authorization;
@@ -32,8 +37,21 @@ export const authenticate = (
       userId: decoded.userId,
       username: decoded.username,
       email: decoded.email,
-      role: decoded.role
+      role: decoded.role,
+      municipalityId: decoded.municipalityId,
+      schoolConfigId: decoded.schoolConfigId
     };
+
+    const tenantContext = await resolveTenantContext({
+      userId: decoded.userId,
+      role: decoded.role,
+      municipalityId: decoded.municipalityId,
+      schoolConfigId: decoded.schoolConfigId,
+    });
+
+    if (tenantContext.schoolConfigIds) {
+      req.user.allowedSchoolConfigIds = tenantContext.schoolConfigIds;
+    }
 
     // Log successful authentication
     logger.debug('User authenticated', {
@@ -43,7 +61,7 @@ export const authenticate = (
       method: req.method
     });
 
-    next();
+    runWithTenantContext(tenantContext, () => next());
   } catch (error) {
     logger.error('Authentication failed', {
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -51,7 +69,7 @@ export const authenticate = (
       method: req.method,
       ip: req.ip
     });
-    next(error);
+    runWithTenantContext({ enforceIsolation: false }, () => next(error));
   }
 };
 
@@ -148,12 +166,13 @@ export const requirePermissions = (...requiredPermissions: string[]) => {
  * Optional Authentication Middleware
  * Attaches user data if token is present, but doesn't fail if missing
  */
-export const optionalAuth = (
+export const optionalAuth = async (
   req: Request,
   _res: Response,
   next: NextFunction
-): void => {
+): Promise<void> => {
   try {
+    let tenantContext: TenantContextStore = { enforceIsolation: false };
     const authHeader = req.headers.authorization;
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -164,8 +183,21 @@ export const optionalAuth = (
         userId: decoded.userId,
         username: decoded.username,
         email: decoded.email,
-        role: decoded.role
+        role: decoded.role,
+        municipalityId: decoded.municipalityId,
+        schoolConfigId: decoded.schoolConfigId
       };
+
+      tenantContext = await resolveTenantContext({
+        userId: decoded.userId,
+        role: decoded.role,
+        municipalityId: decoded.municipalityId,
+        schoolConfigId: decoded.schoolConfigId,
+      });
+
+      if (tenantContext.schoolConfigIds) {
+        req.user.allowedSchoolConfigIds = tenantContext.schoolConfigIds;
+      }
 
       logger.debug('Optional auth: User authenticated', {
         userId: decoded.userId,
@@ -173,10 +205,10 @@ export const optionalAuth = (
       });
     }
 
-    next();
+    runWithTenantContext(tenantContext, () => next());
   } catch {
     // Silently fail for optional auth
-    next();
+    runWithTenantContext({ enforceIsolation: false }, () => next());
   }
 };
 
@@ -201,7 +233,11 @@ export const requireSelfAccess = (userIdParam = 'userId') => {
     }
 
     // Allow access if user is accessing their own resource or is an admin
-    if (req.user.userId !== targetUserId && req.user.role !== 'School_Admin') {
+    if (
+      req.user.userId !== targetUserId &&
+      req.user.role !== UserRole.SCHOOL_ADMIN &&
+      req.user.role !== UserRole.MUNICIPALITY_ADMIN
+    ) {
       logger.warn('Self-access check failed', {
         userId: req.user.userId,
         targetUserId,
@@ -242,7 +278,11 @@ export const requireResourceOwnership = (
       }
 
       // Allow access if user owns the resource or is an admin
-      if (req.user.userId !== ownerId && req.user.role !== 'School_Admin') {
+      if (
+        req.user.userId !== ownerId &&
+        req.user.role !== UserRole.SCHOOL_ADMIN &&
+        req.user.role !== UserRole.MUNICIPALITY_ADMIN
+      ) {
         logger.warn('Resource ownership check failed', {
           userId: req.user.userId,
           ownerId,

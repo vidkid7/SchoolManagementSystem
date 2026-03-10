@@ -1,6 +1,9 @@
 import 'dotenv/config';
+import { Op } from 'sequelize';
 import sequelize from '../config/database';
 import User, { UserRole, UserStatus } from '../models/User.model';
+import Municipality from '../models/Municipality.model';
+import SchoolConfig from '../models/SchoolConfig.model';
 import { logger } from '../utils/logger';
 
 /**
@@ -17,6 +20,39 @@ async function seedDatabase(): Promise<void> {
     await sequelize.authenticate();
     logger.info('Database connection established');
 
+    // Create default municipality for development bootstrapping
+    const [defaultMunicipality] = await Municipality.findOrCreate({
+      where: { code: 'KMC' },
+      defaults: {
+        nameEn: 'Kathmandu Metropolitan City',
+        code: 'KMC',
+        district: 'Kathmandu',
+        province: 'Bagmati',
+        isActive: true,
+      },
+    });
+    logger.info('Default municipality is ready', { code: defaultMunicipality.code });
+    const defaultMunicipalityId = String(defaultMunicipality.getDataValue('id'));
+
+    let defaultSchoolConfig = await SchoolConfig.findOne({
+      where: { isActive: true },
+      order: [['createdAt', 'ASC']],
+    });
+
+    if (!defaultSchoolConfig) {
+      defaultSchoolConfig = await SchoolConfig.create({
+        municipalityId: defaultMunicipalityId,
+        schoolNameEn: 'Default School',
+        schoolCode: 'DEFAULT-SCHOOL',
+        isActive: true,
+      });
+      logger.info('Created default school config', {
+        id: defaultSchoolConfig.getDataValue('id'),
+      });
+    }
+
+    const defaultSchoolConfigId = String(defaultSchoolConfig.getDataValue('id'));
+
     // Create default admin user
     const adminExists = await User.findOne({
       where: { username: 'admin' }
@@ -29,6 +65,8 @@ async function seedDatabase(): Promise<void> {
         password: 'Admin@123', // Will be hashed by beforeCreate hook
         role: UserRole.SCHOOL_ADMIN,
         status: UserStatus.ACTIVE,
+        municipalityId: defaultMunicipalityId,
+        schoolConfigId: defaultSchoolConfigId,
         phoneNumber: '+977-9841234567',
         failedLoginAttempts: 0
       });
@@ -37,7 +75,44 @@ async function seedDatabase(): Promise<void> {
       logger.info('Password: Admin@123');
       logger.info('⚠️  IMPORTANT: Change this password immediately in production!');
     } else {
+      let updatedAdmin = false;
+      if (!adminExists.municipalityId) {
+        adminExists.municipalityId = defaultMunicipalityId;
+        updatedAdmin = true;
+      }
+      if (defaultSchoolConfigId && !adminExists.schoolConfigId) {
+        adminExists.schoolConfigId = defaultSchoolConfigId;
+        updatedAdmin = true;
+      }
+      if (updatedAdmin) {
+        await adminExists.save();
+        logger.info('Linked default admin user to default municipality/school');
+      }
       logger.info('Admin user already exists, skipping...');
+    }
+
+    // Create municipality admin user
+    const municipalityAdminExists = await User.findOne({
+      where: { username: 'municipalityadmin' },
+    });
+
+    if (!municipalityAdminExists) {
+      await User.create({
+        username: 'municipalityadmin',
+        email: 'municipality.admin@school.edu.np',
+        password: 'Municipality@123',
+        role: UserRole.MUNICIPALITY_ADMIN,
+        status: UserStatus.ACTIVE,
+        municipalityId: defaultMunicipalityId,
+        schoolConfigId: defaultSchoolConfigId,
+        phoneNumber: '+977-9841234580',
+        failedLoginAttempts: 0,
+      });
+      logger.info('Default municipality admin created');
+      logger.info('Username: municipalityadmin');
+      logger.info('Password: Municipality@123');
+    } else {
+      logger.info('Municipality admin already exists, skipping...');
     }
 
     // Create sample teacher
@@ -237,6 +312,26 @@ async function seedDatabase(): Promise<void> {
         failedLoginAttempts: 0
       });
       logger.info('Sample non-teaching staff created - Username: staff1 / Password: Staff@123');
+    }
+
+    if (defaultSchoolConfigId) {
+      const [updatedUsers] = await User.update(
+        {
+          schoolConfigId: defaultSchoolConfigId,
+          municipalityId: defaultMunicipalityId,
+        },
+        {
+          where: {
+            schoolConfigId: null,
+            role: {
+              [Op.ne]: UserRole.MUNICIPALITY_ADMIN,
+            },
+          } as any,
+        }
+      );
+      logger.info('Assigned default school/municipality to unassigned users', {
+        updatedUsers,
+      });
     }
 
     logger.info('Database seeding completed successfully');

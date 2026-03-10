@@ -19,6 +19,8 @@ import { initEvent } from '@models/Event.model';
 import { initStaffAttendance } from '@models/StaffAttendance.model';
 import { initLeaveApplication } from '@models/LeaveApplication.model';
 import { initArchiveMetadata } from '@models/ArchiveMetadata.model';
+import { initDocument } from '@models/Document.model';
+import { initDocumentAccessLog } from '@models/DocumentAccessLog.model';
 
 /**
  * Server Entry Point
@@ -132,6 +134,8 @@ const startServer = async (): Promise<void> => {
     initStaffAttendance(sequelize);
     initLeaveApplication(sequelize);
     initArchiveMetadata(sequelize);
+    initDocument(sequelize);
+    initDocumentAccessLog(sequelize);
 
     // Wait a tick to ensure all models are fully initialized
     await new Promise(resolve => setImmediate(resolve));
@@ -228,4 +232,3 @@ const startServer = async (): Promise<void> => {
 
 // Start the server
 startServer();
-

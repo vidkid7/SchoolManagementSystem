@@ -8,6 +8,7 @@ import {
 import { logger, logSecurityEvent, SECURITY_EVENTS } from '@utils/logger';
 import jwtService, { JWTPayload } from './jwt.service';
 import accountLockoutService from './accountLockout.service';
+import smsService from '@services/sms.service';
 
 /**
  * Authentication Service
@@ -15,6 +16,30 @@ import accountLockoutService from './accountLockout.service';
  * Uses JWT service for token management with Redis storage
  */
 class AuthService {
+  private buildPasswordResetUrl(token: string): string {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    return `${frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
+  }
+
+  private async dispatchPasswordResetNotification(user: User, resetToken: string): Promise<void> {
+    if (!user.phoneNumber) {
+      logger.info('Password reset token generated, no phone number available for SMS delivery', {
+        userId: user.userId
+      });
+      return;
+    }
+
+    const resetUrl = this.buildPasswordResetUrl(resetToken);
+    const message = `Password reset requested for your account. Use this link within 60 minutes: ${resetUrl}`;
+    const smsResult = await smsService.sendSMS(user.phoneNumber, message);
+
+    if (!smsResult.success) {
+      logger.warn('Failed to send password reset SMS', {
+        userId: user.userId,
+        error: smsResult.error
+      });
+    }
+  }
 
   /**
    * Register new user
@@ -231,7 +256,9 @@ class AuthService {
       userId: user.userId,
       username: user.username,
       email: user.email,
-      role: user.role
+      role: user.role,
+      municipalityId: user.municipalityId,
+      schoolConfigId: user.schoolConfigId
     };
 
     const { accessToken, refreshToken } = await jwtService.generateTokenPair(payload, rememberMe);
@@ -382,9 +409,8 @@ class AuthService {
     // Generate password reset token
     const resetToken = await user.generatePasswordResetToken();
 
-    // TODO: Send reset token via email/SMS
-    // For now, we'll return it in the response (development only)
-    // In production, this should be sent via email/SMS and not returned
+    await this.dispatchPasswordResetNotification(user, resetToken);
+
     logger.info('Password reset token generated', {
       userId: user.userId,
       email: user.email

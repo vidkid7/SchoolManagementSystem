@@ -15,7 +15,7 @@ const options: swaggerJsdoc.Options = {
         - Bikram Sambat (BS) calendar support
         - Nepal payment gateway integration (eSewa, Khalti, IME Pay)
         - Offline-first architecture
-        - Role-based access control (13 user roles)
+        - Role-based access control (14 user roles)
         - 17+ modules covering all school operations
         
         ## Authentication
@@ -140,6 +140,7 @@ const options: swaggerJsdoc.Options = {
         UserRole: {
           type: 'string',
           enum: [
+            'municipality_admin',
             'school_admin',
             'subject_teacher',
             'class_teacher',

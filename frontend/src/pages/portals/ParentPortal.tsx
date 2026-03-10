@@ -59,37 +59,40 @@ interface ChildInfo {
 
 const ParentPortal: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
-  const [selectedChild, setSelectedChild] = useState(0);
+  const [selectedChildIndex, setSelectedChildIndex] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [children, setChildren] = useState<ChildInfo[]>([]);
+  const [attendanceData, setAttendanceData] = useState({ present: 0, total: 0, percentage: 0 });
+  const [feeData, setFeeData] = useState<{
+    invoices: Array<{ id: number; month: string; amount: number; status: string; paidDate?: string; dueDate?: string }>;
+    totalPaid: number;
+    totalPending: number;
+  }>({ invoices: [], totalPaid: 0, totalPending: 0 });
+  const [notifications, setNotifications] = useState<Array<{ id: number; title: string; type: string; date: string }>>([]);
+  const [grades, setGrades] = useState<Array<{ subject: string; midterm?: string; final?: string; gpa?: number }>>([]);
 
-  const children: ChildInfo[] = [
-    { id: 1, name: 'Ram Sharma', class: '10', section: 'A', rollNo: 15 },
-    { id: 2, name: 'Sita Sharma', class: '7', section: 'B', rollNo: 8 },
-  ];
+  useEffect(() => {
+    apiClient.get('/api/v1/parents/children').then((res) => {
+      const list = res.data?.data || [];
+      setChildren(list.map((c: any) => ({ id: c.studentId ?? c.id, name: c.name, class: c.class ?? '', section: c.section ?? '', rollNo: c.rollNo ?? 0 })));
+    }).catch(() => setChildren([]));
+  }, []);
 
-  const attendanceData = { present: 185, total: 200, percentage: 92.5 };
-  const feeData = {
-    invoices: [
-      { id: 1, month: 'Mangsir 2082', amount: 5000, status: 'paid', paidDate: '2082-08-15' },
-      { id: 2, month: 'Poush 2082', amount: 5000, status: 'paid', paidDate: '2082-09-14' },
-      { id: 3, month: 'Magh 2082', amount: 5000, status: 'pending', dueDate: '2082-10-15' },
-      { id: 4, month: 'Falgun 2082', amount: 5000, status: 'upcoming', dueDate: '2082-11-15' },
-    ],
-    totalPaid: 10000,
-    totalPending: 5000,
-  };
-  const notifications = [
-    { id: 1, title: 'Low attendance warning for Ram', type: 'warning', date: '2082-10-25' },
-    { id: 2, title: 'Fee payment reminder - Magh', type: 'info', date: '2082-10-20' },
-    { id: 3, title: 'Parent-Teacher Meeting on Mangsir 30', type: 'info', date: '2082-10-18' },
-    { id: 4, title: 'School closed - Dashain holidays', type: 'info', date: '2082-10-10' },
-  ];
-  const grades = [
-    { subject: 'Mathematics', midterm: 'A', final: 'A+', gpa: 4.0 },
-    { subject: 'Science', midterm: 'B+', final: 'A', gpa: 3.6 },
-    { subject: 'English', midterm: 'A', final: 'A', gpa: 3.6 },
-    { subject: 'Nepali', midterm: 'B+', final: 'B+', gpa: 3.2 },
-  ];
+  const selectedChild = children[selectedChildIndex];
+  useEffect(() => {
+    if (!selectedChild?.id) return;
+    setLoading(true);
+    apiClient.get(`/api/v1/parents/children/${selectedChild.id}/summary`)
+      .then((res) => {
+        const d = res.data?.data || {};
+        if (d.attendance) setAttendanceData({ present: d.attendance.present ?? 0, total: d.attendance.total ?? 0, percentage: d.attendance.percentage ?? 0 });
+        if (d.fees) setFeeData({ invoices: d.fees.invoices ?? [], totalPaid: d.fees.totalPaid ?? 0, totalPending: d.fees.totalPending ?? 0 });
+        if (d.notifications) setNotifications(d.notifications);
+        if (d.grades) setGrades(d.grades);
+      })
+      .catch(() => { setAttendanceData({ present: 0, total: 0, percentage: 0 }); setFeeData({ invoices: [], totalPaid: 0, totalPending: 0 }); setNotifications([]); setGrades([]); })
+      .finally(() => setLoading(false));
+  }, [selectedChild?.id]);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -98,8 +101,8 @@ const ParentPortal: React.FC = () => {
         <FormControl sx={{ minWidth: 200 }}>
           <InputLabel>Select Child</InputLabel>
           <Select
-            value={selectedChild}
-            onChange={(e) => setSelectedChild(Number(e.target.value))}
+            value={selectedChildIndex}
+            onChange={(e) => setSelectedChildIndex(Number(e.target.value))}
             label="Select Child"
           >
             {children.map((child, idx) => (
@@ -114,20 +117,22 @@ const ParentPortal: React.FC = () => {
       {loading && <LinearProgress sx={{ mb: 2 }} />}
 
       {/* Selected Child Info */}
+      {selectedChild && (
       <Paper sx={{ p: 2, mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Avatar sx={{ bgcolor: 'primary.main', width: 56, height: 56 }}>
-            {children[selectedChild].name.charAt(0)}
+            {selectedChild.name.charAt(0)}
           </Avatar>
           <Box>
-            <Typography variant="h6">{children[selectedChild].name}</Typography>
+            <Typography variant="h6">{selectedChild.name}</Typography>
             <Typography color="textSecondary">
-              Class {children[selectedChild].class}-{children[selectedChild].section} |
-              Roll No: {children[selectedChild].rollNo}
+              Class {selectedChild.class}-{selectedChild.section} |
+              Roll No: {selectedChild.rollNo}
             </Typography>
           </Box>
         </Box>
       </Paper>
+      )}
 
       {/* Quick Stats */}
       <Grid container spacing={2} sx={{ mb: 3 }}>

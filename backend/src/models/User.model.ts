@@ -6,6 +6,7 @@ import bcrypt from 'bcrypt';
  * User Roles as per Nepal School Management System
  */
 export enum UserRole {
+  MUNICIPALITY_ADMIN = 'Municipality_Admin',
   SCHOOL_ADMIN = 'School_Admin',
   SUBJECT_TEACHER = 'Subject_Teacher',
   CLASS_TEACHER = 'Class_Teacher',
@@ -41,6 +42,8 @@ export interface UserAttributes {
   password: string;
   role: UserRole;
   status: UserStatus;
+  municipalityId?: string;
+  schoolConfigId?: string;
   phoneNumber?: string;
   profilePhoto?: string;
   lastLogin?: Date;
@@ -62,7 +65,8 @@ export interface UserAttributes {
 export interface UserCreationAttributes extends Optional<UserAttributes, 
   'userId' | 'status' | 'failedLoginAttempts' | 'lastLogin' | 'accountLockedUntil' | 
   'passwordChangedAt' | 'passwordResetToken' | 'passwordResetExpires' | 'refreshToken' | 
-  'refreshTokenExpiresAt' | 'phoneNumber' | 'profilePhoto' | 'createdAt' | 'updatedAt' | 'deletedAt'> {}
+  'refreshTokenExpiresAt' | 'phoneNumber' | 'profilePhoto' | 'municipalityId' | 'schoolConfigId' |
+  'createdAt' | 'updatedAt' | 'deletedAt'> {}
 
 /**
  * User Model Class
@@ -74,6 +78,8 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   declare password: string;
   declare role: UserRole;
   declare status: UserStatus;
+  declare municipalityId?: string;
+  declare schoolConfigId?: string;
   declare phoneNumber?: string;
   declare profilePhoto?: string;
   declare lastLogin?: Date;
@@ -221,6 +227,16 @@ User.init(
       allowNull: false,
       defaultValue: UserStatus.ACTIVE
     },
+    municipalityId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'municipality_id'
+    },
+    schoolConfigId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'school_config_id'
+    },
     phoneNumber: {
       type: DataTypes.STRING(20),
       allowNull: true,
@@ -313,6 +329,12 @@ User.init(
       },
       {
         fields: ['status']
+      },
+      {
+        fields: ['municipality_id']
+      },
+      {
+        fields: ['school_config_id']
       }
     ],
     hooks: {

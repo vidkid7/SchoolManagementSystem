@@ -73,11 +73,23 @@ router.get(
 );
 
 /**
- * @route   PUT /api/v1/certificates/templates/:id
+ * @route   PUT /api/v1/certificate-templates/:id
  * @desc    Update certificate template
  * @access  Private (Admin, Coordinator)
  */
 router.put(
+  '/:id',
+  validate(templateIdParamSchema, 'params'),
+  validate(updateTemplateSchema, 'body'),
+  certificateTemplateController.updateTemplate.bind(certificateTemplateController)
+);
+
+/**
+ * @route   PATCH /api/v1/certificate-templates/:id
+ * @desc    Partial update (e.g. isActive toggle)
+ * @access  Private (Admin, Coordinator)
+ */
+router.patch(
   '/:id',
   validate(templateIdParamSchema, 'params'),
   validate(updateTemplateSchema, 'body'),

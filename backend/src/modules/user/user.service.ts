@@ -4,9 +4,12 @@
  * Business logic for user management operations
  */
 
-import { User, UserStatus, UserRole } from '../../models/User.model';
+import User, { UserStatus, UserRole } from '../../models/User.model';
+import AuditLog from '../../models/AuditLog.model';
 import { Op } from 'sequelize';
 import crypto from 'crypto';
+import smsService from '../../services/sms.service';
+import { logger } from '../../utils/logger';
 
 export interface UserFilters {
   search?: string;
@@ -176,38 +179,53 @@ export class UserService {
       passwordResetExpires: resetExpires,
     });
 
-    // TODO: Send email with reset link
-    // For now, just update the token
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(resetToken)}`;
+
+    if (user.phoneNumber) {
+      const smsResult = await smsService.sendSMS(
+        user.phoneNumber,
+        `Admin initiated password reset. Use this link within 60 minutes: ${resetUrl}`
+      );
+
+      if (!smsResult.success) {
+        logger.warn('Failed to send user reset-password SMS', {
+          userId,
+          error: smsResult.error
+        });
+      }
+    } else {
+      logger.info('User has no phone number for reset-password SMS', { userId });
+    }
   }
 
   /**
    * Get user activity log
    */
   async getUserActivity(userId: number): Promise<any[]> {
-    // For now, return mock activity data
-    // In production, this would query an audit log table
     const user = await User.findByPk(userId);
 
     if (!user) {
       throw new Error('User not found');
     }
 
-    return [
-      {
-        id: 1,
-        action: 'login',
-        ipAddress: '192.168.1.1',
-        userAgent: 'Chrome/120.0',
-        timestamp: user.lastLogin || new Date(),
-      },
-      {
-        id: 2,
-        action: 'password_change',
-        ipAddress: '192.168.1.1',
-        userAgent: 'Chrome/120.0',
-        timestamp: user.passwordChangedAt || new Date(),
-      },
-    ];
+    const logs = await AuditLog.findAll({
+      where: { userId },
+      order: [['timestamp', 'DESC'], ['auditLogId', 'DESC']],
+      limit: 100
+    });
+
+    return logs.map(log => ({
+      id: log.auditLogId,
+      action: log.action,
+      entityType: log.entityType,
+      entityId: log.entityId,
+      changedFields: log.changedFields || [],
+      ipAddress: log.ipAddress,
+      userAgent: log.userAgent,
+      metadata: log.metadata,
+      timestamp: log.timestamp
+    }));
   }
 
   /**
@@ -240,6 +258,8 @@ export class UserService {
       phone: user.phoneNumber,
       role: user.role,
       roleName: this.getRoleDisplayName(user.role),
+      municipalityId: user.municipalityId,
+      schoolConfigId: user.schoolConfigId,
       status: user.status,
       lastLogin: user.lastLogin,
       createdAt: user.createdAt,
@@ -252,6 +272,7 @@ export class UserService {
    */
   private getRoleDisplayName(role: UserRole): string {
     const roleNames: Record<UserRole, string> = {
+      [UserRole.MUNICIPALITY_ADMIN]: 'Municipality Admin',
       [UserRole.SCHOOL_ADMIN]: 'School Admin',
       [UserRole.SUBJECT_TEACHER]: 'Subject Teacher',
       [UserRole.CLASS_TEACHER]: 'Class Teacher',

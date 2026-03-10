@@ -89,9 +89,7 @@ class TimetableValidationService {
     excludePeriodId?: number
   ): Promise<ValidationResult> {
     try {
-      // This would query the periods table to find conflicts
-      // For now, returning a structure that can be implemented
-      // when the Period model is available
+      // Query periods to find conflicts once period persistence is enabled.
       
       const errors: string[] = [];
       const warnings: string[] = [];

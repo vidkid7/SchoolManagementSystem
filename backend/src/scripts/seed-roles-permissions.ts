@@ -6,6 +6,7 @@ import '../models/RolePermission.model';
 import { logger } from '../utils/logger';
 
 const systemRoles = [
+  { name: 'Municipality Admin', code: 'MUNICIPALITY_ADMIN', description: 'Municipality-level authority to manage schools and school admins', isSystem: true },
   { name: 'School Admin', code: 'SCHOOL_ADMIN', description: 'Full administrative access to all modules', isSystem: true },
   { name: 'Class Teacher', code: 'CLASS_TEACHER', description: 'Manages a specific class: attendance, grades, communication', isSystem: true },
   { name: 'Subject Teacher', code: 'SUBJECT_TEACHER', description: 'Teaches specific subjects; marks attendance and grades', isSystem: true },
@@ -79,6 +80,21 @@ const systemPermissions = [
 ];
 
 const rolePermissionMap: Record<string, string[]> = {
+  MUNICIPALITY_ADMIN: [
+    'student:read',
+    'staff:read',
+    'academic:read',
+    'attendance:read',
+    'examination:read',
+    'finance:read',
+    'library:read',
+    'eca:read',
+    'sports:read',
+    'communication:read',
+    'document:read',
+    'report:read',
+    'system:manage',
+  ],
   SCHOOL_ADMIN: systemPermissions.map(p => p.code),
   CLASS_TEACHER: [
     'student:read', 'academic:read', 'attendance:create', 'attendance:read',

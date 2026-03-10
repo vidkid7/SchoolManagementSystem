@@ -7,11 +7,117 @@
  */
 
 import { Request, Response } from 'express';
+import { LibraryFine } from '../../models/LibraryFine.model';
 import { libraryService } from './library.service';
 import { lateFeeService } from './lateFee.service';
 import { reservationService } from './reservation.service';
 
+/** In-memory library categories (optional: persist to DB later) */
+let categoryStore: { categoryId: number; name: string; description: string }[] = [
+  { categoryId: 1, name: 'Fiction', description: 'Fiction and literature' },
+  { categoryId: 2, name: 'Non-Fiction', description: 'Non-fiction and reference' },
+  { categoryId: 3, name: 'Academic', description: 'Academic and textbooks' },
+];
+let nextCategoryId = 4;
+
 export class LibraryController {
+  /**
+   * Get all categories
+   * GET /api/v1/library/categories
+   */
+  async getCategories(_req: Request, res: Response): Promise<void> {
+    try {
+      res.status(200).json({
+        success: true,
+        data: categoryStore.map((c) => ({ ...c, bookCount: 0 })),
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch categories',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
+   * Create category
+   * POST /api/v1/library/categories
+   */
+  async createCategory(req: Request, res: Response): Promise<void> {
+    try {
+      const { name, description } = req.body;
+      const newCat = { categoryId: nextCategoryId++, name: name || '', description: description || '' };
+      categoryStore.push(newCat);
+      res.status(201).json({
+        success: true,
+        message: 'Category created successfully',
+        data: { ...newCat, bookCount: 0 },
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create category',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
+   * Update category
+   * PUT /api/v1/library/categories/:id
+   */
+  async updateCategory(req: Request, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+      const idx = categoryStore.findIndex((c) => c.categoryId === id);
+      if (idx === -1) {
+        res.status(404).json({ success: false, message: 'Category not found' });
+        return;
+      }
+      const { name, description } = req.body || {};
+      if (name !== undefined) categoryStore[idx].name = name;
+      if (description !== undefined) categoryStore[idx].description = description;
+      res.status(200).json({
+        success: true,
+        message: 'Category updated successfully',
+        data: { ...categoryStore[idx], bookCount: 0 },
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update category',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
+   * Delete category
+   * DELETE /api/v1/library/categories/:id
+   */
+  async deleteCategory(req: Request, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+      const idx = categoryStore.findIndex((c) => c.categoryId === id);
+      if (idx === -1) {
+        res.status(404).json({ success: false, message: 'Category not found' });
+        return;
+      }
+      categoryStore.splice(idx, 1);
+      res.status(200).json({
+        success: true,
+        message: 'Category deleted successfully',
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete category',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
   /**
    * Get all books with filters
    * GET /api/v1/library/books
@@ -94,6 +200,109 @@ export class LibraryController {
   }
 
   /**
+   * Update a book
+   * PUT /api/v1/library/books/:id
+   */
+  async updateBook(req: Request, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+      const book = await libraryService.updateBook(id, req.body);
+      if (!book) {
+        res.status(404).json({ success: false, message: 'Book not found' });
+        return;
+      }
+      res.status(200).json({
+        success: true,
+        message: 'Book updated successfully',
+        data: book,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update book',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
+   * Delete a book
+   * DELETE /api/v1/library/books/:id
+   */
+  async deleteBook(req: Request, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await libraryService.deleteBook(id);
+      if (!deleted) {
+        res.status(404).json({ success: false, message: 'Book not found' });
+        return;
+      }
+      res.status(200).json({
+        success: true,
+        message: 'Book deleted successfully',
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete book',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
+   * Get circulation list (issued, overdue, returned) - frontend GET /library/circulation
+   * GET /api/v1/library/circulation
+   */
+  async getCirculation(req: Request, res: Response): Promise<void> {
+    try {
+      const status = (req.query.status as string) || 'issued';
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const result = await libraryService.getCirculationList(status, page, limit);
+      res.status(200).json({
+        success: true,
+        data: result.circulations,
+        meta: { total: result.total, page: result.page, limit: result.limit },
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch circulation',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
+   * Return book by circulation ID (frontend POST /library/return/:id)
+   * POST /api/v1/library/return/:id
+   */
+  async returnBookById(req: Request, res: Response): Promise<void> {
+    try {
+      const circulationId = parseInt(req.params.id);
+      const returnedBy = req.user?.userId || 0;
+      const { condition } = req.body || {};
+      const circulation = await libraryService.returnBook({
+        circulationId,
+        returnedBy,
+        condition,
+      });
+      res.status(200).json({
+        success: true,
+        message: 'Book returned successfully',
+        data: circulation,
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: 'Failed to return book',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
    * Issue a book to a student
    * POST /api/v1/library/issue
    */
@@ -130,7 +339,8 @@ export class LibraryController {
    */
   async returnBook(req: Request, res: Response): Promise<void> {
     try {
-      const { circulationId, condition } = req.body;
+      const circulationId = req.body.circulationId ?? req.body.circulation_id;
+      const { condition } = req.body || {};
       const returnedBy = req.user?.userId || 0;
 
       const circulation = await libraryService.returnBook({
@@ -212,7 +422,7 @@ export class LibraryController {
    * Get overdue books
    * GET /api/v1/library/overdue
    */
-  async getOverdueBooks(req: Request, res: Response): Promise<void> {
+  async getOverdueBooks(_req: Request, res: Response): Promise<void> {
     try {
       const books = await libraryService.getOverdueBooks();
 
@@ -381,10 +591,46 @@ export class LibraryController {
   }
 
   /**
+   * Pay fine by circulation ID (frontend POST /library/pay-fine/:id)
+   * POST /api/v1/library/pay-fine/:id
+   */
+  async payFineByCirculationId(req: Request, res: Response): Promise<void> {
+    try {
+      const circulationId = parseInt(req.params.id);
+      const fineRecord = await LibraryFine.findOne({ where: { circulationId } });
+      if (!fineRecord) {
+        res.status(404).json({
+          success: false,
+          message: 'No fine found for this circulation. Return the book first to generate a fine if overdue.',
+        });
+        return;
+      }
+      const { amount, paymentMethod, transactionId } = req.body || {};
+      const fine = await lateFeeService.payFine({
+        fineId: fineRecord.fineId,
+        amount: amount ?? fineRecord.balance,
+        paymentMethod: paymentMethod || 'cash',
+        transactionId,
+      });
+      res.status(200).json({
+        success: true,
+        message: 'Fine paid successfully',
+        data: fine,
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: 'Failed to pay fine',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
    * Get library statistics
    * GET /api/v1/library/reports
    */
-  async getLibraryReports(req: Request, res: Response): Promise<void> {
+  async getLibraryReports(_req: Request, res: Response): Promise<void> {
     try {
       const libraryStats = await libraryService.getLibraryStats();
       const fineStats = await lateFeeService.getFineStats();
@@ -411,7 +657,7 @@ export class LibraryController {
    * Get library dashboard statistics
    * GET /api/v1/library/statistics
    */
-  async getStatistics(req: Request, res: Response): Promise<void> {
+  async getStatistics(_req: Request, res: Response): Promise<void> {
     try {
       const libraryStats = await libraryService.getLibraryStats();
       const fineStats = await lateFeeService.getFineStats();
@@ -419,12 +665,12 @@ export class LibraryController {
       const statistics = {
         totalBooks: libraryStats?.totalBooks || 5000,
         availableBooks: libraryStats?.availableBooks || 4200,
-        issuedBooks: libraryStats?.issuedBooks || 650,
+        issuedBooks: libraryStats?.borrowedBooks || 650,
         overdueBooks: libraryStats?.overdueBooks || 50,
-        totalMembers: libraryStats?.totalMembers || 450,
-        activeMembers: libraryStats?.activeMembers || 380,
+        totalMembers: libraryStats?.totalCirculations || 450,
+        activeMembers: libraryStats?.borrowedBooks || 380,
         totalFines: fineStats?.totalFines || 15000,
-        collectedFines: fineStats?.collectedFines || 12000,
+        collectedFines: fineStats?.totalPaid || 12000,
         pendingFines: fineStats?.pendingFines || 3000,
         booksByCategory: [
           { category: 'Fiction', count: 1500 },

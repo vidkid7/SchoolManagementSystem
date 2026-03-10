@@ -6,7 +6,7 @@
  * Requirements: 25.7
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Paper,
@@ -21,6 +21,10 @@ import {
   Divider,
   CircularProgress,
   InputAdornment,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   QrCodeScanner as QrCodeIcon,
@@ -55,20 +59,20 @@ export const CertificateVerification = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CertificateVerificationResult | null>(null);
   const [error, setError] = useState('');
-  const [qrMode, setQrMode] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animationRef = useRef<number | null>(null);
 
-  const handleVerify = async () => {
-    if (!certificateNumber.trim()) {
-      setError('Please enter a certificate number');
-      return;
-    }
-
+  const verifyCertificate = async (input: string) => {
+    const certNumber = input.trim();
+    if (!certNumber) return;
     setLoading(true);
     setError('');
     setResult(null);
 
-try {
-      const response = await apiClient.get(`/api/v1/certificates/verify/${certificateNumber.trim()}`);
+    try {
+      const response = await apiClient.get(`/api/v1/certificates/verify/${certNumber}`);
       setResult(response.data.data);
     } catch (err: any) {
       if (err.response?.status === 404) {
@@ -86,13 +90,138 @@ try {
     }
   };
 
-  const handleScanQrCode = () => {
-    // In a real implementation, this would use the device camera and a QR code library
-    // For now, we'll simulate QR code scanning
-    setQrMode(true);
-    setError('QR code scanning would be implemented with a library like jsQR or react-qr-reader');
-    setTimeout(() => setQrMode(false), 3000);
+  const handleVerify = async () => {
+    if (!certificateNumber.trim()) {
+      setError('Please enter a certificate number');
+      return;
+    }
+    await verifyCertificate(certificateNumber);
   };
+
+  const extractCertificateNumber = (rawValue: string): string => {
+    const value = rawValue.trim();
+    if (!value) return '';
+
+    const verifyPath = '/api/v1/certificates/verify/';
+
+    if (value.includes(verifyPath)) {
+      const extracted = value.split(verifyPath)[1]?.split(/[?#]/)[0];
+      return decodeURIComponent(extracted || '').trim();
+    }
+
+    try {
+      const parsed = new URL(value);
+      const idx = parsed.pathname.indexOf(verifyPath);
+      if (idx !== -1) {
+        const extracted = parsed.pathname.slice(idx + verifyPath.length).split('/')[0];
+        return decodeURIComponent(extracted || '').trim();
+      }
+    } catch {
+      // Not a URL, continue with direct certificate value.
+    }
+
+    return value;
+  };
+
+  const handleScanQrCode = () => {
+    setError('');
+    setScannerOpen(true);
+  };
+
+  useEffect(() => {
+    if (!scannerOpen) return;
+
+    let stopped = false;
+    const BarcodeDetectorClass = (window as any).BarcodeDetector;
+
+    const stopScanner = () => {
+      if (animationRef.current !== null) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+    };
+
+    const startScanner = async () => {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setError('Camera access is not supported in this browser. Enter certificate number manually.');
+        setScannerOpen(false);
+        return;
+      }
+
+      if (!BarcodeDetectorClass) {
+        setError('QR scanning is not supported in this browser. Enter certificate number manually.');
+        setScannerOpen(false);
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } },
+        });
+
+        if (stopped) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
+        streamRef.current = stream;
+        const video = videoRef.current;
+        if (!video) return;
+
+        video.srcObject = stream;
+        await video.play();
+
+        const detector = new BarcodeDetectorClass({ formats: ['qr_code'] });
+
+        const scanFrame = async () => {
+          if (stopped || !videoRef.current) return;
+
+          try {
+            const barcodes = await detector.detect(videoRef.current);
+            const rawValue = barcodes?.[0]?.rawValue;
+
+            if (rawValue) {
+              const certNumber = extractCertificateNumber(rawValue);
+              if (!certNumber) {
+                setError('QR code does not contain a valid certificate reference.');
+                setScannerOpen(false);
+                stopScanner();
+                return;
+              }
+
+              setCertificateNumber(certNumber);
+              setScannerOpen(false);
+              stopScanner();
+              await verifyCertificate(certNumber);
+              return;
+            }
+          } catch {
+            // Continue scanning.
+          }
+
+          animationRef.current = requestAnimationFrame(() => {
+            void scanFrame();
+          });
+        };
+
+        void scanFrame();
+      } catch {
+        setError('Unable to access camera. Please allow camera permissions and try again.');
+        setScannerOpen(false);
+      }
+    };
+
+    void startScanner();
+
+    return () => {
+      stopped = true;
+      stopScanner();
+    };
+  }, [scannerOpen]);
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
@@ -173,13 +302,34 @@ try {
           </CardContent>
         </Card>
 
-        {/* QR Mode Info */}
-        {qrMode && (
-          <Alert severity="info" sx={{ mb: 4 }}>
-            QR Code scanning requires camera access and a QR code library. 
-            This feature would use react-qr-reader or similar library in production.
-          </Alert>
-        )}
+        <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} fullWidth maxWidth="sm">
+          <DialogTitle>Scan QR Code / QR कोड स्क्यान गर्नुहोस्</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Point your camera at the certificate QR code. Verification starts automatically.
+            </Typography>
+            <Box
+              sx={{
+                width: '100%',
+                borderRadius: 1,
+                overflow: 'hidden',
+                bgcolor: 'black',
+                aspectRatio: '4 / 3',
+              }}
+            >
+              <video ref={videoRef} style={{ width: '100%', height: '100%', objectFit: 'cover' }} playsInline muted />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              color="inherit"
+              startIcon={<CloseIcon />}
+              onClick={() => setScannerOpen(false)}
+            >
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {/* Verification Result */}
         {result && (

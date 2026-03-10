@@ -25,6 +25,11 @@ apiClient.interceptors.request.use(
     const state = store.getState();
     const token = state.auth.accessToken;
 
+    // Normalize short API paths to /api/v1/* so mixed call styles remain compatible
+    if (config.url && config.url.startsWith('/') && !config.url.startsWith('/api/')) {
+      config.url = '/api/v1' + config.url;
+    }
+
     // Also check localStorage as fallback
     const localToken = localStorage.getItem('accessToken');
     const finalToken = token || localToken;
@@ -84,31 +89,35 @@ apiClient.interceptors.response.use(
         // Try to refresh the token
         const refreshToken = localStorage.getItem('refreshToken');
         
-        if (refreshToken) {
-          const response = await axios.post(`${API_URL}/api/v1/auth/refresh`, {
-            refreshToken,
-          });
-
-          const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-
-          // Store new tokens in both localStorage and Redux
-          localStorage.setItem('accessToken', accessToken);
-          localStorage.setItem('refreshToken', newRefreshToken);
-          
-          // Update Redux store
-          store.dispatch(setCredentials({
-            accessToken,
-            refreshToken: newRefreshToken,
-          }));
-
-          // Notify waiting requests
-          onTokenRefreshed(accessToken);
-
-          // Retry original request with new token
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          isRefreshing = false;
-          return apiClient(originalRequest);
+        if (!refreshToken) {
+          throw new Error('No refresh token');
         }
+
+        const response = await axios.post(
+          '/api/v1/auth/refresh',
+          { refreshToken },
+          { baseURL: API_URL }
+        );
+
+        const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+
+        // Store new tokens in both localStorage and Redux
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', newRefreshToken);
+        
+        // Update Redux store
+        store.dispatch(setCredentials({
+          accessToken,
+          refreshToken: newRefreshToken,
+        }));
+
+        // Notify waiting requests
+        onTokenRefreshed(accessToken);
+
+        // Retry original request with new token
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        isRefreshing = false;
+        return apiClient(originalRequest);
       } catch (refreshError) {
         isRefreshing = false;
         // Refresh failed, logout user
@@ -125,3 +134,4 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+

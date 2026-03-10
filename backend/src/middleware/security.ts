@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import hpp from 'hpp';
@@ -62,7 +62,7 @@ export const corsMiddleware = cors({
 /**
  * HTTP Parameter Pollution Prevention
  */
-export const hppMiddleware = hpp({
+export const hppMiddleware: RequestHandler = hpp({
   whitelist: ['sort', 'filter', 'page', 'limit', 'search']
 });
 
@@ -71,7 +71,7 @@ export const hppMiddleware = hpp({
  * Optimized for low-bandwidth networks (2G/3G)
  * Requirements: 29.7, 29.9
  */
-export const compressionMiddleware = compression({
+export const compressionMiddleware: RequestHandler = compression({
   filter: (req: Request, res: Response) => {
     // Skip compression if explicitly disabled
     if (req.headers['x-no-compression']) {
@@ -137,7 +137,7 @@ export const detectSuspiciousActivity = (req: Request): boolean => {
   return suspiciousPatterns.some(pattern => pattern.test(inputString));
 };
 
-export default {
+const securityMiddleware: Record<string, RequestHandler | ((req: Request) => boolean)> = {
   helmetMiddleware,
   corsMiddleware,
   hppMiddleware,
@@ -146,3 +146,5 @@ export default {
   xssProtection,
   detectSuspiciousActivity
 };
+
+export default securityMiddleware;

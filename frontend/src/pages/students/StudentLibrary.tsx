@@ -101,46 +101,14 @@ export const StudentLibrary = ({ studentId }: StudentLibraryProps) => {
       });
     } catch (err: any) {
       console.error('Failed to fetch library data:', err);
-      setError(t('messages.error') + ' (' + t('library.showingSampleData') + ')');
-      
-      // Set mock data for demonstration if API fails
-      setRecords([
-        {
-          id: 1,
-          bookTitle: 'Introduction to Computer Science',
-          bookCode: 'CS-101',
-          author: 'John Doe',
-          borrowDate: '2024-01-15',
-          dueDate: '2024-02-15',
-          returnDate: '2024-02-10',
-          status: 'returned',
-        },
-        {
-          id: 2,
-          bookTitle: 'Advanced Mathematics',
-          bookCode: 'MATH-201',
-          author: 'Jane Smith',
-          borrowDate: '2024-02-01',
-          dueDate: '2024-03-01',
-          status: 'borrowed',
-        },
-        {
-          id: 3,
-          bookTitle: 'Physics Fundamentals',
-          bookCode: 'PHY-101',
-          author: 'Robert Johnson',
-          borrowDate: '2024-01-20',
-          dueDate: '2024-02-20',
-          status: 'overdue',
-          fine: 50,
-        },
-      ]);
+      setError(t('messages.error'));
+      setRecords([]);
       setStats({
-        totalBorrowed: 15,
-        currentlyBorrowed: 3,
-        returned: 11,
-        overdue: 1,
-        totalFines: 50,
+        totalBorrowed: 0,
+        currentlyBorrowed: 0,
+        returned: 0,
+        overdue: 0,
+        totalFines: 0,
       });
     } finally {
       setLoading(false);
@@ -185,7 +153,7 @@ const getStatusLabel = (status: string) => {
     <Box>
       {error && (
         <Alert severity="warning" sx={{ mb: 2 }}>
-          {error} (Showing sample data)
+          {error}
         </Alert>
       )}
 

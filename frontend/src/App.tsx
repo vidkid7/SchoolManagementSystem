@@ -5,7 +5,7 @@
  */
 
 import React, { Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Provider, useSelector } from 'react-redux';
 import { CssBaseline, CircularProgress, Box, Typography, Button } from '@mui/material';
 import { store } from './store';
@@ -13,6 +13,10 @@ import './i18n/config';
 import { ThemeProvider } from './theme/ThemeContext';
 import { AccessibilityProvider, useAccessibility } from './contexts/AccessibilityContext';
 import { Login } from './pages/Login';
+import { ForgotPassword } from './pages/auth/ForgotPassword';
+import { ResetPassword } from './pages/auth/ResetPassword';
+import { Register } from './pages/auth/Register';
+import { ChangePassword } from './pages/auth/ChangePassword';
 import { DashboardLayout } from './components/Layout/DashboardLayout';
 import { RoleBasedRedirect } from './components/RoleBasedRedirect';
 import { ProtectedRoute } from './routes/ProtectedRoute';
@@ -110,6 +114,7 @@ const StudentPortal = React.lazy(() => import('./pages/portals/EnhancedStudentPo
 const ParentPortal = React.lazy(() => import('./pages/portals/ParentPortal'));
 const TeacherPortal = React.lazy(() => import('./pages/portals/TeacherPortal'));
 const AdminSettings = React.lazy(() => import('./pages/portals/AdminSettings'));
+const MunicipalityAdminPortal = React.lazy(() => import('./pages/portals/MunicipalityAdminPortal'));
 const TransportPortal = React.lazy(() => import('./pages/portals/TransportPortal'));
 const HostelPortal = React.lazy(() => import('./pages/portals/HostelPortal'));
 const NonTeachingStaffPortal = React.lazy(() => import('./pages/portals/NonTeachingStaffPortal'));
@@ -121,6 +126,7 @@ const BackupManagement = React.lazy(() => import('./pages/settings/BackupManagem
 const ArchiveManagement = React.lazy(() => import('./pages/settings/ArchiveManagement').then(m => ({ default: m.ArchiveManagement })));
 
 const ADMIN = 'School_Admin';
+const MUNICIPALITY_ADMIN = 'Municipality_Admin';
 const CLASS_TEACHER = 'Class_Teacher';
 const SUBJECT_TEACHER = 'Subject_Teacher';
 const DEPT_HEAD = 'Department_Head';
@@ -134,7 +140,7 @@ const TRANSPORT = 'Transport_Manager';
 const HOSTEL = 'Hostel_Warden';
 const NON_TEACHING = 'Non_Teaching_Staff';
 
-const ALL_ROLES = [ADMIN, CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD, ECA_COORD, SPORTS_COORD, STUDENT, PARENT, LIBRARIAN, ACCOUNTANT, TRANSPORT, HOSTEL, NON_TEACHING];
+const ALL_ROLES = [MUNICIPALITY_ADMIN, ADMIN, CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD, ECA_COORD, SPORTS_COORD, STUDENT, PARENT, LIBRARIAN, ACCOUNTANT, TRANSPORT, HOSTEL, NON_TEACHING];
 const TEACHER_ROLES = [ADMIN, CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD];
 const STAFF_ROLES = [ADMIN, CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD, ECA_COORD, SPORTS_COORD, LIBRARIAN, ACCOUNTANT, TRANSPORT, HOSTEL, NON_TEACHING];
 
@@ -192,6 +198,9 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
             {/* Admin and Staff Dashboard */}
@@ -201,13 +210,14 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
               </Route>
             </Route>
 
-            {/* Calendar, Messages, Announcements - accessible to all logged-in users */}
+            {/* Calendar, Messages, Announcements, Change password - accessible to all logged-in users */}
             <Route element={<ProtectedRoute allowedRoles={ALL_ROLES} />}>
               <Route element={<DashboardLayout />}>
                 <Route path="/calendar" element={<Calendar />} />
                 <Route path="/calendar/view" element={<Calendar />} />
                 <Route path="/communication/messages" element={<Messaging />} />
                 <Route path="/communication/announcements" element={<Announcements />} />
+                <Route path="/change-password" element={<ChangePassword />} />
               </Route>
             </Route>
 
@@ -253,6 +263,13 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
             <Route element={<ProtectedRoute allowedRoles={[CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD]} />}>
               <Route element={<DashboardLayout />}>
                 <Route path="/portal/teacher" element={<TeacherPortal />} />
+              </Route>
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={[MUNICIPALITY_ADMIN]} />}>
+              <Route element={<DashboardLayout />}>
+                <Route path="/municipality" element={<MunicipalityAdminPortal />} />
+                <Route path="/admin/municipality/dashboard" element={<MunicipalityAdminPortal />} />
               </Route>
             </Route>
 

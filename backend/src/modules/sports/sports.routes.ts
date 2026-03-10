@@ -69,11 +69,18 @@ router.get(
 
 /**
  * @route   GET /api/v1/sports
+ * @route   GET /api/v1/sports/list (alias for frontend)
  * @desc    List sports with filters and pagination
  * @access  Private (All authenticated)
  */
 router.get(
   '/',
+  authorize(...readRoles),
+  getSportsValidation,
+  sportsController.getSports
+);
+router.get(
+  '/list',
   authorize(...readRoles),
   getSportsValidation,
   sportsController.getSports
@@ -200,6 +207,18 @@ router.get(
 );
 
 /**
+ * @route   GET /api/v1/sports/:sportId/enrollments
+ * @desc    Get enrollments for a sport (for attendance etc.)
+ * @access  Private (All authenticated)
+ */
+router.get(
+  '/:sportId/enrollments',
+  authorize(...readRoles),
+  getSportByIdValidation,
+  sportsController.getSportEnrollments
+);
+
+/**
  * @route   GET /api/v1/sports/:sportId
  * @desc    Get sport details by ID
  * @access  Private (All authenticated)
@@ -221,6 +240,18 @@ router.put(
   authorize(...manageRoles),
   updateSportValidation,
   sportsController.updateSport
+);
+
+/**
+ * @route   DELETE /api/v1/sports/:sportId
+ * @desc    Delete sport
+ * @access  Private (Sports Coordinator, Admin)
+ */
+router.delete(
+  '/:sportId',
+  authorize(...manageRoles),
+  getSportByIdValidation,
+  sportsController.deleteSport
 );
 
 /**

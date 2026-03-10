@@ -4,9 +4,7 @@ import Class from '@models/Class.model';
 import AttendanceRecord from '@models/AttendanceRecord.model';
 import Grade from '@models/Grade.model';
 import Invoice from '@models/Invoice.model';
-import Payment from '@models/Payment.model';
 import User from '@models/User.model';
-import { logger } from '@utils/logger';
 import { StudentStatus } from '@models/Student.model';
 
 interface ChildInfo {
@@ -71,18 +69,18 @@ class ParentService {
       include: [
         {
           model: Class,
-          as: 'class',
-          attributes: ['className', 'section'],
+          as: 'currentClass',
+          attributes: ['gradeLevel', 'section'],
         },
       ],
     });
 
-    return students.map((student) => ({
+    return students.map((student: any) => ({
       studentId: student.studentId,
       name: student.getFullNameEn(),
-      class: student.class?.className || String(student.admissionClass),
-      section: student.class?.section || '',
-      rollNo: student.rollNumber,
+      class: student.currentClass?.gradeLevel ? `Grade ${student.currentClass.gradeLevel}` : String(student.admissionClass),
+      section: student.currentClass?.section || '',
+      rollNo: student.rollNumber ?? null,
       photoUrl: student.photoUrl,
     }));
   }
@@ -133,11 +131,11 @@ class ParentService {
       limit: 10,
     });
 
-    return grades.map((grade) => ({
-      subject: grade.subjectName || 'Unknown',
-      midterm: grade.midtermGrade,
-      final: grade.finalGrade,
-      gpa: grade.gpa,
+    return grades.map((grade: any) => ({
+      subject: grade.exam?.examName || 'Exam',
+      midterm: grade.grade,
+      final: grade.grade,
+      gpa: Number(grade.gradePoint),
     }));
   }
 
@@ -146,13 +144,6 @@ class ParentService {
 
     const invoices = await Invoice.findAll({
       where: { studentId: childId },
-      include: [
-        {
-          model: Payment,
-          as: 'payments',
-          attributes: ['amount', 'paymentDate'],
-        },
-      ],
       order: [['dueDate', 'DESC']],
       limit: 10,
     });
@@ -161,7 +152,7 @@ class ParentService {
     let totalPending = 0;
 
     const formattedInvoices = invoices.map((inv) => {
-      const paidAmount = inv.payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+      const paidAmount = Number(inv.paidAmount || 0);
       const remaining = Number(inv.totalAmount) - paidAmount;
 
       if (inv.status === 'paid') {
@@ -174,12 +165,12 @@ class ParentService {
       return {
         id: inv.invoiceId,
         month: inv.dueDate
-          ? `${inv.dueDate.toLocaleString('default', { month: 'long' })} ${inv.dueDate.getFullYear()}`
+          ? `${new Date(inv.dueDate).toLocaleString('default', { month: 'long' })} ${new Date(inv.dueDate).getFullYear()}`
           : 'N/A',
         amount: Number(inv.totalAmount),
         status: inv.status,
-        paidDate: inv.payments?.[0]?.paymentDate?.toISOString().split('T')[0],
-        dueDate: inv.dueDate?.toISOString().split('T')[0],
+        paidDate: paidAmount > 0 ? new Date(inv.updatedAt).toISOString().split('T')[0] : undefined,
+        dueDate: inv.dueDate ? new Date(inv.dueDate).toISOString().split('T')[0] : undefined,
       };
     });
 

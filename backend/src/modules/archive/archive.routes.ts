@@ -2,6 +2,7 @@ import { Router } from 'express';
 import archiveController from './archive.controller';
 import { authenticate, authorize } from '../../middleware/auth';
 import { validate } from '../../middleware/validation';
+import { UserRole } from '../../models/User.model';
 import {
   archiveAcademicYearSchema,
   archiveIdSchema,
@@ -12,7 +13,7 @@ const router = Router();
 
 // All routes require authentication and school_admin role
 router.use(authenticate);
-router.use(authorize(['school_admin']));
+router.use(authorize(UserRole.SCHOOL_ADMIN));
 
 // Archive academic year
 router.post(

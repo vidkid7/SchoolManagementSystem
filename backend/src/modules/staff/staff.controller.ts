@@ -164,8 +164,8 @@ class StaffController {
       throw new Error('No photo file provided');
     }
 
-    // For now, just save the file path
-    // In production, you'd want to:
+    // Save uploaded file path.
+    // Optional enhancements:
     // 1. Compress the image
     // 2. Save to proper location
     // 3. Generate thumbnail

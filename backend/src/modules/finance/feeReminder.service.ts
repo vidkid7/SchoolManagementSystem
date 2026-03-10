@@ -2,6 +2,8 @@ import feeReminderRepository from './feeReminder.repository';
 import invoiceRepository from './invoice.repository';
 import FeeReminder, { ReminderType, ReminderStatus, ReminderConfig } from '@models/FeeReminder.model';
 import { Invoice, InvoiceStatus } from '@models/Invoice.model';
+import Student from '@models/Student.model';
+import smsService from '@services/sms.service';
 import { Transaction } from 'sequelize';
 
 /**
@@ -39,6 +41,42 @@ export interface ProcessRemindersResult {
 }
 
 class FeeReminderService {
+  private isMissingColumnError(error: unknown): boolean {
+    if (!(error instanceof Error)) {
+      return false;
+    }
+    return /unknown column|no such column|column .* does not exist/i.test(error.message);
+  }
+
+  private async resolveStudentReminderContact(studentId: number): Promise<{
+    studentName: string;
+    phoneNumber?: string;
+  }> {
+    try {
+      const student = await Student.findByPk(studentId, {
+        attributes: ['studentId', 'firstNameEn', 'middleNameEn', 'lastNameEn', 'fatherPhone', 'motherPhone', 'phone']
+      });
+
+      return {
+        studentName: student?.getFullNameEn() || `Student #${studentId}`,
+        phoneNumber: student?.fatherPhone || student?.motherPhone || student?.phone
+      };
+    } catch (error) {
+      if (!this.isMissingColumnError(error)) {
+        throw error;
+      }
+
+      const legacyStudent = await Student.findByPk(studentId, {
+        attributes: ['studentId', 'firstNameEn', 'middleNameEn', 'lastNameEn']
+      });
+
+      return {
+        studentName: legacyStudent?.getFullNameEn() || `Student #${studentId}`,
+        phoneNumber: undefined
+      };
+    }
+  }
+
   /**
    * Get default reminder configuration
    */
@@ -225,10 +263,16 @@ class FeeReminderService {
             continue;
           }
 
-          // For now, we'll create the reminder with a placeholder phone number
-          // In production, this would fetch the parent's phone number from student record
-          const phoneNumber = '9800000000'; // Placeholder
-          const studentName = 'Student'; // Placeholder
+          const { studentName, phoneNumber } = await this.resolveStudentReminderContact(invoice.studentId);
+
+          if (!phoneNumber) {
+            result.errors.push({
+              invoiceId: invoice.invoiceId,
+              error: `No contact phone found for student ${invoice.studentId}`
+            });
+            result.skipped++;
+            continue;
+          }
 
           // Generate reminder message
           const message = await this.generateReminderMessage(
@@ -265,7 +309,7 @@ class FeeReminderService {
 
   /**
    * Send pending reminders
-   * This integrates with SMS gateway (to be implemented in task 18.1)
+   * Sends pending reminders through SMS gateway
    */
   async sendPendingReminders(limit?: number): Promise<{
     sent: number;
@@ -283,14 +327,12 @@ class FeeReminderService {
 
     for (const reminder of pendingReminders) {
       try {
-        // TODO: Integrate with SMS gateway (task 18.1)
-        // For now, just mark as sent
-        // In production, this would call SMS gateway API
-        
-        // Simulate SMS sending
-        const smsGatewayId = `SMS-${Date.now()}-${reminder.feeReminderId}`;
-        
-        await feeReminderRepository.markAsSent(reminder.feeReminderId, smsGatewayId);
+        const smsResult = await smsService.sendSMS(reminder.phoneNumber, reminder.message);
+        if (!smsResult.success) {
+          throw new Error(smsResult.error || 'Unknown SMS gateway failure');
+        }
+
+        await feeReminderRepository.markAsSent(reminder.feeReminderId, smsResult.messageId);
         result.sent++;
       } catch (error) {
         result.failed++;

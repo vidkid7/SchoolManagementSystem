@@ -247,7 +247,7 @@ export const StudentForm = () => {
         district: data.district,
         fatherName: data.guardian_name,
         fatherPhone: data.guardian_contact,
-        motherName: data.guardian_name, // Using same for now
+        motherName: data.guardian_name,
         motherPhone: data.guardian_contact,
         emergencyContact: data.guardian_contact,
         status: data.status,

@@ -16,6 +16,8 @@ import Sport from '../../models/Sport.model';
 import SportsEnrollment from '../../models/SportsEnrollment.model';
 import Class from '../../models/Class.model';
 import { Subject } from '../../models/Subject.model';
+import StaffAssignment, { AssignmentType } from '../../models/StaffAssignment.model';
+import { Period, Syllabus } from '../../models/Timetable.model';
 import {
   EnrollmentReportParams,
   AttendanceReportParams,
@@ -347,14 +349,105 @@ class ReportService {
       throw new Error('Teacher not found');
     }
 
+    const activeAssignments = await StaffAssignment.findAll({
+      where: {
+        staffId: params.teacherId,
+        isActive: true,
+        assignmentType: {
+          [Op.in]: [AssignmentType.CLASS_TEACHER, AssignmentType.SUBJECT_TEACHER],
+        },
+      },
+    });
+
+    const classIds = Array.from(
+      new Set(
+        activeAssignments
+          .map(assignment => assignment.classId)
+          .filter((classId): classId is number => typeof classId === 'number')
+      )
+    );
+
+    const totalClasses = await Period.count({
+      where: {
+        teacherId: params.teacherId,
+      },
+    });
+
+    // Teacher attendance table does not exist yet; use scheduled classes as attended baseline.
+    const classesAttended = totalClasses;
+
+    let attendanceRate = 0;
+    if (classIds.length > 0) {
+      const attendanceWhere: Record<string, any> = {
+        classId: {
+          [Op.in]: classIds,
+        },
+      };
+
+      const [totalAttendanceRecords, presentAttendanceRecords] = await Promise.all([
+        AttendanceRecord.count({ where: attendanceWhere }),
+        AttendanceRecord.count({
+          where: {
+            ...attendanceWhere,
+            status: 'present',
+          },
+        }),
+      ]);
+
+      attendanceRate = totalAttendanceRecords > 0
+        ? (presentAttendanceRecords / totalAttendanceRecords) * 100
+        : 0;
+    }
+
+    let syllabusCompletion = 0;
+    if (classIds.length > 0) {
+      const syllabi = await Syllabus.findAll({
+        where: {
+          classId: {
+            [Op.in]: classIds,
+          },
+        },
+      });
+
+      if (syllabi.length > 0) {
+        const totalCompletion = syllabi.reduce(
+          (sum, syllabus) => sum + Number(syllabus.get('completedPercentage') || 0),
+          0
+        );
+        syllabusCompletion = totalCompletion / syllabi.length;
+      }
+    }
+
+    const subjectIds = Array.from(
+      new Set(
+        activeAssignments
+          .map(assignment => assignment.subjectId)
+          .filter((subjectId): subjectId is number => typeof subjectId === 'number')
+      )
+    );
+
+    const subjects = subjectIds.length > 0
+      ? await Subject.findAll({
+          where: {
+            subjectId: {
+              [Op.in]: subjectIds,
+            },
+          },
+          attributes: ['subjectId', 'name'],
+        })
+      : [];
+
     return {
-      teacherId: params.teacherId!,
+      teacherId: String(params.teacherId || ''),
       teacherName: `${teacher.firstNameEn} ${teacher.lastNameEn}`,
-      attendanceRate: 95,
-      totalClasses: 100,
-      classesAttended: 95,
-      syllabusCompletion: 85,
-      subjects: [],
+      attendanceRate: Math.round(attendanceRate * 100) / 100,
+      totalClasses,
+      classesAttended,
+      syllabusCompletion: Math.round(syllabusCompletion * 100) / 100,
+      subjects: subjects.map((subject: any) => ({
+        subjectName: subject.name,
+        completionRate: Math.round(syllabusCompletion * 100) / 100,
+      })),
     };
   }
 
@@ -430,12 +523,36 @@ class ReportService {
 
       const totalActivities = await ECA.count();
       const totalParticipants = new Set(enrollments.map(e => e.studentId)).size;
+      const byActivityMap = new Map<number, { activityName: string; participantCount: number }>();
+      const byCategoryMap = new Map<string, number>();
+
+      enrollments.forEach((enrollment: any) => {
+        const eca = enrollment.eca as ECA | undefined;
+        if (!eca) {
+          return;
+        }
+
+        const currentActivity = byActivityMap.get(eca.ecaId) || {
+          activityName: eca.name,
+          participantCount: 0,
+        };
+        currentActivity.participantCount += 1;
+        byActivityMap.set(eca.ecaId, currentActivity);
+
+        const currentCategoryCount = byCategoryMap.get(eca.category) || 0;
+        byCategoryMap.set(eca.category, currentCategoryCount + 1);
+      });
 
       return {
         totalActivities,
         totalParticipants,
-        byActivity: [],
-        byCategory: [],
+        byActivity: Array.from(byActivityMap.values()).sort(
+          (a, b) => b.participantCount - a.participantCount
+        ),
+        byCategory: Array.from(byCategoryMap.entries()).map(([category, count]) => ({
+          category,
+          count,
+        })),
         achievements: [],
       };
     } catch (error: any) {

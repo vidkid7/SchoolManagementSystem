@@ -28,6 +28,7 @@ import SportsEnrollment from './SportsEnrollment.model';
 import Staff from './Staff.model';
 import StaffAttendance from './StaffAttendance.model';
 import LeaveApplication from './LeaveApplication.model';
+import { initializeTenantIsolation } from './tenantIsolation';
 
 /**
  * Set up Exam and ExamSchedule associations
@@ -171,6 +172,7 @@ export function initializeAssociations(): void {
   setupClassSubjectAssociations();
   setupStaffAttendanceAssociations();
   setupLeaveApplicationAssociations();
+  initializeTenantIsolation();
   // Add other association setups here as needed
 }
 

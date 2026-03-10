@@ -95,6 +95,50 @@ export class LibraryService {
   }
 
   /**
+   * Update a book
+   */
+  async updateBook(bookId: number, data: Partial<BookCreationAttributes>): Promise<Book | null> {
+    const book = await Book.findByPk(bookId);
+    if (!book) return null;
+    await book.update(data);
+    return book;
+  }
+
+  /**
+   * Delete a book
+   */
+  async deleteBook(bookId: number): Promise<boolean> {
+    const book = await Book.findByPk(bookId);
+    if (!book) return false;
+    await book.destroy();
+    return true;
+  }
+
+  /**
+   * Get circulation list by status (issued, overdue, returned) with pagination
+   */
+  async getCirculationList(status: string, page = 1, limit = 20): Promise<{ circulations: Circulation[]; total: number; page: number; limit: number }> {
+    const whereClause: any = {};
+    if (status === 'issued') {
+      whereClause.status = { [Op.in]: ['borrowed', 'renewed'] };
+    } else if (status === 'overdue') {
+      whereClause.status = 'borrowed';
+      whereClause.dueDate = { [Op.lt]: new Date() };
+    } else if (status === 'returned') {
+      whereClause.status = 'returned';
+    }
+
+    const { count, rows } = await Circulation.findAndCountAll({
+      where: whereClause,
+      include: [Book, Student],
+      order: [['dueDate', 'DESC']],
+      limit,
+      offset: (page - 1) * limit,
+    });
+    return { circulations: rows, total: count, page, limit };
+  }
+
+  /**
    * Issue a book to a student
    */
   async issueBook(request: IssueBookRequest): Promise<Circulation> {

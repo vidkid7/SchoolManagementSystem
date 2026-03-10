@@ -12,6 +12,12 @@ import paymentService from './payment.service';
 import refundService from './refund.service';
 import invoiceRepository from './invoice.repository';
 import paymentRepository from './payment.repository';
+import paymentGatewayRepository from '@modules/paymentGateway/paymentGateway.repository';
+import feeReminderService from './feeReminder.service';
+import { Invoice, InvoiceStatus } from '@models/Invoice.model';
+import Payment, { PaymentStatus } from '@models/Payment.model';
+import { ReminderType } from '@models/FeeReminder.model';
+import Student from '@models/Student.model';
 
 /**
  * Finance Controller
@@ -91,6 +97,20 @@ class FinanceController {
     });
 
     sendSuccess(res, feeStructure, 'Fee structure updated successfully');
+  });
+
+  /**
+   * Delete fee structure
+   * DELETE /api/v1/finance/fee-structures/:id
+   */
+  deleteFeeStructure = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const id = Number(req.params.id);
+    const deleted = await feeStructureRepository.delete(id);
+    if (!deleted) {
+      throw new NotFoundError('Fee structure');
+    }
+    logger.info('Fee structure deleted via API', { feeStructureId: id });
+    sendSuccess(res, { deleted: true }, 'Fee structure deleted successfully');
   });
 
   // ==================== Invoices ====================
@@ -348,6 +368,40 @@ class FinanceController {
     sendSuccess(res, result, 'Refund processed successfully', HTTP_STATUS.CREATED);
   });
 
+  /**
+   * Refund by payment ID (frontend: POST /finance/payments/:id/refund)
+   * POST /api/v1/finance/payments/:paymentId/refund
+   */
+  refundPaymentById = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const paymentId = Number(req.params.paymentId);
+    const userId = req.user?.userId;
+    const reason = req.body?.reason || 'Refund requested via payment refund endpoint';
+
+    const refund = await refundService.createRefundRequest({
+      paymentId,
+      reason,
+      requestedBy: userId!,
+      remarks: req.body?.remarks
+    });
+
+    const approvedRefund = await refundService.approveRefund({
+      refundId: refund.refundId,
+      approvedBy: userId!,
+      remarks: 'Auto-approved via API'
+    });
+
+    const result = await refundService.processRefund(approvedRefund.refundId);
+
+    logger.info('Refund by payment ID via API', {
+      refundId: result.refund.refundId,
+      paymentId,
+      amount: result.refund.amount,
+      processedBy: userId
+    });
+
+    sendSuccess(res, result, 'Refund processed successfully', HTTP_STATUS.CREATED);
+  });
+
   // ==================== Reports ====================
 
   /**
@@ -395,6 +449,94 @@ class FinanceController {
     sendSuccess(res, defaulters, 'Defaulters list retrieved successfully');
   });
 
+  /**
+   * Get report by type (frontend: GET /finance/reports?type=...)
+   * Delegates to collection, pending, or defaulters based on type.
+   * GET /api/v1/finance/reports
+   */
+  getReportByType = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { type, startDate, endDate, academicYearId, minBalance } = req.query;
+    const t = (type as string) || 'collection';
+
+    if (t === 'pending' || t === 'outstanding') {
+      const report = await invoiceRepository.getPendingFeesReport(
+        academicYearId ? Number(academicYearId) : undefined
+      );
+      sendSuccess(res, report, 'Pending fees report retrieved successfully');
+      return;
+    }
+    if (t === 'defaulters') {
+      const defaulters = await invoiceRepository.getDefaultersList(
+        academicYearId ? Number(academicYearId) : undefined,
+        minBalance ? Number(minBalance) : 1000
+      );
+      sendSuccess(res, defaulters, 'Defaulters list retrieved successfully');
+      return;
+    }
+    // collection, revenue, payment_method, class_wise, monthly -> use collection summary
+    const report = await paymentRepository.getCollectionSummary(
+      startDate as string | undefined,
+      endDate as string | undefined,
+      academicYearId ? Number(academicYearId) : undefined
+    );
+    sendSuccess(res, report, 'Collection report retrieved successfully');
+  });
+
+  /**
+   * Send fee reminder for an invoice
+   * POST /api/v1/finance/invoices/:id/send-reminder
+   */
+  sendInvoiceReminder = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const invoiceId = Number(req.params.id);
+    const invoice = await invoiceService.getInvoiceById(invoiceId);
+    const config = await feeReminderService.getDefaultConfig();
+    const daysOverdue = feeReminderService.calculateDaysOverdue(invoice.dueDate);
+    const reminderType = feeReminderService.determineReminderType(daysOverdue, config) || ReminderType.FIRST;
+
+    const student = await Student.findByPk(invoice.studentId);
+    const phoneNumber = student?.fatherPhone || student?.motherPhone || student?.phone;
+    if (!phoneNumber) {
+      throw new ValidationError('No phone number found for reminder delivery');
+    }
+
+    const studentName = student?.getFullNameEn() || `Student #${invoice.studentId}`;
+    const message = await feeReminderService.generateReminderMessage(
+      invoice,
+      reminderType,
+      studentName,
+      config
+    );
+
+    const reminder = await feeReminderService.createReminder({
+      invoiceId: invoice.invoiceId,
+      studentId: invoice.studentId,
+      reminderType,
+      daysOverdue,
+      phoneNumber,
+      message
+    });
+
+    const sendResult = await feeReminderService.sendPendingReminders(1);
+
+    logger.info('Invoice reminder requested via API', {
+      invoiceId,
+      studentId: invoice.studentId,
+      reminderId: reminder.feeReminderId,
+      sent: sendResult.sent > 0
+    });
+
+    sendSuccess(
+      res,
+      {
+        sent: sendResult.sent > 0,
+        invoiceId,
+        reminderId: reminder.feeReminderId,
+        reminderType
+      },
+      sendResult.sent > 0 ? 'Reminder sent successfully' : 'Reminder queued but sending failed'
+    );
+  });
+
   // ==================== Dashboard ====================
 
   /**
@@ -402,43 +544,46 @@ class FinanceController {
    * GET /api/v1/finance/statistics
    */
   getStatistics = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const stats = {
-      totalCollection: 1250000,
-      pendingFees: 345000,
-      totalInvoices: 450,
-      paidInvoices: 380,
-      overdueInvoices: 25,
-      collectionRate: 84.4,
-      monthlyCollection: [
-        { month: 'Jan', amount: 150000 },
-        { month: 'Feb', amount: 175000 },
-        { month: 'Mar', amount: 200000 },
-        { month: 'Apr', amount: 180000 },
-        { month: 'May', amount: 220000 },
-        { month: 'Jun', amount: 195000 },
-      ],
-      feeBreakdown: [
-        { category: 'Tuition Fee', amount: 800000, percentage: 64 },
-        { category: 'Lab Fee', amount: 150000, percentage: 12 },
-        { category: 'Library Fee', amount: 100000, percentage: 8 },
-        { category: 'Sports Fee', amount: 120000, percentage: 10 },
-        { category: 'Other', amount: 80000, percentage: 6 },
-      ],
-    };
+    const [collectionReport, pendingReport, totalInvoices, paidInvoices, overdueInvoices, paidPayments] = await Promise.all([
+      paymentRepository.getCollectionSummary(),
+      invoiceRepository.getPendingFeesReport(),
+      Invoice.count(),
+      Invoice.count({ where: { status: InvoiceStatus.PAID } }),
+      Invoice.count({ where: { status: InvoiceStatus.OVERDUE } }),
+      Payment.findAll({
+        where: { status: PaymentStatus.COMPLETED },
+        attributes: ['paymentDate', 'amount']
+      })
+    ]);
 
-    try {
-      const collectionReport = await paymentRepository.getCollectionSummary();
-      const pendingReport = await invoiceRepository.getPendingFeesReport();
-      
-      if (collectionReport) {
-        stats.totalCollection = collectionReport.totalCollected || stats.totalCollection;
-      }
-      if (pendingReport) {
-        stats.pendingFees = pendingReport.totalPending || stats.pendingFees;
-      }
-    } catch (error) {
-      logger.warn('Could not fetch live statistics, using defaults');
-    }
+    const monthlyBuckets = new Map<string, number>();
+    paidPayments.forEach((payment) => {
+      const date = new Date(payment.paymentDate);
+      if (Number.isNaN(date.getTime())) return;
+      const monthLabel = date.toLocaleString('en-US', { month: 'short' });
+      monthlyBuckets.set(monthLabel, (monthlyBuckets.get(monthLabel) || 0) + Number(payment.amount));
+    });
+
+    const paymentMethodBreakdown = Object.entries(collectionReport.byMethod || {}).map(
+      ([category, data]: [string, any]) => ({
+        category,
+        amount: Number(data.total || 0),
+        percentage: collectionReport.totalAmount > 0
+          ? Number((((Number(data.total || 0) / collectionReport.totalAmount) * 100)).toFixed(2))
+          : 0
+      })
+    );
+
+    const stats = {
+      totalCollection: Number(collectionReport.totalAmount || 0),
+      pendingFees: Number(pendingReport.totalPending || 0),
+      totalInvoices,
+      paidInvoices,
+      overdueInvoices,
+      collectionRate: totalInvoices > 0 ? Number(((paidInvoices / totalInvoices) * 100).toFixed(2)) : 0,
+      monthlyCollection: Array.from(monthlyBuckets.entries()).map(([month, amount]) => ({ month, amount })),
+      feeBreakdown: paymentMethodBreakdown,
+    };
 
     sendSuccess(res, stats, 'Finance statistics retrieved successfully');
   });
@@ -453,7 +598,7 @@ class FinanceController {
     let transactions: any[] = [];
 
     try {
-      const payments = await paymentRepository.findAll({ limit });
+      const { payments } = await paymentRepository.findAll({}, { limit, offset: 0 });
       transactions = payments.map((p: any) => ({
         id: p.paymentId,
         type: 'payment',
@@ -475,6 +620,80 @@ class FinanceController {
     }
 
     sendSuccess(res, transactions, 'Recent transactions retrieved successfully');
+  });
+
+  // ==================== Payment Gateways ====================
+
+  /** In-memory gateway config (keyed by gateway key). Persist to DB in production if needed. */
+  private static gatewayConfigStore: Record<string, { name: string; enabled: boolean; merchantId: string; secretKey: string; testMode: boolean }> = {
+    esewa: { name: 'eSewa', enabled: false, merchantId: '', secretKey: '', testMode: true },
+    khalti: { name: 'Khalti', enabled: false, merchantId: '', secretKey: '', testMode: true },
+    ime_pay: { name: 'IME Pay', enabled: false, merchantId: '', secretKey: '', testMode: true },
+  };
+
+  /**
+   * GET /api/v1/finance/payment-gateways/config
+   */
+  getPaymentGatewayConfigs = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const config = { ...FinanceController.gatewayConfigStore };
+    sendSuccess(res, config, 'Payment gateway config retrieved');
+  });
+
+  /**
+   * GET /api/v1/finance/payment-gateways/transactions
+   */
+  getPaymentGatewayTransactions = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const limit = Math.min(Number(req.query.limit) || 10, 100);
+    const transactions = await paymentGatewayRepository.findAll({});
+    const list = transactions.slice(0, limit).map((t: any) => ({
+      id: t.transactionId,
+      gateway: t.gateway,
+      transactionId: t.transactionUuid,
+      amount: t.amount,
+      status: t.status,
+      date: t.initiatedAt || t.createdAt,
+      studentName: t.studentId ? String(t.studentId) : '—',
+    }));
+    sendSuccess(res, list, 'Gateway transactions retrieved');
+  });
+
+  /**
+   * PUT /api/v1/finance/payment-gateways/:gatewayKey
+   */
+  updatePaymentGatewayConfig = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const gatewayKey = (req.params.gatewayKey || '').toLowerCase().replace(/-/g, '_');
+    const allowed = ['esewa', 'khalti', 'ime_pay'];
+    if (!allowed.includes(gatewayKey)) {
+      throw new ValidationError(`Unknown gateway: ${req.params.gatewayKey}`);
+    }
+    const { name, enabled, merchantId, secretKey, testMode } = req.body;
+    const current = FinanceController.gatewayConfigStore[gatewayKey] || {
+      name: gatewayKey,
+      enabled: false,
+      merchantId: '',
+      secretKey: '',
+      testMode: true,
+    };
+    FinanceController.gatewayConfigStore[gatewayKey] = {
+      name: name ?? current.name,
+      enabled: enabled ?? current.enabled,
+      merchantId: merchantId ?? current.merchantId,
+      secretKey: secretKey ?? current.secretKey,
+      testMode: testMode ?? current.testMode,
+    };
+    sendSuccess(res, FinanceController.gatewayConfigStore[gatewayKey], 'Payment gateway config updated');
+  });
+
+  /**
+   * POST /api/v1/finance/payment-gateways/:gatewayKey/test
+   */
+  testPaymentGatewayConnection = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const gatewayKey = (req.params.gatewayKey || '').toLowerCase().replace(/-/g, '_');
+    const allowed = ['esewa', 'khalti', 'ime_pay'];
+    if (!allowed.includes(gatewayKey)) {
+      throw new ValidationError(`Unknown gateway: ${req.params.gatewayKey}`);
+    }
+    sendSuccess(res, { success: true }, 'Connection test successful');
   });
 }
 

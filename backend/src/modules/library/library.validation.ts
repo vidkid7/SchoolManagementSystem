@@ -6,7 +6,7 @@
  * Requirements: 10.1-10.13
  */
 
-import { body, param, query } from 'express-validator';
+import { body } from 'express-validator';
 
 export const libraryValidation = {
   /**
@@ -103,8 +103,20 @@ export const libraryValidation = {
    */
   returnBook: [
     body('circulationId')
+      .optional()
       .isInt({ min: 1 })
       .withMessage('Valid circulation ID is required'),
+    body('circulation_id')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('Valid circulation_id is required'),
+    body()
+      .custom((_val, { req }) => {
+        if (!req.body?.circulationId && !req.body?.circulation_id) {
+          throw new Error('circulationId or circulation_id is required');
+        }
+        return true;
+      }),
 
     body('condition')
       .optional()

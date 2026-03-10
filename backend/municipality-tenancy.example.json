@@ -1,0 +1,44 @@
+{
+  "municipalities": [
+    {
+      "code": "KMC",
+      "nameEn": "Kathmandu Metropolitan City",
+      "nameNp": "काठमाडौं महानगरपालिका",
+      "district": "Kathmandu",
+      "province": "Bagmati",
+      "contactPhone": "+977-01-1234567",
+      "contactEmail": "education@kmc.gov.np",
+      "schools": [
+        {
+          "schoolCode": "KMC-001",
+          "schoolNameEn": "KMC Model Secondary School",
+          "schoolNameNp": "काठमाडौँ नमुना माध्यमिक विद्यालय",
+          "addressEn": "Ward 5, Kathmandu",
+          "phone": "+977-01-4012345",
+          "email": "info@kmc001.edu.np",
+          "isActive": true
+        }
+      ],
+      "admins": [
+        {
+          "username": "kmcadmin",
+          "email": "kmc.admin@local.gov.np",
+          "password": "ChangeMe@123",
+          "phoneNumber": "+977-9800000001",
+          "schoolCode": "KMC-001"
+        }
+      ]
+    }
+  ],
+  "userAssignments": [
+    {
+      "username": "teacher1",
+      "schoolCode": "KMC-001"
+    },
+    {
+      "username": "student1",
+      "schoolCode": "KMC-001"
+    }
+  ],
+  "defaultSchoolCodeForUnassignedUsers": "KMC-001"
+}

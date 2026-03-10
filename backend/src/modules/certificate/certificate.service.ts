@@ -14,6 +14,7 @@ import QRCode from 'qrcode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
+import NepaliDate from 'nepali-date-converter';
 
 const mkdir = promisify(fs.mkdir);
 
@@ -462,14 +463,18 @@ export class CertificateService {
   }
 
   /**
-   * Convert AD date to BS (simplified - use proper library in production)
+   * Convert AD date to BS
    */
   private convertToBS(date: Date): string {
-    // This is a placeholder - in production, use nepali-date-converter library
-    const year = date.getFullYear() + 57; // Approximate conversion
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    try {
+      const nepaliDate = new (NepaliDate as any)(date);
+      const year = String(nepaliDate.getYear()).padStart(4, '0');
+      const month = String(nepaliDate.getMonth() + 1).padStart(2, '0');
+      const day = String(nepaliDate.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      throw new Error(`Failed to convert AD date to BS: ${(error as Error).message}`);
+    }
   }
 
   /**

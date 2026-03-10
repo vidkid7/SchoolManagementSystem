@@ -12,6 +12,8 @@ export interface User {
   username: string;
   email: string;
   role: string;
+  municipalityId?: string;
+  schoolConfigId?: string;
   firstName?: string;
   lastName?: string;
 }
@@ -86,6 +88,54 @@ export const getCurrentUser = createAsyncThunk('auth/getCurrentUser', async (_, 
     return rejectWithValue(error.response?.data?.message || 'Failed to fetch user');
   }
 });
+
+export const register = createAsyncThunk(
+  'auth/register',
+  async (data: { username: string; email: string; password: string; confirmPassword: string; role: string; phoneNumber?: string }, { rejectWithValue }) => {
+    try {
+      await api.post('/auth/register', data);
+      return null;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Registration failed');
+    }
+  }
+);
+
+export const forgotPassword = createAsyncThunk(
+  'auth/forgotPassword',
+  async (email: string, { rejectWithValue }) => {
+    try {
+      await api.post('/auth/forgot-password', { email });
+      return null;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Request failed');
+    }
+  }
+);
+
+export const resetPassword = createAsyncThunk(
+  'auth/resetPassword',
+  async (data: { token: string; newPassword: string; confirmNewPassword: string }, { rejectWithValue }) => {
+    try {
+      await api.post('/auth/reset-password', data);
+      return null;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Reset failed');
+    }
+  }
+);
+
+export const changePassword = createAsyncThunk(
+  'auth/changePassword',
+  async (data: { currentPassword: string; newPassword: string; confirmNewPassword: string }, { rejectWithValue }) => {
+    try {
+      await api.post('/auth/change-password', data);
+      return null;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Change password failed');
+    }
+  }
+);
 
 // Slice
 const authSlice = createSlice({
@@ -162,6 +212,12 @@ const authSlice = createSlice({
       state.user = null;
       state.accessToken = null;
       state.refreshToken = null;
+    });
+
+    [register, forgotPassword, resetPassword, changePassword].forEach((thunk) => {
+      builder.addCase(thunk.pending, (state) => { state.isLoading = true; state.error = null; });
+      builder.addCase(thunk.fulfilled, (state) => { state.isLoading = false; state.error = null; });
+      builder.addCase(thunk.rejected, (state, action) => { state.isLoading = false; state.error = action.payload as string; });
     });
   },
 });

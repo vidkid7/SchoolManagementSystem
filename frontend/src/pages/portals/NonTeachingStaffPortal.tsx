@@ -43,27 +43,40 @@ interface DashboardData {
   quickLinks: Array<{ label: string; path: string }>;
 }
 
+interface ProfileData {
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber?: string;
+  role: string;
+  status: string;
+}
+
 const NonTeachingStaffPortal: React.FC = () => {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user, accessToken } = useSelector((state: RootState) => state.auth);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchDashboard = async () => {
+    const fetchAll = async () => {
       try {
-        const response = await apiClient.get('/api/v1/non-teaching-staff/dashboard', {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
-        setData(response.data.data);
+        const [dashboardRes, profileRes] = await Promise.all([
+          apiClient.get('/api/v1/non-teaching-staff/dashboard', { headers: { Authorization: `Bearer ${accessToken}` } }),
+          apiClient.get('/api/v1/non-teaching-staff/profile', { headers: { Authorization: `Bearer ${accessToken}` } }).catch(() => ({ data: { data: null } })),
+        ]);
+        setData(dashboardRes.data.data);
+        setProfile(profileRes.data?.data ?? null);
       } catch {
         setError('Failed to load staff dashboard');
       } finally {
         setLoading(false);
       }
     };
-    fetchDashboard();
+    fetchAll();
   }, [accessToken]);
 
   if (loading) {
@@ -123,7 +136,7 @@ const NonTeachingStaffPortal: React.FC = () => {
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
                 <Typography variant="h6" fontWeight={600}>My Profile</Typography>
-                <Chip label="Non-Teaching Staff" color="warning" size="small" />
+                <Chip label={profile?.role || 'Non-Teaching Staff'} color="warning" size="small" />
               </Box>
               <Divider sx={{ mb: 2 }} />
               <Grid container spacing={2}>
@@ -132,21 +145,21 @@ const NonTeachingStaffPortal: React.FC = () => {
                     <PersonIcon color="action" />
                     <Box>
                       <Typography variant="caption" color="text.secondary">Name</Typography>
-                      <Typography variant="body1">{user?.firstName} {user?.lastName}</Typography>
+                      <Typography variant="body1">{(profile?.firstName && profile?.lastName) ? `${profile.firstName} ${profile.lastName}` : (user?.firstName && user?.lastName) ? `${user.firstName} ${user.lastName}` : user?.username}</Typography>
                     </Box>
                   </Box>
                   <Box display="flex" alignItems="center" gap={1} mb={1}>
                     <StaffIcon color="action" />
                     <Box>
                       <Typography variant="caption" color="text.secondary">Username</Typography>
-                      <Typography variant="body1">{user?.username}</Typography>
+                      <Typography variant="body1">{profile?.username ?? user?.username}</Typography>
                     </Box>
                   </Box>
                   <Box display="flex" alignItems="center" gap={1}>
                     <AnnouncementIcon color="action" />
                     <Box>
-                      <Typography variant="caption" color="text.secondary">Role</Typography>
-                      <Typography variant="body1">Non-Teaching Staff</Typography>
+                      <Typography variant="caption" color="text.secondary">Email</Typography>
+                      <Typography variant="body1">{profile?.email ?? user?.email ?? '—'}</Typography>
                     </Box>
                   </Box>
                 </Grid>

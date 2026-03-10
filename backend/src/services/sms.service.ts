@@ -1,5 +1,6 @@
 import { logger } from '@utils/logger';
 import { env } from '@config/env';
+import { sparrowSmsService } from '@modules/notifications/sparrow-sms.service';
 
 /**
  * SMS Service Interface
@@ -21,8 +22,7 @@ export interface SMSResult {
 
 /**
  * SMS Service
- * Mock implementation for development
- * In production, integrate with Sparrow SMS or Aakash SMS (Nepal SMS gateways)
+ * Integrates with Sparrow SMS when configured.
  */
 class SMSService {
   private enabled: boolean;
@@ -50,20 +50,29 @@ class SMSService {
         return { success: false, error: 'Invalid phone number format' };
       }
 
-      // Mock SMS sending for development
-      // In production, integrate with Sparrow SMS or Aakash SMS API
-      logger.info('SMS sent (mock)', {
-        recipient,
-        messageLength: message.length,
-        language
-      });
+      if (sparrowSmsService.isConfigured()) {
+        const gatewayResponse = language === 'nepali'
+          ? await sparrowSmsService.sendUnicodeSms(recipient, message)
+          : await sparrowSmsService.sendSms({ to: recipient, text: message, type: 'sms' });
 
-      // Simulate SMS gateway response
-      const messageId = `SMS-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const success = gatewayResponse.response_code === 200;
+        if (!success) {
+          return {
+            success: false,
+            error: gatewayResponse.message || 'SMS gateway rejected request'
+          };
+        }
 
+        return {
+          success: true,
+          messageId: gatewayResponse.response_data
+        };
+      }
+
+      logger.warn('SMS gateway is not configured', { recipient, language });
       return {
-        success: true,
-        messageId
+        success: false,
+        error: 'SMS gateway is not configured'
       };
     } catch (error) {
       logger.error('Error sending SMS', { error, recipient });
@@ -92,7 +101,7 @@ class SMSService {
    * Send admission workflow notification
    * Requirements: 3.11
    */
-  async sendAdmissionNotification(
+  sendAdmissionNotification(
     recipient: string,
     stage: 'inquiry' | 'application' | 'test_scheduled' | 'interview_scheduled' | 'admitted' | 'enrolled' | 'rejected',
     data: {
@@ -121,7 +130,7 @@ class SMSService {
    * Send low attendance alert
    * Requirements: 6.8
    */
-  async sendLowAttendanceAlert(
+  sendLowAttendanceAlert(
     recipient: string,
     studentName: string,
     attendancePercentage: number
@@ -134,7 +143,7 @@ class SMSService {
    * Send fee reminder
    * Requirements: 9.13
    */
-  async sendFeeReminder(
+  sendFeeReminder(
     recipient: string,
     studentName: string,
     amount: number,

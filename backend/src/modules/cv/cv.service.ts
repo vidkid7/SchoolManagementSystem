@@ -2,6 +2,18 @@ import PDFDocument from 'pdfkit';
 import { logger } from '@utils/logger';
 import StudentRepository from '@modules/student/student.repository';
 import Student from '@models/Student.model';
+import AttendanceRecord, { AttendanceStatus } from '@models/AttendanceRecord.model';
+import Grade from '@models/Grade.model';
+import Exam from '@models/Exam.model';
+import { Subject } from '@models/Subject.model';
+import ECAEnrollment from '@models/ECAEnrollment.model';
+import ECAAchievement from '@models/ECAAchievement.model';
+import ECA from '@models/ECA.model';
+import SportsEnrollment from '@models/SportsEnrollment.model';
+import SportsAchievement from '@models/SportsAchievement.model';
+import Sport from '@models/Sport.model';
+import { Certificate } from '@models/Certificate.model';
+import { Op } from 'sequelize';
 
 /**
  * CV Data Interface
@@ -99,6 +111,29 @@ export interface CVCustomization {
  * Handles CV data aggregation and PDF generation
  */
 class CVService {
+  private getDurationLabel(dateValue?: string | Date): string {
+    if (!dateValue) return 'N/A';
+
+    const start = new Date(dateValue);
+    if (Number.isNaN(start.getTime())) return 'N/A';
+
+    const now = new Date();
+    const diffMs = Math.max(0, now.getTime() - start.getTime());
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays >= 365) {
+      const years = Math.floor(diffDays / 365);
+      return `${years} year${years > 1 ? 's' : ''}`;
+    }
+
+    if (diffDays >= 30) {
+      const months = Math.floor(diffDays / 30);
+      return `${months} month${months > 1 ? 's' : ''}`;
+    }
+
+    return `${diffDays} day${diffDays !== 1 ? 's' : ''}`;
+  }
+
   /**
    * Get CV data for a student
    */
@@ -109,96 +144,167 @@ class CVService {
         throw new Error('Student not found');
       }
 
-      // Mock data - replace with actual data from respective modules
+      const [
+        attendanceRecords,
+        grades,
+        ecaEnrollments,
+        ecaAchievements,
+        sportsEnrollments,
+        sportsAchievements,
+        certificates
+      ] = await Promise.all([
+        AttendanceRecord.findAll({ where: { studentId } }),
+        Grade.findAll({
+          where: { studentId },
+          include: [
+            {
+              model: Exam,
+              as: 'exam',
+              required: false,
+              include: [{ model: Subject, as: 'subject', required: false }]
+            }
+          ],
+          order: [['enteredAt', 'DESC']],
+          limit: 30
+        }),
+        ECAEnrollment.findAll({
+          where: { studentId },
+          include: [{ model: ECA, as: 'eca', required: false }],
+          order: [['createdAt', 'DESC']]
+        }),
+        ECAAchievement.findAll({
+          where: { studentId },
+          include: [{ model: ECA, as: 'eca', required: false }],
+          order: [['achievementDate', 'DESC']]
+        }),
+        SportsEnrollment.findAll({
+          where: { studentId },
+          include: [{ model: Sport, as: 'sport', required: false }],
+          order: [['createdAt', 'DESC']]
+        }),
+        SportsAchievement.findAll({
+          where: { studentId },
+          order: [['achievementDate', 'DESC']]
+        }),
+        Certificate.findAll({
+          where: { studentId },
+          order: [['issuedDate', 'DESC']],
+          limit: 20
+        })
+      ]);
+
+      const sportIds = Array.from(new Set(sportsAchievements.map(a => a.sportId).filter(Boolean)));
+      const sports = sportIds.length > 0
+        ? await Sport.findAll({ where: { sportId: { [Op.in]: sportIds } } as any })
+        : [];
+      const sportNameMap = new Map<number, string>(
+        sports.map(sport => [sport.sportId, sport.name])
+      );
+
+      const presentDays = attendanceRecords.filter(
+        r => r.status === AttendanceStatus.PRESENT
+      ).length;
+      const absentDays = attendanceRecords.filter(
+        r => r.status === AttendanceStatus.ABSENT
+      ).length;
+      const lateDays = attendanceRecords.filter(
+        r => r.status === AttendanceStatus.LATE
+      ).length;
+      const excusedDays = attendanceRecords.filter(
+        r => r.status === AttendanceStatus.EXCUSED
+      ).length;
+      const totalDays = attendanceRecords.length;
+
+      const ecaParticipationRows = ecaEnrollments.map((enrollment: any) => ({
+        ecaName: enrollment.eca?.name || `ECA ${enrollment.ecaId}`,
+        category: enrollment.eca?.category || 'unknown',
+        duration: this.getDurationLabel(enrollment.enrollmentDate),
+        attendancePercentage: enrollment.getAttendancePercentage(),
+        status: enrollment.status
+      }));
+
+      const ecaAchievementRows = ecaAchievements.map((achievement: any) => ({
+        title: achievement.title,
+        ecaName: achievement.eca?.name || `ECA ${achievement.ecaId}`,
+        type: achievement.type,
+        level: achievement.level,
+        position: achievement.position,
+        date: new Date(achievement.achievementDate)
+      }));
+
+      const sportsParticipationRows = sportsEnrollments.map((enrollment: any) => ({
+        sportName: enrollment.sport?.name || `Sport ${enrollment.sportId}`,
+        category: enrollment.sport?.category || 'unknown',
+        duration: this.getDurationLabel(enrollment.enrollmentDate),
+        attendancePercentage: enrollment.getAttendancePercentage(),
+        status: enrollment.status
+      }));
+
+      const sportsAchievementRows = sportsAchievements.map((achievement) => ({
+        title: achievement.title,
+        sportName: sportNameMap.get(achievement.sportId) || `Sport ${achievement.sportId}`,
+        type: achievement.type,
+        level: achievement.level,
+        position: achievement.position,
+        medal: achievement.medal,
+        date: new Date(achievement.achievementDate)
+      }));
+
+      const sportMedals = sportsAchievements.reduce(
+        (acc, achievement) => {
+          if (achievement.medal === 'gold') acc.gold += 1;
+          if (achievement.medal === 'silver') acc.silver += 1;
+          if (achievement.medal === 'bronze') acc.bronze += 1;
+          return acc;
+        },
+        { gold: 0, silver: 0, bronze: 0 }
+      );
+
       const cvData: CVData = {
         student,
         attendance: {
-          overallPercentage: 92.5,
-          totalDays: 200,
-          presentDays: 185,
-          absentDays: 10,
-          lateDays: 5,
-          excusedDays: 0
+          overallPercentage: totalDays > 0 ? Number(((presentDays / totalDays) * 100).toFixed(2)) : 0,
+          totalDays,
+          presentDays,
+          absentDays,
+          lateDays,
+          excusedDays
         },
-        grades: [
-          { subject: 'English', marks: 85, grade: 'A' },
-          { subject: 'Mathematics', marks: 92, grade: 'A+' },
-          { subject: 'Science', marks: 78, grade: 'B+' },
-          { subject: 'Nepali', marks: 88, grade: 'A' },
-          { subject: 'Social Studies', marks: 82, grade: 'A-' }
-        ],
+        grades: grades.map((grade: any) => ({
+          subject: grade.exam?.subject?.nameEn || grade.exam?.name || `Exam ${grade.examId}`,
+          marks: Number(grade.totalMarks),
+          grade: grade.grade
+        })),
         eca: {
-          participations: [
-            {
-              ecaName: 'Scouts',
-              category: 'Community Service',
-              duration: '2 years',
-              attendancePercentage: 95,
-              status: 'Active'
-            },
-            {
-              ecaName: 'Music Club',
-              category: 'Arts',
-              duration: '1 year',
-              attendancePercentage: 88,
-              status: 'Active'
-            }
-          ],
-          achievements: [
-            {
-              title: 'First Prize in School Music Competition',
-              ecaName: 'Music Club',
-              type: 'Competition',
-              level: 'School',
-              position: '1st',
-              date: new Date('2024-01-15')
-            }
-          ],
+          participations: ecaParticipationRows,
+          achievements: ecaAchievementRows,
           summary: {
-            totalECAs: 2,
-            totalAchievements: 1,
-            highLevelAchievements: 0,
-            averageAttendance: 91.5
+            totalECAs: ecaParticipationRows.length,
+            totalAchievements: ecaAchievementRows.length,
+            highLevelAchievements: ecaAchievementRows.filter(a => ['national', 'international'].includes(a.level)).length,
+            averageAttendance: ecaParticipationRows.length > 0
+              ? Number((ecaParticipationRows.reduce((sum, p) => sum + p.attendancePercentage, 0) / ecaParticipationRows.length).toFixed(2))
+              : 0
           }
         },
         sports: {
-          participations: [
-            {
-              sportName: 'Football',
-              category: 'Team Sports',
-              duration: '3 years',
-              attendancePercentage: 92,
-              status: 'Active'
-            }
-          ],
-          achievements: [
-            {
-              title: 'District Level Winner',
-              sportName: 'Football',
-              type: 'Tournament',
-              level: 'District',
-              position: 'Captain',
-              medal: 'Gold',
-              date: new Date('2024-02-20')
-            }
-          ],
+          participations: sportsParticipationRows,
+          achievements: sportsAchievementRows,
           summary: {
-            totalSports: 1,
-            totalAchievements: 1,
-            highLevelAchievements: 1,
-            averageAttendance: 92,
-            medalCount: {
-              gold: 1,
-              silver: 0,
-              bronze: 0
-            },
-            recordsSet: 0
+            totalSports: sportsParticipationRows.length,
+            totalAchievements: sportsAchievementRows.length,
+            highLevelAchievements: sportsAchievementRows.filter(a => ['national', 'international'].includes(a.level)).length,
+            averageAttendance: sportsParticipationRows.length > 0
+              ? Number((sportsParticipationRows.reduce((sum, p) => sum + p.attendancePercentage, 0) / sportsParticipationRows.length).toFixed(2))
+              : 0,
+            medalCount: sportMedals,
+            recordsSet: sportsAchievements.filter(achievement => achievement.type === 'record').length
           }
         },
-        certificates: [
-          { title: 'Character Certificate', issuedDate: '2024-03-15' },
-          { title: 'Transfer Certificate', issuedDate: '2024-03-20' }
-        ]
+        certificates: certificates.map(certificate => ({
+          title: String(certificate.data?.title || `${certificate.type.replace(/_/g, ' ')} certificate`),
+          issuedDate: certificate.issuedDateBS || new Date(certificate.issuedDate).toISOString().split('T')[0]
+        }))
       };
 
       return cvData;
@@ -363,9 +469,8 @@ class CVService {
    * Check if CV needs regeneration
    */
   needsRegeneration(_studentId: number): boolean {
-    // Logic to check if student data has changed since last CV generation
-    // For now, always return false
-    return false;
+    // Always regenerate to ensure CV reflects latest profile/activity state.
+    return true;
   }
 }
 
