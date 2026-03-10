@@ -249,3 +249,42 @@ export const getNotifications = async (
     next(error);
   }
 };
+
+export const getMyClass = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'Authentication required',
+      });
+      return;
+    }
+
+    const staff = await teacherService.getStaffFromUserId(userId);
+
+    if (!staff) {
+      res.status(404).json({
+        success: false,
+        message: 'Staff profile not found',
+      });
+      return;
+    }
+
+    const classData = await teacherService.getMyClass(staff.staffId);
+
+    res.status(200).json({
+      success: true,
+      data: classData,
+      message: 'Class data retrieved successfully',
+    });
+  } catch (error) {
+    logger.error('Error fetching class data:', error);
+    next(error);
+  }
+};

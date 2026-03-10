@@ -42,9 +42,12 @@ const AttendanceSettings = React.lazy(() => import('./pages/attendance/Attendanc
 const FinanceDashboard = React.lazy(() => import('./pages/finance/FinanceDashboard').then(m => ({ default: m.FinanceDashboard })));
 const FeeStructures = React.lazy(() => import('./pages/finance/FeeStructures').then(m => ({ default: m.FeeStructures })));
 const InvoiceList = React.lazy(() => import('./pages/finance/InvoiceList').then(m => ({ default: m.InvoiceList })));
+const InvoiceGeneration = React.lazy(() => import('./pages/finance/InvoiceGeneration').then(m => ({ default: m.InvoiceGeneration })));
 const Payments = React.lazy(() => import('./pages/finance/Payments').then(m => ({ default: m.Payments })));
+const RefundManagement = React.lazy(() => import('./pages/finance/RefundManagement').then(m => ({ default: m.RefundManagement })));
 const PaymentGateways = React.lazy(() => import('./pages/finance/PaymentGateways').then(m => ({ default: m.PaymentGateways })));
 const FinancialReports = React.lazy(() => import('./pages/finance/FinancialReports').then(m => ({ default: m.FinancialReports })));
+const StudentFeeSearch = React.lazy(() => import('./pages/finance/StudentFeeSearch').then(m => ({ default: m.StudentFeeSearch })));
 
 const StaffList = React.lazy(() => import('./pages/staff/StaffList').then(m => ({ default: m.StaffList })));
 const StaffForm = React.lazy(() => import('./pages/staff/StaffForm').then(m => ({ default: m.StaffForm })));
@@ -92,6 +95,9 @@ const ReportsAnalytics = React.lazy(() => import('./pages/reports/ReportsAnalyti
 const TeacherDashboard = React.lazy(() => import('./pages/teacher/TeacherDashboard').then(m => ({ default: m.TeacherDashboard })));
 const LessonPlanning = React.lazy(() => import('./pages/teacher/LessonPlanning').then(m => ({ default: m.LessonPlanning })));
 const AssignmentManagement = React.lazy(() => import('./pages/teacher/AssignmentManagement').then(m => ({ default: m.AssignmentManagement })));
+const ClassRoster = React.lazy(() => import('./pages/teacher/ClassRoster').then(m => ({ default: m.ClassRoster })));
+const BehaviorTracking = React.lazy(() => import('./pages/teacher/BehaviorTracking').then(m => ({ default: m.BehaviorTracking })));
+const DepartmentTeachers = React.lazy(() => import('./pages/department/DepartmentTeachers').then(m => ({ default: m.DepartmentTeachers })));
 
 const Messaging = React.lazy(() => import('./pages/communication/Messaging').then(m => ({ default: m.Messaging })));
 const Announcements = React.lazy(() => import('./pages/communication/Announcements').then(m => ({ default: m.Announcements })));
@@ -393,9 +399,14 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
                 <Route path="/finance/dashboard" element={<FinanceDashboard />} />
                 <Route path="/finance/fee-structures" element={<FeeStructures />} />
                 <Route path="/finance/invoices" element={<InvoiceList />} />
+                <Route path="/finance/invoices/generate" element={<InvoiceGeneration />} />
+                <Route path="/finance/invoices/create" element={<InvoiceGeneration />} />
+                <Route path="/finance/invoices/bulk-generate" element={<InvoiceGeneration />} />
                 <Route path="/finance/payments" element={<Payments />} />
+                <Route path="/finance/refunds" element={<RefundManagement />} />
                 <Route path="/finance/payment-gateways" element={<PaymentGateways />} />
                 <Route path="/finance/reports" element={<FinancialReports />} />
+                <Route path="/finance/students" element={<StudentFeeSearch />} />
               </Route>
             </Route>
 
@@ -483,8 +494,25 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
             <Route element={<ProtectedRoute allowedRoles={[ADMIN, CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD]} />}>
               <Route element={<DashboardLayout />}>
                 <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+                <Route path="/teacher/lesson-planning" element={<LessonPlanning />} />
                 <Route path="/teacher/lessons" element={<LessonPlanning />} />
                 <Route path="/teacher/assignments" element={<AssignmentManagement />} />
+              </Route>
+            </Route>
+
+            {/* Class Teacher specific routes */}
+            <Route element={<ProtectedRoute allowedRoles={[CLASS_TEACHER, ADMIN]} />}>
+              <Route element={<DashboardLayout />}>
+                <Route path="/teacher/my-class" element={<ClassRoster />} />
+                <Route path="/teacher/classes" element={<ClassRoster />} />
+                <Route path="/teacher/behavior" element={<BehaviorTracking />} />
+              </Route>
+            </Route>
+
+            {/* Department Head specific routes */}
+            <Route element={<ProtectedRoute allowedRoles={[DEPT_HEAD, ADMIN]} />}>
+              <Route element={<DashboardLayout />}>
+                <Route path="/department/teachers" element={<DepartmentTeachers />} />
               </Route>
             </Route>
 

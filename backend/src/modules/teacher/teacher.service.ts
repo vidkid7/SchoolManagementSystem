@@ -370,6 +370,91 @@ class TeacherService {
       minute: parseInt(match[2], 10),
     };
   }
+
+  async getMyClass(staffId: number): Promise<any> {
+    // Get class teacher assignment
+    const assignment = await StaffAssignment.findOne({
+      where: {
+        staffId,
+        assignmentType: 'class_teacher',
+        isActive: true,
+      },
+      include: [
+        {
+          model: Class,
+          as: 'class',
+          attributes: ['classId', 'className', 'section', 'gradeLevel'],
+        },
+      ],
+    });
+
+    if (!assignment || !assignment.classId) {
+      return {
+        classInfo: null,
+        students: [],
+      };
+    }
+
+    // Get students in the class
+    const students = await Student.findAll({
+      where: {
+        classId: assignment.classId,
+        status: StudentStatus.ACTIVE,
+      },
+      attributes: [
+        'studentId',
+        'rollNumber',
+        'firstNameEn',
+        'lastNameEn',
+        'gender',
+        'dateOfBirth',
+        'phone',
+        'email',
+        'fatherName',
+        'motherName',
+        'fatherPhone',
+        'motherPhone',
+        'address',
+      ],
+      order: [['rollNumber', 'ASC']],
+    });
+
+    // Calculate attendance rate for each student
+    const studentsWithStats = await Promise.all(
+      students.map(async (student) => {
+        const attendanceRecords = await AttendanceRecord.findAll({
+          where: {
+            studentId: student.studentId,
+          },
+        });
+
+        const totalRecords = attendanceRecords.length;
+        const presentRecords = attendanceRecords.filter((r) => r.status === 'present').length;
+        const attendanceRate = totalRecords > 0 ? (presentRecords / totalRecords) * 100 : 0;
+
+        return {
+          ...student.toJSON(),
+          attendanceRate,
+          averageGrade: null, // Can be calculated from exam results if needed
+        };
+      })
+    );
+
+    const classInfo = assignment.class
+      ? {
+          classId: assignment.class.classId,
+          name: assignment.class.className,
+          section: assignment.class.section,
+          gradeLevel: assignment.class.gradeLevel,
+          totalStudents: students.length,
+        }
+      : null;
+
+    return {
+      classInfo,
+      students: studentsWithStats,
+    };
+  }
 }
 
 export default new TeacherService();

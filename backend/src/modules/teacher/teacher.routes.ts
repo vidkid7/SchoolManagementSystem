@@ -50,4 +50,10 @@ router.get(
   teacherController.getNotifications
 );
 
+router.get(
+  '/my-class',
+  authorize(UserRole.CLASS_TEACHER),
+  teacherController.getMyClass
+);
+
 export default router;

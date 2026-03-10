@@ -33,6 +33,18 @@ const router = Router();
 // ==================== Dashboard ====================
 
 /**
+ * @route   GET /api/v1/finance/students/fee-status
+ * @desc    Get students by fee status
+ * @access  Private (School_Admin, Accountant)
+ */
+router.get(
+  '/students/fee-status',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.ACCOUNTANT),
+  financeController.getStudentsByFeeStatus
+);
+
+/**
  * @route   GET /api/v1/finance/statistics
  * @desc    Get finance dashboard statistics
  * @access  Private (School_Admin, Accountant)

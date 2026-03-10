@@ -128,6 +128,9 @@ import nonTeachingStaffRoutes from '@modules/nonTeachingStaff/nonTeachingStaff.r
 import parentRoutes from '@modules/parent/parent.routes';
 import teacherRoutes from '@modules/teacher/teacher.routes';
 import assignmentRoutes from '@modules/assignment/assignment.routes';
+import departmentRoutes from '@modules/department/department.routes';
+import lessonPlanRoutes from '@modules/lessonPlan/lessonPlan.routes';
+import setupRoutes from '@modules/config/setup.routes';
 import lessonPlanRoutes from '@modules/lessonPlan/lessonPlan.routes';
 import setupRoutes from './routes/setup.routes';
 
@@ -171,6 +174,7 @@ app.use('/api/v1/parents', parentRoutes);
 app.use('/api/v1/teachers', teacherRoutes);
 app.use('/api/v1/assignments', assignmentRoutes);
 app.use('/api/v1/lesson-plans', lessonPlanRoutes);
+app.use('/api/v1/department', departmentRoutes);
 
 // Serve uploaded files statically
 app.use('/uploads', express.static('uploads'));

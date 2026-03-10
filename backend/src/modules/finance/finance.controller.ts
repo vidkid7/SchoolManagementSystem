@@ -540,6 +540,91 @@ class FinanceController {
   // ==================== Dashboard ====================
 
   /**
+   * Get students by fee status
+   * GET /api/v1/finance/students/fee-status
+   */
+  getStudentsByFeeStatus = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { search, status } = req.query;
+
+    // Get all invoices with student information
+    const { invoices } = await invoiceRepository.findAll({}, { limit: 10000, offset: 0 });
+
+    // Group by student
+    const studentMap = new Map<number, any>();
+
+    for (const invoice of invoices) {
+      const studentId = invoice.studentId;
+      if (!studentMap.has(studentId)) {
+        studentMap.set(studentId, {
+          studentId,
+          studentName: invoice.student?.firstNameEn
+            ? `${invoice.student.firstNameEn} ${invoice.student.lastNameEn}`
+            : `Student #${studentId}`,
+          className: invoice.student?.class?.name || 'Unknown',
+          totalInvoiced: 0,
+          totalPaid: 0,
+          balance: 0,
+          overdueAmount: 0,
+          lastPaymentDate: null,
+          status: 'pending',
+        });
+      }
+
+      const student = studentMap.get(studentId)!;
+      student.totalInvoiced += Number(invoice.totalAmount || 0);
+      student.totalPaid += Number(invoice.paidAmount || 0);
+      student.balance += Number(invoice.balance || 0);
+
+      if (invoice.status === InvoiceStatus.OVERDUE) {
+        student.overdueAmount += Number(invoice.balance || 0);
+      }
+    }
+
+    // Get payment dates
+    const { payments } = await paymentRepository.findAll({}, { limit: 10000, offset: 0 });
+    for (const payment of payments) {
+      const student = studentMap.get(payment.studentId);
+      if (student) {
+        const paymentDate = new Date(payment.paymentDate);
+        if (!student.lastPaymentDate || paymentDate > new Date(student.lastPaymentDate)) {
+          student.lastPaymentDate = payment.paymentDate;
+        }
+      }
+    }
+
+    // Determine status
+    for (const student of studentMap.values()) {
+      if (student.balance === 0) {
+        student.status = 'paid';
+      } else if (student.overdueAmount > 0) {
+        student.status = 'overdue';
+      } else if (student.totalPaid > 0) {
+        student.status = 'partial';
+      } else {
+        student.status = 'pending';
+      }
+    }
+
+    let results = Array.from(studentMap.values());
+
+    // Apply filters
+    if (search) {
+      const searchLower = (search as string).toLowerCase();
+      results = results.filter(
+        (s) =>
+          s.studentName.toLowerCase().includes(searchLower) ||
+          s.studentId.toString().includes(searchLower)
+      );
+    }
+
+    if (status) {
+      results = results.filter((s) => s.status === status);
+    }
+
+    sendSuccess(res, results, 'Student fee status retrieved successfully');
+  });
+
+  /**
    * Get finance dashboard statistics
    * GET /api/v1/finance/statistics
    */

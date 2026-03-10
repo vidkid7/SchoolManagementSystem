@@ -22,4 +22,22 @@ router.get('/children/:childId/fees', parentController.getChildFees);
 
 router.get('/notifications', parentController.getNotifications);
 
+// Library - child's borrowed books
+router.get('/children/:childId/library', parentController.getChildLibrary);
+
+// Assignments - child's assignments
+router.get('/children/:childId/assignments', parentController.getChildAssignments);
+
+// ECA & Sports - child's activities
+router.get('/children/:childId/activities', parentController.getChildActivities);
+
+// Behavior - child's behavior records
+router.get('/children/:childId/behavior', parentController.getChildBehavior);
+
+// Calendar - school events
+router.get('/calendar', parentController.getSchoolCalendar);
+
+// Certificates - child's certificates
+router.get('/children/:childId/certificates', parentController.getChildCertificates);
+
 export default router;

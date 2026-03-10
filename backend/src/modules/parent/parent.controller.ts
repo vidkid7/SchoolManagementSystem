@@ -262,6 +262,14 @@ export const getChildSummary = async (
       parentService.getParentNotifications(parentUserId, childId),
     ]);
 
+    // Optionally include library data
+    let library = [];
+    try {
+      library = await parentService.getChildLibrary(childId, parentUserId);
+    } catch (error) {
+      // Library data is optional
+    }
+
     res.status(200).json({
       success: true,
       data: {
@@ -269,6 +277,7 @@ export const getChildSummary = async (
         grades,
         fees,
         notifications,
+        library,
       },
       message: 'Child summary retrieved successfully',
     });
@@ -279,6 +288,182 @@ export const getChildSummary = async (
         success: false,
         message: error.message,
       });
+      return;
+    }
+    next(error);
+  }
+};
+
+export const getChildLibrary = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const parentUserId = req.user?.userId;
+    const childId = parseInt(req.params.childId, 10);
+
+    if (!parentUserId) {
+      res.status(401).json({ success: false, message: 'Authentication required' });
+      return;
+    }
+
+    if (isNaN(childId)) {
+      res.status(400).json({ success: false, message: 'Invalid child ID' });
+      return;
+    }
+
+    const library = await parentService.getChildLibrary(childId, parentUserId);
+    res.status(200).json({ success: true, data: library, message: 'Library data retrieved successfully' });
+  } catch (error) {
+    logger.error('Error fetching child library:', error);
+    if (error instanceof Error && error.message.includes('Access denied')) {
+      res.status(403).json({ success: false, message: error.message });
+      return;
+    }
+    next(error);
+  }
+};
+
+export const getChildAssignments = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const parentUserId = req.user?.userId;
+    const childId = parseInt(req.params.childId, 10);
+
+    if (!parentUserId) {
+      res.status(401).json({ success: false, message: 'Authentication required' });
+      return;
+    }
+
+    if (isNaN(childId)) {
+      res.status(400).json({ success: false, message: 'Invalid child ID' });
+      return;
+    }
+
+    const assignments = await parentService.getChildAssignments(childId, parentUserId);
+    res.status(200).json({ success: true, data: assignments, message: 'Assignments retrieved successfully' });
+  } catch (error) {
+    logger.error('Error fetching child assignments:', error);
+    if (error instanceof Error && error.message.includes('Access denied')) {
+      res.status(403).json({ success: false, message: error.message });
+      return;
+    }
+    next(error);
+  }
+};
+
+export const getChildActivities = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const parentUserId = req.user?.userId;
+    const childId = parseInt(req.params.childId, 10);
+
+    if (!parentUserId) {
+      res.status(401).json({ success: false, message: 'Authentication required' });
+      return;
+    }
+
+    if (isNaN(childId)) {
+      res.status(400).json({ success: false, message: 'Invalid child ID' });
+      return;
+    }
+
+    const activities = await parentService.getChildActivities(childId, parentUserId);
+    res.status(200).json({ success: true, data: activities, message: 'Activities retrieved successfully' });
+  } catch (error) {
+    logger.error('Error fetching child activities:', error);
+    if (error instanceof Error && error.message.includes('Access denied')) {
+      res.status(403).json({ success: false, message: error.message });
+      return;
+    }
+    next(error);
+  }
+};
+
+export const getChildBehavior = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const parentUserId = req.user?.userId;
+    const childId = parseInt(req.params.childId, 10);
+
+    if (!parentUserId) {
+      res.status(401).json({ success: false, message: 'Authentication required' });
+      return;
+    }
+
+    if (isNaN(childId)) {
+      res.status(400).json({ success: false, message: 'Invalid child ID' });
+      return;
+    }
+
+    const behavior = await parentService.getChildBehavior(childId, parentUserId);
+    res.status(200).json({ success: true, data: behavior, message: 'Behavior records retrieved successfully' });
+  } catch (error) {
+    logger.error('Error fetching child behavior:', error);
+    if (error instanceof Error && error.message.includes('Access denied')) {
+      res.status(403).json({ success: false, message: error.message });
+      return;
+    }
+    next(error);
+  }
+};
+
+export const getSchoolCalendar = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const parentUserId = req.user?.userId;
+
+    if (!parentUserId) {
+      res.status(401).json({ success: false, message: 'Authentication required' });
+      return;
+    }
+
+    const calendar = await parentService.getSchoolCalendar();
+    res.status(200).json({ success: true, data: calendar, message: 'Calendar retrieved successfully' });
+  } catch (error) {
+    logger.error('Error fetching school calendar:', error);
+    next(error);
+  }
+};
+
+export const getChildCertificates = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const parentUserId = req.user?.userId;
+    const childId = parseInt(req.params.childId, 10);
+
+    if (!parentUserId) {
+      res.status(401).json({ success: false, message: 'Authentication required' });
+      return;
+    }
+
+    if (isNaN(childId)) {
+      res.status(400).json({ success: false, message: 'Invalid child ID' });
+      return;
+    }
+
+    const certificates = await parentService.getChildCertificates(childId, parentUserId);
+    res.status(200).json({ success: true, data: certificates, message: 'Certificates retrieved successfully' });
+  } catch (error) {
+    logger.error('Error fetching child certificates:', error);
+    if (error instanceof Error && error.message.includes('Access denied')) {
+      res.status(403).json({ success: false, message: error.message });
       return;
     }
     next(error);

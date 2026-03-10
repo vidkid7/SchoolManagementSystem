@@ -576,7 +576,7 @@ class ECAController {
    * Get recent ECA activities
    * GET /api/v1/eca/recent-activities
    */
-  async getRecentActivities(req: Request, res: Response, next: NextFunction): Promise<void> {
+  getRecentActivities(req: Request, res: Response, next: NextFunction): void {
     try {
       const limit = Number(req.query.limit) || 10;
 
@@ -591,6 +591,198 @@ class ECAController {
       res.status(200).json({
         success: true,
         data: activities
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get ECA enrollments
+   * GET /api/v1/eca/enrollments
+   */
+  async getEnrollments(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const filters: any = {};
+      if (req.query.ecaId) filters.ecaId = parseInt(req.query.ecaId as string);
+      if (req.query.studentId) filters.studentId = parseInt(req.query.studentId as string);
+      if (req.query.status) filters.status = req.query.status;
+
+      const page = req.query.page ? parseInt(req.query.page as string) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+
+      const result = await ecaEnrollmentService.getEnrollments(filters, page, limit);
+
+      res.status(200).json({
+        success: true,
+        data: result.enrollments,
+        meta: result.pagination
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Enroll student directly (alternative endpoint)
+   * POST /api/v1/eca/enrollments
+   */
+  async enrollStudentDirect(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Validation failed',
+            details: errors.array()
+          }
+        });
+        return;
+      }
+
+      const enrollmentData = {
+        ecaId: req.body.ecaId,
+        studentId: req.body.studentId,
+        enrollmentDate: req.body.enrollmentDate ? new Date(req.body.enrollmentDate) : undefined,
+        remarks: req.body.remarks
+      };
+
+      const enrollment = await ecaEnrollmentService.enrollStudent(
+        enrollmentData,
+        req.user?.userId,
+        req
+      );
+
+      res.status(201).json({
+        success: true,
+        data: enrollment,
+        message: 'Student enrolled successfully'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get attendance records
+   * GET /api/v1/eca/attendance
+   */
+  getAttendanceRecords(req: Request, res: Response, next: NextFunction): void {
+    try {
+      // Mock data for now - can be enhanced with actual attendance tracking
+      const records = [
+        { id: 1, ecaName: 'Football Club', date: new Date(), presentCount: 18, absentCount: 2, totalStudents: 20 },
+        { id: 2, ecaName: 'Art Club', date: new Date(), presentCount: 15, absentCount: 3, totalStudents: 18 },
+        { id: 3, ecaName: 'Music Club', date: new Date(), presentCount: 12, absentCount: 1, totalStudents: 13 },
+      ];
+
+      res.status(200).json({
+        success: true,
+        data: records
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Mark attendance directly (alternative endpoint)
+   * POST /api/v1/eca/attendance
+   */
+  async markAttendanceDirect(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Validation failed',
+            details: errors.array()
+          }
+        });
+        return;
+      }
+
+      const attendanceData = req.body.attendanceData || [];
+      const updatedEnrollments = await ecaEnrollmentService.bulkMarkAttendance(attendanceData);
+
+      res.status(200).json({
+        success: true,
+        data: updatedEnrollments,
+        message: `Attendance marked for ${updatedEnrollments.length} students`
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get achievements
+   * GET /api/v1/eca/achievements
+   */
+  async getAchievements(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const filters: any = {};
+      if (req.query.ecaId) filters.ecaId = parseInt(req.query.ecaId as string);
+      if (req.query.studentId) filters.studentId = parseInt(req.query.studentId as string);
+
+      const achievements = await ECAAchievement.findAll({
+        where: filters,
+        order: [['achievementDate', 'DESC']],
+        limit: req.query.limit ? parseInt(req.query.limit as string) : 50
+      });
+
+      res.status(200).json({
+        success: true,
+        data: achievements
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Record achievement directly (alternative endpoint)
+   * POST /api/v1/eca/achievements
+   */
+  async recordAchievementDirect(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Validation failed',
+            details: errors.array()
+          }
+        });
+        return;
+      }
+
+      const achievement = await ECAAchievement.create({
+        ecaId: req.body.ecaId,
+        studentId: req.body.studentId,
+        eventId: req.body.eventId,
+        title: req.body.achievement || req.body.title,
+        titleNp: req.body.titleNp,
+        type: req.body.type || 'achievement',
+        level: req.body.level,
+        position: req.body.position,
+        description: req.body.description,
+        descriptionNp: req.body.descriptionNp,
+        achievementDate: new Date(req.body.date || req.body.achievementDate),
+        achievementDateBS: req.body.achievementDateBS,
+        remarks: req.body.remarks
+      });
+
+      res.status(201).json({
+        success: true,
+        data: achievement,
+        message: 'Achievement recorded successfully'
       });
     } catch (error) {
       next(error);

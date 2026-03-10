@@ -1,6 +1,9 @@
 export { FinanceDashboard } from './FinanceDashboard';
 export { FeeStructures } from './FeeStructures';
 export { InvoiceList } from './InvoiceList';
+export { InvoiceGeneration } from './InvoiceGeneration';
 export { Payments } from './Payments';
+export { RefundManagement } from './RefundManagement';
 export { PaymentGateways } from './PaymentGateways';
 export { FinancialReports } from './FinancialReports';
+export { StudentFeeSearch } from './StudentFeeSearch';
