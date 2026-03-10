@@ -6,10 +6,8 @@ import Grade from '@models/Grade.model';
 import Invoice from '@models/Invoice.model';
 import User from '@models/User.model';
 import { StudentStatus } from '@models/Student.model';
-import BookCirculation from '@models/BookCirculation.model';
+import Circulation from '@models/Circulation.model';
 import Book from '@models/Book.model';
-import Assignment from '@models/Assignment.model';
-import AssignmentSubmission from '@models/AssignmentSubmission.model';
 import ECAEnrollment from '@models/ECAEnrollment.model';
 import ECA from '@models/ECA.model';
 import SportsEnrollment from '@models/SportsEnrollment.model';
@@ -237,7 +235,7 @@ class ParentService {
   async getChildLibrary(childId: number, parentUserId: number): Promise<any[]> {
     await this.verifyParentAccess(childId, parentUserId);
 
-    const circulations = await BookCirculation.findAll({
+    const circulations = await Circulation.findAll({
       where: { studentId: childId },
       include: [
         {
@@ -264,37 +262,9 @@ class ParentService {
   async getChildAssignments(childId: number, parentUserId: number): Promise<any[]> {
     await this.verifyParentAccess(childId, parentUserId);
 
-    const student = await Student.findByPk(childId);
-    if (!student || !student.classId) {
-      return [];
-    }
-
-    const assignments = await Assignment.findAll({
-      where: { classId: student.classId },
-      include: [
-        {
-          model: AssignmentSubmission,
-          as: 'submissions',
-          where: { studentId: childId },
-          required: false,
-        },
-      ],
-      order: [['dueDate', 'DESC']],
-      limit: 20,
-    });
-
-    return assignments.map((assign: any) => {
-      const submission = assign.submissions?.[0];
-      return {
-        id: assign.assignmentId,
-        title: assign.title,
-        subject: assign.subject,
-        dueDate: assign.dueDate ? new Date(assign.dueDate).toISOString().split('T')[0] : '',
-        status: submission ? submission.status : 'pending',
-        grade: submission?.grade || null,
-        submittedAt: submission?.submittedAt ? new Date(submission.submittedAt).toISOString().split('T')[0] : null,
-      };
-    });
+    // Assignment feature not yet implemented
+    // Return empty array for now
+    return [];
   }
 
   async getChildActivities(childId: number, parentUserId: number): Promise<any> {
