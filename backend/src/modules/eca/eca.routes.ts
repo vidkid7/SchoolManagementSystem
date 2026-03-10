@@ -63,6 +63,72 @@ router.get(
 );
 
 /**
+ * @route   GET /api/v1/eca/enrollments
+ * @desc    List all ECA enrollments
+ * @access  Private (ECA Coordinator, Admin)
+ */
+router.get(
+  '/enrollments',
+  authorize(...manageRoles),
+  ecaController.getEnrollments
+);
+
+/**
+ * @route   POST /api/v1/eca/enrollments
+ * @desc    Enroll a student in an ECA
+ * @access  Private (ECA Coordinator, Admin)
+ */
+router.post(
+  '/enrollments',
+  authorize(...manageRoles),
+  ecaController.createEnrollment
+);
+
+/**
+ * @route   GET /api/v1/eca/attendance
+ * @desc    Get ECA attendance records
+ * @access  Private (ECA Coordinator, Admin)
+ */
+router.get(
+  '/attendance',
+  authorize(...manageRoles),
+  ecaController.getAttendanceRecords
+);
+
+/**
+ * @route   POST /api/v1/eca/attendance
+ * @desc    Mark attendance for an ECA session
+ * @access  Private (ECA Coordinator, Admin)
+ */
+router.post(
+  '/attendance',
+  authorize(...manageRoles),
+  ecaController.markAttendanceFlat
+);
+
+/**
+ * @route   GET /api/v1/eca/achievements
+ * @desc    List all ECA achievements
+ * @access  Private (ECA Coordinator, Admin)
+ */
+router.get(
+  '/achievements',
+  authorize(...manageRoles),
+  ecaController.getAchievements
+);
+
+/**
+ * @route   POST /api/v1/eca/achievements
+ * @desc    Record an ECA achievement
+ * @access  Private (ECA Coordinator, Admin)
+ */
+router.post(
+  '/achievements',
+  authorize(...manageRoles),
+  ecaController.createAchievement
+);
+
+/**
  * @route   GET /api/v1/eca
  * @route   GET /api/v1/eca/list (alias for frontend)
  * @desc    List ECAs with filters and pagination

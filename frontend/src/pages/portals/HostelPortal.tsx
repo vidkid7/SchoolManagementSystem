@@ -15,6 +15,11 @@ import {
   Chip,
   CircularProgress,
   Alert,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
 } from '@mui/material';
 import {
   Hotel as HostelIcon,
@@ -25,6 +30,10 @@ import {
   Notifications as AnnouncementIcon,
   Person as PersonIcon,
   CheckCircle as ActiveIcon,
+  BeachAccess as LeaveIcon,
+  Warning as IncidentIcon,
+  CheckCircleOutline as ApproveIcon,
+  Cancel as RejectIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -59,27 +68,70 @@ interface Resident {
   studentCode?: string;
 }
 
+interface LeaveRequest {
+  leaveId: number;
+  studentId: number;
+  startDate: string;
+  endDate: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  appliedAt: string;
+}
+
+interface AttendanceSummary {
+  date: string;
+  totalResidents: number;
+  present: number;
+  absent: number;
+  attendanceRate: number;
+}
+
+interface IncidentSummary {
+  summary: {
+    totalIncidents: number;
+    rejectedLeaves: number;
+    flaggedStudents: number;
+  };
+  incidents: Array<{
+    type: string;
+    count: number;
+    severity: 'medium' | 'high';
+    description: string;
+  }>;
+}
+
 const HostelPortal: React.FC = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [residents, setResidents] = useState<Resident[]>([]);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [attendance, setAttendance] = useState<AttendanceSummary | null>(null);
+  const [incidents, setIncidents] = useState<IncidentSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
   const { user, accessToken } = useSelector((state: RootState) => state.auth);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [dashboardRes, profileRes, residentsRes] = await Promise.all([
-          apiClient.get('/api/v1/hostel/dashboard', { headers: { Authorization: `Bearer ${accessToken}` } }),
-          apiClient.get('/api/v1/hostel/profile', { headers: { Authorization: `Bearer ${accessToken}` } }).catch(() => ({ data: { data: null } })),
-          apiClient.get('/api/v1/hostel/residents', { params: { limit: 10 }, headers: { Authorization: `Bearer ${accessToken}` } }).catch(() => ({ data: { data: { rows: [] } } })),
+        const headers = { Authorization: `Bearer ${accessToken}` };
+        const [dashboardRes, profileRes, residentsRes, leaveRes, attendanceRes, incidentsRes] = await Promise.all([
+          apiClient.get('/api/v1/hostel/dashboard', { headers }),
+          apiClient.get('/api/v1/hostel/profile', { headers }).catch(() => ({ data: { data: null } })),
+          apiClient.get('/api/v1/hostel/residents', { params: { limit: 10 }, headers }).catch(() => ({ data: { data: { rows: [] } } })),
+          apiClient.get('/api/v1/hostel/leave-requests', { params: { status: 'pending', limit: 10 }, headers }).catch(() => ({ data: { data: [] } })),
+          apiClient.get('/api/v1/hostel/attendance', { headers }).catch(() => ({ data: { data: null } })),
+          apiClient.get('/api/v1/hostel/incidents', { headers }).catch(() => ({ data: { data: null } })),
         ]);
         setData(dashboardRes.data.data);
         setProfile(profileRes.data?.data ?? null);
         const list = residentsRes.data?.data;
         setResidents(Array.isArray(list) ? list : list?.students ?? []);
+        setLeaveRequests(Array.isArray(leaveRes.data?.data) ? leaveRes.data.data : []);
+        setAttendance(attendanceRes.data?.data ?? null);
+        setIncidents(incidentsRes.data?.data ?? null);
       } catch {
         setError('Failed to load hostel dashboard');
       } finally {
@@ -88,6 +140,18 @@ const HostelPortal: React.FC = () => {
     };
     fetchAll();
   }, [accessToken]);
+
+  const handleLeaveAction = async (leaveId: number, action: 'approve' | 'reject') => {
+    try {
+      const headers = { Authorization: `Bearer ${accessToken}` };
+      await apiClient.put(`/api/v1/hostel/leave-requests/${leaveId}/${action}`, {}, { headers });
+      setActionMsg(`Leave ${action}d successfully`);
+      setLeaveRequests((prev) => prev.filter((l) => l.leaveId !== leaveId));
+      setTimeout(() => setActionMsg(null), 3000);
+    } catch {
+      setActionMsg(`Failed to ${action} leave`);
+    }
+  };
 
   if (loading) {
     return (
@@ -112,6 +176,7 @@ const HostelPortal: React.FC = () => {
       </Box>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {actionMsg && <Alert severity="info" sx={{ mb: 2 }}>{actionMsg}</Alert>}
 
       <Grid container spacing={3}>
         <Grid item xs={12} sm={6} md={3}>
@@ -128,8 +193,28 @@ const HostelPortal: React.FC = () => {
           <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
             <CardContent sx={{ textAlign: 'center' }}>
               <ActiveIcon sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
-              <Typography variant="h4" fontWeight={700}>{data?.summary.activeStudents ?? '--'}</Typography>
-              <Typography variant="body2" color="text.secondary">Active Students</Typography>
+              <Typography variant="h4" fontWeight={700}>{attendance?.present ?? data?.summary.activeStudents ?? '--'}</Typography>
+              <Typography variant="body2" color="text.secondary">Present Today</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <LeaveIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
+              <Typography variant="h4" fontWeight={700}>{leaveRequests.length}</Typography>
+              <Typography variant="body2" color="text.secondary">Pending Leaves</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <IncidentIcon sx={{ fontSize: 40, color: 'error.main', mb: 1 }} />
+              <Typography variant="h4" fontWeight={700}>{incidents?.summary.totalIncidents ?? 0}</Typography>
+              <Typography variant="body2" color="text.secondary">Incidents</Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -221,6 +306,71 @@ const HostelPortal: React.FC = () => {
                 </List>
               )}
               <Button size="small" sx={{ mt: 1 }} color="secondary" onClick={() => navigate('/students')}>View all students</Button>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" gap={1} mb={1}>
+                <IncidentIcon color="error" />
+                <Typography variant="h6" fontWeight={600}>Incidents &amp; Alerts</Typography>
+              </Box>
+              <Divider sx={{ mb: 1 }} />
+              {!incidents || incidents.incidents.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">No active incidents.</Typography>
+              ) : (
+                incidents.incidents.map((inc, i) => (
+                  <Box key={i} display="flex" alignItems="center" justifyContent="space-between" py={0.5}>
+                    <Typography variant="body2">{inc.description}</Typography>
+                    <Chip label={inc.severity} color={inc.severity === 'high' ? 'error' : 'warning'} size="small" />
+                  </Box>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12}>
+          <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" gap={1} mb={1}>
+                <LeaveIcon color="warning" />
+                <Typography variant="h6" fontWeight={600}>Pending Leave Requests</Typography>
+              </Box>
+              <Divider sx={{ mb: 1 }} />
+              {leaveRequests.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">No pending leave requests.</Typography>
+              ) : (
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Student ID</TableCell>
+                      <TableCell>Start Date</TableCell>
+                      <TableCell>End Date</TableCell>
+                      <TableCell>Reason</TableCell>
+                      <TableCell>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {leaveRequests.map((leave) => (
+                      <TableRow key={leave.leaveId}>
+                        <TableCell>{leave.studentId}</TableCell>
+                        <TableCell>{new Date(leave.startDate).toLocaleDateString()}</TableCell>
+                        <TableCell>{new Date(leave.endDate).toLocaleDateString()}</TableCell>
+                        <TableCell>{leave.reason}</TableCell>
+                        <TableCell>
+                          <Box display="flex" gap={1}>
+                            <Button size="small" color="success" variant="outlined" startIcon={<ApproveIcon />} onClick={() => handleLeaveAction(leave.leaveId, 'approve')}>Approve</Button>
+                            <Button size="small" color="error" variant="outlined" startIcon={<RejectIcon />} onClick={() => handleLeaveAction(leave.leaveId, 'reject')}>Reject</Button>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </Grid>

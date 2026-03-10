@@ -5,6 +5,7 @@ import ecaEventService from './ecaEvent.service';
 import ecaCertificateService from './ecaCertificate.service';
 import ECA from '@models/ECA.model';
 import ECAAchievement from '@models/ECAAchievement.model';
+import ECAEnrollment from '@models/ECAEnrollment.model';
 
 /**
  * ECA Controller
@@ -569,6 +570,178 @@ class ECAController {
       });
     } catch (error) {
       next(error);
+    }
+  }
+
+  /**
+   * Get all ECA enrollments
+   * GET /api/v1/eca/enrollments
+   */
+  async getEnrollments(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { ecaId, status, page = 1, limit = 20 } = req.query;
+      const filters: any = {};
+      if (ecaId) filters.ecaId = parseInt(ecaId as string);
+      if (status) filters.status = status;
+
+      const offset = (Number(page) - 1) * Number(limit);
+      const { rows, count } = await ECAEnrollment.findAndCountAll({
+        where: filters,
+        limit: Number(limit),
+        offset,
+        order: [['enrollmentDate', 'DESC']],
+      });
+
+      res.status(200).json({
+        success: true,
+        data: rows,
+        meta: { page: Number(page), limit: Number(limit), total: count, totalPages: Math.ceil(count / Number(limit)) },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Enroll a student in an ECA
+   * POST /api/v1/eca/enrollments
+   */
+  async createEnrollment(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { ecaId, studentId, enrollmentDate, remarks } = req.body;
+      if (!ecaId || !studentId) {
+        res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'ecaId and studentId are required' } });
+        return;
+      }
+      const enrollment = await ecaEnrollmentService.enrollStudent(
+        { ecaId: parseInt(ecaId), studentId: parseInt(studentId), enrollmentDate: enrollmentDate ? new Date(enrollmentDate) : undefined, remarks },
+        req.user?.userId,
+        req
+      );
+      res.status(201).json({ success: true, data: enrollment, message: 'Student enrolled successfully' });
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: { code: 'ENROLLMENT_ERROR', message: error.message || 'Enrollment failed' } });
+    }
+  }
+
+  /**
+   * Get ECA attendance records
+   * GET /api/v1/eca/attendance
+   */
+  async getAttendanceRecords(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { ecaId, page = 1, limit = 20 } = req.query;
+      // Return enrollment-based attendance summary grouped by ECA
+      const filters: any = {};
+      if (ecaId) filters.ecaId = parseInt(ecaId as string);
+
+      const offset = (Number(page) - 1) * Number(limit);
+      const { rows, count } = await ECAEnrollment.findAndCountAll({
+        where: { ...filters, status: 'active' },
+        limit: Number(limit),
+        offset,
+        order: [['updatedAt', 'DESC']],
+      });
+
+      const records = rows.map((e) => ({
+        enrollmentId: e.enrollmentId,
+        ecaId: e.ecaId,
+        studentId: e.studentId,
+        attendanceCount: e.attendanceCount,
+        totalSessions: e.totalSessions,
+        attendancePercentage: e.totalSessions > 0 ? Math.round((e.attendanceCount / e.totalSessions) * 100) : 0,
+        date: e.updatedAt,
+      }));
+
+      res.status(200).json({
+        success: true,
+        data: records,
+        meta: { page: Number(page), limit: Number(limit), total: count, totalPages: Math.ceil(count / Number(limit)) },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Mark attendance for an ECA (simplified, without specific ecaId in URL)
+   * POST /api/v1/eca/attendance
+   */
+  async markAttendanceFlat(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { ecaId, date, presentStudentIds = [] } = req.body;
+      if (!ecaId) {
+        res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'ecaId is required' } });
+        return;
+      }
+      // Find all active enrollments for this ECA and mark attendance
+      const enrollments = await ECAEnrollment.findAll({ where: { ecaId: parseInt(ecaId), status: 'active' } });
+      const presentSet = new Set((presentStudentIds as number[]).map(Number));
+      for (const enrollment of enrollments) {
+        if (presentSet.has(enrollment.studentId)) {
+          await enrollment.markAttendance();
+        } else {
+          await enrollment.markAbsent();
+        }
+      }
+      res.status(200).json({ success: true, message: `Attendance marked for ${enrollments.length} students`, data: { date, ecaId, total: enrollments.length } });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get all ECA achievements
+   * GET /api/v1/eca/achievements
+   */
+  async getAchievements(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { ecaId, studentId, page = 1, limit = 20 } = req.query;
+      const filters: any = {};
+      if (ecaId) filters.ecaId = parseInt(ecaId as string);
+      if (studentId) filters.studentId = parseInt(studentId as string);
+
+      const offset = (Number(page) - 1) * Number(limit);
+      const { rows, count } = await ECAAchievement.findAndCountAll({
+        where: filters,
+        limit: Number(limit),
+        offset,
+        order: [['achievementDate', 'DESC']],
+      });
+
+      res.status(200).json({
+        success: true,
+        data: rows,
+        meta: { page: Number(page), limit: Number(limit), total: count, totalPages: Math.ceil(count / Number(limit)) },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Record an achievement (simplified, without ecaId in URL)
+   * POST /api/v1/eca/achievements
+   */
+  async createAchievement(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { studentId, ecaId, achievement, title, date, description, type = 'recognition', level = 'school' } = req.body;
+      if (!studentId || !ecaId) {
+        res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'studentId and ecaId are required' } });
+        return;
+      }
+      const record = await ECAAchievement.create({
+        studentId: parseInt(studentId),
+        ecaId: parseInt(ecaId),
+        title: title || achievement || 'Achievement',
+        type,
+        level,
+        description,
+        achievementDate: date ? new Date(date) : new Date(),
+      });
+      res.status(201).json({ success: true, data: record, message: 'Achievement recorded successfully' });
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: { code: 'ACHIEVEMENT_ERROR', message: error.message || 'Failed to record achievement' } });
     }
   }
 
