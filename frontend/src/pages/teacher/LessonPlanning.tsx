@@ -4,7 +4,7 @@
  * Create and manage lesson plans with syllabus tracking
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Paper,
@@ -31,6 +31,8 @@ import {
   IconButton,
   Tabs,
   Tab,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -41,6 +43,9 @@ import {
   AttachFile as AttachFileIcon,
   Visibility as ViewIcon,
 } from '@mui/icons-material';
+import { useSelector } from 'react-redux';
+import apiClient from '../../services/apiClient';
+import { RootState } from '../../store';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -57,54 +62,40 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-// Sample lesson plans
-const lessonPlans = [
-  {
-    id: 1,
-    subject: 'Mathematics',
-    class: 'Class 10 A',
-    topic: 'Quadratic Equations',
-    date: '2081-10-26 BS',
-    duration: '45 mins',
-    status: 'draft',
-    objectives: ['Understand quadratic formula', 'Solve quadratic equations'],
-  },
-  {
-    id: 2,
-    subject: 'Physics',
-    class: 'Class 11 Science',
-    topic: "Newton's Laws of Motion",
-    date: '2081-10-25 BS',
-    duration: '45 mins',
-    status: 'completed',
-    objectives: ['Understand three laws', 'Apply to real-world problems'],
-  },
-  {
-    id: 3,
-    subject: 'Mathematics',
-    class: 'Class 10 B',
-    topic: 'Trigonometry Basics',
-    date: '2081-10-27 BS',
-    duration: '45 mins',
-    status: 'scheduled',
-    objectives: ['Learn sine, cosine, tangent', 'Solve basic problems'],
-  },
-];
-
-// Sample syllabus topics
-const syllabusTopics = [
-  { id: 1, unit: 'Unit 1: Algebra', topic: 'Linear Equations', status: 'completed', progress: 100 },
-  { id: 2, unit: 'Unit 1: Algebra', topic: 'Quadratic Equations', status: 'in_progress', progress: 60 },
-  { id: 3, unit: 'Unit 1: Algebra', topic: 'Polynomials', status: 'not_started', progress: 0 },
-  { id: 4, unit: 'Unit 2: Geometry', topic: 'Triangles', status: 'not_started', progress: 0 },
-  { id: 5, unit: 'Unit 2: Geometry', topic: 'Circles', status: 'not_started', progress: 0 },
-];
+const authHdr = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
 
 export const LessonPlanning = () => {
+  const { accessToken } = useSelector((state: RootState) => state.auth);
   const [tabValue, setTabValue] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState('Mathematics');
   const [selectedClass, setSelectedClass] = useState('Class 10 A');
+  const [lessonPlans, setLessonPlans] = useState<any[]>([]);
+  const [syllabusTopics, setSyllabusTopics] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadData = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const [plansRes, progressRes] = await Promise.all([
+        apiClient.get('/api/v1/lesson-plans', { ...authHdr(accessToken), params: { limit: 50 } })
+          .catch(() => ({ data: { data: { lessonPlans: [] } } })),
+        apiClient.get('/api/v1/lesson-plans/syllabus-progress', { ...authHdr(accessToken), params: { limit: 50 } })
+          .catch(() => ({ data: { data: { progress: [] } } })),
+      ]);
+      setLessonPlans(plansRes.data?.data?.lessonPlans ?? plansRes.data?.data ?? []);
+      setSyllabusTopics(progressRes.data?.data?.progress ?? progressRes.data?.data ?? []);
+    } catch {
+      setError('Failed to load lesson plans');
+    } finally {
+      setLoading(false);
+    }
+  }, [accessToken]);
+
+  useEffect(() => { loadData(); }, [loadData]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -140,10 +131,48 @@ export const LessonPlanning = () => {
     setOpenDialog(false);
   };
 
-  const handleSavePlan = () => {
-    // Save lesson plan logic
-    setOpenDialog(false);
+  const handleSavePlan = async (status: string = 'draft') => {
+    if (!accessToken) return;
+    try {
+      const formEl = document.querySelector('#lesson-plan-form') as HTMLFormElement | null;
+      const formData: any = {};
+      if (formEl) {
+        const inputs = formEl.querySelectorAll('input, textarea, select');
+        inputs.forEach((el: any) => {
+          if (el.name) formData[el.name] = el.value;
+        });
+      }
+      formData.status = status;
+      await apiClient.post('/api/v1/lesson-plans', formData, authHdr(accessToken));
+      setOpenDialog(false);
+      loadData();
+    } catch {
+      setError('Failed to create lesson plan');
+      setOpenDialog(false);
+    }
   };
+
+  const handleDeletePlan = async (planId: number | string) => {
+    if (!accessToken) return;
+    try {
+      await apiClient.delete(`/api/v1/lesson-plans/${planId}`, authHdr(accessToken));
+      setLessonPlans(prev => prev.filter((p: any) => p.id !== planId));
+    } catch {
+      setError('Failed to delete lesson plan');
+    }
+  };
+
+  const handleStatusChange = async (planId: number | string, newStatus: string) => {
+    if (!accessToken) return;
+    try {
+      await apiClient.patch(`/api/v1/lesson-plans/${planId}/status`, { status: newStatus }, authHdr(accessToken));
+      setLessonPlans(prev => prev.map((p: any) => p.id === planId ? { ...p, status: newStatus } : p));
+    } catch {
+      setError('Failed to update lesson plan status');
+    }
+  };
+
+  if (loading) return <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh"><CircularProgress /></Box>;
 
   return (
     <Box>
@@ -160,6 +189,8 @@ export const LessonPlanning = () => {
           Create Lesson Plan / नयाँ योजना
         </Button>
       </Box>
+
+      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
 
       {/* Filters */}
       <Paper sx={{ p: 3, mb: 3 }}>
@@ -248,7 +279,7 @@ export const LessonPlanning = () => {
                       Learning Objectives:
                     </Typography>
                     <List dense>
-                      {plan.objectives.map((obj, index) => (
+                      {(plan.objectives ?? []).map((obj: string, index: number) => (
                         <ListItem key={index} sx={{ px: 0, py: 0.5 }}>
                           <CheckCircleIcon fontSize="small" sx={{ mr: 1, color: 'success.main' }} />
                           <ListItemText
@@ -261,13 +292,13 @@ export const LessonPlanning = () => {
                   </CardContent>
 
                   <CardActions>
-                    <IconButton size="small" color="primary">
+                    <IconButton size="small" color="primary" onClick={() => handleStatusChange(plan.id, plan.status === 'draft' ? 'scheduled' : 'completed')}>
                       <ViewIcon />
                     </IconButton>
                     <IconButton size="small" color="primary">
                       <EditIcon />
                     </IconButton>
-                    <IconButton size="small" color="error">
+                    <IconButton size="small" color="error" onClick={() => handleDeletePlan(plan.id)}>
                       <DeleteIcon />
                     </IconButton>
                     <Button size="small" startIcon={<AttachFileIcon />} sx={{ ml: 'auto' }}>
@@ -290,12 +321,12 @@ export const LessonPlanning = () => {
               <Box sx={{ flexGrow: 1, mr: 2 }}>
                 <LinearProgress
                   variant="determinate"
-                  value={32}
+                  value={syllabusTopics.length > 0 ? Math.round(syllabusTopics.reduce((sum: number, t: any) => sum + (t.progress ?? 0), 0) / syllabusTopics.length) : 0}
                   sx={{ height: 10, borderRadius: 5 }}
                 />
               </Box>
               <Typography variant="body2" color="text.secondary">
-                32% Complete
+                {syllabusTopics.length > 0 ? Math.round(syllabusTopics.reduce((sum: number, t: any) => sum + (t.progress ?? 0), 0) / syllabusTopics.length) : 0}% Complete
               </Typography>
             </Box>
           </Box>
@@ -448,10 +479,10 @@ export const LessonPlanning = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel / रद्द गर्नुहोस्</Button>
-          <Button onClick={handleSavePlan} variant="contained">
+          <Button onClick={() => handleSavePlan('draft')} variant="contained">
             Save as Draft / ड्राफ्ट सुरक्षित गर्नुहोस्
           </Button>
-          <Button onClick={handleSavePlan} variant="contained" color="success">
+          <Button onClick={() => handleSavePlan('scheduled')} variant="contained" color="success">
             Save & Schedule / सुरक्षित र तालिका
           </Button>
         </DialogActions>

@@ -4,7 +4,7 @@
  * Create assignments, view submissions, and grade student work
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Paper,
@@ -35,6 +35,8 @@ import {
   Avatar,
   LinearProgress,
   Badge,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -48,6 +50,9 @@ import {
   Schedule as ScheduleIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
+import { useSelector } from 'react-redux';
+import apiClient from '../../services/apiClient';
+import { RootState } from '../../store';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -64,96 +69,49 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-// Sample assignments
-const assignments = [
-  {
-    id: 1,
-    title: 'Quadratic Equations Practice',
-    subject: 'Mathematics',
-    class: 'Class 10 A',
-    dueDate: '2081-10-30 BS',
-    totalMarks: 20,
-    submissions: 35,
-    totalStudents: 40,
-    graded: 25,
-    status: 'active',
-  },
-  {
-    id: 2,
-    title: "Newton's Laws Application",
-    subject: 'Physics',
-    class: 'Class 11 Science',
-    dueDate: '2081-10-28 BS',
-    totalMarks: 25,
-    submissions: 42,
-    totalStudents: 45,
-    graded: 42,
-    status: 'grading',
-  },
-  {
-    id: 3,
-    title: 'Trigonometry Problems',
-    subject: 'Mathematics',
-    class: 'Class 10 B',
-    dueDate: '2081-11-05 BS',
-    totalMarks: 15,
-    submissions: 0,
-    totalStudents: 38,
-    graded: 0,
-    status: 'upcoming',
-  },
-];
-
-// Sample submissions
-const submissions = [
-  {
-    id: 1,
-    studentId: 'STU-2081-001',
-    studentName: 'Ram Sharma',
-    submittedDate: '2081-10-28 BS',
-    status: 'graded',
-    marks: 18,
-    totalMarks: 20,
-    feedback: 'Excellent work!',
-  },
-  {
-    id: 2,
-    studentId: 'STU-2081-002',
-    studentName: 'Sita Thapa',
-    submittedDate: '2081-10-29 BS',
-    status: 'submitted',
-    marks: null,
-    totalMarks: 20,
-    feedback: null,
-  },
-  {
-    id: 3,
-    studentId: 'STU-2081-003',
-    studentName: 'Hari Gurung',
-    submittedDate: '2081-10-30 BS',
-    status: 'late',
-    marks: null,
-    totalMarks: 20,
-    feedback: null,
-  },
-  {
-    id: 4,
-    studentId: 'STU-2081-004',
-    studentName: 'Gita Rai',
-    submittedDate: null,
-    status: 'pending',
-    marks: null,
-    totalMarks: 20,
-    feedback: null,
-  },
-];
+const authHdr = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
 
 export const AssignmentManagement = () => {
+  const { accessToken } = useSelector((state: RootState) => state.auth);
   const [tabValue, setTabValue] = useState(0);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openGradeDialog, setOpenGradeDialog] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [gradeMarks, setGradeMarks] = useState<string>('');
+  const [gradeFeedback, setGradeFeedback] = useState<string>('');
+
+  const loadAssignments = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await apiClient.get('/api/v1/assignments', { ...authHdr(accessToken), params: { limit: 50 } })
+        .catch(() => ({ data: { data: { assignments: [] } } }));
+      setAssignments(res.data?.data?.assignments ?? res.data?.data ?? []);
+    } catch {
+      setError('Failed to load assignments');
+    } finally {
+      setLoading(false);
+    }
+  }, [accessToken]);
+
+  const loadSubmissions = useCallback(async (assignmentId: number | string) => {
+    if (!accessToken) return;
+    try {
+      const res = await apiClient.get(`/api/v1/assignments/${assignmentId}/submissions`, authHdr(accessToken))
+        .catch(() => ({ data: { data: { submissions: [] } } }));
+      setSubmissions(res.data?.data?.submissions ?? res.data?.data ?? []);
+    } catch {
+      setSubmissions([]);
+    }
+  }, [accessToken]);
+
+  useEffect(() => { loadAssignments(); }, [loadAssignments]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -192,12 +150,65 @@ export const AssignmentManagement = () => {
   const handleViewSubmissions = (assignment: any) => {
     setSelectedAssignment(assignment);
     setTabValue(1);
+    loadSubmissions(assignment.id);
   };
 
   const handleGradeSubmission = (submission: any) => {
     setSelectedSubmission(submission);
+    setGradeMarks(submission.marks != null ? String(submission.marks) : '');
+    setGradeFeedback(submission.feedback || '');
     setOpenGradeDialog(true);
   };
+
+  const handleSaveAssignment = async () => {
+    if (!accessToken) return;
+    try {
+      const formEl = document.querySelector('#assignment-form') as HTMLFormElement | null;
+      const formData: any = {};
+      if (formEl) {
+        const inputs = formEl.querySelectorAll('input, textarea, select');
+        inputs.forEach((el: any) => {
+          if (el.name) formData[el.name] = el.value;
+        });
+      }
+      await apiClient.post('/api/v1/assignments', formData, authHdr(accessToken));
+      setOpenCreateDialog(false);
+      loadAssignments();
+    } catch {
+      setError('Failed to create assignment');
+      setOpenCreateDialog(false);
+    }
+  };
+
+  const handleDeleteAssignment = async (assignmentId: number | string) => {
+    if (!accessToken) return;
+    try {
+      await apiClient.delete(`/api/v1/assignments/${assignmentId}`, authHdr(accessToken));
+      setAssignments(prev => prev.filter((a: any) => a.id !== assignmentId));
+    } catch {
+      setError('Failed to delete assignment');
+    }
+  };
+
+  const handleSaveGrade = async () => {
+    if (!accessToken || !selectedSubmission) return;
+    try {
+      await apiClient.put(
+        `/api/v1/assignments/submissions/${selectedSubmission.id}/grade`,
+        { marks: Number(gradeMarks), feedback: gradeFeedback },
+        authHdr(accessToken),
+      );
+      setSubmissions(prev => prev.map((s: any) =>
+        s.id === selectedSubmission.id ? { ...s, marks: Number(gradeMarks), feedback: gradeFeedback, status: 'graded' } : s
+      ));
+      setOpenGradeDialog(false);
+    } catch {
+      setError('Failed to save grade');
+      setOpenGradeDialog(false);
+    }
+  };
+
+  if (loading) return <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh"><CircularProgress /></Box>;
 
   return (
     <Box>
@@ -215,6 +226,8 @@ export const AssignmentManagement = () => {
         </Button>
       </Box>
 
+      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
+
       {/* Summary Cards */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={3}>
@@ -225,7 +238,7 @@ export const AssignmentManagement = () => {
                   <AttachFileIcon />
                 </Avatar>
                 <Box>
-                  <Typography variant="h4">12</Typography>
+                  <Typography variant="h4">{assignments.filter((a: any) => a.status === 'active').length}</Typography>
                   <Typography variant="caption">Active Assignments / सक्रिय</Typography>
                 </Box>
               </Box>
@@ -241,7 +254,7 @@ export const AssignmentManagement = () => {
                   <ScheduleIcon />
                 </Avatar>
                 <Box>
-                  <Typography variant="h4">45</Typography>
+                  <Typography variant="h4">{assignments.filter((a: any) => a.status === 'grading').length}</Typography>
                   <Typography variant="caption">Pending Grading / ग्रेडिङ बाँकी</Typography>
                 </Box>
               </Box>
@@ -257,7 +270,7 @@ export const AssignmentManagement = () => {
                   <CheckCircleIcon />
                 </Avatar>
                 <Box>
-                  <Typography variant="h4">156</Typography>
+                  <Typography variant="h4">{assignments.filter((a: any) => a.status === 'completed').length}</Typography>
                   <Typography variant="caption">Graded / ग्रेड गरिएको</Typography>
                 </Box>
               </Box>
@@ -273,7 +286,7 @@ export const AssignmentManagement = () => {
                   <WarningIcon />
                 </Avatar>
                 <Box>
-                  <Typography variant="h4">8</Typography>
+                  <Typography variant="h4">{assignments.filter((a: any) => a.status === 'overdue').length}</Typography>
                   <Typography variant="caption">Overdue / म्याद नाघेको</Typography>
                 </Box>
               </Box>
@@ -288,7 +301,7 @@ export const AssignmentManagement = () => {
           <Tab label="All Assignments / सबै असाइनमेन्ट" />
           <Tab
             label={
-              <Badge badgeContent={45} color="error">
+              <Badge badgeContent={submissions.length} color="error">
                 <span>Submissions / पेश गरिएको</span>
               </Badge>
             }
@@ -377,7 +390,7 @@ export const AssignmentManagement = () => {
                         <IconButton size="small" color="primary">
                           <EditIcon />
                         </IconButton>
-                        <IconButton size="small" color="error">
+                        <IconButton size="small" color="error" onClick={() => handleDeleteAssignment(assignment.id)}>
                           <DeleteIcon />
                         </IconButton>
                         <Button
@@ -542,7 +555,7 @@ export const AssignmentManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenCreateDialog(false)}>Cancel / रद्द गर्नुहोस्</Button>
-          <Button variant="contained" onClick={() => setOpenCreateDialog(false)}>
+          <Button variant="contained" onClick={handleSaveAssignment}>
             Create Assignment / असाइनमेन्ट सिर्जना गर्नुहोस्
           </Button>
         </DialogActions>
@@ -571,6 +584,8 @@ export const AssignmentManagement = () => {
                 placeholder={`Out of ${selectedSubmission.totalMarks}`}
                 sx={{ mt: 3 }}
                 inputProps={{ min: 0, max: selectedSubmission.totalMarks }}
+                value={gradeMarks}
+                onChange={(e) => setGradeMarks(e.target.value)}
               />
 
               <TextField
@@ -580,13 +595,15 @@ export const AssignmentManagement = () => {
                 label="Feedback / प्रतिक्रिया"
                 placeholder="Enter feedback for the student"
                 sx={{ mt: 2 }}
+                value={gradeFeedback}
+                onChange={(e) => setGradeFeedback(e.target.value)}
               />
             </Box>
           )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenGradeDialog(false)}>Cancel / रद्द गर्नुहोस्</Button>
-          <Button variant="contained" onClick={() => setOpenGradeDialog(false)}>
+          <Button variant="contained" onClick={handleSaveGrade}>
             Save Grade / ग्रेड सुरक्षित गर्नुहोस्
           </Button>
         </DialogActions>
