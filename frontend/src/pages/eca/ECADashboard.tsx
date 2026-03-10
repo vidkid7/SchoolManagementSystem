@@ -35,8 +35,8 @@ export function ECADashboard() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h4" fontWeight={600}>ECA Dashboard</Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/eca/new')}>New ECA</Button>
-          <Button variant="outlined" startIcon={<EventIcon />} onClick={() => navigate('/eca/events/new')}>Create Event</Button>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/eca/management')}>New ECA</Button>
+          <Button variant="outlined" startIcon={<EventIcon />} onClick={() => navigate('/eca/events')}>Create Event</Button>
         </Box>
       </Box>
 

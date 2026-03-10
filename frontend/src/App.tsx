@@ -405,6 +405,11 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
                 <Route path="/eca" element={<ECADashboard />} />
                 <Route path="/eca/dashboard" element={<ECADashboard />} />
                 <Route path="/eca/management" element={<ECAManagement />} />
+                <Route path="/eca/new" element={<ECAManagement />} />
+                <Route path="/eca/enrollments" element={<ECAManagement />} />
+                <Route path="/eca/attendance" element={<ECAManagement />} />
+                <Route path="/eca/achievements" element={<ECAManagement />} />
+                <Route path="/eca/events" element={<ECAManagement />} />
               </Route>
             </Route>
 

@@ -25,4 +25,34 @@ router.get(
   hostelController.getResidentStudents
 );
 
+router.get(
+  '/leave-requests',
+  authorize(UserRole.HOSTEL_WARDEN, UserRole.SCHOOL_ADMIN),
+  hostelController.getLeaveRequests
+);
+
+router.put(
+  '/leave-requests/:leaveId/approve',
+  authorize(UserRole.HOSTEL_WARDEN, UserRole.SCHOOL_ADMIN),
+  hostelController.approveLeave
+);
+
+router.put(
+  '/leave-requests/:leaveId/reject',
+  authorize(UserRole.HOSTEL_WARDEN, UserRole.SCHOOL_ADMIN),
+  hostelController.rejectLeave
+);
+
+router.get(
+  '/attendance',
+  authorize(UserRole.HOSTEL_WARDEN, UserRole.SCHOOL_ADMIN),
+  hostelController.getAttendanceSummary
+);
+
+router.get(
+  '/incidents',
+  authorize(UserRole.HOSTEL_WARDEN, UserRole.SCHOOL_ADMIN),
+  hostelController.getIncidents
+);
+
 export default router;

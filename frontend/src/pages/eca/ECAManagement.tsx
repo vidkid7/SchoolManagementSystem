@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Box, Paper, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip, Alert, Grid } from '@mui/material';
 import { Add as AddIcon, EmojiEvents as TrophyIcon } from '@mui/icons-material';
 import api from '../../config/api';
@@ -11,8 +12,17 @@ function TabPanel({ children, value, index }: any) {
   return <div hidden={value !== index}>{value === index && <Box sx={{ pt: 3 }}>{children}</Box>}</div>;
 }
 
+const PATH_TAB_MAP: Record<string, number> = {
+  '/eca/enrollments': 0,
+  '/eca/attendance': 1,
+  '/eca/events': 2,
+  '/eca/achievements': 3,
+};
+
 export function ECAManagement() {
-  const [tabValue, setTabValue] = useState(0);
+  const location = useLocation();
+  const initialTab = PATH_TAB_MAP[location.pathname] ?? 0;
+  const [tabValue, setTabValue] = useState(initialTab);
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
