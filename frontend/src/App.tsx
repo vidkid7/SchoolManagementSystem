@@ -20,6 +20,7 @@ import { ChangePassword } from './pages/auth/ChangePassword';
 import { DashboardLayout } from './components/Layout/DashboardLayout';
 import { RoleBasedRedirect } from './components/RoleBasedRedirect';
 import { ProtectedRoute } from './routes/ProtectedRoute';
+import MunicipalityRouteGuard from './components/MunicipalityRouteGuard';
 import { useNetworkMonitor } from './hooks/useNetworkMonitor';
 import { selectShouldDisableAnimations } from './store/slices/liteModeSlice';
 import type { RootState } from './store';
@@ -215,343 +216,348 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
+            {/* Municipality-scoped routes */}
+            <Route path="/:municipalitySlug" element={<MunicipalityRouteGuard />}>
+
             {/* Admin and Staff Dashboard */}
             <Route element={<ProtectedRoute allowedRoles={STAFF_ROLES} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="dashboard" element={<Dashboard />} />
               </Route>
             </Route>
 
             {/* Calendar, Messages, Announcements, Change password - accessible to all logged-in users */}
             <Route element={<ProtectedRoute allowedRoles={ALL_ROLES} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/calendar" element={<Calendar />} />
-                <Route path="/calendar/view" element={<Calendar />} />
-                <Route path="/communication/messages" element={<Messaging />} />
-                <Route path="/communication/announcements" element={<Announcements />} />
-                <Route path="/change-password" element={<ChangePassword />} />
+                <Route path="calendar" element={<Calendar />} />
+                <Route path="calendar/view" element={<Calendar />} />
+                <Route path="communication/messages" element={<Messaging />} />
+                <Route path="communication/announcements" element={<Announcements />} />
+                <Route path="change-password" element={<ChangePassword />} />
               </Route>
             </Route>
 
             {/* Calendar Management - Admin only */}
             <Route element={<ProtectedRoute allowedRoles={[ADMIN]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/calendar/dashboard" element={<CalendarDashboard />} />
-                <Route path="/calendar/events" element={<EventManagement />} />
+                <Route path="calendar/dashboard" element={<CalendarDashboard />} />
+                <Route path="calendar/events" element={<EventManagement />} />
               </Route>
             </Route>
 
             {/* Student Management — Admin + Teachers */}
             <Route element={<ProtectedRoute allowedRoles={[ADMIN, CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/students" element={<StudentList />} />
-                <Route path="/students/:id" element={<StudentDetail />} />
-                <Route path="/students/:id/cv" element={<StudentCV />} />
+                <Route path="students" element={<StudentList />} />
+                <Route path="students/:id" element={<StudentDetail />} />
+                <Route path="students/:id/cv" element={<StudentCV />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[ADMIN]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/students/create" element={<StudentForm />} />
-                <Route path="/students/bulk-import" element={<BulkImport />} />
-                <Route path="/students/:id/edit" element={<StudentForm />} />
+                <Route path="students/create" element={<StudentForm />} />
+                <Route path="students/bulk-import" element={<BulkImport />} />
+                <Route path="students/:id/edit" element={<StudentForm />} />
               </Route>
             </Route>
 
             {/* Student can view their own detail & CV */}
             <Route element={<ProtectedRoute allowedRoles={[STUDENT, PARENT]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/portal/student" element={<StudentPortal />} />
-                <Route path="/my-certificates" element={<StudentCertificates />} />
+                <Route path="portal/student" element={<StudentPortal />} />
+                <Route path="my-certificates" element={<StudentCertificates />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[PARENT]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/portal/parent" element={<ParentPortal />} />
+                <Route path="portal/parent" element={<ParentPortal />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/portal/teacher" element={<TeacherPortal />} />
+                <Route path="portal/teacher" element={<TeacherPortal />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[MUNICIPALITY_ADMIN]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/municipality" element={<MunicipalityAdminPortal />} />
-                <Route path="/admin/municipality/dashboard" element={<MunicipalityAdminPortal />} />
+                <Route path="municipality" element={<MunicipalityAdminPortal />} />
+                <Route path="admin/municipality/dashboard" element={<MunicipalityAdminPortal />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[TRANSPORT]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/portal/transport" element={<TransportPortal />} />
+                <Route path="portal/transport" element={<TransportPortal />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[HOSTEL]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/portal/hostel" element={<HostelPortal />} />
+                <Route path="portal/hostel" element={<HostelPortal />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[NON_TEACHING]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/portal/non-teaching-staff" element={<NonTeachingStaffPortal />} />
+                <Route path="portal/non-teaching-staff" element={<NonTeachingStaffPortal />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[ACCOUNTANT]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/portal/accountant" element={<AccountantPortal />} />
+                <Route path="portal/accountant" element={<AccountantPortal />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[CLASS_TEACHER]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/portal/class-teacher" element={<ClassTeacherPortal />} />
+                <Route path="portal/class-teacher" element={<ClassTeacherPortal />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[DEPT_HEAD]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/portal/department-head" element={<DepartmentHeadPortal />} />
+                <Route path="portal/department-head" element={<DepartmentHeadPortal />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[SPORTS_COORD]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/portal/sports-coordinator" element={<SportsCoordinatorPortal />} />
+                <Route path="portal/sports-coordinator" element={<SportsCoordinatorPortal />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[ECA_COORD]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/portal/eca-coordinator" element={<ECACoordinatorPortal />} />
+                <Route path="portal/eca-coordinator" element={<ECACoordinatorPortal />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[LIBRARIAN]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/portal/librarian" element={<LibrarianPortal />} />
+                <Route path="portal/librarian" element={<LibrarianPortal />} />
               </Route>
             </Route>
 
             {/* Staff Management — Admin only */}
             <Route element={<ProtectedRoute allowedRoles={[ADMIN]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/staff" element={<StaffList />} />
-                <Route path="/staff/create" element={<StaffForm />} />
-                <Route path="/staff/:id" element={<StaffDetail />} />
-                <Route path="/staff/:id/edit" element={<StaffForm />} />
-                <Route path="/staff/:id/assignments" element={<StaffAssignments />} />
+                <Route path="staff" element={<StaffList />} />
+                <Route path="staff/create" element={<StaffForm />} />
+                <Route path="staff/:id" element={<StaffDetail />} />
+                <Route path="staff/:id/edit" element={<StaffForm />} />
+                <Route path="staff/:id/assignments" element={<StaffAssignments />} />
               </Route>
             </Route>
 
             {/* Academic Management — Admin + Teachers */}
             <Route element={<ProtectedRoute allowedRoles={[ADMIN, CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/academic" element={<AcademicDashboard />} />
-                <Route path="/academic/classes" element={<ClassManagement />} />
-                <Route path="/academic/years" element={<AcademicYears />} />
-                <Route path="/academic/calendar" element={<AcademicCalendar />} />
-                <Route path="/academic/timetable" element={<Timetable />} />
-                <Route path="/academic/syllabus" element={<Syllabus />} />
-                <Route path="/academic/class-subjects" element={<ClassSubjects />} />
-                <Route path="/academic/classes/:classId/teacher" element={<ClassTeacherView />} />
-                <Route path="/academic/classes/:classId/subjects/:subjectId/teachers" element={<SubjectTeachersView />} />
+                <Route path="academic" element={<AcademicDashboard />} />
+                <Route path="academic/classes" element={<ClassManagement />} />
+                <Route path="academic/years" element={<AcademicYears />} />
+                <Route path="academic/calendar" element={<AcademicCalendar />} />
+                <Route path="academic/timetable" element={<Timetable />} />
+                <Route path="academic/syllabus" element={<Syllabus />} />
+                <Route path="academic/class-subjects" element={<ClassSubjects />} />
+                <Route path="academic/classes/:classId/teacher" element={<ClassTeacherView />} />
+                <Route path="academic/classes/:classId/subjects/:subjectId/teachers" element={<SubjectTeachersView />} />
               </Route>
             </Route>
 
             {/* Attendance — Admin + Teachers + Student/Parent (view only) */}
             <Route element={<ProtectedRoute allowedRoles={[ADMIN, CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/attendance" element={<AttendanceDashboard />} />
-                <Route path="/attendance/student/mark" element={<AttendanceMarking />} />
-                <Route path="/attendance/reports" element={<AttendanceReports />} />
-                <Route path="/attendance/leave" element={<LeaveManagement />} />
+                <Route path="attendance" element={<AttendanceDashboard />} />
+                <Route path="attendance/student/mark" element={<AttendanceMarking />} />
+                <Route path="attendance/reports" element={<AttendanceReports />} />
+                <Route path="attendance/leave" element={<LeaveManagement />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[ADMIN]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/attendance/staff/mark" element={<StaffAttendanceMarking />} />
-                <Route path="/attendance/settings" element={<AttendanceSettings />} />
+                <Route path="attendance/staff/mark" element={<StaffAttendanceMarking />} />
+                <Route path="attendance/settings" element={<AttendanceSettings />} />
               </Route>
             </Route>
 
             {/* Admission Management — Admin + Accountant */}
             <Route element={<ProtectedRoute allowedRoles={[ADMIN, ACCOUNTANT]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/admissions" element={<AdmissionDashboard />} />
-                <Route path="/admissions/list" element={<AdmissionList />} />
-                <Route path="/admissions/new" element={<NewInquiry />} />
-                <Route path="/admissions/:id" element={<AdmissionDetail />} />
+                <Route path="admissions" element={<AdmissionDashboard />} />
+                <Route path="admissions/list" element={<AdmissionList />} />
+                <Route path="admissions/new" element={<NewInquiry />} />
+                <Route path="admissions/:id" element={<AdmissionDetail />} />
               </Route>
             </Route>
 
             {/* Finance Management — Admin + Accountant */}
             <Route element={<ProtectedRoute allowedRoles={[ADMIN, ACCOUNTANT]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/finance" element={<FinanceDashboard />} />
-                <Route path="/finance/dashboard" element={<FinanceDashboard />} />
-                <Route path="/finance/fee-structures" element={<FeeStructures />} />
-                <Route path="/finance/invoices" element={<InvoiceList />} />
-                <Route path="/finance/invoices/generate" element={<InvoiceGeneration />} />
-                <Route path="/finance/invoices/create" element={<InvoiceGeneration />} />
-                <Route path="/finance/invoices/bulk-generate" element={<InvoiceGeneration />} />
-                <Route path="/finance/payments" element={<Payments />} />
-                <Route path="/finance/refunds" element={<RefundManagement />} />
-                <Route path="/finance/payment-gateways" element={<PaymentGateways />} />
-                <Route path="/finance/reports" element={<FinancialReports />} />
-                <Route path="/finance/students" element={<StudentFeeSearch />} />
+                <Route path="finance" element={<FinanceDashboard />} />
+                <Route path="finance/dashboard" element={<FinanceDashboard />} />
+                <Route path="finance/fee-structures" element={<FeeStructures />} />
+                <Route path="finance/invoices" element={<InvoiceList />} />
+                <Route path="finance/invoices/generate" element={<InvoiceGeneration />} />
+                <Route path="finance/invoices/create" element={<InvoiceGeneration />} />
+                <Route path="finance/invoices/bulk-generate" element={<InvoiceGeneration />} />
+                <Route path="finance/payments" element={<Payments />} />
+                <Route path="finance/refunds" element={<RefundManagement />} />
+                <Route path="finance/payment-gateways" element={<PaymentGateways />} />
+                <Route path="finance/reports" element={<FinancialReports />} />
+                <Route path="finance/students" element={<StudentFeeSearch />} />
               </Route>
             </Route>
 
             {/* Examination Management — Admin + Teachers */}
             <Route element={<ProtectedRoute allowedRoles={TEACHER_ROLES} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/examinations" element={<ExaminationDashboard />} />
-                <Route path="/examinations/list" element={<ExamList />} />
-                <Route path="/examinations/grading-scheme" element={<GradingScheme />} />
+                <Route path="examinations" element={<ExaminationDashboard />} />
+                <Route path="examinations/list" element={<ExamList />} />
+                <Route path="examinations/grading-scheme" element={<GradingScheme />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[ADMIN, CLASS_TEACHER, SUBJECT_TEACHER]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/examinations/create" element={<CreateExam />} />
-                <Route path="/examinations/:id/edit" element={<CreateExam />} />
-                <Route path="/examinations/grades" element={<GradeEntry />} />
-                <Route path="/examinations/:id/grades" element={<GradeEntry />} />
+                <Route path="examinations/create" element={<CreateExam />} />
+                <Route path="examinations/:id/edit" element={<CreateExam />} />
+                <Route path="examinations/grades" element={<GradeEntry />} />
+                <Route path="examinations/:id/grades" element={<GradeEntry />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[...TEACHER_ROLES, STUDENT, PARENT]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/examinations/reports" element={<ReportCards />} />
+                <Route path="examinations/reports" element={<ReportCards />} />
               </Route>
             </Route>
 
             {/* Library Management — Admin + Librarian + Students/Parents (read) */}
             <Route element={<ProtectedRoute allowedRoles={[ADMIN, LIBRARIAN]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/library" element={<LibraryDashboard />} />
-                <Route path="/library/dashboard" element={<LibraryDashboard />} />
-                <Route path="/library/circulation" element={<BookCirculation />} />
-                <Route path="/library/reports" element={<LibraryReports />} />
-                <Route path="/library/management" element={<LibraryManagement />} />
+                <Route path="library" element={<LibraryDashboard />} />
+                <Route path="library/dashboard" element={<LibraryDashboard />} />
+                <Route path="library/circulation" element={<BookCirculation />} />
+                <Route path="library/reports" element={<LibraryReports />} />
+                <Route path="library/management" element={<LibraryManagement />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[ADMIN, LIBRARIAN, CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD, STUDENT, PARENT]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/library/books" element={<BookCatalog />} />
-                <Route path="/library/categories" element={<LibraryCategories />} />
+                <Route path="library/books" element={<BookCatalog />} />
+                <Route path="library/categories" element={<LibraryCategories />} />
               </Route>
             </Route>
 
             {/* ECA Management — Admin + ECA_Coordinator (manage), All (read) */}
             <Route element={<ProtectedRoute allowedRoles={[ADMIN, ECA_COORD, DEPT_HEAD]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/eca" element={<ECADashboard />} />
-                <Route path="/eca/dashboard" element={<ECADashboard />} />
-                <Route path="/eca/management" element={<ECAManagement />} />
+                <Route path="eca" element={<ECADashboard />} />
+                <Route path="eca/dashboard" element={<ECADashboard />} />
+                <Route path="eca/management" element={<ECAManagement />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[...ALL_ROLES]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/eca/list" element={<ECAList />} />
+                <Route path="eca/list" element={<ECAList />} />
               </Route>
             </Route>
 
             {/* Sports Management — Admin + Sports_Coordinator (manage), All (read) */}
             <Route element={<ProtectedRoute allowedRoles={[ADMIN, SPORTS_COORD, DEPT_HEAD]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/sports" element={<SportsDashboard />} />
-                <Route path="/sports/dashboard" element={<SportsDashboard />} />
-                <Route path="/sports/management" element={<SportsManagement />} />
+                <Route path="sports" element={<SportsDashboard />} />
+                <Route path="sports/dashboard" element={<SportsDashboard />} />
+                <Route path="sports/management" element={<SportsManagement />} />
               </Route>
             </Route>
 
             {/* Document Management — Admin + Staff */}
             <Route element={<ProtectedRoute allowedRoles={STAFF_ROLES} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/documents" element={<DocumentManagement />} />
+                <Route path="documents" element={<DocumentManagement />} />
               </Route>
             </Route>
 
             {/* Reports & Analytics — Admin + Dept Head + Coordinators */}
             <Route element={<ProtectedRoute allowedRoles={[ADMIN, DEPT_HEAD, ACCOUNTANT, LIBRARIAN, ECA_COORD, SPORTS_COORD, CLASS_TEACHER, SUBJECT_TEACHER]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/reports" element={<ReportsAnalytics />} />
+                <Route path="reports" element={<ReportsAnalytics />} />
               </Route>
             </Route>
 
             {/* Teacher Portal — All teachers */}
             <Route element={<ProtectedRoute allowedRoles={[ADMIN, CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-                <Route path="/teacher/lesson-planning" element={<LessonPlanning />} />
-                <Route path="/teacher/lessons" element={<LessonPlanning />} />
-                <Route path="/teacher/assignments" element={<AssignmentManagement />} />
+                <Route path="teacher/dashboard" element={<TeacherDashboard />} />
+                <Route path="teacher/lesson-planning" element={<LessonPlanning />} />
+                <Route path="teacher/lessons" element={<LessonPlanning />} />
+                <Route path="teacher/assignments" element={<AssignmentManagement />} />
               </Route>
             </Route>
 
             {/* Class Teacher specific routes */}
             <Route element={<ProtectedRoute allowedRoles={[CLASS_TEACHER, ADMIN]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/teacher/my-class" element={<ClassRoster />} />
-                <Route path="/teacher/classes" element={<ClassRoster />} />
-                <Route path="/teacher/behavior" element={<BehaviorTracking />} />
+                <Route path="teacher/my-class" element={<ClassRoster />} />
+                <Route path="teacher/classes" element={<ClassRoster />} />
+                <Route path="teacher/behavior" element={<BehaviorTracking />} />
               </Route>
             </Route>
 
             {/* Department Head specific routes */}
             <Route element={<ProtectedRoute allowedRoles={[DEPT_HEAD, ADMIN]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/department/teachers" element={<DepartmentTeachers />} />
+                <Route path="department/teachers" element={<DepartmentTeachers />} />
               </Route>
             </Route>
 
             {/* Certificates */}
             <Route element={<ProtectedRoute allowedRoles={[ADMIN]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/certificates" element={<CertificateDashboard />} />
-                <Route path="/certificates/dashboard" element={<CertificateDashboard />} />
-                <Route path="/certificates/manage" element={<CertificateManagement />} />
-                <Route path="/certificates/templates" element={<TemplateManagement />} />
+                <Route path="certificates" element={<CertificateDashboard />} />
+                <Route path="certificates/dashboard" element={<CertificateDashboard />} />
+                <Route path="certificates/manage" element={<CertificateManagement />} />
+                <Route path="certificates/templates" element={<TemplateManagement />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={ALL_ROLES} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/certificates/verify" element={<CertificateVerification />} />
+                <Route path="certificates/verify" element={<CertificateVerification />} />
               </Route>
             </Route>
 
             {/* Audit Logs — Admin only */}
             <Route element={<ProtectedRoute allowedRoles={[ADMIN]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/audit" element={<AuditLogs />} />
-                <Route path="/notifications" element={<NotificationCenter />} />
-                <Route path="/users" element={<UserManagement />} />
+                <Route path="audit" element={<AuditLogs />} />
+                <Route path="notifications" element={<NotificationCenter />} />
+                <Route path="users" element={<UserManagement />} />
               </Route>
             </Route>
 
             {/* Admin Settings & System — Admin only */}
             <Route element={<ProtectedRoute allowedRoles={[ADMIN]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="/settings" element={<AdminSettings />} />
-                <Route path="/settings/school" element={<SchoolConfiguration />} />
-                <Route path="/settings/roles" element={<RoleManagement />} />
-                <Route path="/settings/system" element={<SystemSettings />} />
-                <Route path="/settings/backup" element={<BackupManagement />} />
-                <Route path="/settings/archive" element={<ArchiveManagement />} />
+                <Route path="settings" element={<AdminSettings />} />
+                <Route path="settings/school" element={<SchoolConfiguration />} />
+                <Route path="settings/roles" element={<RoleManagement />} />
+                <Route path="settings/system" element={<SystemSettings />} />
+                <Route path="settings/backup" element={<BackupManagement />} />
+                <Route path="settings/archive" element={<ArchiveManagement />} />
               </Route>
             </Route>
+
+            </Route>{/* End municipality-scoped routes */}
 
             {/* Default redirect - role-based */}
             <Route path="/" element={<RoleBasedRedirect />} />

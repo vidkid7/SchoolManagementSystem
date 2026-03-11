@@ -34,6 +34,16 @@ import ECAEnrollment from './ECAEnrollment.model';
 import ECAAchievement from './ECAAchievement.model';
 import Event from './Event.model';
 import Certificate from './Certificate.model';
+import GradingScheme from './GradingScheme.model';
+import NotificationTemplate from './NotificationTemplate.model';
+import AuditLog from './AuditLog.model';
+import { Notification } from './Notification.model';
+import ArchiveMetadata from './ArchiveMetadata.model';
+import CertificateTemplate from './CertificateTemplate.model';
+import Document from './Document.model';
+import DocumentAccessLog from './DocumentAccessLog.model';
+import { Timetable } from './Timetable.model';
+import AcademicHistory from './AcademicHistory.model';
 
 type TenantOptions = {
   where?: Record<string, unknown>;
@@ -85,6 +95,16 @@ const TENANT_MODELS: Array<ModelStatic<Model>> = [
   ECAAchievement,
   Event,
   Certificate,
+  GradingScheme,
+  NotificationTemplate,
+  AuditLog,
+  Notification as unknown as ModelStatic<Model>,
+  ArchiveMetadata,
+  CertificateTemplate as unknown as ModelStatic<Model>,
+  Document as unknown as ModelStatic<Model>,
+  DocumentAccessLog as unknown as ModelStatic<Model>,
+  Timetable as unknown as ModelStatic<Model>,
+  AcademicHistory,
 ];
 
 function getScopedSchoolIds(): string[] | null {
@@ -96,25 +116,36 @@ function getScopedSchoolIds(): string[] | null {
   return context.schoolConfigIds ?? [];
 }
 
-function getTenantCondition(): Record<string, unknown> | null {
-  const scopedIds = getScopedSchoolIds();
-  if (scopedIds === null) {
+function getMunicipalityCondition(): Record<string, unknown> | null {
+  const context = getTenantContext();
+  if (!context?.enforceIsolation || !context.municipalityId) {
     return null;
   }
+  return { municipalityId: context.municipalityId };
+}
 
-  if (scopedIds.length === 0) {
-    return { schoolConfigId: NO_ACCESS_TENANT_ID };
+function getTenantCondition(): Record<string, unknown> | null {
+  const context = getTenantContext();
+  if (!context?.enforceIsolation) return null;
+
+  const conditions: Record<string, unknown> = {};
+
+  // Always filter by municipality if available
+  if (context.municipalityId) {
+    conditions.municipalityId = context.municipalityId;
   }
 
+  // Also filter by school if available
+  const scopedIds = context.schoolConfigIds ?? [];
   if (scopedIds.length === 1) {
-    return { schoolConfigId: scopedIds[0] };
+    conditions.schoolConfigId = scopedIds[0];
+  } else if (scopedIds.length > 1) {
+    conditions.schoolConfigId = { [Op.in]: scopedIds };
+  } else if (scopedIds.length === 0 && !context.municipalityId) {
+    conditions.schoolConfigId = NO_ACCESS_TENANT_ID;
   }
 
-  return {
-    schoolConfigId: {
-      [Op.in]: scopedIds,
-    },
-  };
+  return Object.keys(conditions).length > 0 ? conditions : null;
 }
 
 function applyTenantFilter(options: TenantOptions): void {
@@ -142,13 +173,27 @@ function assertTenantWriteAccess(instance: Model, options?: TenantOptions): void
     return;
   }
 
-  const scopedIds = getScopedSchoolIds();
-  if (scopedIds === null) {
+  const context = getTenantContext();
+  if (!context?.enforceIsolation) {
     return;
   }
 
+  // Validate and assign municipalityId
+  if (context.municipalityId) {
+    const existingMunicipalityId = instance.getDataValue('municipalityId') as string | undefined;
+    if (existingMunicipalityId && existingMunicipalityId !== context.municipalityId) {
+      throw new Error('Cross-municipality write blocked');
+    }
+    if (!existingMunicipalityId) {
+      instance.setDataValue('municipalityId', context.municipalityId);
+    }
+  }
+
+  // Validate and assign schoolConfigId
+  const scopedIds = context.schoolConfigIds ?? [];
   if (scopedIds.length === 0) {
-    throw new Error('Tenant access denied: school scope is not assigned for this user');
+    // Municipality admin might not need school_config_id for some tables
+    return;
   }
 
   const existingTenantId = instance.getDataValue('schoolConfigId') as string | undefined;
@@ -174,13 +219,26 @@ function assertTenantBulkWriteAccess(options: TenantOptions): void {
 
   applyTenantFilter(options);
 
-  const scopedIds = getScopedSchoolIds();
-  if (scopedIds === null) {
+  const context = getTenantContext();
+  if (!context?.enforceIsolation) {
     return;
   }
 
+  // Validate municipalityId in bulk update attributes
+  if (context.municipalityId) {
+    const attrs = options.attributes;
+    if (attrs && Object.prototype.hasOwnProperty.call(attrs, 'municipalityId')) {
+      const municipalityId = attrs.municipalityId as string | undefined;
+      if (municipalityId && municipalityId !== context.municipalityId) {
+        throw new Error('Cross-municipality bulk update blocked');
+      }
+    }
+  }
+
+  // Validate schoolConfigId in bulk update attributes
+  const scopedIds = context.schoolConfigIds ?? [];
   if (scopedIds.length === 0) {
-    throw new Error('Tenant access denied: school scope is not assigned for this user');
+    return;
   }
 
   const attrs = options.attributes;
@@ -207,12 +265,29 @@ function ensureTenantAttribute(model: ModelStatic<Model>): void {
     return;
   }
 
+  let needsRefresh = false;
+
+  // Add municipalityId if missing
+  if (!Object.prototype.hasOwnProperty.call(model.rawAttributes, 'municipalityId')) {
+    model.rawAttributes.municipalityId = {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'municipality_id',
+    } as any;
+    needsRefresh = true;
+  }
+
+  // Add schoolConfigId if missing
   if (!Object.prototype.hasOwnProperty.call(model.rawAttributes, 'schoolConfigId')) {
     model.rawAttributes.schoolConfigId = {
       type: DataTypes.UUID,
       allowNull: true,
       field: 'school_config_id',
     } as any;
+    needsRefresh = true;
+  }
+
+  if (needsRefresh) {
     (model as any).refreshAttributes();
   }
 
@@ -286,13 +361,26 @@ function registerHooks(model: ModelStatic<Model>): void {
         return;
       }
 
-      const scopedIds = getScopedSchoolIds();
-      if (scopedIds === null) {
+      const context = getTenantContext();
+      if (!context?.enforceIsolation) {
         return;
       }
 
+      // Validate and assign municipalityId
+      if (context.municipalityId) {
+        const municipalityId = values.municipalityId as string | undefined;
+        if (municipalityId && municipalityId !== context.municipalityId) {
+          throw new Error('Cross-municipality upsert blocked');
+        }
+        if (!municipalityId) {
+          values.municipalityId = context.municipalityId;
+        }
+      }
+
+      // Validate and assign schoolConfigId
+      const scopedIds = context.schoolConfigIds ?? [];
       if (scopedIds.length === 0) {
-        throw new Error('Tenant access denied: school scope is not assigned for this user');
+        return;
       }
 
       const schoolConfigId = values.schoolConfigId as string | undefined;
@@ -313,6 +401,8 @@ function registerHooks(model: ModelStatic<Model>): void {
 
   (model as any)[TENANT_HOOK_FLAG] = true;
 }
+
+export { getMunicipalityCondition, getTenantCondition };
 
 export function initializeTenantIsolation(): void {
   TENANT_MODELS.forEach(model => {

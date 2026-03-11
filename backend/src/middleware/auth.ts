@@ -306,3 +306,39 @@ export const requireResourceOwnership = (
     }
   };
 };
+
+/**
+ * Municipality Access Validation Middleware
+ * Ensures requests cannot target a different municipality than the user belongs to.
+ * Checks route params, request body, and query params for municipality ID mismatches.
+ * Requirements: 36.7
+ */
+export const validateMunicipalityAccess = (
+  req: Request, _res: Response, next: NextFunction
+): void => {
+  if (!req.user?.municipalityId) {
+    return next();
+  }
+
+  const tokenMunicipalityId = req.user.municipalityId;
+
+  // Check route params
+  const paramMunicipalityId = req.params.municipalityId || req.params.municipality_id;
+  if (paramMunicipalityId && paramMunicipalityId !== tokenMunicipalityId) {
+    return next(new AuthorizationError('Access denied: municipality mismatch'));
+  }
+
+  // Check body
+  const bodyMunicipalityId = req.body?.municipalityId || req.body?.municipality_id;
+  if (bodyMunicipalityId && bodyMunicipalityId !== tokenMunicipalityId) {
+    return next(new AuthorizationError('Access denied: municipality mismatch'));
+  }
+
+  // Check query
+  const queryMunicipalityId = (req.query?.municipalityId || req.query?.municipality_id) as string | undefined;
+  if (queryMunicipalityId && queryMunicipalityId !== tokenMunicipalityId) {
+    return next(new AuthorizationError('Access denied: municipality mismatch'));
+  }
+
+  next();
+};

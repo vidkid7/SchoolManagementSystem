@@ -103,6 +103,6 @@ export const resolveTenantContext = async (
     userId: user.userId,
     role: user.role,
     municipalityId: user.municipalityId,
-    enforceIsolation: false,
+    enforceIsolation: true,
   };
 };

@@ -1,6 +1,7 @@
 /**
  * Role-Based Redirect Component
- * Redirects users to their appropriate portal/dashboard based on their role
+ * Redirects users to their appropriate portal/dashboard based on their role,
+ * scoped under their municipality slug.
  */
 
 import { Navigate } from 'react-router-dom';
@@ -10,7 +11,7 @@ import { RootState } from '../store';
 export const RoleBasedRedirect = () => {
   const { user } = useSelector((state: RootState) => state.auth);
 
-  const getRedirectPath = (role?: string) => {
+  const getRedirectPath = (role?: string): string => {
     if (!role) return '/login';
 
     switch (role) {
@@ -46,6 +47,13 @@ export const RoleBasedRedirect = () => {
     }
   };
 
-  const redirectPath = getRedirectPath(user?.role);
+  const basePath = getRedirectPath(user?.role);
+
+  if (basePath === '/login') {
+    return <Navigate to="/login" replace />;
+  }
+
+  const slug = user?.municipalityCode;
+  const redirectPath = slug ? `/${slug}${basePath}` : basePath;
   return <Navigate to={redirectPath} replace />;
 };

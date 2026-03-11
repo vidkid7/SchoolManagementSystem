@@ -72,12 +72,13 @@ export const Login = () => {
   useEffect(() => {
     if (isAuthenticated) {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const redirectPath = getRedirectPath(user.role);
-      navigate(redirectPath);
+      const basePath = getRedirectPath(user.role);
+      const slug = user.municipalityCode;
+      navigate(slug ? `/${slug}${basePath}` : basePath);
     }
   }, [isAuthenticated, navigate]);
 
-  const getRedirectPath = (role: string) => {
+  const getRedirectPath = (role: string): string => {
     switch (role) {
       case 'Student':
         return '/portal/student';
@@ -109,8 +110,9 @@ export const Login = () => {
     const result = await dispatch(login(credentials));
     if (login.fulfilled.match(result)) {
       const user = result.payload?.user;
-      const redirectPath = getRedirectPath(user?.role);
-      navigate(redirectPath);
+      const basePath = getRedirectPath(user?.role);
+      const slug = user?.municipalityCode;
+      navigate(slug ? `/${slug}${basePath}` : basePath);
     }
   };
 

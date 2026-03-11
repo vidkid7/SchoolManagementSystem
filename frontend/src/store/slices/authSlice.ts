@@ -13,6 +13,8 @@ export interface User {
   email: string;
   role: string;
   municipalityId?: string;
+  municipalityCode?: string;
+  municipalityName?: string;
   schoolConfigId?: string;
   firstName?: string;
   lastName?: string;

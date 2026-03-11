@@ -13,6 +13,7 @@ import {
 } from '@middleware/security';
 import { errorHandler, notFoundHandler } from '@middleware/errorHandler';
 import { apiRateLimiter } from '@middleware/rateLimiter';
+import { validateMunicipalityAccess } from '@middleware/auth';
 import { swaggerSpec } from '@config/swagger';
 
 /**
@@ -63,6 +64,9 @@ app.get('/health', (_req, res) => {
 // Apply rate limiting to all API routes
 // 100 requests per minute per user with Redis storage
 app.use('/api', apiRateLimiter);
+
+// Municipality access validation — blocks cross-municipality requests
+app.use('/api/v1', validateMunicipalityAccess);
 
 // API Routes
 app.get('/api/v1', (_req, res) => {

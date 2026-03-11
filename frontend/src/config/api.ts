@@ -18,8 +18,6 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
-console.log('API Base URL:', API_BASE_URL); // Debug log
-
 // Create axios instance
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -37,6 +35,19 @@ api.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        if (user.municipalityId) {
+          config.headers['X-Municipality-Id'] = user.municipalityId;
+        }
+      } catch {
+        // ignore parse errors
+      }
+    }
+
     return config;
   },
   (error: AxiosError) => {
