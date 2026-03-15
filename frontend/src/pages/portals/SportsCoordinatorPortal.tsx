@@ -4,7 +4,7 @@ import {
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog,
   DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select,
-  FormControl, InputLabel, IconButton, Tooltip,
+  FormControl, InputLabel, IconButton, Tooltip, useTheme,
 } from '@mui/material';
 import {
   EmojiEvents as SportsIcon,
@@ -20,9 +20,11 @@ import {
   Notifications as AnnouncementIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import apiClient from '../../services/apiClient';
 import { RootState } from '../../store';
+import { C, useAdminStyles } from '../../theme/designTokens';
+import { useTranslation } from 'react-i18next';
 
 interface SportsStats {
   activeSports: number;
@@ -88,6 +90,7 @@ function TabPanel({ children, value, index }: { children: React.ReactNode; value
 }
 
 const SportsCoordinatorPortal: React.FC = () => {
+  const { t } = useTranslation();
   const [tab, setTab] = useState(0);
   const [stats, setStats] = useState<SportsStats>({ activeSports: 0, totalAthletes: 0, upcomingEvents: 0, achievements: 0 });
   const [sports, setSports] = useState<Sport[]>([]);
@@ -99,7 +102,9 @@ const SportsCoordinatorPortal: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const { user, accessToken } = useSelector((state: RootState) => state.auth);
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
 
   const loadData = useCallback(async () => {
     if (!accessToken) return;
@@ -148,9 +153,9 @@ const SportsCoordinatorPortal: React.FC = () => {
           <SportsIcon fontSize="large" />
         </Avatar>
         <Box>
-          <Typography variant="h4" fontWeight={700}>Sports Coordinator Portal</Typography>
+          <Typography variant="h4" fontWeight={700}>{t('portal.sportsCoordinatorPortal')}</Typography>
           <Typography variant="body2" color="text.secondary">
-            Welcome, {user?.firstName || user?.username} — Sports & Athletics
+            {t('portal.welcome')}, {user?.firstName || user?.username} — {t('portal.sportsAndAthletics')}
           </Typography>
         </Box>
       </Box>
@@ -160,41 +165,40 @@ const SportsCoordinatorPortal: React.FC = () => {
       {/* Stats */}
       <Grid container spacing={2} mb={3}>
         {[
-          { label: 'Active Sports', value: stats.activeSports, icon: <ActiveIcon />, color: 'warning.main' },
-          { label: 'Total Athletes', value: stats.totalAthletes, icon: <PeopleIcon />, color: 'primary.main' },
-          { label: 'Upcoming Events', value: stats.upcomingEvents, icon: <EventIcon />, color: 'info.main' },
-          { label: 'Achievements', value: stats.achievements, icon: <AchievementIcon />, color: 'success.main' },
+          { label: t('portal.activeSports'), value: stats.activeSports, icon: <ActiveIcon />, color: C.warning },
+          { label: t('portal.totalAthletes'), value: stats.totalAthletes, icon: <PeopleIcon />, color: C.primary },
+          { label: t('portal.upcomingEventsCount'), value: stats.upcomingEvents, icon: <EventIcon />, color: C.info },
+          { label: t('portal.achievementsCount'), value: stats.achievements, icon: <AchievementIcon />, color: C.success },
         ].map(stat => (
           <Grid item xs={6} sm={3} key={stat.label}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-              <CardContent sx={{ textAlign: 'center', py: 2 }}>
-                <Box sx={{ color: stat.color, fontSize: 32 }}>{stat.icon}</Box>
+            <Box sx={S.STAT_CARD(stat.color)}>
+              <Box sx={{ textAlign: 'center', py: 2 }}>
+                <Box sx={S.ICON_BOX(stat.color, 36)}>{stat.icon}</Box>
                 <Typography variant="h4" fontWeight={700}>{stat.value}</Typography>
                 <Typography variant="body2" color="text.secondary">{stat.label}</Typography>
-              </CardContent>
-            </Card>
+              </Box>
+            </Box>
           </Grid>
         ))}
       </Grid>
 
       {/* Tabs */}
       <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
-        <Tab icon={<SportsIcon />} iconPosition="start" label="Dashboard" />
-        <Tab icon={<ActiveIcon />} iconPosition="start" label="Sports" />
-        <Tab icon={<TeamIcon />} iconPosition="start" label="Teams" />
-        <Tab icon={<EventIcon />} iconPosition="start" label="Tournaments" />
-        <Tab icon={<AchievementIcon />} iconPosition="start" label="Achievements" />
-        <Tab icon={<PersonIcon />} iconPosition="start" label="Profile & Links" />
+        <Tab icon={<SportsIcon />} iconPosition="start" label={t('portal.dashboard')} />
+        <Tab icon={<ActiveIcon />} iconPosition="start" label={t('portal.sports')} />
+        <Tab icon={<TeamIcon />} iconPosition="start" label={t('portal.teams')} />
+        <Tab icon={<EventIcon />} iconPosition="start" label={t('portal.tournaments')} />
+        <Tab icon={<AchievementIcon />} iconPosition="start" label={t('portal.achievementsCount')} />
+        <Tab icon={<PersonIcon />} iconPosition="start" label={t('portal.profileAndLinks')} />
       </Tabs>
 
       {/* Dashboard */}
       <TabPanel value={tab} index={0}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Sports Overview</Typography>
+        <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.sportsOverview')}</Typography>
         <Grid container spacing={2} mb={3}>
           <Grid item xs={12} md={6}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-              <CardContent>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>Recent Sports Activity</Typography>
+            <Box sx={{ ...S.GLASS, p: 3 }}>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom>{t('portal.recentSportsActivity')}</Typography>
                 <Divider sx={{ mb: 2 }} />
                 {sports.slice(0, 5).length > 0 ? sports.slice(0, 5).map(s => (
                   <Box key={s.id} display="flex" justifyContent="space-between" alignItems="center" mb={1}>
@@ -203,15 +207,13 @@ const SportsCoordinatorPortal: React.FC = () => {
                       color={s.status === 'active' || !s.status ? 'success' : 'default'} />
                   </Box>
                 )) : (
-                  <Typography variant="body2" color="text.secondary">No sports data available.</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('portal.noSportsData')}</Typography>
                 )}
-              </CardContent>
-            </Card>
+            </Box>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-              <CardContent>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>Upcoming Tournaments</Typography>
+            <Box sx={{ ...S.GLASS, p: 3 }}>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom>{t('portal.upcomingTournaments')}</Typography>
                 <Divider sx={{ mb: 2 }} />
                 {tournaments.slice(0, 5).length > 0 ? tournaments.slice(0, 5).map(t => (
                   <Box key={t.id} display="flex" justifyContent="space-between" alignItems="center" mb={1}>
@@ -225,30 +227,29 @@ const SportsCoordinatorPortal: React.FC = () => {
                       color={t.status === 'ongoing' ? 'warning' : t.status === 'completed' ? 'success' : 'info'} />
                   </Box>
                 )) : (
-                  <Typography variant="body2" color="text.secondary">No upcoming tournaments.</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('portal.noUpcomingTournaments')}</Typography>
                 )}
-              </CardContent>
-            </Card>
+            </Box>
           </Grid>
         </Grid>
       </TabPanel>
 
       {/* Sports */}
       <TabPanel value={tab} index={1}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Active Sports</Typography>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.activeSports')}</Typography>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
             <TableHead>
-              <TableRow sx={{ bgcolor: 'grey.100' }}>
-                <TableCell>Name</TableCell>
-                <TableCell>Category</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Enrolled</TableCell>
+              <TableRow sx={{ bgcolor: S.TH_BG }}>
+                <TableCell>{t('common.name')}</TableCell>
+                <TableCell>{t('common.category')}</TableCell>
+                <TableCell>{t('common.status')}</TableCell>
+                <TableCell>{t('portal.enrolled')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {sports.length === 0 ? (
-                <TableRow><TableCell colSpan={4} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No sports found.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={4} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('portal.noSportsFound')}</Typography></TableCell></TableRow>
               ) : sports.map(s => (
                 <TableRow key={s.id} hover>
                   <TableCell><strong>{s.name}</strong></TableCell>
@@ -267,21 +268,21 @@ const SportsCoordinatorPortal: React.FC = () => {
 
       {/* Teams */}
       <TabPanel value={tab} index={2}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Teams</Typography>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.teams')}</Typography>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
             <TableHead>
-              <TableRow sx={{ bgcolor: 'grey.100' }}>
-                <TableCell>Team Name</TableCell>
-                <TableCell>Sport</TableCell>
-                <TableCell>Coach</TableCell>
-                <TableCell>Members</TableCell>
-                <TableCell>Status</TableCell>
+              <TableRow sx={{ bgcolor: S.TH_BG }}>
+                <TableCell>{t('portal.teamName')}</TableCell>
+                <TableCell>{t('portal.sport')}</TableCell>
+                <TableCell>{t('portal.coach')}</TableCell>
+                <TableCell>{t('portal.members')}</TableCell>
+                <TableCell>{t('common.status')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {teams.length === 0 ? (
-                <TableRow><TableCell colSpan={5} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No teams found.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('portal.noTeamsFound')}</Typography></TableCell></TableRow>
               ) : teams.map(t => (
                 <TableRow key={t.id} hover>
                   <TableCell><strong>{t.name}</strong></TableCell>
@@ -301,23 +302,23 @@ const SportsCoordinatorPortal: React.FC = () => {
 
       {/* Tournaments */}
       <TabPanel value={tab} index={3}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Tournaments</Typography>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.tournaments')}</Typography>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
             <TableHead>
-              <TableRow sx={{ bgcolor: 'grey.100' }}>
-                <TableCell>Tournament</TableCell>
-                <TableCell>Sport</TableCell>
-                <TableCell>Start Date</TableCell>
-                <TableCell>End Date</TableCell>
-                <TableCell>Venue</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Participants</TableCell>
+              <TableRow sx={{ bgcolor: S.TH_BG }}>
+                <TableCell>{t('portal.tournament')}</TableCell>
+                <TableCell>{t('portal.sport')}</TableCell>
+                <TableCell>{t('common.startDate')}</TableCell>
+                <TableCell>{t('common.endDate')}</TableCell>
+                <TableCell>{t('portal.venue')}</TableCell>
+                <TableCell>{t('common.status')}</TableCell>
+                <TableCell>{t('portal.participants')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {tournaments.length === 0 ? (
-                <TableRow><TableCell colSpan={7} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No tournaments found.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('portal.noTournamentsFound')}</Typography></TableCell></TableRow>
               ) : tournaments.map(t => (
                 <TableRow key={t.id} hover>
                   <TableCell><strong>{t.name}</strong></TableCell>
@@ -339,22 +340,20 @@ const SportsCoordinatorPortal: React.FC = () => {
 
       {/* Achievements */}
       <TabPanel value={tab} index={4}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Achievements</Typography>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.achievements')}</Typography>        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
             <TableHead>
-              <TableRow sx={{ bgcolor: 'grey.100' }}>
-                <TableCell>Title</TableCell>
-                <TableCell>Sport</TableCell>
-                <TableCell>Student / Team</TableCell>
-                <TableCell>Date</TableCell>
-                <TableCell>Category</TableCell>
+              <TableRow sx={{ bgcolor: S.TH_BG }}>
+                <TableCell>{t('common.title')}</TableCell>
+                <TableCell>{t('portal.sport')}</TableCell>
+                <TableCell>{t('portal.studentTeam')}</TableCell>
+                <TableCell>{t('common.date')}</TableCell>
+                <TableCell>{t('common.category')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {achievements.length === 0 ? (
-                <TableRow><TableCell colSpan={5} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No achievements recorded.</Typography></TableCell></TableRow>
-              ) : achievements.map(a => (
+                <TableRow><TableCell colSpan={5} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('portal.noAchievementsRecorded')}</Typography></TableCell></TableRow>              ) : achievements.map(a => (
                 <TableRow key={a.id} hover>
                   <TableCell><strong>{a.title}</strong></TableCell>
                   <TableCell>{a.sport || '—'}</TableCell>
@@ -372,33 +371,30 @@ const SportsCoordinatorPortal: React.FC = () => {
       <TabPanel value={tab} index={5}>
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-              <CardContent>
+            <Box sx={{ ...S.GLASS, p: 3 }}>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                  <Typography variant="h6" fontWeight={600}>My Profile</Typography>
-                  <Chip label={profile?.role || 'Sports Coordinator'} color="warning" size="small" />
+                  <Typography variant="h6" fontWeight={600}>{t('portal.myProfile')}</Typography>
+                  <Chip label={profile?.role || t('portal.sportsCoordinator')} color="warning" size="small" />
                 </Box>
                 <Divider sx={{ mb: 2 }} />
-                <Typography variant="body2"><strong>Name:</strong> {profile?.firstName || user?.firstName} {profile?.lastName || user?.lastName}</Typography>
-                <Typography variant="body2" mt={1}><strong>Username:</strong> {profile?.username ?? user?.username}</Typography>
-                <Typography variant="body2" mt={1}><strong>Email:</strong> {profile?.email ?? user?.email ?? '—'}</Typography>
-                <Typography variant="body2" mt={1}><strong>Phone:</strong> {profile?.phoneNumber || '—'}</Typography>
+                <Typography variant="body2"><strong>{t('common.name')}:</strong> {profile?.firstName || user?.firstName} {profile?.lastName || user?.lastName}</Typography>
+                <Typography variant="body2" mt={1}><strong>{t('portal.username')}:</strong> {profile?.username ?? user?.username}</Typography>
+                <Typography variant="body2" mt={1}><strong>{t('portal.email')}:</strong> {profile?.email ?? user?.email ?? '—'}</Typography>
+                <Typography variant="body2" mt={1}><strong>{t('portal.phone')}:</strong> {profile?.phoneNumber || '—'}</Typography>
                 <Box mt={2}>
-                  <Button variant="outlined" color="warning" size="small" onClick={() => navigate('/communication/messages')}>Contact Admin</Button>
+                  <Button sx={S.BTN_OUTLINE} size="small" onClick={() => navigate('/communication/messages')}>{t('portal.contactAdmin')}</Button>
                 </Box>
-              </CardContent>
-            </Card>
+            </Box>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-              <CardContent>
-                <Typography variant="h6" fontWeight={600} gutterBottom>Quick Links</Typography>
+            <Box sx={{ ...S.GLASS, p: 3 }}>
+                <Typography variant="h6" fontWeight={600} gutterBottom>{t('portal.quickLinks')}</Typography>
                 <Divider sx={{ mb: 1 }} />
                 <List dense>
                   {[
-                    { label: 'Sports Dashboard', path: '/sports', icon: <SportsIcon color="warning" /> },
-                    { label: 'Messages', path: '/communication/messages', icon: <MessageIcon color="warning" /> },
-                    { label: 'Calendar', path: '/calendar', icon: <CalendarIcon color="warning" /> },
+                    { label: t('portal.sportsDashboard'), path: '/sports', icon: <SportsIcon color="warning" /> },
+                    { label: t('communication.messages'), path: '/communication/messages', icon: <MessageIcon color="warning" /> },
+                    { label: t('menu.calendar'), path: '/calendar', icon: <CalendarIcon color="warning" /> },
                   ].map(l => (
                     <ListItem key={l.path} button onClick={() => navigate(l.path)}>
                       <ListItemIcon>{l.icon}</ListItemIcon>
@@ -406,8 +402,7 @@ const SportsCoordinatorPortal: React.FC = () => {
                     </ListItem>
                   ))}
                 </List>
-              </CardContent>
-            </Card>
+            </Box>
           </Grid>
         </Grid>
       </TabPanel>

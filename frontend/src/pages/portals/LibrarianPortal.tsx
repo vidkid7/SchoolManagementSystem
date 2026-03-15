@@ -4,7 +4,7 @@ import {
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog,
   DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select,
-  FormControl, InputLabel, IconButton, Tooltip,
+  FormControl, InputLabel, IconButton, Tooltip, useTheme,
 } from '@mui/material';
 import {
   LocalLibrary as LibraryIcon,
@@ -21,9 +21,12 @@ import {
   Notifications as AnnouncementIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import apiClient from '../../services/apiClient';
 import { RootState } from '../../store';
+import { C, useAdminStyles } from '../../theme/designTokens';
+import { useTranslation } from 'react-i18next';
 
 interface LibraryStats {
   totalBooks: number;
@@ -73,6 +76,7 @@ function TabPanel({ children, value, index }: { children: React.ReactNode; value
 }
 
 const LibrarianPortal: React.FC = () => {
+  const { t } = useTranslation();
   const [tab, setTab] = useState(0);
   const [stats, setStats] = useState<LibraryStats>({ totalBooks: 0, booksIssued: 0, overdue: 0, reservations: 0 });
   const [books, setBooks] = useState<Book[]>([]);
@@ -82,7 +86,10 @@ const LibrarianPortal: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const { user, accessToken } = useSelector((state: RootState) => state.auth);
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
 
   const loadData = useCallback(async () => {
     if (!accessToken) return;
@@ -125,9 +132,9 @@ const LibrarianPortal: React.FC = () => {
           <LibraryIcon fontSize="large" />
         </Avatar>
         <Box>
-          <Typography variant="h4" fontWeight={700}>Librarian Portal</Typography>
+          <Typography variant="h4" fontWeight={700}>{t('portal.librarianPortal')}</Typography>
           <Typography variant="body2" color="text.secondary">
-            Welcome, {user?.firstName || user?.username} — Library Management
+            {t('portal.welcome')}, {user?.firstName || user?.username} — {t('roles.categories.library')}
           </Typography>
         </Box>
       </Box>
@@ -137,77 +144,73 @@ const LibrarianPortal: React.FC = () => {
       {/* Stats */}
       <Grid container spacing={2} mb={3}>
         {[
-          { label: 'Total Books', value: stats.totalBooks, icon: <BookIcon />, color: 'primary.main' },
-          { label: 'Books Issued', value: stats.booksIssued, icon: <IssuedIcon />, color: 'info.main' },
-          { label: 'Overdue', value: stats.overdue, icon: <OverdueIcon />, color: 'error.main' },
-          { label: 'Reservations', value: stats.reservations, icon: <ReservationIcon />, color: 'warning.main' },
+          { label: t('portal.totalBooksLib'), value: stats.totalBooks, icon: <BookIcon />, color: C.primary },
+          { label: t('portal.issuedBooksLib'), value: stats.booksIssued, icon: <IssuedIcon />, color: C.info },
+          { label: t('portal.overdueBooksLib'), value: stats.overdue, icon: <OverdueIcon />, color: C.danger },
+          { label: t('portal.reservations'), value: stats.reservations, icon: <ReservationIcon />, color: C.warning },
         ].map(stat => (
           <Grid item xs={6} sm={3} key={stat.label}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-              <CardContent sx={{ textAlign: 'center', py: 2 }}>
-                <Box sx={{ color: stat.color, fontSize: 32 }}>{stat.icon}</Box>
+            <Box sx={S.STAT_CARD(stat.color)}>
+              <Box sx={{ textAlign: 'center', py: 2 }}>
+                <Box sx={S.ICON_BOX(stat.color, 36)}>{stat.icon}</Box>
                 <Typography variant="h4" fontWeight={700}>{stat.value}</Typography>
                 <Typography variant="body2" color="text.secondary">{stat.label}</Typography>
-              </CardContent>
-            </Card>
+              </Box>
+            </Box>
           </Grid>
         ))}
       </Grid>
 
       {/* Tabs */}
       <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
-        <Tab icon={<LibraryIcon />} iconPosition="start" label="Dashboard" />
-        <Tab icon={<BookIcon />} iconPosition="start" label="Book Catalog" />
-        <Tab icon={<CirculationIcon />} iconPosition="start" label="Circulation" />
-        <Tab icon={<FineIcon />} iconPosition="start" label="Fines" />
-        <Tab icon={<ReportIcon />} iconPosition="start" label="Reports" />
-        <Tab icon={<PersonIcon />} iconPosition="start" label="Profile & Links" />
+        <Tab icon={<LibraryIcon />} iconPosition="start" label={t('portal.dashboard')} />
+        <Tab icon={<BookIcon />} iconPosition="start" label={t('library.books')} />
+        <Tab icon={<CirculationIcon />} iconPosition="start" label={t('portal.circulation')} />
+        <Tab icon={<FineIcon />} iconPosition="start" label={t('portal.fines')} />
+        <Tab icon={<ReportIcon />} iconPosition="start" label={t('finance.reports')} />
+        <Tab icon={<PersonIcon />} iconPosition="start" label={t('portal.profileAndLinks')} />
       </Tabs>
 
       {/* Dashboard */}
       <TabPanel value={tab} index={0}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Library Overview</Typography>
+        <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.libraryOverview')}</Typography>
         <Grid container spacing={2} mb={3}>
           <Grid item xs={12} md={6}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-              <CardContent>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>Collection Summary</Typography>
+            <Box sx={{ ...S.GLASS, p: 3 }}>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom>{t('portal.collectionSummary')}</Typography>
                 <Divider sx={{ mb: 2 }} />
-                <Typography variant="body2"><strong>Total Books:</strong> {stats.totalBooks}</Typography>
-                <Typography variant="body2" mt={1}><strong>Currently Issued:</strong> {stats.booksIssued}</Typography>
-                <Typography variant="body2" mt={1}><strong>Available:</strong> {stats.totalBooks - stats.booksIssued}</Typography>
-                <Typography variant="body2" mt={1} color="error.main"><strong>Overdue Returns:</strong> {stats.overdue}</Typography>
-              </CardContent>
-            </Card>
+                <Typography variant="body2"><strong>{t('portal.totalBooksLib')}:</strong> {stats.totalBooks}</Typography>
+                <Typography variant="body2" mt={1}><strong>{t('portal.currentlyIssued')}:</strong> {stats.booksIssued}</Typography>
+                <Typography variant="body2" mt={1}><strong>{t('portal.available')}:</strong> {stats.totalBooks - stats.booksIssued}</Typography>
+                <Typography variant="body2" mt={1} color="error.main"><strong>{t('portal.overdueReturns')}:</strong> {stats.overdue}</Typography>
+            </Box>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-              <CardContent>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>Quick Actions</Typography>
+            <Box sx={{ ...S.GLASS, p: 3 }}>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom>{t('portal.quickActions')}</Typography>
                 <Divider sx={{ mb: 2 }} />
                 <Box display="flex" flexDirection="column" gap={1}>
-                  <Button variant="outlined" size="small" onClick={() => navigate('/library')}>Library Dashboard</Button>
-                  <Button variant="outlined" size="small" onClick={() => navigate('/library/books')}>Manage Books</Button>
-                  <Button variant="outlined" size="small" onClick={() => navigate('/library/circulation')}>Issue / Return</Button>
+                  <Button sx={S.BTN_OUTLINE} size="small" onClick={() => navigate(`/library`)}>{t('portal.libraryDashboard')}</Button>
+                  <Button sx={S.BTN_OUTLINE} size="small" onClick={() => navigate(`/library/books`)}>{t('portal.manageBooks')}</Button>
+                  <Button sx={S.BTN_OUTLINE} size="small" onClick={() => navigate(`/library/circulation`)}>{t('portal.issueReturn')}</Button>
                 </Box>
-              </CardContent>
-            </Card>
+            </Box>
           </Grid>
         </Grid>
 
         {/* Recent overdue fines */}
         {fines.filter(f => f.status === 'pending' || f.status === 'unpaid').length > 0 && (
           <>
-            <Typography variant="h6" fontWeight={600} mb={2}>Pending Fines</Typography>
-            <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+            <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.pendingFines')}</Typography>
+            <TableContainer component={Paper} sx={S.GLASS}>
               <Table size="small">
                 <TableHead>
-                  <TableRow sx={{ bgcolor: 'grey.100' }}>
-                    <TableCell>Student</TableCell>
-                    <TableCell>Book</TableCell>
-                    <TableCell>Amount</TableCell>
-                    <TableCell>Reason</TableCell>
-                    <TableCell>Status</TableCell>
+                  <TableRow sx={{ bgcolor: S.TH_BG }}>
+                    <TableCell>{t('portal.student')}</TableCell>
+                    <TableCell>{t('portal.book')}</TableCell>
+                    <TableCell>{t('portal.amount')}</TableCell>
+                    <TableCell>{t('portal.reason')}</TableCell>
+                    <TableCell>{t('common.status')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -229,23 +232,23 @@ const LibrarianPortal: React.FC = () => {
 
       {/* Book Catalog */}
       <TabPanel value={tab} index={1}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Book Catalog</Typography>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.bookCatalog')}</Typography>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
             <TableHead>
-              <TableRow sx={{ bgcolor: 'grey.100' }}>
-                <TableCell>Title</TableCell>
-                <TableCell>Author</TableCell>
+              <TableRow sx={{ bgcolor: S.TH_BG }}>
+                <TableCell>{t('common.title')}</TableCell>
+                <TableCell>{t('portal.author')}</TableCell>
                 <TableCell>ISBN</TableCell>
-                <TableCell>Category</TableCell>
-                <TableCell>Copies</TableCell>
-                <TableCell>Available</TableCell>
-                <TableCell>Status</TableCell>
+                <TableCell>{t('common.category')}</TableCell>
+                <TableCell>{t('portal.copies')}</TableCell>
+                <TableCell>{t('portal.available')}</TableCell>
+                <TableCell>{t('common.status')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {books.length === 0 ? (
-                <TableRow><TableCell colSpan={7} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No books found.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('messages.noData')}</Typography></TableCell></TableRow>
               ) : books.map(b => (
                 <TableRow key={b.id} hover>
                   <TableCell><strong>{b.title}</strong></TableCell>
@@ -267,57 +270,55 @@ const LibrarianPortal: React.FC = () => {
 
       {/* Circulation */}
       <TabPanel value={tab} index={2}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Circulation</Typography>
-        <Card sx={{ borderRadius: 3, boxShadow: 2, mb: 3 }}>
-          <CardContent>
+        <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.circulation')}</Typography>
+        <Box sx={{ ...S.GLASS, p: 3, mb: 3 }}>
             <Grid container spacing={2}>
               <Grid item xs={6} sm={3}>
-                <Typography variant="body2" color="text.secondary">Total Books</Typography>
+                <Typography variant="body2" color="text.secondary">{t('portal.totalBooksLib')}</Typography>
                 <Typography variant="h5" fontWeight={700}>{stats.totalBooks}</Typography>
               </Grid>
               <Grid item xs={6} sm={3}>
-                <Typography variant="body2" color="text.secondary">Currently Issued</Typography>
+                <Typography variant="body2" color="text.secondary">{t('portal.currentlyIssued')}</Typography>
                 <Typography variant="h5" fontWeight={700} color="info.main">{stats.booksIssued}</Typography>
               </Grid>
               <Grid item xs={6} sm={3}>
-                <Typography variant="body2" color="text.secondary">Overdue</Typography>
+                <Typography variant="body2" color="text.secondary">{t('portal.overdue')}</Typography>
                 <Typography variant="h5" fontWeight={700} color="error.main">{stats.overdue}</Typography>
               </Grid>
               <Grid item xs={6} sm={3}>
-                <Typography variant="body2" color="text.secondary">Reservations</Typography>
+                <Typography variant="body2" color="text.secondary">{t('portal.reservations')}</Typography>
                 <Typography variant="h5" fontWeight={700} color="warning.main">{stats.reservations}</Typography>
               </Grid>
             </Grid>
-          </CardContent>
-        </Card>
+        </Box>
         <Box display="flex" gap={2}>
-          <Button variant="contained" startIcon={<CirculationIcon />} onClick={() => navigate('/library/circulation')}>
-            Issue / Return Books
+          <Button sx={S.BTN_PRIMARY} startIcon={<CirculationIcon />} onClick={() => navigate(`/library/circulation`)}>
+            {t('portal.issueReturnBooks')}
           </Button>
-          <Button variant="outlined" startIcon={<ReservationIcon />} onClick={() => navigate('/library/reservations')}>
-            Manage Reservations
+          <Button sx={S.BTN_OUTLINE} startIcon={<ReservationIcon />} onClick={() => navigate(`/library/reservations`)}>
+            {t('portal.manageReservations')}
           </Button>
         </Box>
       </TabPanel>
 
       {/* Fines */}
       <TabPanel value={tab} index={3}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Fines</Typography>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.fines')}</Typography>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
             <TableHead>
-              <TableRow sx={{ bgcolor: 'grey.100' }}>
-                <TableCell>Student</TableCell>
-                <TableCell>Book</TableCell>
-                <TableCell>Amount</TableCell>
-                <TableCell>Reason</TableCell>
-                <TableCell>Date</TableCell>
-                <TableCell>Status</TableCell>
+              <TableRow sx={{ bgcolor: S.TH_BG }}>
+                <TableCell>{t('portal.student')}</TableCell>
+                <TableCell>{t('portal.book')}</TableCell>
+                <TableCell>{t('portal.amount')}</TableCell>
+                <TableCell>{t('portal.reason')}</TableCell>
+                <TableCell>{t('common.date')}</TableCell>
+                <TableCell>{t('common.status')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {fines.length === 0 ? (
-                <TableRow><TableCell colSpan={6} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No fines recorded.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('messages.noData')}</Typography></TableCell></TableRow>
               ) : fines.map(f => (
                 <TableRow key={f.id} hover>
                   <TableCell>{f.studentName || `Student #${f.studentId || '—'}`}</TableCell>
@@ -338,21 +339,19 @@ const LibrarianPortal: React.FC = () => {
 
       {/* Reports */}
       <TabPanel value={tab} index={4}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Library Reports</Typography>
+        <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.libraryReports')}</Typography>
         <Grid container spacing={2}>
           {[
-            { label: 'Collection Report', desc: 'Overview of total collection and categorization', path: '/library/reports' },
-            { label: 'Circulation Report', desc: 'Issue, return, and overdue statistics', path: '/library/reports' },
-            { label: 'Fine Report', desc: 'Fine collection and pending amounts', path: '/library/reports' },
+            { label: t('portal.collectionReport'), desc: t('portal.collectionReportDesc'), path: '/library/reports' },
+            { label: t('portal.circulationReport'), desc: t('portal.circulationReportDesc'), path: '/library/reports' },
+            { label: t('portal.fineReport'), desc: t('portal.fineReportDesc'), path: '/library/reports' },
           ].map(r => (
             <Grid item xs={12} sm={4} key={r.label}>
-              <Card sx={{ borderRadius: 3, boxShadow: 2, cursor: 'pointer' }} onClick={() => navigate(r.path)}>
-                <CardContent sx={{ textAlign: 'center', py: 3 }}>
-                  <ReportIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
+              <Box sx={{ ...S.GLASS, p: 3, cursor: 'pointer', textAlign: 'center' }} onClick={() => navigate(r.path)}>
+                  <ReportIcon sx={{ fontSize: 40, color: C.primary, mb: 1 }} />
                   <Typography variant="subtitle1" fontWeight={600}>{r.label}</Typography>
                   <Typography variant="body2" color="text.secondary">{r.desc}</Typography>
-                </CardContent>
-              </Card>
+              </Box>
             </Grid>
           ))}
         </Grid>
@@ -362,35 +361,32 @@ const LibrarianPortal: React.FC = () => {
       <TabPanel value={tab} index={5}>
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-              <CardContent>
+            <Box sx={{ ...S.GLASS, p: 3 }}>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                  <Typography variant="h6" fontWeight={600}>My Profile</Typography>
-                  <Chip label={profile?.role || 'Librarian'} color="primary" size="small" />
+                  <Typography variant="h6" fontWeight={600}>{t('portal.myProfile')}</Typography>
+                  <Chip label={profile?.role || t('portal.librarian')} color="primary" size="small" />
                 </Box>
                 <Divider sx={{ mb: 2 }} />
-                <Typography variant="body2"><strong>Name:</strong> {profile?.firstName || user?.firstName} {profile?.lastName || user?.lastName}</Typography>
-                <Typography variant="body2" mt={1}><strong>Username:</strong> {profile?.username ?? user?.username}</Typography>
-                <Typography variant="body2" mt={1}><strong>Email:</strong> {profile?.email ?? user?.email ?? '—'}</Typography>
-                <Typography variant="body2" mt={1}><strong>Phone:</strong> {profile?.phoneNumber || '—'}</Typography>
+                <Typography variant="body2"><strong>{t('common.name')}:</strong> {profile?.firstName || user?.firstName} {profile?.lastName || user?.lastName}</Typography>
+                <Typography variant="body2" mt={1}><strong>{t('portal.username')}:</strong> {profile?.username ?? user?.username}</Typography>
+                <Typography variant="body2" mt={1}><strong>{t('portal.email')}:</strong> {profile?.email ?? user?.email ?? '—'}</Typography>
+                <Typography variant="body2" mt={1}><strong>{t('portal.phone')}:</strong> {profile?.phoneNumber || '—'}</Typography>
                 <Box mt={2}>
-                  <Button variant="outlined" color="primary" size="small" onClick={() => navigate('/communication/messages')}>Contact Admin</Button>
+                  <Button sx={S.BTN_OUTLINE} size="small" onClick={() => navigate(`/communication/messages`)}>{t('portal.contactAdmin')}</Button>
                 </Box>
-              </CardContent>
-            </Card>
+            </Box>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-              <CardContent>
-                <Typography variant="h6" fontWeight={600} gutterBottom>Quick Links</Typography>
+            <Box sx={{ ...S.GLASS, p: 3 }}>
+                <Typography variant="h6" fontWeight={600} gutterBottom>{t('portal.quickLinks')}</Typography>
                 <Divider sx={{ mb: 1 }} />
                 <List dense>
                   {[
-                    { label: 'Library Dashboard', path: '/library', icon: <LibraryIcon color="primary" /> },
-                    { label: 'Book Catalog', path: '/library/books', icon: <BookIcon color="primary" /> },
-                    { label: 'Circulation', path: '/library/circulation', icon: <CirculationIcon color="primary" /> },
-                    { label: 'Messages', path: '/communication/messages', icon: <MessageIcon color="primary" /> },
-                    { label: 'Calendar', path: '/calendar', icon: <CalendarIcon color="primary" /> },
+                    { label: t('portal.libraryDashboard'), path: '/library', icon: <LibraryIcon color="primary" /> },
+                    { label: t('library.books'), path: '/library/books', icon: <BookIcon color="primary" /> },
+                    { label: t('portal.circulation'), path: '/library/circulation', icon: <CirculationIcon color="primary" /> },
+                    { label: t('communication.messages'), path: '/communication/messages', icon: <MessageIcon color="primary" /> },
+                    { label: t('menu.calendar'), path: '/calendar', icon: <CalendarIcon color="primary" /> },
                   ].map(l => (
                     <ListItem key={l.path} button onClick={() => navigate(l.path)}>
                       <ListItemIcon>{l.icon}</ListItemIcon>
@@ -398,8 +394,7 @@ const LibrarianPortal: React.FC = () => {
                     </ListItem>
                   ))}
                 </List>
-              </CardContent>
-            </Card>
+            </Box>
           </Grid>
         </Grid>
       </TabPanel>

@@ -4,8 +4,9 @@ import {
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog,
   DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select,
-  FormControl, InputLabel, IconButton, Tooltip,
+  FormControl, InputLabel, IconButton, Tooltip, useTheme,
 } from '@mui/material';
+import { C, useAdminStyles } from '../../theme/designTokens';
 import {
   DirectionsBus as BusIcon,
   People as PeopleIcon, Message as MessageIcon,
@@ -17,9 +18,10 @@ import {
   PersonPin as DriverIcon, Build as MaintenanceIcon, Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import apiClient from '../../services/apiClient';
 import { RootState } from '../../store';
+import { useTranslation } from 'react-i18next';
 
 interface DashboardData { summary: { totalStudents: number; activeStudents: number; role: string }; quickLinks: Array<{ label: string; path: string }>; }
 interface ProfileData { id: number; username: string; email: string; firstName: string; lastName: string; phoneNumber?: string; role: string; status: string; }
@@ -37,6 +39,7 @@ function TabPanel({ children, value, index }: { children: React.ReactNode; value
 }
 
 const TransportPortal: React.FC = () => {
+  const { t } = useTranslation();
   const [tab, setTab] = useState(0);
   const [data, setData] = useState<DashboardData | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -61,7 +64,9 @@ const TransportPortal: React.FC = () => {
   const [formData, setFormData] = useState<any>({});
 
   const { user, accessToken } = useSelector((state: RootState) => state.auth);
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
 
   const loadData = useCallback(async () => {
     if (!accessToken) return;
@@ -170,9 +175,9 @@ const TransportPortal: React.FC = () => {
           <BusIcon fontSize="large" />
         </Avatar>
         <Box>
-          <Typography variant="h4" fontWeight={700}>Transport Management</Typography>
+          <Typography variant="h4" fontWeight={700}>{t('portal.transportManagement')}</Typography>
           <Typography variant="body2" color="text.secondary">
-            Welcome, {user?.firstName || user?.username} — Transport Manager
+            {t('portal.welcome')}, {user?.firstName || user?.username} — {t('portal.transportManager')}
           </Typography>
         </Box>
       </Box>
@@ -182,50 +187,50 @@ const TransportPortal: React.FC = () => {
       {/* Stats */}
       <Grid container spacing={2} mb={3}>
         {[
-          { label: 'Total Students', value: data?.summary.totalStudents ?? '--', icon: <PeopleIcon />, color: 'primary.main' },
-          { label: 'Active Students', value: data?.summary.activeStudents ?? '--', icon: <ActiveIcon />, color: 'success.main' },
-          { label: 'Routes', value: routes.length, icon: <RouteIcon />, color: 'info.main' },
-          { label: 'Vehicles', value: vehicles.length, icon: <VehicleIcon />, color: 'warning.main' },
+          { label: t('dashboard.totalStudents'), value: data?.summary.totalStudents ?? '--', icon: <PeopleIcon />, color: C.primary },
+          { label: t('portal.activeStudents'), value: data?.summary.activeStudents ?? '--', icon: <ActiveIcon />, color: C.success },
+          { label: t('portal.routes'), value: routes.length, icon: <RouteIcon />, color: C.info },
+          { label: t('portal.vehicles'), value: vehicles.length, icon: <VehicleIcon />, color: C.warning },
         ].map(stat => (
           <Grid item xs={6} sm={3} key={stat.label}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-              <CardContent sx={{ textAlign: 'center', py: 2 }}>
-                <Box sx={{ color: stat.color, fontSize: 32 }}>{stat.icon}</Box>
+            <Box sx={S.STAT_CARD(stat.color)}>
+              <Box sx={{ textAlign: 'center', py: 2 }}>
+                <Box sx={S.ICON_BOX(stat.color, 36)}>{stat.icon}</Box>
                 <Typography variant="h4" fontWeight={700}>{stat.value}</Typography>
                 <Typography variant="body2" color="text.secondary">{stat.label}</Typography>
-              </CardContent>
-            </Card>
+              </Box>
+            </Box>
           </Grid>
         ))}
       </Grid>
 
       {/* Tabs */}
       <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
-        <Tab icon={<RouteIcon />} iconPosition="start" label="Routes" />
-        <Tab icon={<VehicleIcon />} iconPosition="start" label="Vehicles" />
-        <Tab icon={<PickupIcon />} iconPosition="start" label="Pickup Points" />
-        <Tab icon={<PeopleIcon />} iconPosition="start" label="Students" />
-        <Tab icon={<AttendanceIcon />} iconPosition="start" label="Attendance" />
-        <Tab icon={<DriverIcon />} iconPosition="start" label="Drivers" />
-        <Tab icon={<MaintenanceIcon />} iconPosition="start" label="Maintenance" />
-        <Tab icon={<PersonIcon />} iconPosition="start" label="Profile & Links" />
+        <Tab icon={<RouteIcon />} iconPosition="start" label={t('transport.routes')} />
+        <Tab icon={<VehicleIcon />} iconPosition="start" label={t('transport.vehicles')} />
+        <Tab icon={<PickupIcon />} iconPosition="start" label={t('transport.pickupPoints')} />
+        <Tab icon={<PeopleIcon />} iconPosition="start" label={t('portal.students')} />
+        <Tab icon={<AttendanceIcon />} iconPosition="start" label={t('attendance.markAttendance') || 'Attendance'} />
+        <Tab icon={<DriverIcon />} iconPosition="start" label={t('transport.drivers')} />
+        <Tab icon={<MaintenanceIcon />} iconPosition="start" label={t('transport.maintenance')} />
+        <Tab icon={<PersonIcon />} iconPosition="start" label={t('portal.profileAndLinks')} />
       </Tabs>
 
       {/* ROUTES */}
       <TabPanel value={tab} index={0}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6" fontWeight={600}>Route Management</Typography>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditRoute(null); setFormData({}); setRouteDialog(true); }}>Add Route</Button>
+          <Typography variant="h6" fontWeight={600}>{t('transport.routeManagement')}</Typography>
+          <Button sx={S.BTN_PRIMARY} startIcon={<AddIcon />} onClick={() => { setEditRoute(null); setFormData({}); setRouteDialog(true); }}>{t('transport.addRoute')}</Button>
         </Box>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
-            <TableHead><TableRow sx={{ bgcolor: 'grey.100' }}>
-              <TableCell>Route Name</TableCell><TableCell>From</TableCell><TableCell>To</TableCell>
-              <TableCell>Driver</TableCell><TableCell>Departure</TableCell><TableCell>Status</TableCell><TableCell>Actions</TableCell>
+            <TableHead><TableRow sx={{ bgcolor: S.TH_BG }}>
+              <TableCell>{t('transport.routeName')}</TableCell><TableCell>{t('transport.origin')}</TableCell><TableCell>{t('transport.destination')}</TableCell>
+              <TableCell>{t('transport.driverCol')}</TableCell><TableCell>{t('transport.departure')}</TableCell><TableCell>{t('common.status')}</TableCell><TableCell>{t('common.actions')}</TableCell>
             </TableRow></TableHead>
             <TableBody>
               {routes.length === 0 ? (
-                <TableRow><TableCell colSpan={7} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No routes added. Click "Add Route" to get started.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('transport.noRoutes')}</Typography></TableCell></TableRow>
               ) : routes.map(r => (
                 <TableRow key={r.id} hover>
                   <TableCell><strong>{r.routeName}</strong></TableCell>
@@ -248,18 +253,18 @@ const TransportPortal: React.FC = () => {
       {/* VEHICLES */}
       <TabPanel value={tab} index={1}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6" fontWeight={600}>Vehicle Management</Typography>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditVehicle(null); setFormData({}); setVehicleDialog(true); }}>Add Vehicle</Button>
+          <Typography variant="h6" fontWeight={600}>{t('transport.vehicleManagement')}</Typography>
+          <Button sx={S.BTN_PRIMARY} startIcon={<AddIcon />} onClick={() => { setEditVehicle(null); setFormData({}); setVehicleDialog(true); }}>{t('transport.addVehicle')}</Button>
         </Box>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
-            <TableHead><TableRow sx={{ bgcolor: 'grey.100' }}>
-              <TableCell>Vehicle No.</TableCell><TableCell>Type</TableCell><TableCell>Capacity</TableCell>
-              <TableCell>Driver</TableCell><TableCell>Phone</TableCell><TableCell>Status</TableCell><TableCell>Actions</TableCell>
+            <TableHead><TableRow sx={{ bgcolor: S.TH_BG }}>
+              <TableCell>{t('transport.vehicleNo')}</TableCell><TableCell>{t('transport.type')}</TableCell><TableCell>{t('hostel.capacity')}</TableCell>
+              <TableCell>{t('transport.driverCol')}</TableCell><TableCell>{t('common.phone')}</TableCell><TableCell>{t('common.status')}</TableCell><TableCell>{t('common.actions')}</TableCell>
             </TableRow></TableHead>
             <TableBody>
               {vehicles.length === 0 ? (
-                <TableRow><TableCell colSpan={7} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No vehicles added. Click "Add Vehicle" to get started.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('transport.noVehicles')}</Typography></TableCell></TableRow>
               ) : vehicles.map(v => (
                 <TableRow key={v.id} hover>
                   <TableCell><strong>{v.vehicleNumber}</strong></TableCell>
@@ -281,17 +286,17 @@ const TransportPortal: React.FC = () => {
       {/* PICKUP POINTS */}
       <TabPanel value={tab} index={2}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6" fontWeight={600}>Pickup Points</Typography>
-          <Button variant="contained" color="info" startIcon={<AddIcon />} onClick={() => { setFormData({}); setPickupDialog(true); }}>Add Pickup Point</Button>
+          <Typography variant="h6" fontWeight={600}>{t('transport.pickupPoints')}</Typography>
+          <Button variant="contained" color="info" startIcon={<AddIcon />} onClick={() => { setFormData({}); setPickupDialog(true); }}>{t('transport.addPickupPoint')}</Button>
         </Box>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
-            <TableHead><TableRow sx={{ bgcolor: 'grey.100' }}>
-              <TableCell>Name</TableCell><TableCell>Address</TableCell><TableCell>Route ID</TableCell><TableCell>Est. Time</TableCell><TableCell>Status</TableCell>
+            <TableHead><TableRow sx={{ bgcolor: S.TH_BG }}>
+              <TableCell>{t('common.name')}</TableCell><TableCell>{t('transport.address')}</TableCell><TableCell>{t('transport.routeId')}</TableCell><TableCell>{t('transport.estimatedTime')}</TableCell><TableCell>{t('common.status')}</TableCell>
             </TableRow></TableHead>
             <TableBody>
               {pickupPoints.length === 0 ? (
-                <TableRow><TableCell colSpan={5} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No pickup points. Click "Add Pickup Point" to get started.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('transport.noPickupPoints')}</Typography></TableCell></TableRow>
               ) : pickupPoints.map(p => (
                 <TableRow key={p.id} hover>
                   <TableCell><strong>{p.name}</strong></TableCell>
@@ -308,18 +313,18 @@ const TransportPortal: React.FC = () => {
 
       {/* STUDENTS */}
       <TabPanel value={tab} index={3}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Students on Transport</Typography>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <Typography variant="h6" fontWeight={600} mb={2}>{t('transport.studentsOnTransport')}</Typography>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
-            <TableHead><TableRow sx={{ bgcolor: 'grey.100' }}><TableCell>Student Code</TableCell><TableCell>Name</TableCell><TableCell>Actions</TableCell></TableRow></TableHead>
+            <TableHead><TableRow sx={{ bgcolor: S.TH_BG }}><TableCell>{t('hostel.studentCode')}</TableCell><TableCell>{t('common.name')}</TableCell><TableCell>{t('common.actions')}</TableCell></TableRow></TableHead>
             <TableBody>
               {students.length === 0 ? (
-                <TableRow><TableCell colSpan={3} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No student transport data.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={3} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('transport.noStudents')}</Typography></TableCell></TableRow>
               ) : students.map(s => (
                 <TableRow key={s.studentId ?? s.id} hover>
                   <TableCell>{s.studentCode ?? '—'}</TableCell>
                   <TableCell>{`${s.firstNameEn ?? ''} ${s.lastNameEn ?? ''}`.trim() || '—'}</TableCell>
-                  <TableCell><Button size="small" onClick={() => navigate(`/students/${s.studentId ?? s.id}`)}>View</Button></TableCell>
+                  <TableCell><Button size="small" onClick={() => navigate(`/students/${s.studentId ?? s.id}`)}>{t('portal.viewProfileBtn')}</Button></TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -329,31 +334,30 @@ const TransportPortal: React.FC = () => {
 
       {/* ATTENDANCE */}
       <TabPanel value={tab} index={4}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Transport Attendance</Typography>
+        <Typography variant="h6" fontWeight={600} mb={2}>{t('transport.transportAttendance')}</Typography>
         <Typography variant="body2" color="text.secondary">
-          Use the attendance marking section to record daily transport attendance. 
-          Route-wise attendance reports will appear here once students are linked to routes.
+          {t('transport.attendanceDesc')}
         </Typography>
-        <Button variant="contained" sx={{ mt: 2 }} onClick={() => navigate('/attendance')}>
-          Go to Attendance Module
+        <Button sx={{ ...S.BTN_PRIMARY, mt: 2 }} onClick={() => navigate('/attendance')}>
+          {t('transport.goToAttendance')}
         </Button>
       </TabPanel>
 
       {/* DRIVERS */}
       <TabPanel value={tab} index={5}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6" fontWeight={600}>Driver Management</Typography>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditDriver(null); setFormData({}); setDriverDialog(true); }}>Add Driver</Button>
+          <Typography variant="h6" fontWeight={600}>{t('transport.driverManagement')}</Typography>
+          <Button sx={S.BTN_PRIMARY} startIcon={<AddIcon />} onClick={() => { setEditDriver(null); setFormData({}); setDriverDialog(true); }}>{t('transport.addDriver')}</Button>
         </Box>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
-            <TableHead><TableRow sx={{ bgcolor: 'grey.100' }}>
-              <TableCell>Name</TableCell><TableCell>License #</TableCell><TableCell>License Expiry</TableCell>
-              <TableCell>Phone</TableCell><TableCell>Status</TableCell><TableCell>Actions</TableCell>
+            <TableHead><TableRow sx={{ bgcolor: S.TH_BG }}>
+              <TableCell>{t('common.name')}</TableCell><TableCell>{t('transport.licenseNo')}</TableCell><TableCell>{t('transport.licenseExpiry')}</TableCell>
+              <TableCell>{t('common.phone')}</TableCell><TableCell>{t('common.status')}</TableCell><TableCell>{t('common.actions')}</TableCell>
             </TableRow></TableHead>
             <TableBody>
               {driversList.length === 0 ? (
-                <TableRow><TableCell colSpan={6} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No drivers added. Click "Add Driver" to get started.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('transport.noDrivers')}</Typography></TableCell></TableRow>
               ) : driversList.map(d => (
                 <TableRow key={d.id} hover>
                   <TableCell><strong>{d.name}</strong></TableCell>
@@ -375,18 +379,18 @@ const TransportPortal: React.FC = () => {
       {/* MAINTENANCE */}
       <TabPanel value={tab} index={6}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6" fontWeight={600}>Maintenance Records</Typography>
-          <Button variant="contained" color="warning" startIcon={<AddIcon />} onClick={() => { setEditMaintenance(null); setFormData({}); setMaintenanceDialog(true); }}>Add Record</Button>
+          <Typography variant="h6" fontWeight={600}>{t('transport.maintenanceRecords')}</Typography>
+          <Button variant="contained" color="warning" startIcon={<AddIcon />} onClick={() => { setEditMaintenance(null); setFormData({}); setMaintenanceDialog(true); }}>{t('transport.addRecord')}</Button>
         </Box>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
-            <TableHead><TableRow sx={{ bgcolor: 'grey.100' }}>
-              <TableCell>Vehicle ID</TableCell><TableCell>Type</TableCell><TableCell>Description</TableCell>
-              <TableCell>Cost</TableCell><TableCell>Date</TableCell><TableCell>Status</TableCell><TableCell>Actions</TableCell>
+            <TableHead><TableRow sx={{ bgcolor: S.TH_BG }}>
+              <TableCell>{t('transport.vehicleId')}</TableCell><TableCell>{t('transport.type')}</TableCell><TableCell>{t('common.description')}</TableCell>
+              <TableCell>{t('transport.cost')}</TableCell><TableCell>{t('common.date')}</TableCell><TableCell>{t('common.status')}</TableCell><TableCell>{t('common.actions')}</TableCell>
             </TableRow></TableHead>
             <TableBody>
               {maintenance.length === 0 ? (
-                <TableRow><TableCell colSpan={7} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No maintenance records. Click "Add Record" to get started.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('transport.noMaintenance')}</Typography></TableCell></TableRow>
               ) : maintenance.map(m => (
                 <TableRow key={m.id} hover>
                   <TableCell>{m.vehicleId}</TableCell>
@@ -409,31 +413,28 @@ const TransportPortal: React.FC = () => {
       <TabPanel value={tab} index={7}>
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-              <CardContent>
+            <Box sx={{ ...S.GLASS, p: 3 }}>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                  <Typography variant="h6" fontWeight={600}>My Profile</Typography>
-                  <Chip label={profile?.role || 'Transport Manager'} color="primary" size="small" />
+                  <Typography variant="h6" fontWeight={600}>{t('portal.myProfile')}</Typography>
+                  <Chip label={profile?.role || t('portal.transportManager')} color="primary" size="small" />
                 </Box>
                 <Divider sx={{ mb: 2 }} />
-                <Typography variant="body2"><strong>Name:</strong> {profile?.firstName || user?.firstName} {profile?.lastName || user?.lastName}</Typography>
-                <Typography variant="body2" mt={1}><strong>Email:</strong> {profile?.email || user?.email || '—'}</Typography>
-                <Typography variant="body2" mt={1}><strong>Phone:</strong> {profile?.phoneNumber || '—'}</Typography>
-              </CardContent>
-            </Card>
+                <Typography variant="body2"><strong>{t('common.name')}:</strong> {profile?.firstName || user?.firstName} {profile?.lastName || user?.lastName}</Typography>
+                <Typography variant="body2" mt={1}><strong>{t('portal.email')}:</strong> {profile?.email || user?.email || '—'}</Typography>
+                <Typography variant="body2" mt={1}><strong>{t('portal.phone')}:</strong> {profile?.phoneNumber || '—'}</Typography>
+            </Box>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-              <CardContent>
-                <Typography variant="h6" fontWeight={600} gutterBottom>Quick Links</Typography>
+            <Box sx={{ ...S.GLASS, p: 3 }}>
+                <Typography variant="h6" fontWeight={600} gutterBottom>{t('portal.quickLinks')}</Typography>
                 <Divider sx={{ mb: 1 }} />
                 <List dense>
                   {[
-                    { label: 'Student List', path: '/students', icon: <PeopleIcon color="primary" /> },
-                    { label: 'Messages', path: '/communication/messages', icon: <MessageIcon color="primary" /> },
-                    { label: 'Announcements', path: '/communication/announcements', icon: <AnnouncementIcon color="primary" /> },
-                    { label: 'Calendar', path: '/calendar', icon: <CalendarIcon color="primary" /> },
-                    { label: 'Documents', path: '/documents', icon: <DocIcon color="primary" /> },
+                    { label: t('students.studentList'), path: '/students', icon: <PeopleIcon color="primary" /> },
+                    { label: t('communication.messages'), path: '/communication/messages', icon: <MessageIcon color="primary" /> },
+                    { label: t('communication.announcements'), path: '/communication/announcements', icon: <AnnouncementIcon color="primary" /> },
+                    { label: t('menu.calendar'), path: '/calendar', icon: <CalendarIcon color="primary" /> },
+                    { label: t('menu.documents'), path: '/documents', icon: <DocIcon color="primary" /> },
                   ].map(l => (
                     <ListItem key={l.path} button onClick={() => navigate(l.path)}>
                       <ListItemIcon>{l.icon}</ListItemIcon>
@@ -441,33 +442,32 @@ const TransportPortal: React.FC = () => {
                     </ListItem>
                   ))}
                 </List>
-              </CardContent>
-            </Card>
+            </Box>
           </Grid>
         </Grid>
       </TabPanel>
 
       {/* Route Dialog */}
       <Dialog open={routeDialog} onClose={() => { setRouteDialog(false); setEditRoute(null); setFormData({}); }} maxWidth="sm" fullWidth>
-        <DialogTitle>{editRoute ? 'Edit Route' : 'Add New Route'}</DialogTitle>
+        <DialogTitle>{editRoute ? t('transport.editRoute') : t('transport.addNewRoute')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-          <TextField label="Route Name" value={formData.routeName ?? ''} onChange={e => setFormData({ ...formData, routeName: e.target.value })} fullWidth required />
-          <TextField label="Origin" value={formData.origin ?? ''} onChange={e => setFormData({ ...formData, origin: e.target.value })} fullWidth required />
-          <TextField label="Destination" value={formData.destination ?? ''} onChange={e => setFormData({ ...formData, destination: e.target.value })} fullWidth required />
+          <TextField label={t('transport.routeName')} value={formData.routeName ?? ''} onChange={e => setFormData({ ...formData, routeName: e.target.value })} fullWidth required />
+          <TextField label={t('transport.origin')} value={formData.origin ?? ''} onChange={e => setFormData({ ...formData, origin: e.target.value })} fullWidth required />
+          <TextField label={t('transport.destination')} value={formData.destination ?? ''} onChange={e => setFormData({ ...formData, destination: e.target.value })} fullWidth required />
           <TextField label="Driver Name" value={formData.driverName ?? ''} onChange={e => setFormData({ ...formData, driverName: e.target.value })} fullWidth />
           <TextField label="Driver Phone" value={formData.driverPhone ?? ''} onChange={e => setFormData({ ...formData, driverPhone: e.target.value })} fullWidth />
           <TextField label="Departure Time (HH:MM)" value={formData.departureTime ?? ''} onChange={e => setFormData({ ...formData, departureTime: e.target.value })} fullWidth />
           <TextField label="Arrival Time (HH:MM)" value={formData.arrivalTime ?? ''} onChange={e => setFormData({ ...formData, arrivalTime: e.target.value })} fullWidth />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setRouteDialog(false); setEditRoute(null); setFormData({}); }}>Cancel</Button>
-          <Button variant="contained" onClick={handleSaveRoute}>{editRoute ? 'Update' : 'Create'}</Button>
+          <Button onClick={() => { setRouteDialog(false); setEditRoute(null); setFormData({}); }}>{t('common.cancel')}</Button>
+          <Button sx={S.BTN_PRIMARY} onClick={handleSaveRoute}>{editRoute ? t('common.update') : t('common.create')}</Button>
         </DialogActions>
       </Dialog>
 
       {/* Vehicle Dialog */}
       <Dialog open={vehicleDialog} onClose={() => { setVehicleDialog(false); setEditVehicle(null); setFormData({}); }} maxWidth="sm" fullWidth>
-        <DialogTitle>{editVehicle ? 'Edit Vehicle' : 'Add New Vehicle'}</DialogTitle>
+        <DialogTitle>{editVehicle ? t('transport.editVehicle') : t('transport.addNewVehicle')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
           <TextField label="Vehicle Number" value={formData.vehicleNumber ?? ''} onChange={e => setFormData({ ...formData, vehicleNumber: e.target.value })} fullWidth required />
           <FormControl fullWidth>
@@ -483,29 +483,29 @@ const TransportPortal: React.FC = () => {
           <TextField label="Registration Expiry" type="date" value={formData.registrationExpiry ?? ''} onChange={e => setFormData({ ...formData, registrationExpiry: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setVehicleDialog(false); setEditVehicle(null); setFormData({}); }}>Cancel</Button>
-          <Button variant="contained" onClick={handleSaveVehicle}>{editVehicle ? 'Update' : 'Create'}</Button>
+          <Button onClick={() => { setVehicleDialog(false); setEditVehicle(null); setFormData({}); }}>{t('common.cancel')}</Button>
+          <Button sx={S.BTN_PRIMARY} onClick={handleSaveVehicle}>{editVehicle ? t('common.update') : t('common.create')}</Button>
         </DialogActions>
       </Dialog>
 
       {/* Pickup Point Dialog */}
       <Dialog open={pickupDialog} onClose={() => { setPickupDialog(false); setFormData({}); }} maxWidth="sm" fullWidth>
-        <DialogTitle>Add Pickup Point</DialogTitle>
+        <DialogTitle>{t('transport.addPickupPointTitle')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
           <TextField label="Name" value={formData.name ?? ''} onChange={e => setFormData({ ...formData, name: e.target.value })} fullWidth required />
-          <TextField label="Address" value={formData.address ?? ''} onChange={e => setFormData({ ...formData, address: e.target.value })} fullWidth required />
+          <TextField label={t('transport.address')} value={formData.address ?? ''} onChange={e => setFormData({ ...formData, address: e.target.value })} fullWidth required />
           <TextField label="Route ID (optional)" type="number" value={formData.routeId ?? ''} onChange={e => setFormData({ ...formData, routeId: e.target.value ? Number(e.target.value) : null })} fullWidth />
           <TextField label="Estimated Pickup Time (HH:MM)" value={formData.estimatedTime ?? ''} onChange={e => setFormData({ ...formData, estimatedTime: e.target.value })} fullWidth />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setPickupDialog(false); setFormData({}); }}>Cancel</Button>
+          <Button onClick={() => { setPickupDialog(false); setFormData({}); }}>{t('common.cancel')}</Button>
           <Button variant="contained" color="info" onClick={handleCreatePickup}>Create</Button>
         </DialogActions>
       </Dialog>
 
       {/* Driver Dialog */}
       <Dialog open={driverDialog} onClose={() => { setDriverDialog(false); setEditDriver(null); setFormData({}); }} maxWidth="sm" fullWidth>
-        <DialogTitle>{editDriver ? 'Edit Driver' : 'Add New Driver'}</DialogTitle>
+        <DialogTitle>{editDriver ? t('transport.editDriver') : t('transport.addNewDriver')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
           <TextField label="Name" value={formData.name ?? ''} onChange={e => setFormData({ ...formData, name: e.target.value })} fullWidth required />
           <TextField label="License Number" value={formData.licenseNumber ?? ''} onChange={e => setFormData({ ...formData, licenseNumber: e.target.value })} fullWidth required />
@@ -521,16 +521,16 @@ const TransportPortal: React.FC = () => {
           </FormControl>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setDriverDialog(false); setEditDriver(null); setFormData({}); }}>Cancel</Button>
-          <Button variant="contained" onClick={handleSaveDriver}>{editDriver ? 'Update' : 'Create'}</Button>
+          <Button onClick={() => { setDriverDialog(false); setEditDriver(null); setFormData({}); }}>{t('common.cancel')}</Button>
+          <Button sx={S.BTN_PRIMARY} onClick={handleSaveDriver}>{editDriver ? t('common.update') : t('common.create')}</Button>
         </DialogActions>
       </Dialog>
 
       {/* Maintenance Dialog */}
       <Dialog open={maintenanceDialog} onClose={() => { setMaintenanceDialog(false); setEditMaintenance(null); setFormData({}); }} maxWidth="sm" fullWidth>
-        <DialogTitle>{editMaintenance ? 'Edit Maintenance Record' : 'Add Maintenance Record'}</DialogTitle>
+        <DialogTitle>{editMaintenance ? t('transport.editMaintenanceRecord') : t('transport.addMaintenanceRecord')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-          <TextField label="Vehicle ID" type="number" value={formData.vehicleId ?? ''} onChange={e => setFormData({ ...formData, vehicleId: Number(e.target.value) })} fullWidth required />
+          <TextField label={t('transport.vehicleId')} type="number" value={formData.vehicleId ?? ''} onChange={e => setFormData({ ...formData, vehicleId: Number(e.target.value) })} fullWidth required />
           <FormControl fullWidth>
             <InputLabel>Type</InputLabel>
             <Select label="Type" value={formData.type ?? ''} onChange={e => setFormData({ ...formData, type: e.target.value })}>
@@ -538,7 +538,7 @@ const TransportPortal: React.FC = () => {
             </Select>
           </FormControl>
           <TextField label="Description" value={formData.description ?? ''} onChange={e => setFormData({ ...formData, description: e.target.value })} fullWidth multiline rows={2} />
-          <TextField label="Cost" type="number" value={formData.cost ?? 0} onChange={e => setFormData({ ...formData, cost: Number(e.target.value) })} fullWidth />
+          <TextField label={t('transport.cost')} type="number" value={formData.cost ?? 0} onChange={e => setFormData({ ...formData, cost: Number(e.target.value) })} fullWidth />
           <TextField label="Date" type="date" value={formData.date ?? ''} onChange={e => setFormData({ ...formData, date: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
           <TextField label="Next Due Date" type="date" value={formData.nextDueDate ?? ''} onChange={e => setFormData({ ...formData, nextDueDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
           <FormControl fullWidth>
@@ -549,8 +549,8 @@ const TransportPortal: React.FC = () => {
           </FormControl>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setMaintenanceDialog(false); setEditMaintenance(null); setFormData({}); }}>Cancel</Button>
-          <Button variant="contained" color="warning" onClick={handleSaveMaintenance}>{editMaintenance ? 'Update' : 'Create'}</Button>
+          <Button onClick={() => { setMaintenanceDialog(false); setEditMaintenance(null); setFormData({}); }}>{t('common.cancel')}</Button>
+          <Button variant="contained" color="warning" onClick={handleSaveMaintenance}>{editMaintenance ? t('common.update') : t('common.create')}</Button>
         </DialogActions>
       </Dialog>
     </Box>

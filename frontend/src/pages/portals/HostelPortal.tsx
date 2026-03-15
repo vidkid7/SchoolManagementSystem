@@ -4,8 +4,9 @@ import {
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog,
   DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select,
-  FormControl, InputLabel, IconButton, Tooltip,
+  FormControl, InputLabel, IconButton, Tooltip, useTheme,
 } from '@mui/material';
+import { C, useAdminStyles } from '../../theme/designTokens';
 import {
   Hotel as HostelIcon, People as PeopleIcon, Message as MessageIcon,
   CalendarMonth as CalendarIcon, Description as DocIcon,
@@ -17,9 +18,10 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import apiClient from '../../services/apiClient';
 import { RootState } from '../../store';
+import { useTranslation } from 'react-i18next';
 
 interface DashboardData { summary: { totalStudents: number; activeStudents: number; role: string }; quickLinks: Array<{ label: string; path: string }>; }
 
@@ -57,6 +59,7 @@ function TabPanel({ children, value, index }: { children: React.ReactNode; value
 }
 
 const HostelPortal: React.FC = () => {
+  const { t } = useTranslation();
   const [tab, setTab] = useState(0);
   const [data, setData] = useState<DashboardData | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -83,7 +86,9 @@ const HostelPortal: React.FC = () => {
   const [formData, setFormData] = useState<any>({});
 
   const { user, accessToken } = useSelector((state: RootState) => state.auth);
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
 
   const loadData = useCallback(async () => {
     if (!accessToken) return;
@@ -223,9 +228,9 @@ const HostelPortal: React.FC = () => {
           <HostelIcon fontSize="large" />
         </Avatar>
         <Box>
-          <Typography variant="h4" fontWeight={700}>Hostel Management</Typography>
+          <Typography variant="h4" fontWeight={700}>{t('portal.hostelManagement')}</Typography>
           <Typography variant="body2" color="text.secondary">
-            Welcome, {user?.firstName || user?.username} — Hostel Warden
+            {t('portal.welcome')}, {user?.firstName || user?.username} — {t('portal.hostelWarden')}
           </Typography>
         </Box>
       </Box>
@@ -235,51 +240,51 @@ const HostelPortal: React.FC = () => {
       {/* Stats */}
       <Grid container spacing={2} mb={3}>
         {[
-          { label: 'Total Students', value: data?.summary.totalStudents ?? '--', icon: <PeopleIcon />, color: 'secondary.main' },
-          { label: 'Active Students', value: data?.summary.activeStudents ?? '--', icon: <ActiveIcon />, color: 'success.main' },
-          { label: 'Rooms', value: rooms.length, icon: <RoomIcon />, color: 'primary.main' },
-          { label: 'Pending Leaves', value: leaves.filter(l => l.status === 'pending').length, icon: <LeaveIcon />, color: 'warning.main' },
+          { label: t('dashboard.totalStudents'), value: data?.summary.totalStudents ?? '--', icon: <PeopleIcon />, color: C.purple },
+          { label: t('portal.activeStudents'), value: data?.summary.activeStudents ?? '--', icon: <ActiveIcon />, color: C.success },
+          { label: t('hostel.rooms'), value: rooms.length, icon: <RoomIcon />, color: C.primary },
+          { label: t('portal.pendingLeaves'), value: leaves.filter(l => l.status === 'pending').length, icon: <LeaveIcon />, color: C.warning },
         ].map((stat) => (
           <Grid item xs={6} sm={3} key={stat.label}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-              <CardContent sx={{ textAlign: 'center', py: 2 }}>
-                <Box sx={{ color: stat.color, fontSize: 32 }}>{stat.icon}</Box>
+            <Box sx={S.STAT_CARD(stat.color)}>
+              <Box sx={{ textAlign: 'center', py: 2 }}>
+                <Box sx={S.ICON_BOX(stat.color, 36)}>{stat.icon}</Box>
                 <Typography variant="h4" fontWeight={700}>{stat.value}</Typography>
                 <Typography variant="body2" color="text.secondary">{stat.label}</Typography>
-              </CardContent>
-            </Card>
+              </Box>
+            </Box>
           </Grid>
         ))}
       </Grid>
 
       {/* Tabs */}
       <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
-        <Tab icon={<RoomIcon />} iconPosition="start" label="Rooms" />
-        <Tab icon={<PeopleIcon />} iconPosition="start" label="Residents" />
-        <Tab icon={<DisciplineIcon />} iconPosition="start" label="Discipline" />
-        <Tab icon={<VisitorIcon />} iconPosition="start" label="Visitors" />
-        <Tab icon={<LeaveIcon />} iconPosition="start" label="Leave Requests" />
-        <Tab icon={<IncidentIcon />} iconPosition="start" label="Incidents" />
-        <Tab icon={<MessIcon />} iconPosition="start" label="Mess Management" />
-        <Tab icon={<InventoryIcon />} iconPosition="start" label="Inventory" />
-        <Tab icon={<PersonIcon />} iconPosition="start" label="Profile & Links" />
+        <Tab icon={<RoomIcon />} iconPosition="start" label={t('hostel.rooms')} />
+        <Tab icon={<PeopleIcon />} iconPosition="start" label={t('hostel.residents')} />
+        <Tab icon={<DisciplineIcon />} iconPosition="start" label={t('hostel.discipline')} />
+        <Tab icon={<VisitorIcon />} iconPosition="start" label={t('hostel.visitors')} />
+        <Tab icon={<LeaveIcon />} iconPosition="start" label={t('hostel.leaveRequests')} />
+        <Tab icon={<IncidentIcon />} iconPosition="start" label={t('hostel.incidents')} />
+        <Tab icon={<MessIcon />} iconPosition="start" label={t('hostel.messManagement')} />
+        <Tab icon={<InventoryIcon />} iconPosition="start" label={t('hostel.inventory')} />
+        <Tab icon={<PersonIcon />} iconPosition="start" label={t('portal.profileAndLinks')} />
       </Tabs>
 
       {/* ROOMS */}
       <TabPanel value={tab} index={0}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6" fontWeight={600}>Room Management</Typography>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditRoom(null); setFormData({}); setRoomDialog(true); }}>Add Room</Button>
+          <Typography variant="h6" fontWeight={600}>{t('hostel.roomManagement')}</Typography>
+          <Button sx={S.BTN_PRIMARY} startIcon={<AddIcon />} onClick={() => { setEditRoom(null); setFormData({}); setRoomDialog(true); }}>{t('hostel.addRoom')}</Button>
         </Box>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
-            <TableHead><TableRow sx={{ bgcolor: 'grey.100' }}>
-              <TableCell>Room No.</TableCell><TableCell>Floor</TableCell><TableCell>Type</TableCell>
-              <TableCell>Capacity</TableCell><TableCell>Occupied</TableCell><TableCell>Status</TableCell><TableCell>Actions</TableCell>
+            <TableHead><TableRow sx={{ bgcolor: S.TH_BG }}>
+              <TableCell>{t('hostel.roomNo')}</TableCell><TableCell>{t('hostel.floor')}</TableCell><TableCell>{t('hostel.type') || 'Type'}</TableCell>
+              <TableCell>{t('hostel.capacity')}</TableCell><TableCell>{t('hostel.occupied')}</TableCell><TableCell>{t('common.status')}</TableCell><TableCell>{t('common.actions')}</TableCell>
             </TableRow></TableHead>
             <TableBody>
               {rooms.length === 0 ? (
-                <TableRow><TableCell colSpan={7} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No rooms added yet. Click "Add Room" to get started.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('hostel.noRooms')}</Typography></TableCell></TableRow>
               ) : rooms.map(r => (
                 <TableRow key={r.id} hover>
                   <TableCell><strong>{r.roomNumber}</strong></TableCell>
@@ -301,20 +306,20 @@ const HostelPortal: React.FC = () => {
 
       {/* RESIDENTS */}
       <TabPanel value={tab} index={1}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Resident Students</Typography>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <Typography variant="h6" fontWeight={600} mb={2}>{t('hostel.residents')}</Typography>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
-            <TableHead><TableRow sx={{ bgcolor: 'grey.100' }}>
-              <TableCell>Student Code</TableCell><TableCell>Name</TableCell><TableCell>Actions</TableCell>
+            <TableHead><TableRow sx={{ bgcolor: S.TH_BG }}>
+              <TableCell>{t('hostel.studentCode')}</TableCell><TableCell>{t('common.name')}</TableCell><TableCell>{t('common.actions')}</TableCell>
             </TableRow></TableHead>
             <TableBody>
               {residents.length === 0 ? (
-                <TableRow><TableCell colSpan={3} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No resident data loaded.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={3} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('hostel.noResidents')}</Typography></TableCell></TableRow>
               ) : residents.map(r => (
                 <TableRow key={r.studentId ?? r.id} hover>
                   <TableCell>{r.studentCode ?? '—'}</TableCell>
                   <TableCell>{`${r.firstNameEn ?? ''} ${r.lastNameEn ?? ''}`.trim() || '—'}</TableCell>
-                  <TableCell><Button size="small" onClick={() => navigate(`/students/${r.studentId ?? r.id}`)}>View Profile</Button></TableCell>
+                  <TableCell><Button size="small" onClick={() => navigate(`/students/${r.studentId ?? r.id}`)}>{t('portal.viewProfileBtn')}</Button></TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -325,18 +330,18 @@ const HostelPortal: React.FC = () => {
       {/* DISCIPLINE */}
       <TabPanel value={tab} index={2}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6" fontWeight={600}>Discipline Records</Typography>
-          <Button variant="contained" color="warning" startIcon={<AddIcon />} onClick={() => { setFormData({}); setDisciplineDialog(true); }}>Record Violation</Button>
+          <Typography variant="h6" fontWeight={600}>{t('hostel.disciplineRecords')}</Typography>
+          <Button variant="contained" color="warning" startIcon={<AddIcon />} onClick={() => { setFormData({}); setDisciplineDialog(true); }}>{t('hostel.recordViolation')}</Button>
         </Box>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
-            <TableHead><TableRow sx={{ bgcolor: 'grey.100' }}>
-              <TableCell>Student ID</TableCell><TableCell>Violation</TableCell><TableCell>Severity</TableCell>
-              <TableCell>Action</TableCell><TableCell>Date</TableCell><TableCell>Status</TableCell>
+            <TableHead><TableRow sx={{ bgcolor: S.TH_BG }}>
+              <TableCell>{t('hostel.studentId')}</TableCell><TableCell>{t('hostel.violation')}</TableCell><TableCell>{t('hostel.severity')}</TableCell>
+              <TableCell>{t('hostel.actionTaken')}</TableCell><TableCell>{t('common.date')}</TableCell><TableCell>{t('common.status')}</TableCell>
             </TableRow></TableHead>
             <TableBody>
               {discipline.length === 0 ? (
-                <TableRow><TableCell colSpan={6} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No discipline records.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('hostel.noDiscipline')}</Typography></TableCell></TableRow>
               ) : discipline.map(d => (
                 <TableRow key={d.id} hover>
                   <TableCell>{d.studentId}</TableCell>
@@ -355,18 +360,18 @@ const HostelPortal: React.FC = () => {
       {/* VISITORS */}
       <TabPanel value={tab} index={3}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6" fontWeight={600}>Visitor Log</Typography>
-          <Button variant="contained" color="info" startIcon={<AddIcon />} onClick={() => { setFormData({}); setVisitorDialog(true); }}>Register Visitor</Button>
+          <Typography variant="h6" fontWeight={600}>{t('hostel.visitorLog')}</Typography>
+          <Button variant="contained" color="info" startIcon={<AddIcon />} onClick={() => { setFormData({}); setVisitorDialog(true); }}>{t('hostel.registerVisitor')}</Button>
         </Box>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
-            <TableHead><TableRow sx={{ bgcolor: 'grey.100' }}>
-              <TableCell>Visitor</TableCell><TableCell>Student ID</TableCell><TableCell>Relation</TableCell>
-              <TableCell>Purpose</TableCell><TableCell>Check-In</TableCell><TableCell>Status</TableCell><TableCell>Action</TableCell>
+            <TableHead><TableRow sx={{ bgcolor: S.TH_BG }}>
+              <TableCell>{t('hostel.visitorName')}</TableCell><TableCell>{t('hostel.studentId')}</TableCell><TableCell>{t('hostel.relation')}</TableCell>
+              <TableCell>{t('hostel.purpose')}</TableCell><TableCell>{t('hostel.checkIn')}</TableCell><TableCell>{t('common.status')}</TableCell><TableCell>{t('common.actions')}</TableCell>
             </TableRow></TableHead>
             <TableBody>
               {visitors.length === 0 ? (
-                <TableRow><TableCell colSpan={7} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No visitor records.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('hostel.noVisitors')}</Typography></TableCell></TableRow>
               ) : visitors.map(v => (
                 <TableRow key={v.id} hover>
                   <TableCell>{v.visitorName}</TableCell>
@@ -389,16 +394,16 @@ const HostelPortal: React.FC = () => {
 
       {/* LEAVE REQUESTS */}
       <TabPanel value={tab} index={4}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Leave Requests</Typography>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <Typography variant="h6" fontWeight={600} mb={2}>{t('hostel.leaveRequests')}</Typography>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
-            <TableHead><TableRow sx={{ bgcolor: 'grey.100' }}>
-              <TableCell>Student ID</TableCell><TableCell>From</TableCell><TableCell>To</TableCell>
-              <TableCell>Reason</TableCell><TableCell>Status</TableCell><TableCell>Actions</TableCell>
+            <TableHead><TableRow sx={{ bgcolor: S.TH_BG }}>
+              <TableCell>{t('hostel.studentId')}</TableCell><TableCell>{t('common.from')}</TableCell><TableCell>{t('common.to')}</TableCell>
+              <TableCell>{t('portal.reason')}</TableCell><TableCell>{t('common.status')}</TableCell><TableCell>{t('common.actions')}</TableCell>
             </TableRow></TableHead>
             <TableBody>
               {leaves.length === 0 ? (
-                <TableRow><TableCell colSpan={6} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No leave requests.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('hostel.noLeaves')}</Typography></TableCell></TableRow>
               ) : leaves.map(l => (
                 <TableRow key={l.id} hover>
                   <TableCell>{l.studentId}</TableCell>
@@ -424,18 +429,18 @@ const HostelPortal: React.FC = () => {
       {/* INCIDENTS */}
       <TabPanel value={tab} index={5}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6" fontWeight={600}>Incident Reports</Typography>
-          <Button variant="contained" color="error" startIcon={<AddIcon />} onClick={() => { setFormData({}); setIncidentDialog(true); }}>Record Incident</Button>
+          <Typography variant="h6" fontWeight={600}>{t('hostel.incidentReports')}</Typography>
+          <Button variant="contained" color="error" startIcon={<AddIcon />} onClick={() => { setFormData({}); setIncidentDialog(true); }}>{t('hostel.recordIncident')}</Button>
         </Box>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
-            <TableHead><TableRow sx={{ bgcolor: 'grey.100' }}>
-              <TableCell>Title</TableCell><TableCell>Severity</TableCell><TableCell>Date</TableCell>
-              <TableCell>Action Taken</TableCell><TableCell>Status</TableCell>
+            <TableHead><TableRow sx={{ bgcolor: S.TH_BG }}>
+              <TableCell>{t('common.title')}</TableCell><TableCell>{t('hostel.severity')}</TableCell><TableCell>{t('common.date')}</TableCell>
+              <TableCell>{t('hostel.actionTaken')}</TableCell><TableCell>{t('common.status')}</TableCell>
             </TableRow></TableHead>
             <TableBody>
               {incidents.length === 0 ? (
-                <TableRow><TableCell colSpan={5} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No incidents recorded.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('hostel.noIncidents')}</Typography></TableCell></TableRow>
               ) : incidents.map(i => (
                 <TableRow key={i.id} hover>
                   <TableCell>{i.title}</TableCell>
@@ -453,18 +458,18 @@ const HostelPortal: React.FC = () => {
       {/* MESS MANAGEMENT */}
       <TabPanel value={tab} index={6}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6" fontWeight={600}>Mess Menu</Typography>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditMenu(null); setFormData({}); setMessDialog(true); }}>Create Menu</Button>
+          <Typography variant="h6" fontWeight={600}>{t('hostel.messMenu')}</Typography>
+          <Button sx={S.BTN_PRIMARY} startIcon={<AddIcon />} onClick={() => { setEditMenu(null); setFormData({}); setMessDialog(true); }}>{t('hostel.createMenu')}</Button>
         </Box>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
-            <TableHead><TableRow sx={{ bgcolor: 'grey.100' }}>
-              <TableCell>Day</TableCell><TableCell>Meal Type</TableCell><TableCell>Items</TableCell>
-              <TableCell>Special Notes</TableCell><TableCell>Actions</TableCell>
+            <TableHead><TableRow sx={{ bgcolor: S.TH_BG }}>
+              <TableCell>{t('hostel.day')}</TableCell><TableCell>{t('hostel.mealType')}</TableCell><TableCell>{t('hostel.items')}</TableCell>
+              <TableCell>{t('hostel.specialNotes')}</TableCell><TableCell>{t('common.actions')}</TableCell>
             </TableRow></TableHead>
             <TableBody>
               {messMenus.length === 0 ? (
-                <TableRow><TableCell colSpan={5} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No mess menus added. Click "Create Menu" to get started.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('hostel.noMessMenus')}</Typography></TableCell></TableRow>
               ) : messMenus.map(m => (
                 <TableRow key={m.id} hover>
                   <TableCell><strong>{m.day}</strong></TableCell>
@@ -485,18 +490,18 @@ const HostelPortal: React.FC = () => {
       {/* INVENTORY */}
       <TabPanel value={tab} index={7}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6" fontWeight={600}>Inventory Management</Typography>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditInventory(null); setFormData({}); setInventoryDialog(true); }}>Add Item</Button>
+          <Typography variant="h6" fontWeight={600}>{t('hostel.inventoryManagement')}</Typography>
+          <Button sx={S.BTN_PRIMARY} startIcon={<AddIcon />} onClick={() => { setEditInventory(null); setFormData({}); setInventoryDialog(true); }}>{t('hostel.addItem')}</Button>
         </Box>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
-            <TableHead><TableRow sx={{ bgcolor: 'grey.100' }}>
-              <TableCell>Name</TableCell><TableCell>Category</TableCell><TableCell>Quantity</TableCell>
-              <TableCell>Unit</TableCell><TableCell>Min Stock</TableCell><TableCell>Location</TableCell><TableCell>Actions</TableCell>
+            <TableHead><TableRow sx={{ bgcolor: S.TH_BG }}>
+              <TableCell>{t('common.name')}</TableCell><TableCell>{t('common.category')}</TableCell><TableCell>{t('hostel.quantity')}</TableCell>
+              <TableCell>{t('hostel.unit')}</TableCell><TableCell>{t('hostel.minStock')}</TableCell><TableCell>{t('hostel.location')}</TableCell><TableCell>{t('common.actions')}</TableCell>
             </TableRow></TableHead>
             <TableBody>
               {inventory.length === 0 ? (
-                <TableRow><TableCell colSpan={7} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No inventory items. Click "Add Item" to get started.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('hostel.noInventory')}</Typography></TableCell></TableRow>
               ) : inventory.map(i => (
                 <TableRow key={i.id} hover>
                   <TableCell><strong>{i.name}</strong></TableCell>
@@ -520,32 +525,29 @@ const HostelPortal: React.FC = () => {
       <TabPanel value={tab} index={8}>
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-              <CardContent>
+            <Box sx={{ ...S.GLASS, p: 3 }}>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                  <Typography variant="h6" fontWeight={600}>My Profile</Typography>
-                  <Chip label={profile?.role || 'Hostel Warden'} color="secondary" size="small" />
+                  <Typography variant="h6" fontWeight={600}>{t('portal.myProfile')}</Typography>
+                  <Chip label={profile?.role || t('portal.hostelWarden')} color="secondary" size="small" />
                 </Box>
                 <Divider sx={{ mb: 2 }} />
-                <Typography variant="body2"><strong>Name:</strong> {profile?.firstName || user?.firstName} {profile?.lastName || user?.lastName}</Typography>
-                <Typography variant="body2" mt={1}><strong>Email:</strong> {profile?.email || user?.email || '—'}</Typography>
-                <Typography variant="body2" mt={1}><strong>Phone:</strong> {profile?.phoneNumber || '—'}</Typography>
-                <Typography variant="body2" mt={1}><strong>Status:</strong> <Chip label={profile?.status || 'active'} size="small" color="success" /></Typography>
-              </CardContent>
-            </Card>
+                <Typography variant="body2"><strong>{t('common.name')}:</strong> {profile?.firstName || user?.firstName} {profile?.lastName || user?.lastName}</Typography>
+                <Typography variant="body2" mt={1}><strong>{t('portal.email')}:</strong> {profile?.email || user?.email || '—'}</Typography>
+                <Typography variant="body2" mt={1}><strong>{t('portal.phone')}:</strong> {profile?.phoneNumber || '—'}</Typography>
+                <Typography variant="body2" mt={1}><strong>{t('common.status')}:</strong> <Chip label={profile?.status || 'active'} size="small" color="success" /></Typography>
+            </Box>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-              <CardContent>
-                <Typography variant="h6" fontWeight={600} gutterBottom>Quick Links</Typography>
+            <Box sx={{ ...S.GLASS, p: 3 }}>
+                <Typography variant="h6" fontWeight={600} gutterBottom>{t('portal.quickLinks')}</Typography>
                 <Divider sx={{ mb: 1 }} />
                 <List dense>
                   {[
-                    { label: 'Student List', path: '/students', icon: <PeopleIcon color="secondary" /> },
-                    { label: 'Messages', path: '/communication/messages', icon: <MessageIcon color="secondary" /> },
-                    { label: 'Announcements', path: '/communication/announcements', icon: <AnnouncementIcon color="secondary" /> },
-                    { label: 'Calendar', path: '/calendar', icon: <CalendarIcon color="secondary" /> },
-                    { label: 'Documents', path: '/documents', icon: <DocIcon color="secondary" /> },
+                    { label: t('students.studentList'), path: '/students', icon: <PeopleIcon color="secondary" /> },
+                    { label: t('communication.messages'), path: '/communication/messages', icon: <MessageIcon color="secondary" /> },
+                    { label: t('communication.announcements'), path: '/communication/announcements', icon: <AnnouncementIcon color="secondary" /> },
+                    { label: t('menu.calendar'), path: '/calendar', icon: <CalendarIcon color="secondary" /> },
+                    { label: t('menu.documents'), path: '/documents', icon: <DocIcon color="secondary" /> },
                   ].map(l => (
                     <ListItem key={l.path} button onClick={() => navigate(l.path)}>
                       <ListItemIcon>{l.icon}</ListItemIcon>
@@ -553,93 +555,92 @@ const HostelPortal: React.FC = () => {
                     </ListItem>
                   ))}
                 </List>
-              </CardContent>
-            </Card>
+            </Box>
           </Grid>
         </Grid>
       </TabPanel>
 
       {/* Room Dialog */}
       <Dialog open={roomDialog} onClose={() => { setRoomDialog(false); setEditRoom(null); setFormData({}); }} maxWidth="sm" fullWidth>
-        <DialogTitle>{editRoom ? 'Edit Room' : 'Add New Room'}</DialogTitle>
+        <DialogTitle>{editRoom ? t('hostel.editRoom') : t('hostel.addNewRoom')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-          <TextField label="Room Number" value={formData.roomNumber ?? ''} onChange={e => setFormData({ ...formData, roomNumber: e.target.value })} fullWidth required />
-          <TextField label="Floor" type="number" value={formData.floor ?? 1} onChange={e => setFormData({ ...formData, floor: Number(e.target.value) })} fullWidth />
+          <TextField label={t('hostel.roomNumber')} value={formData.roomNumber ?? ''} onChange={e => setFormData({ ...formData, roomNumber: e.target.value })} fullWidth required />
+          <TextField label={t('hostel.floor')} type="number" value={formData.floor ?? 1} onChange={e => setFormData({ ...formData, floor: Number(e.target.value) })} fullWidth />
           <FormControl fullWidth>
             <InputLabel>Type</InputLabel>
             <Select label="Type" value={formData.type ?? ''} onChange={e => setFormData({ ...formData, type: e.target.value })}>
               {['Single', 'Double', 'Triple', 'Dormitory'].map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
             </Select>
           </FormControl>
-          <TextField label="Capacity" type="number" value={formData.capacity ?? 2} onChange={e => setFormData({ ...formData, capacity: Number(e.target.value) })} fullWidth />
+          <TextField label={t('hostel.capacity')} type="number" value={formData.capacity ?? 2} onChange={e => setFormData({ ...formData, capacity: Number(e.target.value) })} fullWidth />
           <TextField label="Description" value={formData.description ?? ''} onChange={e => setFormData({ ...formData, description: e.target.value })} fullWidth multiline rows={2} />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setRoomDialog(false); setEditRoom(null); setFormData({}); }}>Cancel</Button>
-          <Button variant="contained" onClick={handleSaveRoom}>{editRoom ? 'Update' : 'Create'}</Button>
+          <Button onClick={() => { setRoomDialog(false); setEditRoom(null); setFormData({}); }}>{t('common.cancel')}</Button>
+          <Button sx={S.BTN_PRIMARY} onClick={handleSaveRoom}>{editRoom ? t('common.update') : t('common.create')}</Button>
         </DialogActions>
       </Dialog>
 
       {/* Discipline Dialog */}
       <Dialog open={disciplineDialog} onClose={() => { setDisciplineDialog(false); setFormData({}); }} maxWidth="sm" fullWidth>
-        <DialogTitle>Record Discipline Violation</DialogTitle>
+        <DialogTitle>{t('hostel.recordDisciplineViolation')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
           <TextField label="Student ID" type="number" value={formData.studentId ?? ''} onChange={e => setFormData({ ...formData, studentId: Number(e.target.value) })} fullWidth required />
-          <TextField label="Violation" value={formData.violation ?? ''} onChange={e => setFormData({ ...formData, violation: e.target.value })} fullWidth required />
+          <TextField label={t('hostel.violation')} value={formData.violation ?? ''} onChange={e => setFormData({ ...formData, violation: e.target.value })} fullWidth required />
           <TextField label="Description" value={formData.description ?? ''} onChange={e => setFormData({ ...formData, description: e.target.value })} fullWidth multiline rows={2} />
           <FormControl fullWidth>
-            <InputLabel>Severity</InputLabel>
-            <Select label="Severity" value={formData.severity ?? 'minor'} onChange={e => setFormData({ ...formData, severity: e.target.value })}>
+            <InputLabel>{t('hostel.severity')}</InputLabel>
+            <Select label={t('hostel.severity')} value={formData.severity ?? 'minor'} onChange={e => setFormData({ ...formData, severity: e.target.value })}>
               {['minor', 'moderate', 'major'].map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
             </Select>
           </FormControl>
-          <TextField label="Action Taken" value={formData.action ?? ''} onChange={e => setFormData({ ...formData, action: e.target.value })} fullWidth />
+          <TextField label={t('hostel.actionTaken')} value={formData.action ?? ''} onChange={e => setFormData({ ...formData, action: e.target.value })} fullWidth />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setDisciplineDialog(false); setFormData({}); }}>Cancel</Button>
-          <Button variant="contained" color="warning" onClick={handleCreateDiscipline}>Record</Button>
+          <Button onClick={() => { setDisciplineDialog(false); setFormData({}); }}>{t('common.cancel')}</Button>
+          <Button variant="contained" color="warning" onClick={handleCreateDiscipline}>{t('common.record')}</Button>
         </DialogActions>
       </Dialog>
 
       {/* Visitor Dialog */}
       <Dialog open={visitorDialog} onClose={() => { setVisitorDialog(false); setFormData({}); }} maxWidth="sm" fullWidth>
-        <DialogTitle>Register Visitor</DialogTitle>
+        <DialogTitle>{t('hostel.registerVisitor')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-          <TextField label="Visitor Name" value={formData.visitorName ?? ''} onChange={e => setFormData({ ...formData, visitorName: e.target.value })} fullWidth required />
+          <TextField label={t('hostel.visitorName')} value={formData.visitorName ?? ''} onChange={e => setFormData({ ...formData, visitorName: e.target.value })} fullWidth required />
           <TextField label="Student ID" type="number" value={formData.studentId ?? ''} onChange={e => setFormData({ ...formData, studentId: Number(e.target.value) })} fullWidth required />
-          <TextField label="Relation" value={formData.relation ?? ''} onChange={e => setFormData({ ...formData, relation: e.target.value })} fullWidth />
-          <TextField label="Phone" value={formData.phone ?? ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} fullWidth />
-          <TextField label="Purpose of Visit" value={formData.purpose ?? ''} onChange={e => setFormData({ ...formData, purpose: e.target.value })} fullWidth multiline rows={2} />
+          <TextField label={t('hostel.relation')} value={formData.relation ?? ''} onChange={e => setFormData({ ...formData, relation: e.target.value })} fullWidth />
+          <TextField label={t('common.phone')} value={formData.phone ?? ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} fullWidth />
+          <TextField label={t('hostel.purpose')} value={formData.purpose ?? ''} onChange={e => setFormData({ ...formData, purpose: e.target.value })} fullWidth multiline rows={2} />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setVisitorDialog(false); setFormData({}); }}>Cancel</Button>
-          <Button variant="contained" color="info" onClick={handleRegisterVisitor}>Register</Button>
+          <Button onClick={() => { setVisitorDialog(false); setFormData({}); }}>{t('common.cancel')}</Button>
+          <Button variant="contained" color="info" onClick={handleRegisterVisitor}>{t('common.register')}</Button>
         </DialogActions>
       </Dialog>
 
       {/* Incident Dialog */}
       <Dialog open={incidentDialog} onClose={() => { setIncidentDialog(false); setFormData({}); }} maxWidth="sm" fullWidth>
-        <DialogTitle>Record Incident</DialogTitle>
+        <DialogTitle>{t('hostel.recordIncident')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
           <TextField label="Title" value={formData.title ?? ''} onChange={e => setFormData({ ...formData, title: e.target.value })} fullWidth required />
           <TextField label="Description" value={formData.description ?? ''} onChange={e => setFormData({ ...formData, description: e.target.value })} fullWidth multiline rows={3} required />
           <FormControl fullWidth>
-            <InputLabel>Severity</InputLabel>
-            <Select label="Severity" value={formData.severity ?? 'low'} onChange={e => setFormData({ ...formData, severity: e.target.value })}>
+            <InputLabel>{t('hostel.severity')}</InputLabel>
+            <Select label={t('hostel.severity')} value={formData.severity ?? 'low'} onChange={e => setFormData({ ...formData, severity: e.target.value })}>
               {['low', 'medium', 'high'].map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
             </Select>
           </FormControl>
-          <TextField label="Action Taken" value={formData.actionTaken ?? ''} onChange={e => setFormData({ ...formData, actionTaken: e.target.value })} fullWidth multiline rows={2} />
+          <TextField label={t('hostel.actionTaken')} value={formData.actionTaken ?? ''} onChange={e => setFormData({ ...formData, actionTaken: e.target.value })} fullWidth multiline rows={2} />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setIncidentDialog(false); setFormData({}); }}>Cancel</Button>
-          <Button variant="contained" color="error" onClick={handleCreateIncident}>Record</Button>
+          <Button onClick={() => { setIncidentDialog(false); setFormData({}); }}>{t('common.cancel')}</Button>
+          <Button variant="contained" color="error" onClick={handleCreateIncident}>{t('common.record')}</Button>
         </DialogActions>
       </Dialog>
 
       {/* Mess Menu Dialog */}
       <Dialog open={messDialog} onClose={() => { setMessDialog(false); setEditMenu(null); setFormData({}); }} maxWidth="sm" fullWidth>
-        <DialogTitle>{editMenu ? 'Edit Menu' : 'Create Mess Menu'}</DialogTitle>
+        <DialogTitle>{editMenu ? t('hostel.editMenu') : t('hostel.createMessMenu')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
           <FormControl fullWidth>
             <InputLabel>Day</InputLabel>
@@ -653,20 +654,20 @@ const HostelPortal: React.FC = () => {
               {['breakfast', 'lunch', 'dinner', 'snack'].map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
             </Select>
           </FormControl>
-          <TextField label="Items (comma-separated)" value={formData.items ?? ''} onChange={e => setFormData({ ...formData, items: e.target.value })} fullWidth required helperText="e.g. Rice, Dal, Chapati, Salad" />
-          <TextField label="Special Notes" value={formData.specialNotes ?? ''} onChange={e => setFormData({ ...formData, specialNotes: e.target.value })} fullWidth multiline rows={2} />
+          <TextField label={t('hostel.itemsCommaSeparated')} value={formData.items ?? ''} onChange={e => setFormData({ ...formData, items: e.target.value })} fullWidth required helperText="e.g. Rice, Dal, Chapati, Salad" />
+          <TextField label={t('hostel.specialNotes')} value={formData.specialNotes ?? ''} onChange={e => setFormData({ ...formData, specialNotes: e.target.value })} fullWidth multiline rows={2} />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setMessDialog(false); setEditMenu(null); setFormData({}); }}>Cancel</Button>
-          <Button variant="contained" onClick={handleSaveMessMenu}>{editMenu ? 'Update' : 'Create'}</Button>
+          <Button onClick={() => { setMessDialog(false); setEditMenu(null); setFormData({}); }}>{t('common.cancel')}</Button>
+          <Button sx={S.BTN_PRIMARY} onClick={handleSaveMessMenu}>{editMenu ? t('common.update') : t('common.create')}</Button>
         </DialogActions>
       </Dialog>
 
       {/* Inventory Dialog */}
       <Dialog open={inventoryDialog} onClose={() => { setInventoryDialog(false); setEditInventory(null); setFormData({}); }} maxWidth="sm" fullWidth>
-        <DialogTitle>{editInventory ? 'Edit Inventory Item' : 'Add Inventory Item'}</DialogTitle>
+        <DialogTitle>{editInventory ? t('hostel.editInventoryItem') : t('hostel.addInventoryItem')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-          <TextField label="Item Name" value={formData.name ?? ''} onChange={e => setFormData({ ...formData, name: e.target.value })} fullWidth required />
+          <TextField label={t('hostel.itemName')} value={formData.name ?? ''} onChange={e => setFormData({ ...formData, name: e.target.value })} fullWidth required />
           <FormControl fullWidth>
             <InputLabel>Category</InputLabel>
             <Select label="Category" value={formData.category ?? ''} onChange={e => setFormData({ ...formData, category: e.target.value })}>
@@ -675,12 +676,12 @@ const HostelPortal: React.FC = () => {
           </FormControl>
           <TextField label="Quantity" type="number" value={formData.quantity ?? 0} onChange={e => setFormData({ ...formData, quantity: Number(e.target.value) })} fullWidth />
           <TextField label="Unit" value={formData.unit ?? 'pcs'} onChange={e => setFormData({ ...formData, unit: e.target.value })} fullWidth />
-          <TextField label="Minimum Stock" type="number" value={formData.minStock ?? 0} onChange={e => setFormData({ ...formData, minStock: Number(e.target.value) })} fullWidth />
-          <TextField label="Location" value={formData.location ?? ''} onChange={e => setFormData({ ...formData, location: e.target.value })} fullWidth />
+          <TextField label={t('hostel.minStock')} type="number" value={formData.minStock ?? 0} onChange={e => setFormData({ ...formData, minStock: Number(e.target.value) })} fullWidth />
+          <TextField label={t('hostel.location')} value={formData.location ?? ''} onChange={e => setFormData({ ...formData, location: e.target.value })} fullWidth />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setInventoryDialog(false); setEditInventory(null); setFormData({}); }}>Cancel</Button>
-          <Button variant="contained" onClick={handleSaveInventory}>{editInventory ? 'Update' : 'Create'}</Button>
+          <Button onClick={() => { setInventoryDialog(false); setEditInventory(null); setFormData({}); }}>{t('common.cancel')}</Button>
+          <Button sx={S.BTN_PRIMARY} onClick={handleSaveInventory}>{editInventory ? t('common.update') : t('common.create')}</Button>
         </DialogActions>
       </Dialog>
     </Box>
