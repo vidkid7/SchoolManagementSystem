@@ -4,6 +4,10 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Paper,
@@ -34,8 +38,8 @@ import {
   Grade as GradeIcon,
   Visibility as ViewIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface Exam {
   examId: number;
@@ -72,7 +76,11 @@ const examTypes: Record<string, string> = {
 };
 
 export function ExamList() {
-  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const navigate = useSlugNavigate();
+  const { municipalitySlug } = useParams();
   const [loading, setLoading] = useState(true);
   const [exams, setExams] = useState<Exam[]>([]);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -101,7 +109,7 @@ export function ExamList() {
       if (classFilter) params.classId = classFilter;
       
       // Fetch from API
-      const response = await api.get('/examinations', { params });
+      const response = await apiClient.get('/examinations', { params });
       const apiExams = response.data?.data || [];
       
       // Transform API data to match our interface
@@ -119,7 +127,7 @@ export function ExamList() {
       setExams(transformedExams);
     } catch (error: any) {
       console.error('Failed to fetch exams:', error);
-      setError(error.response?.data?.message || 'Failed to load examinations. Please ensure the backend is running.');
+      setError(error.response?.data?.message || t('examinations.failedToLoadExaminations'));
       setExams([]);
     } finally {
       setLoading(false);
@@ -155,7 +163,7 @@ export function ExamList() {
         navigate(`/examinations/${selectedExam.examId}/edit`);
         break;
       case 'grades':
-        navigate(`/examinations/${selectedExam.examId}/grades`);
+        navigate(`/examinations/grades`);
         break;
       case 'delete':
         handleDelete();
@@ -166,30 +174,33 @@ export function ExamList() {
   const handleDelete = async () => {
     if (!selectedExam) return;
     
-    if (window.confirm('Are you sure you want to delete this exam?')) {
+    if (window.confirm(t('examinations.confirmDeleteExam'))) {
       try {
-        // await api.delete(`/examinations/${selectedExam.examId}`);
-        setSuccess('Exam deleted successfully');
+        await apiClient.delete(`/examinations/${selectedExam.examId}`);
+        setSuccess(t('examinations.examDeletedSuccessfully'));
+        setTimeout(() => setSuccess(''), 3000);
         fetchExams();
       } catch (error: any) {
-        setError(error.response?.data?.message || 'Failed to delete exam');
+        setError(error.response?.data?.message || t('examinations.failedToDeleteExam'));
+        setTimeout(() => setError(''), 3000);
       }
     }
   };
 
   return (
     <Box>
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h5" fontWeight={600}>
-            Examination Management
+            {t('examinations.examinationManagement')}
           </Typography>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => navigate('/examinations/create')}
+            onClick={() => navigate(`/examinations/create`)}
+            sx={S.BTN_PRIMARY}
           >
-            Create Exam
+            {t('examinations.createExam')}
           </Button>
         </Box>
 
@@ -199,13 +210,13 @@ export function ExamList() {
         <Grid container spacing={2}>
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
+              <InputLabel>{t('common.status')}</InputLabel>
               <Select
                 value={statusFilter}
-                label="Status"
+                label={t('common.status')}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
-                <MenuItem value="">All Statuses</MenuItem>
+                <MenuItem value="">{t('examinations.allStatuses')}</MenuItem>
                 {Object.entries(statusLabels).map(([value, label]) => (
                   <MenuItem key={value} value={value}>{label}</MenuItem>
                 ))}
@@ -214,13 +225,13 @@ export function ExamList() {
           </Grid>
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
-              <InputLabel>Exam Type</InputLabel>
+              <InputLabel>{t('examinations.examType')}</InputLabel>
               <Select
                 value={typeFilter}
-                label="Exam Type"
+                label={t('examinations.examType')}
                 onChange={(e) => setTypeFilter(e.target.value)}
               >
-                <MenuItem value="">All Types</MenuItem>
+                <MenuItem value="">{t('examinations.allTypes')}</MenuItem>
                 {Object.entries(examTypes).map(([value, label]) => (
                   <MenuItem key={value} value={value}>{label}</MenuItem>
                 ))}
@@ -229,15 +240,15 @@ export function ExamList() {
           </Grid>
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
-              <InputLabel>Class</InputLabel>
+              <InputLabel>{t('common.class')}</InputLabel>
               <Select
                 value={classFilter}
-                label="Class"
+                label={t('common.class')}
                 onChange={(e) => setClassFilter(e.target.value)}
               >
-                <MenuItem value="">All Classes</MenuItem>
+                <MenuItem value="">{t('common.allClasses')}</MenuItem>
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((cls) => (
-                  <MenuItem key={cls} value={cls}>Class {cls}</MenuItem>
+                  <MenuItem key={cls} value={cls}>{t('common.class')} {cls}</MenuItem>
                 ))}
               </Select>
             </FormControl>
@@ -250,18 +261,18 @@ export function ExamList() {
           <CircularProgress />
         </Box>
       ) : (
-        <TableContainer component={Paper}>
+        <TableContainer component={Paper} sx={{ ...S.GLASS }}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Exam Name</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Class</TableCell>
-                <TableCell>Subject</TableCell>
-                <TableCell>Date</TableCell>
-                <TableCell>Full Marks</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="center">Actions</TableCell>
+                <TableCell>{t('examinations.examName')}</TableCell>
+                <TableCell>{t('examinations.type')}</TableCell>
+                <TableCell>{t('common.class')}</TableCell>
+                <TableCell>{t('common.subject')}</TableCell>
+                <TableCell>{t('examinations.date')}</TableCell>
+                <TableCell>{t('examinations.fullMarks')}</TableCell>
+                <TableCell>{t('common.status')}</TableCell>
+                <TableCell align="center">{t('common.actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -269,7 +280,7 @@ export function ExamList() {
                 <TableRow>
                   <TableCell colSpan={8} align="center">
                     <Typography color="text.secondary">
-                      No examinations found
+                      {t('examinations.noExaminationsFound')}
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -314,19 +325,19 @@ export function ExamList() {
       >
         <MenuItem onClick={() => handleAction('view')}>
           <ViewIcon sx={{ mr: 1 }} fontSize="small" />
-          View Details
+          {t('examinations.viewDetails')}
         </MenuItem>
         <MenuItem onClick={() => handleAction('edit')}>
           <EditIcon sx={{ mr: 1 }} fontSize="small" />
-          Edit
+          {t('common.edit')}
         </MenuItem>
         <MenuItem onClick={() => handleAction('grades')}>
           <GradeIcon sx={{ mr: 1 }} fontSize="small" />
-          Enter Grades
+          {t('examinations.enterGrades')}
         </MenuItem>
         <MenuItem onClick={() => handleAction('delete')}>
           <DeleteIcon sx={{ mr: 1 }} fontSize="small" />
-          Delete
+          {t('common.delete')}
         </MenuItem>
       </Menu>
     </Box>

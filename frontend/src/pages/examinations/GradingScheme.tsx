@@ -4,6 +4,8 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Paper,
@@ -32,7 +34,8 @@ import {
   Save as SaveIcon,
   Settings as SettingsIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface GradeDefinition {
   grade: string;
@@ -59,10 +62,13 @@ const defaultNEBScheme: GradeDefinition[] = [
   { grade: 'C+', minPercentage: 50, maxPercentage: 59, gradePoint: 2.4, description: 'Satisfactory' },
   { grade: 'C', minPercentage: 40, maxPercentage: 49, gradePoint: 2.0, description: 'Acceptable' },
   { grade: 'D', minPercentage: 35, maxPercentage: 39, gradePoint: 1.6, description: 'Basic' },
-  { grade: 'NG', minPercentage: 0, maxPercentage: 34, gradePoint: 0.0, description: 'Not Graded' },
+  { grade: 'E', minPercentage: 0, maxPercentage: 34, gradePoint: 0.0, description: 'Not Sufficient' },
 ];
 
 export function GradingScheme() {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const [schemes, setSchemes] = useState<GradeScheme[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -83,7 +89,7 @@ export function GradingScheme() {
   const fetchGradingSchemes = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/system-settings/grading-schemes');
+      const response = await apiClient.get('/system-settings/grading-schemes');
       const apiSchemes = response.data?.data || [];
       
       if (apiSchemes.length > 0) {
@@ -149,57 +155,57 @@ export function GradingScheme() {
       setError('');
       
       if (editingScheme && editingScheme.id !== 'default') {
-        await api.put(`/system-settings/grading-schemes/${editingScheme.id}`, {
+        await apiClient.put(`/system-settings/grading-schemes/${editingScheme.id}`, {
           name: formData.name,
           description: formData.description,
           grades: formData.grades,
         });
-        setSuccess('Grade scheme updated successfully!');
+        setSuccess(t('examinations.gradeSchemeUpdated'));
       } else {
-        await api.post('/system-settings/grading-schemes', {
+        await apiClient.post('/system-settings/grading-schemes', {
           name: formData.name || 'Custom Grading Scheme',
           description: formData.description,
           grades: formData.grades,
           isDefault: false,
           isActive: true,
         });
-        setSuccess('Grade scheme created successfully!');
+        setSuccess(t('examinations.gradeSchemeCreated'));
       }
 
       handleCloseDialog();
       fetchGradingSchemes();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save grade scheme');
+      setError(err.response?.data?.message || t('examinations.failedToSaveGradeScheme'));
     }
   };
 
   const handleDelete = async (id: string) => {
     if (id === 'default') {
-      setError('Cannot delete the default grading scheme');
+      setError(t('examinations.cannotDeleteDefault'));
       return;
     }
     
-    if (window.confirm('Are you sure you want to delete this grade scheme?')) {
+    if (window.confirm(t('examinations.confirmDeleteGradeScheme'))) {
       try {
-        await api.delete(`/system-settings/grading-schemes/${id}`);
-        setSuccess('Grade scheme deleted successfully!');
+        await apiClient.delete(`/system-settings/grading-schemes/${id}`);
+        setSuccess(t('examinations.gradeSchemeDeleted'));
         fetchGradingSchemes();
         setTimeout(() => setSuccess(''), 3000);
       } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to delete grade scheme');
+        setError(err.response?.data?.message || t('examinations.failedToDeleteGradeScheme'));
       }
     }
   };
 
   const handleResetToDefault = () => {
-    if (window.confirm('Reset to NEB default grading scheme?')) {
+    if (window.confirm(t('examinations.confirmResetToNEB'))) {
       setFormData({
         name: 'NEB Default Grading Scheme',
         description: 'National Examination Board standard grading',
         grades: defaultNEBScheme,
       });
-      setSuccess('Reset to NEB default grading scheme!');
+      setSuccess(t('examinations.resetToNEBSuccess'));
       setTimeout(() => setSuccess(''), 3000);
     }
   };
@@ -217,27 +223,29 @@ export function GradingScheme() {
 
   return (
     <Box>
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <SettingsIcon sx={{ fontSize: 32, color: 'primary.main' }} />
             <Typography variant="h5" fontWeight={600}>
-              Grading Scheme Configuration
+              {t('examinations.gradingSchemeConfiguration')}
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
               variant="outlined"
               onClick={handleResetToDefault}
+              sx={S.BTN_OUTLINE}
             >
-              Reset to NEB Default
+              {t('examinations.resetToNEBDefault')}
             </Button>
             <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={() => handleOpenDialog()}
+              sx={S.BTN_PRIMARY}
             >
-              Add Grade
+              {t('examinations.addGrade')}
             </Button>
           </Box>
         </Box>
@@ -246,18 +254,17 @@ export function GradingScheme() {
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         <Alert severity="info" sx={{ mb: 3 }}>
-          This grading scheme follows the Nepal Education Board (NEB) standard. 
-          Grades are automatically calculated based on percentage ranges.
+          {t('examinations.gradingSchemeInfo')}
         </Alert>
 
         <TableContainer>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Grade</TableCell>
-                <TableCell>Percentage Range</TableCell>
-                <TableCell>Grade Point</TableCell>
-                <TableCell>Description</TableCell>
+                <TableCell>{t('examinations.grade')}</TableCell>
+                <TableCell>{t('examinations.percentageRange')}</TableCell>
+                <TableCell>{t('examinations.gradePoint')}</TableCell>
+                <TableCell>{t('common.description')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -285,18 +292,18 @@ export function GradingScheme() {
       </Paper>
 
       {schemes.length > 1 && (
-        <Paper sx={{ p: 3, mt: 3 }}>
+        <Paper sx={{ ...S.GLASS, p: 3, mt: 3 }}>
           <Typography variant="h6" gutterBottom>
-            Available Grading Schemes
+            {t('examinations.availableGradingSchemes')}
           </Typography>
           <TableContainer>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Description</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="center">Actions</TableCell>
+                  <TableCell>{t('common.name')}</TableCell>
+                  <TableCell>{t('common.description')}</TableCell>
+                  <TableCell>{t('common.status')}</TableCell>
+                  <TableCell align="center">{t('common.actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -305,7 +312,7 @@ export function GradingScheme() {
                     <TableCell>{scheme.name}</TableCell>
                     <TableCell>{scheme.description || '-'}</TableCell>
                     <TableCell>
-                      {scheme.isDefault ? 'Default' : scheme.isActive ? 'Active' : 'Inactive'}
+                      {scheme.isDefault ? t('examinations.default') : scheme.isActive ? t('common.active') : t('examinations.inactive')}
                     </TableCell>
                     <TableCell align="center">
                       <IconButton
@@ -334,7 +341,7 @@ export function GradingScheme() {
 
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>
-          {editingScheme ? 'Edit Grading Scheme' : 'Create Grading Scheme'}
+          {editingScheme ? t('examinations.editGradingScheme') : t('examinations.createGradingScheme')}
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
@@ -342,17 +349,17 @@ export function GradingScheme() {
               <TextField
                 fullWidth
                 required
-                label="Scheme Name"
+                label={t('examinations.schemeName')}
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="e.g., Custom Grading Scheme"
+                placeholder={t('examinations.schemeNamePlaceholder')}
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Description"
+                label={t('common.description')}
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
@@ -362,17 +369,17 @@ export function GradingScheme() {
             </Grid>
           </Grid>
           <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>
-            Grade Definitions
+            {t('examinations.gradeDefinitions')}
           </Typography>
           <TableContainer>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Grade</TableCell>
-                  <TableCell>Min %</TableCell>
-                  <TableCell>Max %</TableCell>
-                  <TableCell>Grade Point</TableCell>
-                  <TableCell>Description</TableCell>
+                  <TableCell>{t('examinations.grade')}</TableCell>
+                  <TableCell>{t('examinations.minPercentage')}</TableCell>
+                  <TableCell>{t('examinations.maxPercentage')}</TableCell>
+                  <TableCell>{t('examinations.gradePoint')}</TableCell>
+                  <TableCell>{t('common.description')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -390,13 +397,14 @@ export function GradingScheme() {
           </TableContainer>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handleCloseDialog}>{t('common.cancel')}</Button>
           <Button
             variant="contained"
             startIcon={<SaveIcon />}
             onClick={handleSave}
+            sx={S.BTN_PRIMARY}
           >
-            Save
+            {t('common.save')}
           </Button>
         </DialogActions>
       </Dialog>

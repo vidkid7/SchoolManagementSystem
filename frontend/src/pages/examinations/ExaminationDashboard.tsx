@@ -4,6 +4,8 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTheme } from '@mui/material/styles';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import {
   Box,
   Grid,
@@ -21,8 +23,9 @@ import {
   Assessment as ReportIcon,
   TrendingUp as TrendIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
-import api from '../../config/api';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
+import { useTranslation } from 'react-i18next';
+import apiClient from '../../services/apiClient';
 
 interface ExamStats {
   totalExams: number;
@@ -34,7 +37,10 @@ interface ExamStats {
 }
 
 export function ExaminationDashboard() {
-  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const navigate = useSlugNavigate();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<ExamStats>({
     totalExams: 0,
@@ -56,7 +62,7 @@ export function ExaminationDashboard() {
       const start = new Date();
       const end = new Date();
       end.setMonth(end.getMonth() + 2);
-      const res = await api.get('/exam-schedules/by-date-range', {
+      const res = await apiClient.get('/exam-schedules/by-date-range', {
         params: { startDate: start.toISOString().split('T')[0], endDate: end.toISOString().split('T')[0] },
       });
       const list = res.data?.data || [];
@@ -70,7 +76,7 @@ export function ExaminationDashboard() {
     setLoading(true);
     
     try {
-      const response = await api.get('/examinations');
+      const response = await apiClient.get('/examinations');
       const exams = response.data?.data || [];
       
       const stats: ExamStats = {
@@ -100,32 +106,32 @@ export function ExaminationDashboard() {
 
   const statCards = [
     {
-      title: 'Total Exams',
+      title: t('examinations.totalExams'),
       value: stats.totalExams,
       icon: <ExamIcon sx={{ fontSize: 40 }} />,
-      color: '#2196f3',
-      bgColor: '#e3f2fd',
+      color: C.primary,
+      bgColor: C.primaryBg,
     },
     {
-      title: 'Scheduled',
+      title: t('examinations.scheduled'),
       value: stats.scheduledExams,
       icon: <ScheduleIcon sx={{ fontSize: 40 }} />,
-      color: '#ff9800',
-      bgColor: '#fff3e0',
+      color: C.neutral,
+      bgColor: C.neutralBg,
     },
     {
-      title: 'Ongoing',
+      title: t('examinations.ongoing'),
       value: stats.ongoingExams,
       icon: <TrendIcon sx={{ fontSize: 40 }} />,
-      color: '#f44336',
-      bgColor: '#ffebee',
+      color: C.danger,
+      bgColor: C.dangerBg,
     },
     {
-      title: 'Completed',
+      title: t('examinations.completed'),
       value: stats.completedExams,
       icon: <GradeIcon sx={{ fontSize: 40 }} />,
-      color: '#4caf50',
-      bgColor: '#e8f5e9',
+      color: C.primary,
+      bgColor: C.primaryBg,
     },
   ];
 
@@ -139,20 +145,21 @@ export function ExaminationDashboard() {
 
   return (
     <Box>
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={S.PAGE_HEADER}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <ReportIcon sx={{ fontSize: 32, color: 'primary.main' }} />
             <Typography variant="h5" fontWeight={600}>
-              Examination Management Dashboard
+              {t('examinations.examinationManagementDashboard')}
             </Typography>
           </Box>
           <Button
             variant="contained"
             startIcon={<ExamIcon />}
             onClick={() => navigate('/examinations/create')}
+            sx={S.BTN_PRIMARY}
           >
-            Create Exam
+            {t('examinations.createExam')}
           </Button>
         </Box>
       </Paper>
@@ -160,7 +167,7 @@ export function ExaminationDashboard() {
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {statCards.map((card, index) => (
           <Grid item xs={12} sm={6} md={3} key={index}>
-            <Card sx={{ height: '100%' }}>
+            <Card sx={{ ...S.GLASS, height: '100%' }}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <Box>
@@ -176,7 +183,7 @@ export function ExaminationDashboard() {
                       backgroundColor: card.bgColor,
                       color: card.color,
                       p: 1.5,
-                      borderRadius: 2,
+                      borderRadius: R.lg,
                     }}
                   >
                     {card.icon}
@@ -190,71 +197,76 @@ export function ExaminationDashboard() {
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ ...S.GLASS, p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Pending Actions
+              {t('examinations.pendingActions')}
             </Typography>
             <Box sx={{ mt: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                <Typography>Pending Grade Entry</Typography>
+                <Typography>{t('examinations.pendingGradeEntry')}</Typography>
                 <Typography fontWeight={600}>{stats.pendingGrades}</Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                <Typography>Results to Publish</Typography>
+                <Typography>{t('examinations.resultsToPublish')}</Typography>
                 <Typography fontWeight={600}>{stats.completedExams - stats.publishedResults}</Typography>
               </Box>
               <Button
                 fullWidth
                 variant="outlined"
                 onClick={() => navigate('/examinations/grades')}
-                sx={{ mt: 2 }}
+                sx={{ mt: 2, ...S.BTN_OUTLINE }}
               >
-                Enter Grades
+                {t('examinations.enterGrades')}
               </Button>
             </Box>
           </Paper>
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ ...S.GLASS, p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Quick Actions
+              {t('examinations.quickActions')}
             </Typography>
             <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Button
                 variant="outlined"
                 fullWidth
                 onClick={() => navigate('/examinations/create')}
+                sx={S.BTN_OUTLINE}
               >
-                Create New Exam
+                {t('examinations.createNewExam')}
               </Button>
               <Button
                 variant="outlined"
                 fullWidth
                 onClick={() => navigate('/examinations/list')}
+                sx={S.BTN_OUTLINE}
               >
-                Manage Exam Schedule
+                {t('examinations.manageExamSchedule')}
               </Button>
               <Button
                 variant="outlined"
                 fullWidth
                 onClick={() => navigate('/examinations/grades')}
+                sx={S.BTN_OUTLINE}
               >
-                Enter/View Grades
+                {t('examinations.enterViewGrades')}
               </Button>
               <Button
                 variant="outlined"
                 fullWidth
                 onClick={() => navigate('/examinations/reports')}
+                sx={S.BTN_OUTLINE}
               >
-                Generate Report Cards
+                {t('examinations.generateReportCards')}
               </Button>
               <Button
                 variant="outlined"
                 fullWidth
                 onClick={() => navigate('/examinations/grading-scheme')}
+                sx={S.BTN_OUTLINE}
               >
-                Configure Grading Scheme
+                {t('examinations.configureGradingScheme')}
               </Button>
             </Box>
           </Paper>

@@ -4,7 +4,10 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Paper,
@@ -20,34 +23,37 @@ import {
   SelectChangeEvent,
 } from '@mui/material';
 import { Save as SaveIcon, ArrowBack as BackIcon } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
+import { useCurrentAcademicYear } from '../../hooks/useCurrentAcademicYear';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 const examTypes = [
-  { value: 'unit_test', label: 'Unit Test' },
-  { value: 'first_terminal', label: 'First Terminal' },
-  { value: 'second_terminal', label: 'Second Terminal' },
-  { value: 'final', label: 'Final' },
-  { value: 'practical', label: 'Practical' },
-  { value: 'project', label: 'Project' },
+  { value: 'unit_test', label: 'examinations.unitTest' },
+  { value: 'first_terminal', label: 'examinations.firstTerminal' },
+  { value: 'second_terminal', label: 'examinations.secondTerminal' },
+  { value: 'final', label: 'examinations.final' },
+  { value: 'practical', label: 'examinations.practical' },
+  { value: 'project', label: 'examinations.project' },
 ];
 
 export function CreateExam() {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const { id } = useParams();
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   
+  const { currentYear } = useCurrentAcademicYear();
+
   const [subjects, setSubjects] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
-  const [academicYears, setAcademicYears] = useState<any[]>([
-    { academicYearId: 1, name: '2025-2026' },
-    { academicYearId: 2, name: '2024-2025' },
-  ]);
   const [terms, setTerms] = useState<any[]>([
-    { termId: 1, name: 'First Term' },
-    { termId: 2, name: 'Second Term' },
-    { termId: 3, name: 'Third Term' },
+    { termId: 1, name: 'examinations.firstTerm' },
+    { termId: 2, name: 'examinations.secondTerm' },
+    { termId: 3, name: 'examinations.thirdTerm' },
   ]);
   
   const [formData, setFormData] = useState({
@@ -55,7 +61,7 @@ export function CreateExam() {
     type: '',
     classId: '',
     subjectId: '',
-    academicYearId: '1',
+    academicYearId: '',
     termId: '1',
     examDate: '',
     duration: '180',
@@ -67,6 +73,13 @@ export function CreateExam() {
     isInternal: false,
   });
 
+  // Auto-set academicYearId when current year is loaded
+  useEffect(() => {
+    if (currentYear && !formData.academicYearId) {
+      setFormData(prev => ({ ...prev, academicYearId: String(currentYear.academicYearId) }));
+    }
+  }, [currentYear]);
+
   useEffect(() => {
     fetchDropdownData();
     if (id) {
@@ -76,9 +89,8 @@ export function CreateExam() {
 
   const fetchDropdownData = async () => {
     try {
-      const [subjectsRes, classesRes, yearsRes] = await Promise.all([
-        api.get('/academic/subjects').catch(() => { 
-          // Silently use fallback data
+      const [subjectsRes, classesRes] = await Promise.all([
+        apiClient.get('/academic/subjects').catch(() => { 
           return { data: { data: [
             { subjectId: 1, nameEn: 'Mathematics', nameNp: 'गणित' },
             { subjectId: 2, nameEn: 'Science', nameNp: 'विज्ञान' },
@@ -87,8 +99,7 @@ export function CreateExam() {
             { subjectId: 5, nameEn: 'Social Studies', nameNp: 'सामाजिक अध्ययन' },
           ] } }; 
         }),
-        api.get('/academic/classes').catch(() => { 
-          // Silently use fallback data
+        apiClient.get('/academic/classes').catch(() => { 
           const fallbackClasses = [];
           for (let grade = 1; grade <= 12; grade++) {
             for (const section of ['A', 'B', 'C']) {
@@ -101,23 +112,15 @@ export function CreateExam() {
           }
           return { data: { data: fallbackClasses } }; 
         }),
-        api.get('/academic/years').catch(() => { 
-          // Silently use fallback data
-          return { data: { data: [
-            { academicYearId: 1, yearName: '2025-2026' },
-            { academicYearId: 2, yearName: '2024-2025' },
-          ] } }; 
-        }),
       ]);
       
       setSubjects(subjectsRes.data?.data || []);
       setClasses(classesRes.data?.data || []);
-      setAcademicYears(yearsRes.data?.data || []);
       
       setTerms([
-        { termId: 1, name: 'First Term' },
-        { termId: 2, name: 'Second Term' },
-        { termId: 3, name: 'Third Term' },
+        { termId: 1, name: 'examinations.firstTerm' },
+        { termId: 2, name: 'examinations.secondTerm' },
+        { termId: 3, name: 'examinations.thirdTerm' },
       ]);
     } catch (error) {
       // Silently handle any unexpected errors
@@ -127,7 +130,7 @@ export function CreateExam() {
   const fetchExam = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/examinations/${id}`);
+      const response = await apiClient.get(`/examinations/${id}`);
       const exam = response.data?.data;
       
       if (exam) {
@@ -150,7 +153,7 @@ export function CreateExam() {
       }
     } catch (error: any) {
       console.error('Failed to load exam:', error);
-      setError('Failed to load exam details');
+      setError(t('examinations.failedToLoadExamDetails'));
     } finally {
       setLoading(false);
     }
@@ -195,11 +198,11 @@ export function CreateExam() {
       };
       
       if (id) {
-        await api.put(`/examinations/${id}`, payload);
-        setSuccess('Exam updated successfully!');
+        await apiClient.put(`/examinations/${id}`, payload);
+        setSuccess(t('examinations.examUpdatedSuccessfully'));
       } else {
-        await api.post('/examinations', payload);
-        setSuccess('Exam created successfully!');
+        await apiClient.post('/examinations', payload);
+        setSuccess(t('examinations.examCreatedSuccessfully'));
       }
       
       setTimeout(() => {
@@ -207,7 +210,7 @@ export function CreateExam() {
       }, 1500);
     } catch (error: any) {
       console.error('Failed to save exam:', error);
-      setError(error.response?.data?.message || 'Failed to save exam');
+      setError(error.response?.data?.message || t('examinations.failedToSaveExam'));
     } finally {
       setLoading(false);
     }
@@ -215,16 +218,17 @@ export function CreateExam() {
 
   return (
     <Box>
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
           <Button
             startIcon={<BackIcon />}
             onClick={() => navigate('/examinations/list')}
+            sx={S.BTN_GHOST}
           >
-            Back
+            {t('common.back')}
           </Button>
           <Typography variant="h5" fontWeight={600}>
-            {id ? 'Edit Exam' : 'Create New Exam'}
+            {id ? t('examinations.editExam') : t('examinations.createNewExam')}
           </Typography>
         </Box>
 
@@ -233,18 +237,19 @@ export function CreateExam() {
 
         <form onSubmit={handleSubmit}>
           <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-            Basic Information
+            {t('examinations.basicInformation')}
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <TextField
                 fullWidth
                 required
-                label="Exam Name"
+                label={t('examinations.examName')}
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="e.g., First Terminal Exam - Mathematics"
+                placeholder={t('examinations.examNamePlaceholder')}
+                sx={S.TF}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -252,14 +257,15 @@ export function CreateExam() {
                 fullWidth
                 required
                 select
-                label="Exam Type"
+                label={t('examinations.examType')}
                 name="type"
                 value={formData.type}
                 onChange={handleChange}
+                sx={S.TF}
               >
                 {examTypes.map((type) => (
                   <MenuItem key={type.value} value={type.value}>
-                    {type.label}
+                    {t(type.label)}
                   </MenuItem>
                 ))}
               </TextField>
@@ -269,13 +275,14 @@ export function CreateExam() {
                 fullWidth
                 required
                 select
-                label="Subject"
+                label={t('common.subject')}
                 name="subjectId"
                 value={formData.subjectId}
                 onChange={handleChange}
+                sx={S.TF}
               >
                 {subjects.length === 0 ? (
-                  <MenuItem value="" disabled>Loading subjects...</MenuItem>
+                  <MenuItem value="" disabled>{t('common.loading')}...</MenuItem>
                 ) : (
                   subjects.map((subject) => (
                     <MenuItem key={subject.subjectId} value={subject.subjectId}>
@@ -290,13 +297,14 @@ export function CreateExam() {
                 fullWidth
                 required
                 select
-                label="Class"
+                label={t('common.class')}
                 name="classId"
                 value={formData.classId}
                 onChange={handleChange}
+                sx={S.TF}
               >
                 {classes.length === 0 ? (
-                  <MenuItem value="" disabled>Loading classes...</MenuItem>
+                  <MenuItem value="" disabled>{t('common.loading')}...</MenuItem>
                 ) : (
                   classes.map((cls) => (
                     <MenuItem key={cls.classId} value={cls.classId}>
@@ -311,11 +319,12 @@ export function CreateExam() {
                 fullWidth
                 required
                 type="date"
-                label="Exam Date"
+                label={t('examinations.examDate')}
                 name="examDate"
                 value={formData.examDate}
                 onChange={handleChange}
                 InputLabelProps={{ shrink: true }}
+                sx={S.TF}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -323,16 +332,17 @@ export function CreateExam() {
                 fullWidth
                 required
                 type="number"
-                label="Duration (minutes)"
+                label={t('examinations.durationMinutes')}
                 name="duration"
                 value={formData.duration}
                 onChange={handleChange}
+                sx={S.TF}
               />
             </Grid>
           </Grid>
 
           <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-            Marks Configuration
+            {t('examinations.marksConfiguration')}
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={12} md={3}>
@@ -340,10 +350,11 @@ export function CreateExam() {
                 fullWidth
                 required
                 type="number"
-                label="Full Marks"
+                label={t('examinations.fullMarks')}
                 name="fullMarks"
                 value={formData.fullMarks}
                 onChange={handleChange}
+                sx={S.TF}
               />
             </Grid>
             <Grid item xs={12} md={3}>
@@ -351,10 +362,11 @@ export function CreateExam() {
                 fullWidth
                 required
                 type="number"
-                label="Pass Marks"
+                label={t('examinations.passMarks')}
                 name="passMarks"
                 value={formData.passMarks}
                 onChange={handleChange}
+                sx={S.TF}
               />
             </Grid>
             <Grid item xs={12} md={3}>
@@ -362,10 +374,11 @@ export function CreateExam() {
                 fullWidth
                 required
                 type="number"
-                label="Theory Marks"
+                label={t('examinations.theoryMarks')}
                 name="theoryMarks"
                 value={formData.theoryMarks}
                 onChange={handleChange}
+                sx={S.TF}
               />
             </Grid>
             <Grid item xs={12} md={3}>
@@ -373,10 +386,11 @@ export function CreateExam() {
                 fullWidth
                 required
                 type="number"
-                label="Practical Marks"
+                label={t('examinations.practicalMarks')}
                 name="practicalMarks"
                 value={formData.practicalMarks}
                 onChange={handleChange}
+                sx={S.TF}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -384,11 +398,12 @@ export function CreateExam() {
                 fullWidth
                 required
                 type="number"
-                label="Weightage (%)"
+                label={t('examinations.weightagePercent')}
                 name="weightage"
                 value={formData.weightage}
                 onChange={handleChange}
-                helperText="Percentage for final grade calculation"
+                helperText={t('examinations.weightageHelper')}
+                sx={S.TF}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -400,52 +415,39 @@ export function CreateExam() {
                     name="isInternal"
                   />
                 }
-                label="Internal Assessment"
+                label={t('examinations.internalAssessment')}
               />
             </Grid>
           </Grid>
 
           <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-            Academic Details
+            {t('examinations.academicDetails')}
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                required
-                select
-                label="Academic Year"
-                name="academicYearId"
-                value={formData.academicYearId}
-                onChange={handleChange}
-              >
-                {academicYears.length === 0 ? (
-                  <>
-                    <MenuItem value="1">2025-2026</MenuItem>
-                    <MenuItem value="2">2024-2025</MenuItem>
-                  </>
-                ) : (
-                  academicYears.map((year) => (
-                    <MenuItem key={year.academicYearId} value={year.academicYearId.toString()}>
-                      {year.name}
-                    </MenuItem>
-                  ))
-                )}
-              </TextField>
+                label={t('academic.academicYear')}
+                value={currentYear ? `AY ${currentYear.name.replace('-', '/')}` : `${t('common.loading')}...`}
+                InputProps={{ readOnly: true }}
+                helperText={t('examinations.autoDetectedFromCalendar')}
+                sx={S.TF}
+              />
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 required
                 select
-                label="Term"
+                label={t('examinations.term')}
                 name="termId"
                 value={formData.termId}
                 onChange={handleChange}
+                sx={S.TF}
               >
                 {terms.map((term) => (
                   <MenuItem key={term.termId} value={term.termId.toString()}>
-                    {term.name}
+                    {t(term.name)}
                   </MenuItem>
                 ))}
               </TextField>
@@ -457,16 +459,18 @@ export function CreateExam() {
               variant="outlined"
               onClick={() => navigate('/examinations/list')}
               disabled={loading}
+              sx={S.BTN_OUTLINE}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="submit"
               variant="contained"
               startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
               disabled={loading}
+              sx={S.BTN_PRIMARY}
             >
-              {id ? 'Update Exam' : 'Create Exam'}
+              {id ? t('examinations.updateExam') : t('examinations.createExam')}
             </Button>
           </Box>
         </form>

@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -25,14 +26,18 @@ import {
   Alert,
   Chip,
   IconButton,
+  alpha,
+  useTheme,
 } from '@mui/material';
 import {
   Save as SaveIcon,
   Upload as UploadIcon,
   Download as DownloadIcon,
   CheckCircle as CheckIcon,
+  Assessment as AssessmentIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface Student {
   id: number;
@@ -49,6 +54,10 @@ interface Student {
 }
 
 export const GradeEntry = () => {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+
   const [exams, setExams] = useState<any[]>([]);
   const [selectedExam, setSelectedExam] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
@@ -73,9 +82,9 @@ export const GradeEntry = () => {
   const fetchInitialData = async () => {
     try {
       const [subjectsRes, classesRes, examsRes] = await Promise.all([
-        api.get('/academic/subjects'),
-        api.get('/academic/classes'),
-        api.get('/examinations'),
+        apiClient.get('/academic/subjects'),
+        apiClient.get('/academic/classes'),
+        apiClient.get('/examinations'),
       ]);
       setSubjects(subjectsRes.data?.data || []);
       setClasses(classesRes.data?.data || []);
@@ -104,7 +113,7 @@ export const GradeEntry = () => {
     
     try {
       // Fetch students from API
-      const response = await api.get('/students', {
+      const response = await apiClient.get('/students', {
         params: {
           classId: selectedClass,
           section: selectedSection,
@@ -134,7 +143,7 @@ export const GradeEntry = () => {
       // Fetch existing grades from grade-entry API if any
       if (selectedExam) {
         try {
-          const gradesResponse = await api.get(`/grades/exam/${selectedExam}`);
+          const gradesResponse = await apiClient.get(`/grades/exam/${selectedExam}`);
           const gradeList = gradesResponse.data?.data || [];
           const gradesMap = new Map(
             gradeList.map((g: any) => [g.studentId || g.student_id, g])
@@ -162,7 +171,7 @@ export const GradeEntry = () => {
       }
     } catch (error) {
       console.error('Failed to fetch students:', error);
-      setError('Failed to load students. Please ensure the backend is running and students are seeded.');
+      setError(t('examinations.failedToLoadStudents'));
       setStudents([]);
     } finally {
       setLoading(false);
@@ -225,17 +234,17 @@ export const GradeEntry = () => {
         }));
 
       if (gradesData.length === 0) {
-        setError('Please enter grades for at least one student');
+        setError(t('examinations.enterGradesForAtLeastOne'));
         return;
       }
 
       // Save grades via grade-entry API
-      await api.post('/grades/bulk', {
+      await apiClient.post('/grades/bulk', {
         examId: Number(selectedExam),
         grades: gradesData,
       });
 
-      setSuccess(`Successfully saved grades for ${gradesData.length} students`);
+      setSuccess(t('examinations.successfullySavedGrades', { count: gradesData.length }));
       
       // Update status
       setStudents(students.map(student => ({
@@ -244,75 +253,171 @@ export const GradeEntry = () => {
       })));
     } catch (error: any) {
       console.error('Failed to save grades:', error);
-      setError(error.response?.data?.message || 'Failed to save grades');
+      setError(error.response?.data?.message || t('examinations.failedToSaveGrades'));
     } finally {
       setSaving(false);
     }
   };
 
   const handleBulkImport = () => {
-    // In a real app, this would open a file upload dialog
-    alert('Bulk import feature - Upload Excel file with grades');
+    // Create a file input element
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv,.xlsx,.xls';
+    
+    input.onchange = async (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      try {
+        // For now, show a message that the feature is coming soon
+        // In production, you would parse the Excel/CSV file and populate the grades
+        setSuccess(t('examinations.importFeatureComingSoon'));
+      } catch (error) {
+        setError(t('examinations.failedToImportGrades'));
+      }
+    };
+    
+    input.click();
   };
 
   const handleExport = () => {
-    // In a real app, this would download an Excel template
-    alert('Export feature - Download grade entry template');
+    if (students.length === 0) {
+      setError(t('examinations.noDataToExport'));
+      return;
+    }
+
+    try {
+      // Create CSV content
+      const headers = [
+        t('students.rollNumber'),
+        t('students.studentId'),
+        t('common.name'),
+        t('examinations.theory') + ` (${t('common.max')}: ${theoryMarks})`,
+        hasPractical ? t('examinations.practical') + ` (${t('common.max')}: ${practicalMarks})` : null,
+        t('examinations.total'),
+        t('examinations.grade'),
+        'GPA',
+      ].filter(Boolean);
+
+      const rows = students.map(student => [
+        student.roll_number,
+        student.student_id,
+        `${student.first_name} ${student.last_name}`,
+        student.theory_marks ?? '',
+        hasPractical ? (student.practical_marks ?? '') : null,
+        student.total_marks?.toFixed(1) ?? '',
+        student.grade ?? '',
+        student.grade_point?.toFixed(1) ?? '',
+      ].filter((_, index) => hasPractical || index !== 4));
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.join(','))
+      ].join('\n');
+
+      // Create and download the file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      const examName = exams.find(e => e.examId === selectedExam || e.id === selectedExam)?.name || 'exam';
+      const subjectName = subjects.find(s => s.subjectId.toString() === selectedSubject)?.nameEn || 'subject';
+      const fileName = `grades_${examName}_${subjectName}_class${selectedClass}${selectedSection}.csv`;
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', fileName);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setSuccess(t('examinations.exportedSuccessfully'));
+    } catch (error) {
+      console.error('Export error:', error);
+      setError(t('examinations.failedToExportGrades'));
+    }
   };
 
   const getEnteredCount = () => students.filter(s => s.status === 'entered').length;
   const getPendingCount = () => students.filter(s => s.status === 'pending').length;
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
-          Grade Entry / ग्रेड प्रविष्टि
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined"
-            startIcon={<DownloadIcon />}
-            onClick={handleExport}
+    <Box sx={{ p: 3 }}>
+      {/* Header */}
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+          <Box
+            sx={{
+              width: 48,
+              height: 48,
+              borderRadius: R.lg,
+              background: C.primaryBg,
+              border: `1px solid ${alpha(C.primary, 0.2)}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
-            Export Template / टेम्प्लेट निर्यात
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<UploadIcon />}
-            onClick={handleBulkImport}
-          >
-            Bulk Import / थोक आयात
-          </Button>
+            <AssessmentIcon sx={{ fontSize: 24, color: C.primary }} />
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h5" fontWeight={700}>
+              {t('examinations.gradeEntry')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('examinations.enterStudentGrades')}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Chip
+              label={`${t('examinations.entered')}: ${getEnteredCount()}`}
+              sx={{
+                bgcolor: C.successBg,
+                color: C.success,
+                fontWeight: 600,
+                border: `1px solid ${alpha(C.success, 0.2)}`,
+              }}
+            />
+            <Chip
+              label={`${t('examinations.pending')}: ${getPendingCount()}`}
+              sx={{
+                bgcolor: C.warningBg,
+                color: C.warning,
+                fontWeight: 600,
+                border: `1px solid ${alpha(C.warning, 0.2)}`,
+              }}
+            />
+          </Box>
         </Box>
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
+        <Alert severity="error" sx={{ mb: 3, ...S.GLASS }} onClose={() => setError('')}>
           {error}
         </Alert>
       )}
 
       {success && (
-        <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess('')}>
+        <Alert severity="success" sx={{ mb: 3, ...S.GLASS }} onClose={() => setSuccess('')}>
           {success}
         </Alert>
       )}
 
       {/* Filters */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Grid container spacing={3}>
+      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
+        <Grid container spacing={2}>
           <Grid item xs={12} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Exam / परीक्षा</InputLabel>
+            <FormControl fullWidth size="small">
+              <InputLabel>{t('examinations.exam')}</InputLabel>
               <Select
                 value={selectedExam}
-                label="Exam / परीक्षा"
+                label={t('examinations.exam')}
                 onChange={(e) => setSelectedExam(e.target.value)}
               >
-                <MenuItem value="">Select Exam</MenuItem>
+                <MenuItem value="">{t('common.select')} {t('examinations.exam')}</MenuItem>
                 {exams.length === 0 ? (
-                  <MenuItem value="" disabled>No exams available</MenuItem>
+                  <MenuItem value="" disabled>{t('examinations.noExamsAvailable')}</MenuItem>
                 ) : (
                   exams.map((exam) => (
                     <MenuItem key={exam.examId || exam.id} value={exam.examId || exam.id}>
@@ -325,24 +430,24 @@ export const GradeEntry = () => {
           </Grid>
 
           <Grid item xs={12} md={2}>
-            <FormControl fullWidth>
-              <InputLabel>Class / कक्षा</InputLabel>
+            <FormControl fullWidth size="small">
+              <InputLabel>{t('common.class')}</InputLabel>
               <Select
                 value={selectedClass}
-                label="Class / कक्षा"
+                label={t('common.class')}
                 onChange={(e) => setSelectedClass(e.target.value)}
               >
-                <MenuItem value="">Select Class</MenuItem>
+                <MenuItem value="">{t('common.select')} {t('common.class')}</MenuItem>
                 {classes.length === 0 ? (
                   [...Array(12)].map((_, i) => (
                     <MenuItem key={i + 1} value={(i + 1).toString()}>
-                      Class {i + 1}
+                      {t('common.class')} {i + 1}
                     </MenuItem>
                   ))
                 ) : (
                   classes.map((cls) => (
                     <MenuItem key={cls.classId} value={cls.classId}>
-                      Class {cls.gradeLevel}{cls.section}
+                      {t('common.class')} {cls.gradeLevel}{cls.section}
                     </MenuItem>
                   ))
                 )}
@@ -351,36 +456,38 @@ export const GradeEntry = () => {
           </Grid>
 
           <Grid item xs={12} md={2}>
-            <FormControl fullWidth>
-              <InputLabel>Section / खण्ड</InputLabel>
+            <FormControl fullWidth size="small">
+              <InputLabel>{t('common.section')}</InputLabel>
               <Select
                 value={selectedSection}
-                label="Section / खण्ड"
+                label={t('common.section')}
                 onChange={(e) => setSelectedSection(e.target.value)}
               >
-                <MenuItem value="A">Section A</MenuItem>
-                <MenuItem value="B">Section B</MenuItem>
-                <MenuItem value="C">Section C</MenuItem>
+                <MenuItem value="">{t('common.select')} {t('common.section')}</MenuItem>
+                <MenuItem value="A">{t('common.section')} A</MenuItem>
+                <MenuItem value="B">{t('common.section')} B</MenuItem>
+                <MenuItem value="C">{t('common.section')} C</MenuItem>
               </Select>
             </FormControl>
           </Grid>
 
           <Grid item xs={12} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Subject / विषय</InputLabel>
+            <FormControl fullWidth size="small">
+              <InputLabel>{t('common.subject')}</InputLabel>
               <Select
                 value={selectedSubject}
-                label="Subject / विषय"
+                label={t('common.subject')}
                 onChange={(e) => setSelectedSubject(e.target.value)}
               >
+                <MenuItem value="">{t('common.select')} {t('common.subject')}</MenuItem>
                 {subjects.length === 0 ? (
                   <MenuItem value="" disabled>
-                    Loading subjects... / विषयहरू लोड हुँदैछ...
+                    {t('common.loading')}...
                   </MenuItem>
                 ) : (
                   subjects.map((subject) => (
                     <MenuItem key={subject.subjectId} value={subject.subjectId.toString()}>
-                      {subject.nameEn} / {subject.nameNp}
+                      {subject.nameEn}
                     </MenuItem>
                   ))
                 )}
@@ -389,17 +496,35 @@ export const GradeEntry = () => {
           </Grid>
 
           <Grid item xs={12} md={2}>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Chip
-                label={`Entered: ${getEnteredCount()}`}
-                color="success"
+            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+              <Button
+                variant="outlined"
                 size="small"
-              />
-              <Chip
-                label={`Pending: ${getPendingCount()}`}
-                color="warning"
+                startIcon={<DownloadIcon />}
+                onClick={handleExport}
+                sx={{
+                  borderColor: C.primary,
+                  color: C.primary,
+                  '&:hover': { borderColor: C.primary, bgcolor: C.primaryBg },
+                  textTransform: 'none',
+                }}
+              >
+                {t('common.export')}
+              </Button>
+              <Button
+                variant="outlined"
                 size="small"
-              />
+                startIcon={<UploadIcon />}
+                onClick={handleBulkImport}
+                sx={{
+                  borderColor: C.primary,
+                  color: C.primary,
+                  '&:hover': { borderColor: C.primary, bgcolor: C.primaryBg },
+                  textTransform: 'none',
+                }}
+              >
+                {t('common.import')}
+              </Button>
             </Box>
           </Grid>
         </Grid>
@@ -407,43 +532,43 @@ export const GradeEntry = () => {
 
       {/* Grade Entry Table */}
       {loading ? (
-        <Paper sx={{ p: 3 }}>
-          <Typography align="center">Loading... / लोड हुँदैछ...</Typography>
+        <Paper sx={{ ...S.GLASS, p: 3 }}>
+          <Typography align="center">{t('common.loading')}...</Typography>
         </Paper>
       ) : students.length === 0 ? (
-        <Paper sx={{ p: 3 }}>
-          <Typography align="center">
-            Please select exam, class, section, and subject / कृपया परीक्षा, कक्षा, खण्ड र विषय चयन गर्नुहोस्
+        <Paper sx={{ ...S.GLASS, p: 4, textAlign: 'center' }}>
+          <Typography variant="body1" color="text.secondary">
+            {t('examinations.selectAllCriteria')}
           </Typography>
         </Paper>
       ) : (
         <>
-          <TableContainer component={Paper}>
+          <TableContainer component={Paper} sx={{ ...S.GLASS }}>
             <Table size="small">
               <TableHead>
-                <TableRow>
-                  <TableCell>Roll No. / रोल नं</TableCell>
-                  <TableCell>Student ID / विद्यार्थी ID</TableCell>
-                  <TableCell>Name / नाम</TableCell>
-                  <TableCell align="center">
-                    Theory / सैद्धान्तिक<br />
-                    (Max: {theoryMarks})
+                <TableRow sx={{ bgcolor: alpha(C.primary, 0.05) }}>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('students.rollNumber')}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('students.studentId')}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('common.name')}</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 600 }}>
+                    {t('examinations.theory')}<br />
+                    ({t('common.max')}: {theoryMarks})
                   </TableCell>
                   {hasPractical && (
-                    <TableCell align="center">
-                      Practical / प्रयोगात्मक<br />
-                      (Max: {practicalMarks})
+                    <TableCell align="center" sx={{ fontWeight: 600 }}>
+                      {t('examinations.practical')}<br />
+                      ({t('common.max')}: {practicalMarks})
                     </TableCell>
                   )}
-                  <TableCell align="center">Total / कुल</TableCell>
-                  <TableCell align="center">Grade / ग्रेड</TableCell>
-                  <TableCell align="center">GPA</TableCell>
-                  <TableCell align="center">Status / स्थिति</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 600 }}>{t('examinations.total')}</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 600 }}>{t('examinations.grade')}</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 600 }}>GPA</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 600 }}>{t('common.status')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {students.map((student) => (
-                  <TableRow key={student.id} hover>
+                  <TableRow key={student.id} hover sx={{ '&:hover': { bgcolor: alpha(C.primary, 0.03) } }}>
                     <TableCell>{student.roll_number}</TableCell>
                     <TableCell>{student.student_id}</TableCell>
                     <TableCell>{`${student.first_name} ${student.last_name}`}</TableCell>
@@ -477,7 +602,12 @@ export const GradeEntry = () => {
                     <TableCell align="center">
                       <Chip
                         label={student.grade || '-'}
-                        color={student.grade === 'NG' ? 'error' : 'success'}
+                        sx={{
+                          bgcolor: student.grade === 'NG' ? C.warningBg : C.successBg,
+                          color: student.grade === 'NG' ? C.warning : C.success,
+                          fontWeight: 600,
+                          border: `1px solid ${alpha(student.grade === 'NG' ? C.warning : C.success, 0.2)}`,
+                        }}
                         size="small"
                       />
                     </TableCell>
@@ -486,11 +616,20 @@ export const GradeEntry = () => {
                     </TableCell>
                     <TableCell align="center">
                       {student.status === 'entered' ? (
-                        <IconButton size="small" color="success">
+                        <IconButton size="small" sx={{ color: C.success }}>
                           <CheckIcon />
                         </IconButton>
                       ) : (
-                        <Chip label="Pending" size="small" color="warning" />
+                        <Chip 
+                          label={t('examinations.pending')} 
+                          size="small" 
+                          sx={{
+                            bgcolor: C.warningBg,
+                            color: C.warning,
+                            fontWeight: 600,
+                            border: `1px solid ${alpha(C.warning, 0.2)}`,
+                          }}
+                        />
                       )}
                     </TableCell>
                   </TableRow>
@@ -502,14 +641,13 @@ export const GradeEntry = () => {
           {/* Save Button */}
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
             <Button
-              variant="contained"
               size="large"
               startIcon={<SaveIcon />}
               onClick={handleSave}
               disabled={saving || students.length === 0}
-              sx={{ minWidth: 200 }}
+              sx={{ ...S.BTN_PRIMARY, minWidth: 200 }}
             >
-              {saving ? 'Saving... / बचत गर्दै...' : 'Save Grades / ग्रेड बचत गर्नुहोस्'}
+              {saving ? `${t('common.saving')}...` : t('examinations.saveGrades')}
             </Button>
           </Box>
         </>
