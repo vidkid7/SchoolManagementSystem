@@ -405,7 +405,7 @@ export function ReportCards() {
             startIcon={<DownloadIcon />}
             onClick={handleBulkDownload}
             disabled={loading || students.length === 0 || !filters.term || !filters.academicYear}
-            sx={{
+            sx={{ ...S.BTN_OUTLINE, 
               borderColor: C.primary,
               color: C.primary,
               '&:hover': { borderColor: C.primary, bgcolor: C.primaryBg },
@@ -420,7 +420,7 @@ export function ReportCards() {
             startIcon={<SendIcon />}
             onClick={handleBulkEmail}
             disabled={loading || students.length === 0 || !filters.term || !filters.academicYear}
-            sx={{
+            sx={{ ...S.BTN_OUTLINE, 
               borderColor: C.purple,
               color: C.purple,
               '&:hover': { borderColor: C.purple, bgcolor: C.purpleBg },
@@ -452,7 +452,7 @@ export function ReportCards() {
           <Divider sx={{ mb: 2 }} />
           <TableContainer>
             <Table size="small">
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600 }}>{t('students.rollNumber')}</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>{t('students.studentId')}</TableCell>
@@ -464,19 +464,19 @@ export function ReportCards() {
                 {students.map((student) => (
                   <TableRow 
                     key={student.studentId}
-                    sx={{ '&:hover': { bgcolor: alpha(C.primary, 0.05) } }}
+                    sx={{ ...S.TR_HOVER, '&:hover': { bgcolor: alpha(C.primary, 0.05) } }}
                   >
-                    <TableCell>{student.rollNumber}</TableCell>
-                    <TableCell>{student.studentCode}</TableCell>
-                    <TableCell>{student.firstName} {student.lastName}</TableCell>
-                    <TableCell align="right">
+                    <TableCell sx={S.TD}>{student.rollNumber}</TableCell>
+                    <TableCell sx={S.TD}>{student.studentCode}</TableCell>
+                    <TableCell sx={S.TD}>{student.firstName} {student.lastName}</TableCell>
+                    <TableCell align="right" sx={S.TD}>
                       <Button
                         size="small"
                         variant="outlined"
                         startIcon={<DownloadIcon />}
                         onClick={() => handleGenerateReport(student.studentId.toString())}
                         disabled={loading}
-                        sx={{
+                        sx={{ ...S.BTN_OUTLINE, 
                           borderColor: C.primary,
                           color: C.primary,
                           '&:hover': { borderColor: C.primary, bgcolor: C.primaryBg },
@@ -543,7 +543,7 @@ export function ReportCards() {
                 variant="outlined"
                 fullWidth
                 onClick={() => navigate(`/examinations/grades`)}
-                sx={{
+                sx={{ ...S.BTN_OUTLINE, 
                   borderColor: C.primary,
                   color: C.primary,
                   '&:hover': { borderColor: C.primary, bgcolor: C.primaryBg },
@@ -558,7 +558,7 @@ export function ReportCards() {
                 variant="outlined"
                 fullWidth
                 onClick={() => navigate(`/examinations/grading-scheme`)}
-                sx={{
+                sx={{ ...S.BTN_OUTLINE, 
                   borderColor: C.purple,
                   color: C.purple,
                   '&:hover': { borderColor: C.purple, bgcolor: C.purpleBg },
@@ -573,7 +573,7 @@ export function ReportCards() {
                 variant="outlined"
                 fullWidth
                 onClick={() => navigate(`/examinations/list`)}
-                sx={{
+                sx={{ ...S.BTN_OUTLINE, 
                   borderColor: C.neutral,
                   color: C.neutral,
                   '&:hover': { borderColor: C.neutral, bgcolor: C.neutralBg },

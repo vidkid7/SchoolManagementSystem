@@ -177,7 +177,7 @@ export function DepartmentTeachers() {
 
       <TableContainer component={Paper}>
         <Table>
-          <TableHead>
+          <TableHead sx={{ bgcolor: S.TH_BG }}>
             <TableRow>
               <TableCell>Teacher</TableCell>
               <TableCell>Position</TableCell>
@@ -190,19 +190,19 @@ export function DepartmentTeachers() {
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">Loading...</TableCell>
+              <TableRow sx={S.TR_HOVER}>
+                <TableCell colSpan={7} align="center" sx={S.TD}>Loading...</TableCell>
               </TableRow>
             ) : displayTeachers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">
+              <TableRow sx={S.TR_HOVER}>
+                <TableCell colSpan={7} align="center" sx={S.TD}>
                   No teachers found
                 </TableCell>
               </TableRow>
             ) : (
               displayTeachers.map((teacher) => (
-                <TableRow key={teacher.staffId} hover>
-                  <TableCell>
+                <TableRow key={teacher.staffId} hover sx={S.TR_HOVER}>
+                  <TableCell sx={S.TD}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Avatar sx={{ width: 32, height: 32 }}>
                         {teacher.firstName[0]}
@@ -217,8 +217,8 @@ export function DepartmentTeachers() {
                       </Box>
                     </Box>
                   </TableCell>
-                  <TableCell>{teacher.position}</TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>{teacher.position}</TableCell>
+                  <TableCell sx={S.TD}>
                     {teacher.email && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
                         <EmailIcon fontSize="small" color="action" />
@@ -232,10 +232,10 @@ export function DepartmentTeachers() {
                       </Box>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Chip label={teacher.classCount || 0} size="small" color="primary" />
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Chip
                       label={`${(teacher.attendanceRate || 0).toFixed(1)}%`}
                       size="small"
@@ -248,14 +248,14 @@ export function DepartmentTeachers() {
                       }
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Chip
                       label={teacher.status}
                       size="small"
                       color={teacher.status === 'active' ? 'success' : 'warning'}
                     />
                   </TableCell>
-                  <TableCell align="center">
+                  <TableCell align="center" sx={S.TD}>
                     <IconButton
                       size="small"
                       onClick={() => navigate(`/staff/${teacher.staffId}`)}

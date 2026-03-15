@@ -304,7 +304,7 @@ export const UserManagement = () => {
           User Management / प्रयोगकर्ता व्यवस्थापन
         </Typography>
         <Button
-          variant="contained"
+          variant="contained" sx={S.BTN_PRIMARY}
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
         >
@@ -399,7 +399,7 @@ export const UserManagement = () => {
             </Select>
           </FormControl>
           <Button
-            variant="outlined"
+            variant="outlined" sx={S.BTN_OUTLINE}
             startIcon={<RefreshIcon />}
             onClick={fetchUsers}
           >
@@ -411,7 +411,7 @@ export const UserManagement = () => {
       {/* Users Table */}
       <TableContainer component={Paper}>
         <Table>
-          <TableHead>
+          <TableHead sx={{ bgcolor: S.TH_BG }}>
             <TableRow>
               <TableCell>User</TableCell>
               <TableCell>Email</TableCell>
@@ -424,21 +424,21 @@ export const UserManagement = () => {
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">
+              <TableRow sx={S.TR_HOVER}>
+                <TableCell colSpan={7} align="center" sx={S.TD}>
                   <CircularProgress />
                 </TableCell>
               </TableRow>
             ) : users.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">
+              <TableRow sx={S.TR_HOVER}>
+                <TableCell colSpan={7} align="center" sx={S.TD}>
                   No users found
                 </TableCell>
               </TableRow>
             ) : (
               users.map((user) => (
-                <TableRow key={user.userId} hover>
-                  <TableCell>
+                <TableRow key={user.userId} hover sx={S.TR_HOVER}>
+                  <TableCell sx={S.TD}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                       <Avatar sx={{ bgcolor: 'primary.main' }}>
                         {user.avatar ? (
@@ -457,24 +457,24 @@ export const UserManagement = () => {
                       </Box>
                     </Box>
                   </TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>{user.email}</TableCell>
+                  <TableCell sx={S.TD}>
                     <Chip label={user.roleName} size="small" variant="outlined" />
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Chip
                       label={user.status}
                       color={getStatusColor(user.status)}
                       size="small"
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     {new Date(user.createdAt).toLocaleDateString()}
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell align="right" sx={S.TD}>
                     <IconButton
                       size="small"
                       onClick={(e) => {
@@ -631,7 +631,7 @@ export const UserManagement = () => {
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
           <Button
-            variant="contained"
+            variant="contained" sx={S.BTN_PRIMARY}
             onClick={handleSubmit}
             disabled={!userForm.username || !userForm.email || !userForm.firstName || !userForm.roleId}
           >
@@ -694,7 +694,7 @@ export const UserManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDetailDialogOpen(false)}>Close</Button>
-          <Button variant="contained" onClick={() => { setDetailDialogOpen(false); handleOpenDialog(selectedUser!); }}>
+          <Button variant="contained" sx={S.BTN_PRIMARY} onClick={() => { setDetailDialogOpen(false); handleOpenDialog(selectedUser!); }}>
             Edit
           </Button>
         </DialogActions>
@@ -714,7 +714,7 @@ export const UserManagement = () => {
               ) : (
                 <TableContainer component={Paper} variant="outlined">
                   <Table size="small">
-                    <TableHead>
+                    <TableHead sx={{ bgcolor: S.TH_BG }}>
                       <TableRow>
                         <TableCell>Action</TableCell>
                         <TableCell>IP Address</TableCell>
@@ -723,10 +723,10 @@ export const UserManagement = () => {
                     </TableHead>
                     <TableBody>
                       {userActivity.map((activity) => (
-                        <TableRow key={activity.id}>
-                          <TableCell>{activity.action}</TableCell>
-                          <TableCell>{activity.ipAddress}</TableCell>
-                          <TableCell>{new Date(activity.timestamp).toLocaleString()}</TableCell>
+                        <TableRow key={activity.id} sx={S.TR_HOVER}>
+                          <TableCell sx={S.TD}>{activity.action}</TableCell>
+                          <TableCell sx={S.TD}>{activity.ipAddress}</TableCell>
+                          <TableCell sx={S.TD}>{new Date(activity.timestamp).toLocaleString()}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

@@ -129,7 +129,7 @@ export function StudentFeeSearch() {
 
           <Grid item xs={12} md={2}>
             <Button
-              variant="contained"
+              variant="contained" sx={S.BTN_PRIMARY}
               startIcon={<SearchIcon />}
               onClick={handleSearch}
               disabled={loading}
@@ -142,7 +142,7 @@ export function StudentFeeSearch() {
 
           <Grid item xs={12} md={3}>
             <Button
-              variant="outlined"
+              variant="outlined" sx={S.BTN_OUTLINE}
               onClick={() => {
                 setSearchQuery('');
                 setFeeStatus('');
@@ -237,14 +237,14 @@ export function StudentFeeSearch() {
             </Grid>
             <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 startIcon={<ReceiptIcon />}
                 onClick={() => navigate(`/finance/invoices?studentId=${selectedStudent.studentId}`)}
               >
                 {t('finance.viewInvoices')}
               </Button>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 startIcon={<PaymentIcon />}
                 onClick={() => navigate(`/finance/payments/student/${selectedStudent.studentId}`)}
               >
@@ -259,7 +259,7 @@ export function StudentFeeSearch() {
         <Paper sx={{ ...S.GLASS }}>
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell>{t('finance.studentId')}</TableCell>
                   <TableCell>{t('finance.studentName')}</TableCell>
@@ -273,13 +273,13 @@ export function StudentFeeSearch() {
               </TableHead>
               <TableBody>
                 {students.map((student) => (
-                  <TableRow key={student.studentId} hover>
-                    <TableCell>#{student.studentId}</TableCell>
-                    <TableCell>{student.studentName}</TableCell>
-                    <TableCell>{student.className}</TableCell>
-                    <TableCell align="right">NPR {student.totalInvoiced.toLocaleString()}</TableCell>
-                    <TableCell align="right">NPR {student.totalPaid.toLocaleString()}</TableCell>
-                    <TableCell align="right">
+                  <TableRow key={student.studentId} hover sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>#{student.studentId}</TableCell>
+                    <TableCell sx={S.TD}>{student.studentName}</TableCell>
+                    <TableCell sx={S.TD}>{student.className}</TableCell>
+                    <TableCell align="right" sx={S.TD}>NPR {student.totalInvoiced.toLocaleString()}</TableCell>
+                    <TableCell align="right" sx={S.TD}>NPR {student.totalPaid.toLocaleString()}</TableCell>
+                    <TableCell align="right" sx={S.TD}>
                       <Typography
                         color={student.balance > 0 ? 'error' : 'success'}
                         fontWeight={600}
@@ -287,14 +287,14 @@ export function StudentFeeSearch() {
                         NPR {student.balance.toLocaleString()}
                       </Typography>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip
                         label={student.status}
                         color={getStatusColor(student.status)}
                         size="small"
                       />
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" sx={S.TD}>
                       <IconButton
                         size="small"
                         onClick={() => setSelectedStudent(student)}

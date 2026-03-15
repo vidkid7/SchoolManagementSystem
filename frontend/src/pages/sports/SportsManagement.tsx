@@ -198,11 +198,11 @@ export function SportsManagement() {
 
         <TabPanel value={tabValue} index={0}>
           <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>Create Sport</Button>
+            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>Create Sport</Button>
           </Box>
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell>Sport Name</TableCell>
                   <TableCell>Category</TableCell>
@@ -213,13 +213,13 @@ export function SportsManagement() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? <TableRow><TableCell colSpan={6} align="center">Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow><TableCell colSpan={6} align="center">No sports found</TableCell></TableRow> : data.map((item: any) => (
-                  <TableRow key={item.sportId ?? item.id}>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell><Chip label={item.category} size="small" /></TableCell>
-                    <TableCell>{item.coach}</TableCell>
-                    <TableCell><Chip label={item.status} color={item.status === 'active' ? 'success' : 'default'} size="small" /></TableCell>
-                    <TableCell align="center">
+                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>No sports found</TableCell></TableRow> : data.map((item: any) => (
+                  <TableRow key={item.sportId ?? item.id} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{item.name}</TableCell>
+                    <TableCell sx={S.TD}><Chip label={item.category} size="small" /></TableCell>
+                    <TableCell sx={S.TD}>{item.coach}</TableCell>
+                    <TableCell sx={S.TD}><Chip label={item.status} color={item.status === 'active' ? 'success' : 'default'} size="small" /></TableCell>
+                    <TableCell align="center" sx={S.TD}>
                       <Button size="small" startIcon={<EnrollIcon />} onClick={() => { setEnrollSportId(item.sportId ?? item.id); setEnrollDialog(true); }}>Enroll</Button>
                       <IconButton size="small" onClick={() => handleOpenDialog(item)}><EditIcon fontSize="small" /></IconButton>
                       <IconButton size="small" onClick={() => handleDelete(item)} color="error"><DeleteIcon fontSize="small" /></IconButton>
@@ -233,11 +233,11 @@ export function SportsManagement() {
 
         <TabPanel value={tabValue} index={1}>
           <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button variant="contained" startIcon={<TeamIcon />} onClick={() => handleOpenDialog()}>Create Team</Button>
+            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<TeamIcon />} onClick={() => handleOpenDialog()}>Create Team</Button>
           </Box>
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell>Team Name</TableCell>
                   <TableCell>Sport</TableCell>
@@ -248,14 +248,14 @@ export function SportsManagement() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? <TableRow><TableCell colSpan={6} align="center">Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow><TableCell colSpan={6} align="center">No teams found</TableCell></TableRow> : data.map((item: any) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell>{item.sportName}</TableCell>
-                    <TableCell>{item.coach}</TableCell>
-                    <TableCell>{item.captain}</TableCell>
-                    <TableCell align="center">{item.playerCount || 0}</TableCell>
-                    <TableCell align="center">
+                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>No teams found</TableCell></TableRow> : data.map((item: any) => (
+                  <TableRow key={item.id} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{item.name}</TableCell>
+                    <TableCell sx={S.TD}>{item.sportName}</TableCell>
+                    <TableCell sx={S.TD}>{item.coach}</TableCell>
+                    <TableCell sx={S.TD}>{item.captain}</TableCell>
+                    <TableCell align="center" sx={S.TD}>{item.playerCount || 0}</TableCell>
+                    <TableCell align="center" sx={S.TD}>
                       <IconButton size="small" onClick={() => handleOpenDialog(item)}><EditIcon fontSize="small" /></IconButton>
                       <IconButton size="small" onClick={() => handleDelete(item.id)} color="error"><DeleteIcon fontSize="small" /></IconButton>
                     </TableCell>
@@ -268,11 +268,11 @@ export function SportsManagement() {
 
         <TabPanel value={tabValue} index={2}>
           <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button variant="contained" startIcon={<TrophyIcon />} onClick={() => handleOpenDialog()}>Create Tournament</Button>
+            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<TrophyIcon />} onClick={() => handleOpenDialog()}>Create Tournament</Button>
           </Box>
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell>Tournament Name</TableCell>
                   <TableCell>Sport</TableCell>
@@ -284,15 +284,15 @@ export function SportsManagement() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? <TableRow><TableCell colSpan={7} align="center">Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow><TableCell colSpan={7} align="center">No tournaments found</TableCell></TableRow> : data.map((item: any) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell>{item.sportName}</TableCell>
-                    <TableCell>{new Date(item.startDate).toLocaleDateString()}</TableCell>
-                    <TableCell>{new Date(item.endDate).toLocaleDateString()}</TableCell>
-                    <TableCell>{item.venue}</TableCell>
-                    <TableCell><Chip label={item.status} size="small" /></TableCell>
-                    <TableCell align="center">
+                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={7} align="center" sx={S.TD}>Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={7} align="center" sx={S.TD}>No tournaments found</TableCell></TableRow> : data.map((item: any) => (
+                  <TableRow key={item.id} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{item.name}</TableCell>
+                    <TableCell sx={S.TD}>{item.sportName}</TableCell>
+                    <TableCell sx={S.TD}>{new Date(item.startDate).toLocaleDateString()}</TableCell>
+                    <TableCell sx={S.TD}>{new Date(item.endDate).toLocaleDateString()}</TableCell>
+                    <TableCell sx={S.TD}>{item.venue}</TableCell>
+                    <TableCell sx={S.TD}><Chip label={item.status} size="small" /></TableCell>
+                    <TableCell align="center" sx={S.TD}>
                       <IconButton size="small" onClick={() => handleOpenDialog(item)}><EditIcon fontSize="small" /></IconButton>
                       <IconButton size="small" onClick={() => handleDelete(item.id)} color="error"><DeleteIcon fontSize="small" /></IconButton>
                     </TableCell>
@@ -305,11 +305,11 @@ export function SportsManagement() {
 
         <TabPanel value={tabValue} index={3}>
           <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button variant="contained" startIcon={<TrophyIcon />} onClick={() => handleOpenDialog()}>Record Achievement</Button>
+            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<TrophyIcon />} onClick={() => handleOpenDialog()}>Record Achievement</Button>
           </Box>
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell>Student Name</TableCell>
                   <TableCell>Sport</TableCell>
@@ -318,12 +318,12 @@ export function SportsManagement() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? <TableRow><TableCell colSpan={4} align="center">Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow><TableCell colSpan={4} align="center">No achievements found</TableCell></TableRow> : data.map((item: any) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{item.studentName}</TableCell>
-                    <TableCell>{item.sportName}</TableCell>
-                    <TableCell>{item.achievement}</TableCell>
-                    <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
+                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>No achievements found</TableCell></TableRow> : data.map((item: any) => (
+                  <TableRow key={item.id} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{item.studentName}</TableCell>
+                    <TableCell sx={S.TD}>{item.sportName}</TableCell>
+                    <TableCell sx={S.TD}>{item.achievement}</TableCell>
+                    <TableCell sx={S.TD}>{new Date(item.date).toLocaleDateString()}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -346,15 +346,15 @@ export function SportsManagement() {
                 <MenuItem key={s.sportId ?? s.id} value={String(s.sportId ?? s.id)}>{s.name}</MenuItem>
               ))}
             </TextField>
-            <Button variant="contained" startIcon={<AttendanceIcon />} onClick={fetchEnrollments} disabled={!selectedSportId || enrollmentsLoading}>Load Enrollments</Button>
+            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<AttendanceIcon />} onClick={fetchEnrollments} disabled={!selectedSportId || enrollmentsLoading}>Load Enrollments</Button>
             {enrollments.length > 0 && (
-              <Button variant="outlined" onClick={handleMarkAttendance}>Mark Attendance</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} onClick={handleMarkAttendance}>Mark Attendance</Button>
             )}
           </Box>
           {enrollmentsLoading ? <Typography>Loading...</Typography> : (
             <TableContainer>
               <Table size="small">
-                <TableHead>
+                <TableHead sx={{ bgcolor: S.TH_BG }}>
                   <TableRow>
                     <TableCell>Enrollment ID</TableCell>
                     <TableCell>Student ID</TableCell>
@@ -364,14 +364,14 @@ export function SportsManagement() {
                 </TableHead>
                 <TableBody>
                   {enrollments.length === 0 ? (
-                    <TableRow><TableCell colSpan={4} align="center">Select a sport and click Load Enrollments</TableCell></TableRow>
+                    <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>Select a sport and click Load Enrollments</TableCell></TableRow>
                   ) : (
                     enrollments.map((e: any) => (
-                      <TableRow key={e.enrollmentId ?? e.id}>
-                        <TableCell>{e.enrollmentId ?? e.id}</TableCell>
-                        <TableCell>{e.studentId}</TableCell>
-                        <TableCell>{e.attendanceCount ?? 0} / {e.totalSessions ?? 0}</TableCell>
-                        <TableCell>
+                      <TableRow key={e.enrollmentId ?? e.id} sx={S.TR_HOVER}>
+                        <TableCell sx={S.TD}>{e.enrollmentId ?? e.id}</TableCell>
+                        <TableCell sx={S.TD}>{e.studentId}</TableCell>
+                        <TableCell sx={S.TD}>{e.attendanceCount ?? 0} / {e.totalSessions ?? 0}</TableCell>
+                        <TableCell sx={S.TD}>
                           <input
                             type="checkbox"
                             checked={attendancePresence[e.enrollmentId ?? e.id] ?? false}
@@ -390,7 +390,7 @@ export function SportsManagement() {
         <TabPanel value={tabValue} index={5}>
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
             <TextField size="small" label="Student ID" value={historyStudentId} onChange={(e) => setHistoryStudentId(e.target.value)} placeholder="Student ID" sx={{ width: 140 }} />
-            <Button variant="contained" startIcon={<HistoryIcon />} onClick={fetchStudentHistory} disabled={!historyStudentId || historyLoading}>Load History</Button>
+            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<HistoryIcon />} onClick={fetchStudentHistory} disabled={!historyStudentId || historyLoading}>Load History</Button>
           </Box>
           {historyLoading && <Typography>Loading...</Typography>}
           {studentHistory && !historyLoading && (
@@ -399,13 +399,13 @@ export function SportsManagement() {
                 <Box>
                   <Typography variant="subtitle1" fontWeight={600}>Enrollments</Typography>
                   <TableContainer><Table size="small">
-                    <TableHead><TableRow><TableCell>Sport</TableCell><TableCell>Status</TableCell><TableCell>Attendance</TableCell></TableRow></TableHead>
+                    <TableHead sx={{ bgcolor: S.TH_BG }}><TableRow><TableCell>Sport</TableCell><TableCell>Status</TableCell><TableCell>Attendance</TableCell></TableRow></TableHead>
                     <TableBody>
                       {studentHistory.enrollments.map((e: any) => (
-                        <TableRow key={e.enrollmentId ?? e.id}>
-                          <TableCell>{e.Sport?.name ?? e.sportId}</TableCell>
-                          <TableCell><Chip label={e.status} size="small" /></TableCell>
-                          <TableCell>{e.attendanceCount ?? 0} / {e.totalSessions ?? 0}</TableCell>
+                        <TableRow key={e.enrollmentId ?? e.id} sx={S.TR_HOVER}>
+                          <TableCell sx={S.TD}>{e.Sport?.name ?? e.sportId}</TableCell>
+                          <TableCell sx={S.TD}><Chip label={e.status} size="small" /></TableCell>
+                          <TableCell sx={S.TD}>{e.attendanceCount ?? 0} / {e.totalSessions ?? 0}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -416,10 +416,10 @@ export function SportsManagement() {
                 <Box>
                   <Typography variant="subtitle1" fontWeight={600}>Achievements</Typography>
                   <TableContainer><Table size="small">
-                    <TableHead><TableRow><TableCell>Achievement</TableCell><TableCell>Date</TableCell></TableRow></TableHead>
+                    <TableHead sx={{ bgcolor: S.TH_BG }}><TableRow><TableCell>Achievement</TableCell><TableCell>Date</TableCell></TableRow></TableHead>
                     <TableBody>
                       {studentHistory.achievements.map((a: any, i: number) => (
-                        <TableRow key={i}><TableCell>{a.achievement ?? a.description}</TableCell><TableCell>{a.date ? new Date(a.date).toLocaleDateString() : '-'}</TableCell></TableRow>
+                        <TableRow key={i} sx={S.TR_HOVER}><TableCell sx={S.TD}>{a.achievement ?? a.description}</TableCell><TableCell sx={S.TD}>{a.date ? new Date(a.date).toLocaleDateString() : '-'}</TableCell></TableRow>
                       ))}
                     </TableBody>
                   </Table></TableContainer>
@@ -486,7 +486,7 @@ export function SportsManagement() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">Submit</Button>
+          <Button onClick={handleSubmit} variant="contained" sx={S.BTN_PRIMARY}>Submit</Button>
         </DialogActions>
       </Dialog>
 
@@ -504,7 +504,7 @@ export function SportsManagement() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEnrollDialog(false)}>Cancel</Button>
-          <Button onClick={handleEnroll} variant="contained" disabled={!enrollForm.studentId}>Enroll</Button>
+          <Button onClick={handleEnroll} variant="contained" sx={S.BTN_PRIMARY} disabled={!enrollForm.studentId}>Enroll</Button>
         </DialogActions>
       </Dialog>
     </Box>

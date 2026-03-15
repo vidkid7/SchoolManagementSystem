@@ -243,14 +243,14 @@ export const BackupManagement = () => {
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
-            variant="outlined"
+            variant="outlined" sx={S.BTN_OUTLINE}
             startIcon={<SettingsIcon />}
             onClick={() => setConfigDialogOpen(true)}
           >
             Configuration / कन्फिगरेसन
           </Button>
           <Button
-            variant="contained"
+            variant="contained" sx={S.BTN_PRIMARY}
             startIcon={<BackupIcon />}
             onClick={handleCreateBackup}
             disabled={creating}
@@ -348,7 +348,7 @@ export const BackupManagement = () => {
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
-              variant="outlined"
+              variant="outlined" sx={S.BTN_OUTLINE}
               size="small"
               startIcon={<RefreshIcon />}
               onClick={fetchBackups}
@@ -357,7 +357,7 @@ export const BackupManagement = () => {
               Refresh / ताजा गर्नुहोस्
             </Button>
             <Button
-              variant="outlined"
+              variant="outlined" sx={S.BTN_OUTLINE}
               size="small"
               startIcon={<DeleteIcon />}
               onClick={handleCleanupBackups}
@@ -371,7 +371,7 @@ export const BackupManagement = () => {
         <Divider />
         <TableContainer>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
                 <TableCell>Filename / फाइलनाम</TableCell>
                 <TableCell>Size / आकार</TableCell>
@@ -382,14 +382,14 @@ export const BackupManagement = () => {
             </TableHead>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={5} align="center">
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={5} align="center" sx={S.TD}>
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : backups.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} align="center">
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={5} align="center" sx={S.TD}>
                     <Typography color="text.secondary">
                       No backups found / कुनै ब्याकअप फेला परेन
                     </Typography>
@@ -397,15 +397,15 @@ export const BackupManagement = () => {
                 </TableRow>
               ) : (
                 backups.map((backup) => (
-                  <TableRow key={backup.filename} hover>
-                    <TableCell>
+                  <TableRow key={backup.filename} hover sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>
                       <Typography variant="body2" fontFamily="monospace">
                         {backup.filename}
                       </Typography>
                     </TableCell>
-                    <TableCell>{formatBytes(backup.size)}</TableCell>
-                    <TableCell>{formatDate(backup.createdAt)}</TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>{formatBytes(backup.size)}</TableCell>
+                    <TableCell sx={S.TD}>{formatDate(backup.createdAt)}</TableCell>
+                    <TableCell sx={S.TD}>
                       {backup.isValid === true && (
                         <Chip
                           icon={<CheckCircleIcon />}
@@ -431,7 +431,7 @@ export const BackupManagement = () => {
                         />
                       )}
                     </TableCell>
-                    <TableCell align="right">
+                    <TableCell align="right" sx={S.TD}>
                       <IconButton
                         size="small"
                         title="Verify Backup"
@@ -496,7 +496,7 @@ export const BackupManagement = () => {
             Cancel / रद्द गर्नुहोस्
           </Button>
           <Button
-            variant="contained"
+            variant="contained" sx={S.BTN_PRIMARY}
             color="error"
             onClick={handleRestoreBackup}
             disabled={restoring}

@@ -217,7 +217,7 @@ export function PaymentGateways() {
                   </Box>
                   <Box sx={{ display: 'flex', gap: 1 }}>
                     <Button
-                      variant="contained"
+                      variant="contained" sx={S.BTN_PRIMARY}
                       size="small"
                       fullWidth
                       onClick={() => handleSaveConfig(key)}
@@ -226,7 +226,7 @@ export function PaymentGateways() {
                       {t('common.save')}
                     </Button>
                     <Button
-                      variant="outlined"
+                      variant="outlined" sx={S.BTN_OUTLINE}
                       size="small"
                       fullWidth
                       onClick={() => handleTestConnection(key)}
@@ -267,7 +267,7 @@ export function PaymentGateways() {
         <Divider sx={{ mb: 2 }} />
         <TableContainer>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
                 <TableCell>{t('finance.transactionId')}</TableCell>
                 <TableCell>{t('finance.gateway')}</TableCell>
@@ -279,28 +279,28 @@ export function PaymentGateways() {
             </TableHead>
             <TableBody>
               {transactions.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={6} align="center" sx={S.TD}>
                     {t('finance.noTransactions')}
                   </TableCell>
                 </TableRow>
               ) : (
                 transactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell>{transaction.transactionId}</TableCell>
-                    <TableCell>
+                  <TableRow key={transaction.id} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{transaction.transactionId}</TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip label={transaction.gateway} size="small" />
                     </TableCell>
-                    <TableCell>{transaction.studentName}</TableCell>
-                    <TableCell align="right">NPR {transaction.amount.toLocaleString()}</TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>{transaction.studentName}</TableCell>
+                    <TableCell align="right" sx={S.TD}>NPR {transaction.amount.toLocaleString()}</TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip
                         label={transaction.status}
                         color={transaction.status === 'success' ? 'success' : 'error'}
                         size="small"
                       />
                     </TableCell>
-                    <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
+                    <TableCell sx={S.TD}>{new Date(transaction.date).toLocaleDateString()}</TableCell>
                   </TableRow>
                 ))
               )}

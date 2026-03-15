@@ -166,13 +166,13 @@ export const InvoiceList = () => {
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
-            variant="outlined"
+            variant="outlined" sx={S.BTN_OUTLINE}
             onClick={() => navigate(`/finance/invoices/bulk-generate`)}
           >
             {t('finance.generateInvoices')}
           </Button>
           <Button
-            variant="contained"
+            variant="contained" sx={S.BTN_PRIMARY}
             startIcon={<AddIcon />}
             onClick={() => navigate(`/finance/invoices/create`)}
           >
@@ -212,7 +212,7 @@ export const InvoiceList = () => {
           </FormControl>
 
           <Button
-            variant="outlined"
+            variant="outlined" sx={S.BTN_OUTLINE}
             onClick={() => {
               setSearch('');
               setStatusFilter('');
@@ -226,7 +226,7 @@ export const InvoiceList = () => {
       {/* Invoice Table */}
       <TableContainer component={Paper} sx={{ ...S.GLASS }}>
         <Table>
-          <TableHead>
+          <TableHead sx={{ bgcolor: S.TH_BG }}>
             <TableRow>
               <TableCell>{t('finance.invoices')}</TableCell>
               <TableCell>{t('finance.studentName')}</TableCell>
@@ -241,26 +241,26 @@ export const InvoiceList = () => {
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={9} align="center">
+              <TableRow sx={S.TR_HOVER}>
+                <TableCell colSpan={9} align="center" sx={S.TD}>
                   {t('common.loading')}
                 </TableCell>
               </TableRow>
             ) : (invoices || []).length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={9} align="center">
+              <TableRow sx={S.TR_HOVER}>
+                <TableCell colSpan={9} align="center" sx={S.TD}>
                   {t('finance.noInvoices')}
                 </TableCell>
               </TableRow>
             ) : (
               (invoices || []).map((invoice, index) => (
-                <TableRow key={invoice.invoiceId || invoice.invoice_id || invoice.id || invoice.invoice_number || index} hover>
-                  <TableCell>{invoice.invoice_number}</TableCell>
-                  <TableCell>{invoice.student_name}</TableCell>
-                  <TableCell>{invoice.class_name}</TableCell>
-                  <TableCell align="right">रू {(invoice.total_amount || 0).toLocaleString()}</TableCell>
-                  <TableCell align="right">रू {(invoice.paid_amount || 0).toLocaleString()}</TableCell>
-                  <TableCell align="right">
+                <TableRow key={invoice.invoiceId || invoice.invoice_id || invoice.id || invoice.invoice_number || index} hover sx={S.TR_HOVER}>
+                  <TableCell sx={S.TD}>{invoice.invoice_number}</TableCell>
+                  <TableCell sx={S.TD}>{invoice.student_name}</TableCell>
+                  <TableCell sx={S.TD}>{invoice.class_name}</TableCell>
+                  <TableCell align="right" sx={S.TD}>रू {(invoice.total_amount || 0).toLocaleString()}</TableCell>
+                  <TableCell align="right" sx={S.TD}>रू {(invoice.paid_amount || 0).toLocaleString()}</TableCell>
+                  <TableCell align="right" sx={S.TD}>
                     <Typography
                       color={invoice.balance > 0 ? 'error' : 'success'}
                       fontWeight="bold"
@@ -268,15 +268,15 @@ export const InvoiceList = () => {
                       रू {(invoice.balance || 0).toLocaleString()}
                     </Typography>
                   </TableCell>
-                  <TableCell>{invoice.due_date}</TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>{invoice.due_date}</TableCell>
+                  <TableCell sx={S.TD}>
                     <Chip
                       label={t(`finance.${invoice.status}`)}
                       color={getStatusColor(invoice.status)}
                       size="small"
                     />
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell align="right" sx={S.TD}>
                     {invoice.balance > 0 && (
                       <>
                         <IconButton
@@ -375,7 +375,7 @@ export const InvoiceList = () => {
             {t('common.cancel')}
           </Button>
           <Button
-            variant="contained"
+            variant="contained" sx={S.BTN_PRIMARY}
             onClick={handlePaymentSubmit}
             disabled={!paymentAmount || parseFloat(paymentAmount) <= 0}
           >

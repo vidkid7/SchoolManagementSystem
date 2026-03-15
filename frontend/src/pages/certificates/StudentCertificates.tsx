@@ -151,7 +151,7 @@ const fetchCertificates = async () => {
       ) : (
         <TableContainer component={Paper}>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
                 <TableCell>Certificate No. / प्रमाणपत्र नं.</TableCell>
                 <TableCell>Type / प्रकार</TableCell>
@@ -162,13 +162,13 @@ const fetchCertificates = async () => {
             </TableHead>
             <TableBody>
               {displayedCertificates.map((cert) => (
-                <TableRow key={cert.id} hover>
-                  <TableCell>
+                <TableRow key={cert.id} hover sx={S.TR_HOVER}>
+                  <TableCell sx={S.TD}>
                     <Typography variant="body2" fontWeight="bold">
                       {cert.certificateNumber}
                     </Typography>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Typography variant="body2">
                       {getTypeLabel(cert.type)}
                     </Typography>
@@ -178,21 +178,21 @@ const fetchCertificates = async () => {
                       </Typography>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     {cert.issuedDateBS} BS
                     <br />
                     <Typography variant="caption" color="text.secondary">
                       {cert.issuedDate} AD
                     </Typography>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Chip
                       label={cert.status}
                       color={getStatusColor(cert.status)}
                       size="small"
                     />
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell align="right" sx={S.TD}>
                     <IconButton
                       size="small"
                       title="View Details"
@@ -305,7 +305,7 @@ const fetchCertificates = async () => {
                 </Button>
                 {selectedCertificate.pdfUrl && selectedCertificate.status === 'active' && (
                   <Button
-                    variant="contained"
+                    variant="contained" sx={S.BTN_PRIMARY}
                     startIcon={<DownloadIcon />}
                     onClick={() => {
                       handleDownload(selectedCertificate);

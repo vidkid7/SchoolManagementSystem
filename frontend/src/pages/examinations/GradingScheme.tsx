@@ -259,7 +259,7 @@ export function GradingScheme() {
 
         <TableContainer>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
                 <TableCell>{t('examinations.grade')}</TableCell>
                 <TableCell>{t('examinations.percentageRange')}</TableCell>
@@ -269,21 +269,21 @@ export function GradingScheme() {
             </TableHead>
             <TableBody>
               {displayGrades.map((grade, index) => (
-                <TableRow key={index}>
-                  <TableCell>
+                <TableRow key={index} sx={S.TR_HOVER}>
+                  <TableCell sx={S.TD}>
                     <Typography variant="h6" fontWeight={600}>
                       {grade.grade}
                     </Typography>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     {grade.minPercentage}% - {grade.maxPercentage}%
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Typography fontWeight={600}>
                       {grade.gradePoint.toFixed(1)}
                     </Typography>
                   </TableCell>
-                  <TableCell>{grade.description}</TableCell>
+                  <TableCell sx={S.TD}>{grade.description}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -298,7 +298,7 @@ export function GradingScheme() {
           </Typography>
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell>{t('common.name')}</TableCell>
                   <TableCell>{t('common.description')}</TableCell>
@@ -308,13 +308,13 @@ export function GradingScheme() {
               </TableHead>
               <TableBody>
                 {schemes.map((scheme) => (
-                  <TableRow key={scheme.id}>
-                    <TableCell>{scheme.name}</TableCell>
-                    <TableCell>{scheme.description || '-'}</TableCell>
-                    <TableCell>
+                  <TableRow key={scheme.id} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{scheme.name}</TableCell>
+                    <TableCell sx={S.TD}>{scheme.description || '-'}</TableCell>
+                    <TableCell sx={S.TD}>
                       {scheme.isDefault ? t('examinations.default') : scheme.isActive ? t('common.active') : t('examinations.inactive')}
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" sx={S.TD}>
                       <IconButton
                         size="small"
                         color="primary"
@@ -373,7 +373,7 @@ export function GradingScheme() {
           </Typography>
           <TableContainer>
             <Table size="small">
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell>{t('examinations.grade')}</TableCell>
                   <TableCell>{t('examinations.minPercentage')}</TableCell>
@@ -384,12 +384,12 @@ export function GradingScheme() {
               </TableHead>
               <TableBody>
                 {formData.grades.map((grade, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{grade.grade}</TableCell>
-                    <TableCell>{grade.minPercentage}</TableCell>
-                    <TableCell>{grade.maxPercentage}</TableCell>
-                    <TableCell>{grade.gradePoint}</TableCell>
-                    <TableCell>{grade.description}</TableCell>
+                  <TableRow key={index} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{grade.grade}</TableCell>
+                    <TableCell sx={S.TD}>{grade.minPercentage}</TableCell>
+                    <TableCell sx={S.TD}>{grade.maxPercentage}</TableCell>
+                    <TableCell sx={S.TD}>{grade.gradePoint}</TableCell>
+                    <TableCell sx={S.TD}>{grade.description}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

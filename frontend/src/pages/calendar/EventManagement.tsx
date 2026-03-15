@@ -38,7 +38,7 @@ import {
   Switch,
   useTheme,
 } from '@mui/material';
-import { C, useAdminStyles } from '../../theme/designTokens';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -357,7 +357,7 @@ export const EventManagement = () => {
             </Select>
           </FormControl>
           <Button
-            variant="outlined"
+            variant="outlined" sx={S.BTN_OUTLINE}
             startIcon={<RefreshIcon />}
             onClick={fetchEvents}
           >
@@ -368,7 +368,7 @@ export const EventManagement = () => {
 
       <TableContainer component={Paper} sx={S.GLASS}>
         <Table>
-          <TableHead>
+          <TableHead sx={{ bgcolor: S.TH_BG }}>
             <TableRow>
               <TableCell>ID</TableCell>
               <TableCell>{isNepali ? 'शीर्षक' : 'Title'}</TableCell>
@@ -382,22 +382,22 @@ export const EventManagement = () => {
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center">
+              <TableRow sx={S.TR_HOVER}>
+                <TableCell colSpan={8} align="center" sx={S.TD}>
                   <CircularProgress />
                 </TableCell>
               </TableRow>
             ) : events.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center">
+              <TableRow sx={S.TR_HOVER}>
+                <TableCell colSpan={8} align="center" sx={S.TD}>
                   {isNepali ? 'कुनै कार्यक्रम फेला परेन' : 'No events found'}
                 </TableCell>
               </TableRow>
             ) : (
               events.map((event) => (
-                <TableRow key={event.eventId} hover>
-                  <TableCell>{event.eventId}</TableCell>
-                  <TableCell>
+                <TableRow key={event.eventId} hover sx={S.TR_HOVER}>
+                  <TableCell sx={S.TD}>{event.eventId}</TableCell>
+                  <TableCell sx={S.TD}>
                     <Box>
                       <Typography variant="body2">
                         {isNepali && event.titleNp ? event.titleNp : event.title}
@@ -407,33 +407,33 @@ export const EventManagement = () => {
                       )}
                     </Box>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Chip
                       label={event.category}
                       size="small"
                       color={getCategoryColor(event.category) as any}
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     {event.startDateBS && `${event.startDateBS} BS`}
                     <br />
                     <Typography variant="caption" color="text.secondary">
                       {new Date(event.startDate).toLocaleDateString()}
                     </Typography>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     {event.startTime || '-'}
                     {event.endTime && ` - ${event.endTime}`}
                   </TableCell>
-                  <TableCell>{event.venue || '-'}</TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>{event.venue || '-'}</TableCell>
+                  <TableCell sx={S.TD}>
                     <Chip
                       label={event.status}
                       size="small"
                       color={getStatusColor(event.status) as any}
                     />
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell align="right" sx={S.TD}>
                     <IconButton
                       size="small"
                       title="Edit"

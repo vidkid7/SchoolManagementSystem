@@ -263,7 +263,7 @@ export function ExamList() {
       ) : (
         <TableContainer component={Paper} sx={{ ...S.GLASS }}>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
                 <TableCell>{t('examinations.examName')}</TableCell>
                 <TableCell>{t('examinations.type')}</TableCell>
@@ -277,8 +277,8 @@ export function ExamList() {
             </TableHead>
             <TableBody>
               {exams.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} align="center">
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={8} align="center" sx={S.TD}>
                     <Typography color="text.secondary">
                       {t('examinations.noExaminationsFound')}
                     </Typography>
@@ -286,23 +286,23 @@ export function ExamList() {
                 </TableRow>
               ) : (
                 exams.map((exam) => (
-                  <TableRow key={exam.examId} hover>
-                    <TableCell>{exam.name}</TableCell>
-                    <TableCell>{examTypes[exam.type] || exam.type}</TableCell>
-                    <TableCell>{exam.className}</TableCell>
-                    <TableCell>{exam.subjectName}</TableCell>
-                    <TableCell>
+                  <TableRow key={exam.examId} hover sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{exam.name}</TableCell>
+                    <TableCell sx={S.TD}>{examTypes[exam.type] || exam.type}</TableCell>
+                    <TableCell sx={S.TD}>{exam.className}</TableCell>
+                    <TableCell sx={S.TD}>{exam.subjectName}</TableCell>
+                    <TableCell sx={S.TD}>
                       {new Date(exam.examDate).toLocaleDateString()}
                     </TableCell>
-                    <TableCell>{exam.fullMarks}</TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>{exam.fullMarks}</TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip
                         label={statusLabels[exam.status] || exam.status}
                         color={statusColors[exam.status] || 'default'}
                         size="small"
                       />
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" sx={S.TD}>
                       <IconButton
                         size="small"
                         onClick={(e) => handleMenuOpen(e, exam)}

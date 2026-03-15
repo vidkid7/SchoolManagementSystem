@@ -34,6 +34,8 @@ import {
   Person as PersonIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { useTheme } from '@mui/material';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface Student {
   studentId: number;
@@ -62,6 +64,8 @@ interface ClassInfo {
 }
 
 export function ClassRoster() {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const navigate = useSlugNavigate();
   const [students, setStudents] = useState<Student[]>([]);
   const [classInfo, setClassInfo] = useState<ClassInfo | null>(null);
@@ -167,7 +171,7 @@ export function ClassRoster() {
 
       <TableContainer component={Paper}>
         <Table>
-          <TableHead>
+          <TableHead sx={{ bgcolor: S.TH_BG }}>
             <TableRow>
               <TableCell>Roll No</TableCell>
               <TableCell>Student</TableCell>
@@ -181,20 +185,20 @@ export function ClassRoster() {
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center">Loading...</TableCell>
+              <TableRow sx={S.TR_HOVER}>
+                <TableCell colSpan={8} align="center" sx={S.TD}>Loading...</TableCell>
               </TableRow>
             ) : filteredStudents.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center">
+              <TableRow sx={S.TR_HOVER}>
+                <TableCell colSpan={8} align="center" sx={S.TD}>
                   No students found
                 </TableCell>
               </TableRow>
             ) : (
               filteredStudents.map((student) => (
-                <TableRow key={student.studentId} hover>
-                  <TableCell>{student.rollNumber}</TableCell>
-                  <TableCell>
+                <TableRow key={student.studentId} hover sx={S.TR_HOVER}>
+                  <TableCell sx={S.TD}>{student.rollNumber}</TableCell>
+                  <TableCell sx={S.TD}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Avatar sx={{ width: 32, height: 32 }}>
                         {student.firstNameEn[0]}
@@ -206,14 +210,14 @@ export function ClassRoster() {
                       </Box>
                     </Box>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Chip
                       label={student.gender}
                       size="small"
                       color={student.gender === 'male' ? 'info' : 'secondary'}
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     {student.phone && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <PhoneIcon fontSize="small" color="action" />
@@ -221,7 +225,7 @@ export function ClassRoster() {
                       </Box>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     {student.fatherPhone && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <PhoneIcon fontSize="small" color="action" />
@@ -229,7 +233,7 @@ export function ClassRoster() {
                       </Box>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Chip
                       label={`${(student.attendanceRate || 0).toFixed(1)}%`}
                       size="small"
@@ -242,7 +246,7 @@ export function ClassRoster() {
                       }
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Chip
                       label={student.averageGrade ? `${student.averageGrade.toFixed(1)}%` : 'N/A'}
                       size="small"
@@ -255,7 +259,7 @@ export function ClassRoster() {
                       }
                     />
                   </TableCell>
-                  <TableCell align="center">
+                  <TableCell align="center" sx={S.TD}>
                     <IconButton
                       size="small"
                       onClick={() => navigate(`/students/${student.studentId}`)}

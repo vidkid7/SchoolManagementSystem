@@ -306,7 +306,7 @@ export const NotificationCenter = () => {
           Notification Center / सूचना केन्द्र
         </Typography>
         <Button
-          variant="outlined"
+          variant="outlined" sx={S.BTN_OUTLINE}
           startIcon={<RefreshIcon />}
           onClick={fetchHistory}
         >
@@ -401,7 +401,7 @@ export const NotificationCenter = () => {
                   />
                   <Box sx={{ display: 'flex', gap: 2 }}>
                     <Button
-                      variant="contained"
+                      variant="contained" sx={S.BTN_PRIMARY}
                       startIcon={<SendIcon />}
                       onClick={handleSendSMS}
                       disabled={loading || !smsForm.recipients || !smsForm.message}
@@ -409,7 +409,7 @@ export const NotificationCenter = () => {
                       Send SMS
                     </Button>
                     <Button
-                      variant="outlined"
+                      variant="outlined" sx={S.BTN_OUTLINE}
                       onClick={handleSendBulkSMS}
                       disabled={loading || !smsForm.message}
                     >
@@ -487,7 +487,7 @@ export const NotificationCenter = () => {
                 InputLabelProps={{ shrink: true }}
               />
               <Button
-                variant="contained"
+                variant="contained" sx={S.BTN_PRIMARY}
                 startIcon={<SendIcon />}
                 onClick={handleSendEmail}
                 disabled={loading || !emailForm.recipients || !emailForm.subject || !emailForm.body}
@@ -545,7 +545,7 @@ export const NotificationCenter = () => {
                 InputLabelProps={{ shrink: true }}
               />
               <Button
-                variant="contained"
+                variant="contained" sx={S.BTN_PRIMARY}
                 startIcon={<SendIcon />}
                 onClick={handleSendPush}
                 disabled={loading || !pushForm.title || !pushForm.message || pushForm.targetRoles.length === 0}
@@ -561,7 +561,7 @@ export const NotificationCenter = () => {
       <TabPanel value={tabValue} index={3}>
         <TableContainer component={Paper}>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
                 <TableCell>Type</TableCell>
                 <TableCell>Recipient</TableCell>
@@ -573,14 +573,14 @@ export const NotificationCenter = () => {
             </TableHead>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={6} align="center" sx={S.TD}>
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : history.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={6} align="center" sx={S.TD}>
                     No notification history
                   </TableCell>
                 </TableRow>
@@ -588,30 +588,30 @@ export const NotificationCenter = () => {
                 history
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((item) => (
-                    <TableRow key={item.id} hover>
-                      <TableCell>
+                    <TableRow key={item.id} hover sx={S.TR_HOVER}>
+                      <TableCell sx={S.TD}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           {getTypeIcon(item.type)}
                           {item.type.toUpperCase()}
                         </Box>
                       </TableCell>
-                      <TableCell>{item.recipient}</TableCell>
-                      <TableCell>
+                      <TableCell sx={S.TD}>{item.recipient}</TableCell>
+                      <TableCell sx={S.TD}>
                         <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
                           {item.subject || item.message}
                         </Typography>
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={S.TD}>
                         <Chip
                           label={item.status}
                           color={getStatusColor(item.status)}
                           size="small"
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={S.TD}>
                         {new Date(item.sentAt).toLocaleString()}
                       </TableCell>
-                      <TableCell align="right">
+                      <TableCell align="right" sx={S.TD}>
                         {item.status === 'failed' && (
                           <Typography variant="caption" color="error">
                             {item.error}
@@ -738,7 +738,7 @@ export const NotificationCenter = () => {
             </Card>
           </Grid>
           <Grid item xs={12}>
-            <Button variant="contained" onClick={handleSaveSettings}>
+            <Button variant="contained" sx={S.BTN_PRIMARY} onClick={handleSaveSettings}>
               Save Settings
             </Button>
           </Grid>

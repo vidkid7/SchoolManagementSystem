@@ -412,7 +412,7 @@ export function FinancialReports() {
                         onClick={handleDownloadPDF}
                         disabled={loading}
                         fullWidth
-                        sx={{
+                        sx={{ ...S.BTN_OUTLINE, 
                           borderColor: C.primary,
                           color: C.primary,
                           '&:hover': {
@@ -429,7 +429,7 @@ export function FinancialReports() {
                         onClick={handlePrint}
                         disabled={loading}
                         fullWidth
-                        sx={{
+                        sx={{ ...S.BTN_OUTLINE, 
                           borderColor: C.primary,
                           color: C.primary,
                           '&:hover': {
@@ -482,7 +482,7 @@ export function FinancialReports() {
                     </Typography>
                     <TableContainer sx={{ mt: 2, border: `1px solid ${alpha(C.primary, 0.1)}`, borderRadius: R.lg }}>
                       <Table>
-                        <TableHead sx={{ bgcolor: alpha(C.primary, 0.1) }}>
+                        <TableHead sx={{ bgcolor: S.TH_BG }}>
                           <TableRow>
                             {Object.keys(reportData.details[0]).map((key) => (
                               <TableCell key={key} sx={{ fontWeight: 600, color: C.primary }}>
@@ -495,13 +495,11 @@ export function FinancialReports() {
                           {reportData.details.map((row, index) => (
                             <TableRow 
                               key={index}
-                              sx={{ 
-                                '&:hover': { bgcolor: alpha(C.primary, 0.05) },
-                                '&:nth-of-type(even)': { bgcolor: alpha(theme.palette.background.paper, 0.5) },
-                              }}
+                              sx={{ ...S.TR_HOVER, '&:hover': { bgcolor: alpha(C.primary, 0.05) },
+                                '&:nth-of-type(even)': { bgcolor: alpha(theme.palette.background.paper, 0.5) }, }}
                             >
                               {Object.values(row).map((value: any, i) => (
-                                <TableCell key={i}>
+                                <TableCell key={i} sx={S.TD}>
                                   {typeof value === 'number' ? value.toLocaleString() : value}
                                 </TableCell>
                               ))}
@@ -589,7 +587,7 @@ export function FinancialReports() {
                 size="medium" 
                 startIcon={<ReportIcon />}
                 onClick={() => handleQuickReport('today')}
-                sx={{
+                sx={{ ...S.BTN_OUTLINE, 
                   borderColor: C.primary,
                   color: C.primary,
                   '&:hover': {
@@ -605,7 +603,7 @@ export function FinancialReports() {
                 size="medium" 
                 startIcon={<ReportIcon />}
                 onClick={() => handleQuickReport('week')}
-                sx={{
+                sx={{ ...S.BTN_OUTLINE, 
                   borderColor: C.primary,
                   color: C.primary,
                   '&:hover': {
@@ -621,7 +619,7 @@ export function FinancialReports() {
                 size="medium" 
                 startIcon={<ReportIcon />}
                 onClick={() => handleQuickReport('month')}
-                sx={{
+                sx={{ ...S.BTN_OUTLINE, 
                   borderColor: C.primary,
                   color: C.primary,
                   '&:hover': {
@@ -637,7 +635,7 @@ export function FinancialReports() {
                 size="medium" 
                 startIcon={<ReportIcon />}
                 onClick={() => handleQuickReport('year')}
-                sx={{
+                sx={{ ...S.BTN_OUTLINE, 
                   borderColor: C.primary,
                   color: C.primary,
                   '&:hover': {

@@ -126,7 +126,7 @@ export function RefundManagement() {
           {t('finance.refundManagement')}
         </Typography>
         <Button
-          variant="contained"
+          variant="contained" sx={S.BTN_PRIMARY}
           startIcon={<RefundIcon />}
           onClick={() => setOpenDialog(true)}
         >
@@ -140,7 +140,7 @@ export function RefundManagement() {
       <Paper sx={{ ...S.GLASS }}>
         <TableContainer>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
                 <TableCell>{t('finance.refundId')}</TableCell>
                 <TableCell>{t('finance.receiptNumber')}</TableCell>
@@ -154,32 +154,32 @@ export function RefundManagement() {
             </TableHead>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={8} align="center">{t('common.loading')}</TableCell>
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={8} align="center" sx={S.TD}>{t('common.loading')}</TableCell>
                 </TableRow>
               ) : refunds.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} align="center">
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={8} align="center" sx={S.TD}>
                     {t('finance.noRefunds')}
                   </TableCell>
                 </TableRow>
               ) : (
                 refunds.map((refund) => (
-                  <TableRow key={refund.refundId}>
-                    <TableCell>#{refund.refundId}</TableCell>
-                    <TableCell>{refund.receiptNumber}</TableCell>
-                    <TableCell>{refund.studentName}</TableCell>
-                    <TableCell align="right">NPR {refund.amount.toLocaleString()}</TableCell>
-                    <TableCell>{refund.reason}</TableCell>
-                    <TableCell>{new Date(refund.requestedDate).toLocaleDateString()}</TableCell>
-                    <TableCell>
+                  <TableRow key={refund.refundId} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>#{refund.refundId}</TableCell>
+                    <TableCell sx={S.TD}>{refund.receiptNumber}</TableCell>
+                    <TableCell sx={S.TD}>{refund.studentName}</TableCell>
+                    <TableCell align="right" sx={S.TD}>NPR {refund.amount.toLocaleString()}</TableCell>
+                    <TableCell sx={S.TD}>{refund.reason}</TableCell>
+                    <TableCell sx={S.TD}>{new Date(refund.requestedDate).toLocaleDateString()}</TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip
                         label={refund.status}
                         color={getStatusColor(refund.status)}
                         size="small"
                       />
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" sx={S.TD}>
                       <IconButton
                         size="small"
                         title={t('finance.viewReceipt')}
@@ -247,7 +247,7 @@ export function RefundManagement() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>{t('common.cancel')}</Button>
-          <Button onClick={handleProcessRefund} variant="contained">
+          <Button onClick={handleProcessRefund} variant="contained" sx={S.BTN_PRIMARY}>
             {t('finance.processRefund')}
           </Button>
         </DialogActions>

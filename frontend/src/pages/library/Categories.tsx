@@ -138,7 +138,7 @@ export function Categories() {
       <Paper sx={S.GLASS}>
         <TableContainer>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
                 <TableCell>{t('library.categoryName')}</TableCell>
                 <TableCell>{t('library.description')}</TableCell>
@@ -148,22 +148,22 @@ export function Categories() {
             </TableHead>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={4} align="center">{t('library.loading')}</TableCell>
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={4} align="center" sx={S.TD}>{t('library.loading')}</TableCell>
                 </TableRow>
               ) : categories.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} align="center">
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={4} align="center" sx={S.TD}>
                     {t('library.noCategoriesFound')}
                   </TableCell>
                 </TableRow>
               ) : (
                 categories.map((category) => (
-                  <TableRow key={category.categoryId}>
-                    <TableCell>{category.name}</TableCell>
-                    <TableCell>{category.description || '-'}</TableCell>
-                    <TableCell align="center">{category.bookCount}</TableCell>
-                    <TableCell align="center">
+                  <TableRow key={category.categoryId} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{category.name}</TableCell>
+                    <TableCell sx={S.TD}>{category.description || '-'}</TableCell>
+                    <TableCell align="center" sx={S.TD}>{category.bookCount}</TableCell>
+                    <TableCell align="center" sx={S.TD}>
                       <IconButton
                         size="small"
                         onClick={() => handleOpenDialog(category)}
@@ -215,7 +215,7 @@ export function Categories() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>{t('library.cancel')}</Button>
-          <Button onClick={handleSubmit} variant="contained">
+          <Button onClick={handleSubmit} variant="contained" sx={S.BTN_PRIMARY}>
             {editingCategory ? t('library.update') : t('library.create')}
           </Button>
         </DialogActions>

@@ -488,7 +488,7 @@ export const StudentDetail = () => {
                 variant="outlined"
                 startIcon={<BackIcon />}
                 onClick={() => navigate('/students')}
-                sx={{ 
+                sx={{ ...S.BTN_OUTLINE,  
                   borderRadius: R.xl,
                   borderColor: 'rgba(255,255,255,0.3)',
                   color: 'white',
@@ -506,7 +506,7 @@ export const StudentDetail = () => {
                     variant="outlined"
                     startIcon={<TransferIcon />}
                     onClick={() => setTransferDialogOpen(true)}
-                    sx={{ 
+                    sx={{ ...S.BTN_OUTLINE,  
                       borderRadius: R.xl,
                       borderColor: 'rgba(255,255,255,0.3)',
                       color: 'white',
@@ -522,7 +522,7 @@ export const StudentDetail = () => {
                     variant="outlined"
                     startIcon={<GradeIcon />}
                     onClick={() => setPromoteDialogOpen(true)}
-                    sx={{ 
+                    sx={{ ...S.BTN_OUTLINE,  
                       borderRadius: R.xl,
                       borderColor: 'rgba(255,255,255,0.3)',
                       color: 'white',
@@ -540,7 +540,7 @@ export const StudentDetail = () => {
                 variant="outlined"
                 startIcon={<DocumentIcon />}
                 onClick={() => navigate(`/students/${id}/cv`)}
-                sx={{ 
+                sx={{ ...S.BTN_OUTLINE,  
                   borderRadius: R.xl,
                   borderColor: 'rgba(255,255,255,0.3)',
                   color: 'white',
@@ -556,7 +556,7 @@ export const StudentDetail = () => {
                 variant="contained"
                 startIcon={<EditIcon />}
                 onClick={() => navigate(`/students/${id}/edit`)}
-                sx={{ 
+                sx={{ ...S.BTN_PRIMARY,  
                   borderRadius: R.xl,
                   bgcolor: 'white',
                   color: theme.palette.primary.main,
@@ -685,7 +685,7 @@ export const StudentDetail = () => {
                 </Typography>
                 <TableContainer component={Paper} sx={{ borderRadius: R.md, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
                   <Table>
-                    <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.04) }}>
+                    <TableHead sx={{ bgcolor: S.TH_BG }}>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 600 }}>{t('attendance.date')}</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>{t('attendance.status')}</TableCell>
@@ -693,9 +693,9 @@ export const StudentDetail = () => {
                     </TableHead>
                     <TableBody>
                       {attendance.records?.slice(0, 10).map((record) => (
-                        <TableRow key={record.id} hover>
-                          <TableCell sx={{ fontWeight: 500 }}>{record.date}</TableCell>
-                          <TableCell>
+                        <TableRow key={record.id} hover sx={S.TR_HOVER}>
+                          <TableCell sx={{ ...S.TD, fontWeight: 500 }}>{record.date}</TableCell>
+                          <TableCell sx={S.TD}>
                             <Chip 
                               label={t(`attendance.${record.status}`)}
                               color={getStatusColor(record.status)}
@@ -734,7 +734,7 @@ export const StudentDetail = () => {
                 </Typography>
                 <TableContainer component={Paper} sx={{ borderRadius: R.md, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
                   <Table>
-                    <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.04) }}>
+                    <TableHead sx={{ bgcolor: S.TH_BG }}>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 600 }}>{t('examinations.examName')}</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>{t('examinations.subject')}</TableCell>
@@ -745,12 +745,12 @@ export const StudentDetail = () => {
                     </TableHead>
                     <TableBody>
                       {grades.grades?.slice(0, 10).map((grade) => (
-                        <TableRow key={grade.id} hover>
-                          <TableCell sx={{ fontWeight: 500 }}>{grade.examName}</TableCell>
-                          <TableCell>{grade.subjectName}</TableCell>
-                          <TableCell>{grade.fullMarks}</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>{grade.obtainedMarks}</TableCell>
-                          <TableCell>
+                        <TableRow key={grade.id} hover sx={S.TR_HOVER}>
+                          <TableCell sx={{ ...S.TD, fontWeight: 500 }}>{grade.examName}</TableCell>
+                          <TableCell sx={S.TD}>{grade.subjectName}</TableCell>
+                          <TableCell sx={S.TD}>{grade.fullMarks}</TableCell>
+                          <TableCell sx={{ ...S.TD, fontWeight: 600 }}>{grade.obtainedMarks}</TableCell>
+                          <TableCell sx={S.TD}>
                             <Chip label={grade.grade || '-'} size="small" sx={{ fontWeight: 600, borderRadius: R.lg }} />
                           </TableCell>
                         </TableRow>
@@ -784,7 +784,7 @@ export const StudentDetail = () => {
                 </Typography>
                 <TableContainer component={Paper} sx={{ borderRadius: R.md, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
                   <Table>
-                    <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.04) }}>
+                    <TableHead sx={{ bgcolor: S.TH_BG }}>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 600 }}>{t('finance.invoices')}</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>{t('finance.amount')}</TableCell>
@@ -794,11 +794,11 @@ export const StudentDetail = () => {
                     </TableHead>
                     <TableBody>
                       {fees.invoices?.slice(0, 10).map((invoice) => (
-                        <TableRow key={invoice.id} hover>
-                          <TableCell sx={{ fontWeight: 500 }}>{invoice.invoiceNumber}</TableCell>
-                          <TableCell>रू {invoice.amount}</TableCell>
-                          <TableCell>{invoice.dueDate}</TableCell>
-                          <TableCell>
+                        <TableRow key={invoice.id} hover sx={S.TR_HOVER}>
+                          <TableCell sx={{ ...S.TD, fontWeight: 500 }}>{invoice.invoiceNumber}</TableCell>
+                          <TableCell sx={S.TD}>रू {invoice.amount}</TableCell>
+                          <TableCell sx={S.TD}>{invoice.dueDate}</TableCell>
+                          <TableCell sx={S.TD}>
                             <Chip 
                               label={t(`finance.${invoice.status}`)}
                               color={getFeeStatusColor(invoice.status)}
@@ -939,7 +939,7 @@ export const StudentDetail = () => {
                 {certificates.certificates?.length > 0 ? (
                   <TableContainer component={Paper} sx={{ borderRadius: R.md, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
                     <Table>
-                      <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.04) }}>
+                      <TableHead sx={{ bgcolor: S.TH_BG }}>
                         <TableRow>
                           <TableCell sx={{ fontWeight: 600 }}>{t('certificates.certificateNumber')}</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>{t('certificates.certificateType')}</TableCell>
@@ -949,11 +949,11 @@ export const StudentDetail = () => {
                       </TableHead>
                       <TableBody>
                         {certificates.certificates.map((cert) => (
-                          <TableRow key={cert.id} hover>
-                            <TableCell sx={{ fontWeight: 500, fontFamily: 'monospace' }}>{cert.certificateNumber}</TableCell>
-                            <TableCell>{cert.type}</TableCell>
-                            <TableCell>{cert.issuedDate}</TableCell>
-                            <TableCell>
+                          <TableRow key={cert.id} hover sx={S.TR_HOVER}>
+                            <TableCell sx={{ ...S.TD, fontWeight: 500, fontFamily: 'monospace' }}>{cert.certificateNumber}</TableCell>
+                            <TableCell sx={S.TD}>{cert.type}</TableCell>
+                            <TableCell sx={S.TD}>{cert.issuedDate}</TableCell>
+                            <TableCell sx={S.TD}>
                               <Chip 
                                 label={t(`certificates.${cert.status}`)}
                                 color={cert.status === 'active' ? 'success' : 'error'}

@@ -36,6 +36,8 @@ import {
   TrendingDown as TrendingDownIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { useTheme } from '@mui/material';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface BehaviorRecord {
   id: number;
@@ -57,6 +59,8 @@ interface Student {
 }
 
 export function BehaviorTracking() {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const [records, setRecords] = useState<BehaviorRecord[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,7 +139,7 @@ export function BehaviorTracking() {
           Behavior Tracking
         </Typography>
         <Button
-          variant="contained"
+          variant="contained" sx={S.BTN_PRIMARY}
           startIcon={<AddIcon />}
           onClick={() => setOpenDialog(true)}
         >
@@ -185,7 +189,7 @@ export function BehaviorTracking() {
 
       <TableContainer component={Paper}>
         <Table>
-          <TableHead>
+          <TableHead sx={{ bgcolor: S.TH_BG }}>
             <TableRow>
               <TableCell>Date</TableCell>
               <TableCell>Student</TableCell>
@@ -198,31 +202,31 @@ export function BehaviorTracking() {
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">Loading...</TableCell>
+              <TableRow sx={S.TR_HOVER}>
+                <TableCell colSpan={7} align="center" sx={S.TD}>Loading...</TableCell>
               </TableRow>
             ) : records.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">
+              <TableRow sx={S.TR_HOVER}>
+                <TableCell colSpan={7} align="center" sx={S.TD}>
                   No behavior records found
                 </TableCell>
               </TableRow>
             ) : (
               records.map((record) => (
-                <TableRow key={record.id} hover>
-                  <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
-                  <TableCell>{record.studentName}</TableCell>
-                  <TableCell>
+                <TableRow key={record.id} hover sx={S.TR_HOVER}>
+                  <TableCell sx={S.TD}>{new Date(record.date).toLocaleDateString()}</TableCell>
+                  <TableCell sx={S.TD}>{record.studentName}</TableCell>
+                  <TableCell sx={S.TD}>
                     <Chip
                       label={record.type}
                       color={getTypeColor(record.type)}
                       size="small"
                     />
                   </TableCell>
-                  <TableCell>{record.category}</TableCell>
-                  <TableCell>{record.description}</TableCell>
-                  <TableCell>{record.actionTaken || '—'}</TableCell>
-                  <TableCell align="center">
+                  <TableCell sx={S.TD}>{record.category}</TableCell>
+                  <TableCell sx={S.TD}>{record.description}</TableCell>
+                  <TableCell sx={S.TD}>{record.actionTaken || '—'}</TableCell>
+                  <TableCell align="center" sx={S.TD}>
                     <IconButton size="small" title="View Details">
                       <ViewIcon fontSize="small" />
                     </IconButton>
@@ -314,7 +318,7 @@ export function BehaviorTracking() {
           <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
           <Button
             onClick={handleSubmit}
-            variant="contained"
+            variant="contained" sx={S.BTN_PRIMARY}
             disabled={!formData.studentId || !formData.description}
           >
             Record Behavior

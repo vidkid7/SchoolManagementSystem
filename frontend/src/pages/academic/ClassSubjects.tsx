@@ -270,7 +270,7 @@ export const ClassSubjects = () => {
               {t('classSubjects.assignedSubjects')}
             </Typography>
             <Button
-              variant="contained"
+              variant="contained" sx={S.BTN_PRIMARY}
               startIcon={<AddIcon />}
               onClick={handleOpenDialog}
               disabled={getAvailableSubjects().length === 0}
@@ -281,7 +281,7 @@ export const ClassSubjects = () => {
 
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow sx={{ bgcolor: 'grey.50' }}>
                   <TableCell sx={{ fontWeight: 600 }}>{t('classSubjects.subjectCode')}</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>{t('classSubjects.subjectNameEn')}</TableCell>
@@ -293,33 +293,33 @@ export const ClassSubjects = () => {
               </TableHead>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">
+                  <TableRow sx={S.TR_HOVER}>
+                    <TableCell colSpan={6} align="center" sx={S.TD}>
                       {t('common.loading')}
                     </TableCell>
                   </TableRow>
                 ) : classSubjects.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">
+                  <TableRow sx={S.TR_HOVER}>
+                    <TableCell colSpan={6} align="center" sx={S.TD}>
                       {t('classSubjects.noSubjectsAssigned')}
                     </TableCell>
                   </TableRow>
                 ) : (
                   classSubjects.map((cs) => (
-                    <TableRow key={cs.classSubjectId} hover>
-                      <TableCell>
+                    <TableRow key={cs.classSubjectId} hover sx={S.TR_HOVER}>
+                      <TableCell sx={S.TD}>
                         <Chip label={cs.subject.code} size="small" variant="outlined" />
                       </TableCell>
-                      <TableCell>{cs.subject.nameEn}</TableCell>
-                      <TableCell>{cs.subject.nameNp}</TableCell>
-                      <TableCell>
+                      <TableCell sx={S.TD}>{cs.subject.nameEn}</TableCell>
+                      <TableCell sx={S.TD}>{cs.subject.nameNp}</TableCell>
+                      <TableCell sx={S.TD}>
                         <Chip
                           label={cs.subject.type === 'compulsory' ? t('classSubjects.compulsory') : t('classSubjects.optional')}
                           size="small"
                           color={cs.subject.type === 'compulsory' ? 'primary' : 'default'}
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={S.TD}>
                         {cs.teacher ? (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <PersonIcon fontSize="small" color="action" />
@@ -333,7 +333,7 @@ export const ClassSubjects = () => {
                           </Typography>
                         )}
                       </TableCell>
-                      <TableCell align="right">
+                      <TableCell align="right" sx={S.TD}>
                         <IconButton
                           size="small"
                           color="error"
@@ -406,7 +406,7 @@ export const ClassSubjects = () => {
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleCloseDialog}>{t('common.cancel')}</Button>
           <Button
-            variant="contained"
+            variant="contained" sx={S.BTN_PRIMARY}
             onClick={handleAssignSubject}
             disabled={!assignmentForm.subjectId}
           >

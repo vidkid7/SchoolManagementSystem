@@ -427,7 +427,7 @@ export const ClassManagement = () => {
 
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow sx={{ bgcolor: 'grey.50' }}>
                   <TableCell sx={{ fontWeight: 600 }}>{t('academic.class')}</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>{t('academic.section')}</TableCell>
@@ -439,14 +439,14 @@ export const ClassManagement = () => {
               </TableHead>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">
+                  <TableRow sx={S.TR_HOVER}>
+                    <TableCell colSpan={6} align="center" sx={S.TD}>
                       {t('common.loading')}
                     </TableCell>
                   </TableRow>
                 ) : classes.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">
+                  <TableRow sx={S.TR_HOVER}>
+                    <TableCell colSpan={6} align="center" sx={S.TD}>
                       {t('academic.noClassesFound')}
                     </TableCell>
                   </TableRow>
@@ -455,15 +455,15 @@ export const ClassManagement = () => {
                     const classId = cls.class_id || cls.classId || cls.id;
                     const gradeLevel = cls.grade_level || cls.gradeLevel;
                     return (
-                    <TableRow key={classId} hover>
-                      <TableCell>
+                    <TableRow key={classId} hover sx={S.TR_HOVER}>
+                      <TableCell sx={S.TD}>
                         <Chip label={`${t('academic.class')} ${gradeLevel}`} color="primary" variant="outlined" />
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={S.TD}>
                         <Chip label={cls.section} size="small" />
                       </TableCell>
-                      <TableCell>{cls.capacity}</TableCell>
-                      <TableCell>
+                      <TableCell sx={S.TD}>{cls.capacity}</TableCell>
+                      <TableCell sx={S.TD}>
                         <Typography
                           color={(cls.current_strength || cls.currentStrength || 0) >= cls.capacity ? 'error' : 'inherit'}
                           fontWeight={(cls.current_strength || cls.currentStrength || 0) >= cls.capacity ? 600 : 400}
@@ -471,7 +471,7 @@ export const ClassManagement = () => {
                           {cls.current_strength || cls.currentStrength || 0}
                         </Typography>
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={S.TD}>
                         {(cls.class_teacher_name || cls.classTeacherName) ? (
                           <Button
                             size="small"
@@ -490,7 +490,7 @@ export const ClassManagement = () => {
                           </Typography>
                         )}
                       </TableCell>
-                      <TableCell align="right">
+                      <TableCell align="right" sx={S.TD}>
                         <IconButton 
                           size="small" 
                           color="primary" 
@@ -531,7 +531,7 @@ export const ClassManagement = () => {
 
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow sx={{ bgcolor: 'grey.50' }}>
                   <TableCell sx={{ fontWeight: 600 }}>{t('academic.subjectCode')}</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>{t('academic.subjectNameEnglish')}</TableCell>
@@ -544,14 +544,14 @@ export const ClassManagement = () => {
               </TableHead>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center">
+                  <TableRow sx={S.TR_HOVER}>
+                    <TableCell colSpan={7} align="center" sx={S.TD}>
                       {t('common.loading')}
                     </TableCell>
                   </TableRow>
                 ) : subjects.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center">
+                  <TableRow sx={S.TR_HOVER}>
+                    <TableCell colSpan={7} align="center" sx={S.TD}>
                       {t('academic.noSubjectsFound')}
                     </TableCell>
                   </TableRow>
@@ -559,22 +559,22 @@ export const ClassManagement = () => {
                   subjects.map((subject) => {
                     const subjectId = subject.subject_id || subject.subjectId || subject.id;
                     return (
-                    <TableRow key={subjectId} hover>
-                      <TableCell>
+                    <TableRow key={subjectId} hover sx={S.TR_HOVER}>
+                      <TableCell sx={S.TD}>
                         <Chip label={subject.code} size="small" variant="outlined" />
                       </TableCell>
-                      <TableCell>{subject.name_en}</TableCell>
-                      <TableCell>{subject.name_np}</TableCell>
-                      <TableCell>
+                      <TableCell sx={S.TD}>{subject.name_en}</TableCell>
+                      <TableCell sx={S.TD}>{subject.name_np}</TableCell>
+                      <TableCell sx={S.TD}>
                         <Chip
                           label={subject.type === 'compulsory' ? t('academic.compulsory') : t('academic.optional')}
                           color={subject.type === 'compulsory' ? 'primary' : 'default'}
                           size="small"
                         />
                       </TableCell>
-                      <TableCell>{subject.credit_hours}</TableCell>
-                      <TableCell>{subject.full_marks}</TableCell>
-                      <TableCell align="right">
+                      <TableCell sx={S.TD}>{subject.credit_hours}</TableCell>
+                      <TableCell sx={S.TD}>{subject.full_marks}</TableCell>
+                      <TableCell align="right" sx={S.TD}>
                         <Button
                           size="small"
                           variant="outlined"
@@ -585,7 +585,7 @@ export const ClassManagement = () => {
                             }
                             navigate(`/academic/classes/1/subjects/${subjectId}/teachers`);
                           }}
-                          sx={{ mr: 1, textTransform: 'none' }}
+                          sx={{ ...S.BTN_OUTLINE,  mr: 1, textTransform: 'none' }}
                         >
                           {t('academic.viewTeachers')}
                         </Button>

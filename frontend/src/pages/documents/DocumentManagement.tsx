@@ -501,7 +501,7 @@ export const DocumentManagement = () => {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5">{t('Document Management')}</Typography>
         <Button
-          variant="contained"
+          variant="contained" sx={S.BTN_PRIMARY}
           startIcon={<UploadIcon />}
           onClick={() => setUploadDialogOpen(true)}
         >
@@ -600,7 +600,7 @@ export const DocumentManagement = () => {
           <Grid item xs={12} md={2}>
             <Button
               fullWidth
-              variant="outlined"
+              variant="outlined" sx={S.BTN_OUTLINE}
               startIcon={<ClearIcon />}
               onClick={handleClearFilters}
             >
@@ -620,7 +620,7 @@ export const DocumentManagement = () => {
         {loading && <LinearProgress />}
         <TableContainer>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
                 <TableCell>{t('Name')}</TableCell>
                 <TableCell>{t('Category')}</TableCell>
@@ -633,8 +633,8 @@ export const DocumentManagement = () => {
             </TableHead>
             <TableBody>
               {documents.length === 0 && !loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={7} align="center" sx={S.TD}>
                     <Typography color="text.secondary" sx={{ py: 4 }}>
                       {t('No documents found')}
                     </Typography>
@@ -645,10 +645,10 @@ export const DocumentManagement = () => {
                   <TableRow
                     key={doc.documentId}
                     hover
-                    sx={{ cursor: 'pointer' }}
+                    sx={{ ...S.TR_HOVER, cursor: 'pointer' }}
                     onClick={() => handlePreview(doc)}
                   >
-                    <TableCell>
+                    <TableCell sx={S.TD}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         {getFileIcon(doc.mimeType)}
                         <Box>
@@ -661,26 +661,26 @@ export const DocumentManagement = () => {
                         </Box>
                       </Box>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip
                         label={t(DOCUMENT_CATEGORIES.find(c => c.value === doc.category)?.label || doc.category)}
                         size="small"
                         color={getCategoryColor(doc.category)}
                       />
                     </TableCell>
-                    <TableCell>{formatFileSize(doc.size)}</TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>{formatFileSize(doc.size)}</TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip
                         label={t(doc.accessLevel)}
                         size="small"
                         variant="outlined"
                       />
                     </TableCell>
-                    <TableCell>{doc.uploadedByName || doc.uploadedBy}</TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>{doc.uploadedByName || doc.uploadedBy}</TableCell>
+                    <TableCell sx={S.TD}>
                       {new Date(doc.createdAt).toLocaleDateString()}
                     </TableCell>
-                    <TableCell align="right">
+                    <TableCell align="right" sx={S.TD}>
                       <Tooltip title={t('Preview')}>
                         <IconButton
                           size="small"
@@ -915,7 +915,7 @@ export const DocumentManagement = () => {
             {t('Cancel')}
           </Button>
           <Button
-            variant="contained"
+            variant="contained" sx={S.BTN_PRIMARY}
             onClick={handleUpload}
             disabled={!uploadForm.file || !uploadForm.name || uploading}
           >
@@ -1051,7 +1051,7 @@ export const DocumentManagement = () => {
           </Button>
           {selectedDocument && (
             <Button
-              variant="contained"
+              variant="contained" sx={S.BTN_PRIMARY}
               startIcon={<DownloadIcon />}
               onClick={() => handleDownload(selectedDocument)}
             >

@@ -358,7 +358,7 @@ export const Timetable = () => {
         <Paper sx={{ ...S.GLASS, overflow: 'hidden' }}>
           <TableContainer>
             <Table sx={{ minWidth: 800 }}>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow sx={{ bgcolor: 'primary.main' }}>
                   <TableCell sx={{ color: 'white', fontWeight: 600, minWidth: 100 }}>
                     Period / Day
@@ -372,8 +372,8 @@ export const Timetable = () => {
               </TableHead>
               <TableBody>
                 {PERIODS.map((period) => (
-                  <TableRow key={period.number} hover>
-                    <TableCell sx={{ bgcolor: 'grey.50', fontWeight: 600 }}>
+                  <TableRow key={period.number} hover sx={S.TR_HOVER}>
+                    <TableCell sx={{ ...S.TD, bgcolor: 'grey.50', fontWeight: 600 }}>
                       <Box>
                         <Typography variant="body2" fontWeight={600}>
                           Period {period.number}
@@ -389,11 +389,9 @@ export const Timetable = () => {
                         <TableCell
                           key={dayIndex}
                           align="center"
-                          sx={{
-                            cursor: 'pointer',
+                          sx={{ ...S.TD, cursor: 'pointer',
                             '&:hover': { bgcolor: 'action.hover' },
-                            p: 1,
-                          }}
+                            p: 1, }}
                           onClick={() => handleOpenDialog(dayIndex, period.number)}
                         >
                           {periodData ? (
@@ -513,7 +511,7 @@ export const Timetable = () => {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button variant="contained" onClick={handleSavePeriod}>
+          <Button variant="contained" sx={S.BTN_PRIMARY} onClick={handleSavePeriod}>
             Save Period
           </Button>
         </DialogActions>

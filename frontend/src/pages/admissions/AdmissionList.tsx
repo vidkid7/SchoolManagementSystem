@@ -232,7 +232,7 @@ export function AdmissionList() {
             </Typography>
           </Box>
           <Button
-            variant="contained"
+            variant="contained" sx={S.BTN_PRIMARY}
             startIcon={<InquiryIcon />}
             onClick={() => navigate('/admissions/new')}
           >
@@ -293,7 +293,7 @@ export function AdmissionList() {
       ) : (
         <TableContainer component={Paper}>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
                 <TableCell>ID</TableCell>
                 <TableCell>Name</TableCell>
@@ -306,8 +306,8 @@ export function AdmissionList() {
             </TableHead>
             <TableBody>
               {filteredAdmissions.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={7} align="center" sx={S.TD}>
                     <Typography color="text.secondary">
                       No admissions found
                     </Typography>
@@ -315,27 +315,27 @@ export function AdmissionList() {
                 </TableRow>
               ) : (
                 filteredAdmissions.map((admission) => (
-                  <TableRow key={admission.admissionId} hover>
-                    <TableCell>{admission.temporaryId}</TableCell>
-                    <TableCell>
+                  <TableRow key={admission.admissionId} hover sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{admission.temporaryId}</TableCell>
+                    <TableCell sx={S.TD}>
                       {`${admission.firstNameEn} ${admission.middleNameEn || ''} ${admission.lastNameEn}`}
                     </TableCell>
-                    <TableCell>Class {admission.applyingForClass}</TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>Class {admission.applyingForClass}</TableCell>
+                    <TableCell sx={S.TD}>
                       {admission.phone && <div>{admission.phone}</div>}
                       {admission.email && <div style={{ fontSize: '0.875rem', color: '#666' }}>{admission.email}</div>}
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>
                       {new Date(admission.inquiryDate).toLocaleDateString()}
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip
                         label={statusLabels[admission.status] || admission.status}
                         color={statusColors[admission.status] || 'default'}
                         size="small"
                       />
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" sx={S.TD}>
                       <IconButton
                         size="small"
                         onClick={(e) => handleMenuOpen(e, admission)}

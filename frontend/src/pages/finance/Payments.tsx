@@ -138,7 +138,7 @@ export function Payments() {
           {t('finance.payments')}
         </Typography>
         <Button
-          variant="contained"
+          variant="contained" sx={S.BTN_PRIMARY}
           startIcon={<AddIcon />}
           onClick={() => setOpenDialog(true)}
         >
@@ -152,7 +152,7 @@ export function Payments() {
       <Paper sx={{ ...S.GLASS }}>
         <TableContainer>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
                 <TableCell>{t('finance.payments')}</TableCell>
                 <TableCell>{t('finance.invoices')}</TableCell>
@@ -167,35 +167,35 @@ export function Payments() {
             </TableHead>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={9} align="center">{t('common.loading')}</TableCell>
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={9} align="center" sx={S.TD}>{t('common.loading')}</TableCell>
                 </TableRow>
               ) : payments.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={9} align="center">
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={9} align="center" sx={S.TD}>
                     {t('finance.noPayments')}
                   </TableCell>
                 </TableRow>
               ) : (
                 payments.map((payment) => (
-                  <TableRow key={payment.paymentId}>
-                    <TableCell>#{payment.paymentId}</TableCell>
-                    <TableCell>{payment.invoiceNumber}</TableCell>
-                    <TableCell>{payment.studentName}</TableCell>
-                    <TableCell align="right">NPR {payment.amount.toLocaleString()}</TableCell>
-                    <TableCell>
+                  <TableRow key={payment.paymentId} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>#{payment.paymentId}</TableCell>
+                    <TableCell sx={S.TD}>{payment.invoiceNumber}</TableCell>
+                    <TableCell sx={S.TD}>{payment.studentName}</TableCell>
+                    <TableCell align="right" sx={S.TD}>NPR {payment.amount.toLocaleString()}</TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip label={payment.paymentMethod} size="small" />
                     </TableCell>
-                    <TableCell>{payment.transactionId || '-'}</TableCell>
-                    <TableCell>{new Date(payment.paymentDate).toLocaleDateString()}</TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>{payment.transactionId || '-'}</TableCell>
+                    <TableCell sx={S.TD}>{new Date(payment.paymentDate).toLocaleDateString()}</TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip
                         label={payment.status}
                         color={payment.status === 'completed' ? 'success' : 'warning'}
                         size="small"
                       />
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" sx={S.TD}>
                       <IconButton
                         size="small"
                         onClick={() => handlePrintReceipt(payment.paymentId)}
@@ -298,7 +298,7 @@ export function Payments() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>{t('common.cancel')}</Button>
-          <Button onClick={handleRecordPayment} variant="contained">
+          <Button onClick={handleRecordPayment} variant="contained" sx={S.BTN_PRIMARY}>
             {t('finance.recordPayment')}
           </Button>
         </DialogActions>

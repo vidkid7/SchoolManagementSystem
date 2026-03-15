@@ -105,7 +105,7 @@ export function ECAList() {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h5" fontWeight={600}>Extra-Curricular Activities</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>Create ECA</Button>
+        <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>Create ECA</Button>
       </Box>
 
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
@@ -137,7 +137,7 @@ export function ECAList() {
       <Paper sx={{ ...S.GLASS }}>
         <TableContainer>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
                 <TableCell>Name</TableCell>
                 <TableCell>Category</TableCell>
@@ -149,18 +149,18 @@ export function ECAList() {
             </TableHead>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={6} align="center">Loading...</TableCell></TableRow>
+                <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>Loading...</TableCell></TableRow>
               ) : ecas.length === 0 ? (
-                <TableRow><TableCell colSpan={6} align="center">No ECAs found</TableCell></TableRow>
+                <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>No ECAs found</TableCell></TableRow>
               ) : (
                 ecas.map((eca) => (
-                  <TableRow key={eca.ecaId}>
-                    <TableCell>{eca.name}</TableCell>
-                    <TableCell><Chip label={eca.category} size="small" /></TableCell>
-                    <TableCell>{eca.coordinator}</TableCell>
-                    <TableCell align="center">{eca.enrolledCount}</TableCell>
-                    <TableCell><Chip label={eca.status} color={eca.status === 'active' ? 'success' : 'default'} size="small" /></TableCell>
-                    <TableCell align="center">
+                  <TableRow key={eca.ecaId} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{eca.name}</TableCell>
+                    <TableCell sx={S.TD}><Chip label={eca.category} size="small" /></TableCell>
+                    <TableCell sx={S.TD}>{eca.coordinator}</TableCell>
+                    <TableCell align="center" sx={S.TD}>{eca.enrolledCount}</TableCell>
+                    <TableCell sx={S.TD}><Chip label={eca.status} color={eca.status === 'active' ? 'success' : 'default'} size="small" /></TableCell>
+                    <TableCell align="center" sx={S.TD}>
                       <IconButton size="small" onClick={() => handleOpenDialog(eca)}><EditIcon fontSize="small" /></IconButton>
                       <IconButton size="small" onClick={() => handleDelete(eca.ecaId)} color="error"><DeleteIcon fontSize="small" /></IconButton>
                       <IconButton size="small" onClick={() => navigate(`/eca/${eca.ecaId}/enrollments`)}><PeopleIcon fontSize="small" /></IconButton>
@@ -204,7 +204,7 @@ export function ECAList() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">{editingECA ? 'Update' : 'Create'}</Button>
+          <Button onClick={handleSubmit} variant="contained" sx={S.BTN_PRIMARY}>{editingECA ? 'Update' : 'Create'}</Button>
         </DialogActions>
       </Dialog>
     </Box>

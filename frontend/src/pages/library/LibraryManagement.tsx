@@ -220,7 +220,7 @@ export const LibraryManagement = () => {
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
-            variant="outlined"
+            variant="outlined" sx={S.BTN_OUTLINE}
             startIcon={<IssueIcon />}
             onClick={handleOpenDialog}
           >
@@ -326,7 +326,7 @@ export const LibraryManagement = () => {
 
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell>{t('library.accessionNo')}</TableCell>
                   <TableCell>{t('library.bookTitle')}</TableCell>
@@ -339,26 +339,26 @@ export const LibraryManagement = () => {
               </TableHead>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center">
+                  <TableRow sx={S.TR_HOVER}>
+                    <TableCell colSpan={7} align="center" sx={S.TD}>
                       {t('library.loading')}
                     </TableCell>
                   </TableRow>
                 ) : books.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center">
+                  <TableRow sx={S.TR_HOVER}>
+                    <TableCell colSpan={7} align="center" sx={S.TD}>
                       {t('library.noBooksFound')}
                     </TableCell>
                   </TableRow>
                 ) : (
                   (books || []).map((book) => (
-                    <TableRow key={book.id} hover>
-                      <TableCell>{book.accession_number}</TableCell>
-                      <TableCell>{book.title}</TableCell>
-                      <TableCell>{book.author}</TableCell>
-                      <TableCell>{book.category}</TableCell>
-                      <TableCell align="center">{book.total_copies}</TableCell>
-                      <TableCell align="center">
+                    <TableRow key={book.id} hover sx={S.TR_HOVER}>
+                      <TableCell sx={S.TD}>{book.accession_number}</TableCell>
+                      <TableCell sx={S.TD}>{book.title}</TableCell>
+                      <TableCell sx={S.TD}>{book.author}</TableCell>
+                      <TableCell sx={S.TD}>{book.category}</TableCell>
+                      <TableCell align="center" sx={S.TD}>{book.total_copies}</TableCell>
+                      <TableCell align="center" sx={S.TD}>
                         <Typography
                           color={book.available_copies === 0 ? 'error' : 'success'}
                           fontWeight="bold"
@@ -366,7 +366,7 @@ export const LibraryManagement = () => {
                           {book.available_copies}
                         </Typography>
                       </TableCell>
-                      <TableCell align="center">
+                      <TableCell align="center" sx={S.TD}>
                         <Chip
                           label={book.available_copies > 0 ? t('library.available') : t('library.notAvailable')}
                           color={book.available_copies > 0 ? 'success' : 'error'}
@@ -394,7 +394,7 @@ export const LibraryManagement = () => {
         <TabPanel value={tabValue} index={1}>
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell>{t('library.student')}</TableCell>
                   <TableCell>{t('library.book')}</TableCell>
@@ -407,32 +407,32 @@ export const LibraryManagement = () => {
               </TableHead>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center">
+                  <TableRow sx={S.TR_HOVER}>
+                    <TableCell colSpan={7} align="center" sx={S.TD}>
                       {t('library.loading')}
                     </TableCell>
                   </TableRow>
                 ) : circulations.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center">
+                  <TableRow sx={S.TR_HOVER}>
+                    <TableCell colSpan={7} align="center" sx={S.TD}>
                       {t('library.noIssuedBooks')}
                     </TableCell>
                   </TableRow>
                 ) : (
                   (circulations || []).map((circulation) => (
-                    <TableRow key={circulation.id} hover>
-                      <TableCell>{circulation.student_name}</TableCell>
-                      <TableCell>{circulation.book_title}</TableCell>
-                      <TableCell>{circulation.issue_date}</TableCell>
-                      <TableCell>{circulation.due_date}</TableCell>
-                      <TableCell>
+                    <TableRow key={circulation.id} hover sx={S.TR_HOVER}>
+                      <TableCell sx={S.TD}>{circulation.student_name}</TableCell>
+                      <TableCell sx={S.TD}>{circulation.book_title}</TableCell>
+                      <TableCell sx={S.TD}>{circulation.issue_date}</TableCell>
+                      <TableCell sx={S.TD}>{circulation.due_date}</TableCell>
+                      <TableCell sx={S.TD}>
                         <Chip
                           label={circulation.status}
                           color={getStatusColor(circulation.status)}
                           size="small"
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={S.TD}>
                         {circulation.fine_amount ? (
                           <Typography color="error">
                             रू {circulation.fine_amount}
@@ -441,7 +441,7 @@ export const LibraryManagement = () => {
                           '-'
                         )}
                       </TableCell>
-                      <TableCell align="right">
+                      <TableCell align="right" sx={S.TD}>
                         <IconButton
                           size="small"
                           color="primary"
@@ -510,7 +510,7 @@ export const LibraryManagement = () => {
             {t('library.cancel')}
           </Button>
           <Button
-            variant="contained"
+            variant="contained" sx={S.BTN_PRIMARY}
             onClick={handleIssueBook}
             disabled={!selectedStudentId || !selectedBookId}
           >

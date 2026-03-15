@@ -22,7 +22,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { C, useAdminStyles } from '../../theme/designTokens';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import {
   Add as AddIcon,
   Assessment as AssessmentIcon,
@@ -517,7 +517,7 @@ export default function MunicipalityAdminPortal() {
                 Schools In Municipality
               </Typography>
               <Table size="small">
-                <TableHead>
+                <TableHead sx={{ bgcolor: S.TH_BG }}>
                   <TableRow>
                     <TableCell>School</TableCell>
                     <TableCell>Code</TableCell>
@@ -527,8 +527,8 @@ export default function MunicipalityAdminPortal() {
                 </TableHead>
                 <TableBody>
                   {schools.map((school) => (
-                    <TableRow key={school.id}>
-                      <TableCell>
+                    <TableRow key={school.id} sx={S.TR_HOVER}>
+                      <TableCell sx={S.TD}>
                         <Typography variant="body2" fontWeight={600}>
                           {school.schoolNameEn}
                         </Typography>
@@ -538,19 +538,19 @@ export default function MunicipalityAdminPortal() {
                           </Typography>
                         )}
                       </TableCell>
-                      <TableCell>{school.schoolCode || '-'}</TableCell>
-                      <TableCell>
+                      <TableCell sx={S.TD}>{school.schoolCode || '-'}</TableCell>
+                      <TableCell sx={S.TD}>
                         <Chip
                           size="small"
                           color={school.isActive ? 'success' : 'default'}
                           label={school.isActive ? 'Active' : 'Inactive'}
                         />
                       </TableCell>
-                      <TableCell align="right">
+                      <TableCell align="right" sx={S.TD}>
                         <Stack direction="row" spacing={1} justifyContent="flex-end">
                           <Button
                             size="small"
-                            variant="outlined"
+                            variant="outlined" sx={S.BTN_OUTLINE}
                             startIcon={<PersonAddIcon />}
                             onClick={() => openCreateAdminDialog(school)}
                           >
@@ -559,7 +559,7 @@ export default function MunicipalityAdminPortal() {
                           <Button
                             size="small"
                             color={school.isActive ? 'warning' : 'success'}
-                            variant="contained"
+                            variant="contained" sx={S.BTN_PRIMARY}
                             onClick={() => void toggleSchoolStatus(school)}
                           >
                             {school.isActive ? 'Deactivate' : 'Activate'}
@@ -569,8 +569,8 @@ export default function MunicipalityAdminPortal() {
                     </TableRow>
                   ))}
                   {schools.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={4}>
+                    <TableRow sx={S.TR_HOVER}>
+                      <TableCell colSpan={4} sx={S.TD}>
                         <Typography color="text.secondary">No schools found for this municipality.</Typography>
                       </TableCell>
                     </TableRow>

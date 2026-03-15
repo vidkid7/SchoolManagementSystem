@@ -314,7 +314,7 @@ export const AcademicYears = () => {
       <Paper sx={{ ...S.GLASS }}>
         <TableContainer>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow sx={{ bgcolor: 'grey.50' }}>
                 <TableCell sx={{ fontWeight: 600 }}>{t('academicYears.name')}</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>{t('academicYears.startDateBS')}</TableCell>
@@ -327,35 +327,35 @@ export const AcademicYears = () => {
             </TableHead>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">{t('common.loading')}</TableCell>
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={7} align="center" sx={S.TD}>{t('common.loading')}</TableCell>
                 </TableRow>
               ) : academicYears.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">{t('academicYears.noAcademicYearsFound')}</TableCell>
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={7} align="center" sx={S.TD}>{t('academicYears.noAcademicYearsFound')}</TableCell>
                 </TableRow>
               ) : (
                 academicYears.map((year: AcademicYear) => {
                   const yearId = year.academicYearId;
                   return (
-                    <TableRow key={yearId} hover>
-                      <TableCell>
+                    <TableRow key={yearId} hover sx={S.TR_HOVER}>
+                      <TableCell sx={S.TD}>
                         <Typography fontWeight={year.isCurrent ? 600 : 400}>
                           AY {year.name.replace('-', '/')}
                         </Typography>
                       </TableCell>
-                      <TableCell>{year.startDateBS}</TableCell>
-                      <TableCell>{year.endDateBS}</TableCell>
-                      <TableCell>{new Date(year.startDateAD).toLocaleDateString()}</TableCell>
-                      <TableCell>{new Date(year.endDateAD).toLocaleDateString()}</TableCell>
-                      <TableCell>
+                      <TableCell sx={S.TD}>{year.startDateBS}</TableCell>
+                      <TableCell sx={S.TD}>{year.endDateBS}</TableCell>
+                      <TableCell sx={S.TD}>{new Date(year.startDateAD).toLocaleDateString()}</TableCell>
+                      <TableCell sx={S.TD}>{new Date(year.endDateAD).toLocaleDateString()}</TableCell>
+                      <TableCell sx={S.TD}>
                         {year.isCurrent ? (
                           <Chip label={t('academicYears.current')} color="success" size="small" />
                         ) : (
                           <Chip label={t('academicYears.inactive')} size="small" />
                         )}
                       </TableCell>
-                      <TableCell align="right">
+                      <TableCell align="right" sx={S.TD}>
                         <Button
                           size="small"
                           variant={selectedYearId === yearId ? 'contained' : 'outlined'}
@@ -400,7 +400,7 @@ export const AcademicYears = () => {
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button variant="outlined" size="small" onClick={() => setSelectedYearId(null)}>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} size="small" onClick={() => setSelectedYearId(null)}>
                 {t('academicYears.close')}
               </Button>
               <Button
@@ -416,7 +416,7 @@ export const AcademicYears = () => {
 
           <TableContainer>
             <Table size="small">
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow sx={{ bgcolor: 'grey.50' }}>
                   <TableCell sx={{ fontWeight: 600 }}>{t('academicYears.termName')}</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>{t('academicYears.startDate')}</TableCell>
@@ -427,23 +427,23 @@ export const AcademicYears = () => {
               </TableHead>
               <TableBody>
                 {terms.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} align="center">{t('academicYears.noTermsFound')}</TableCell>
+                  <TableRow sx={S.TR_HOVER}>
+                    <TableCell colSpan={5} align="center" sx={S.TD}>{t('academicYears.noTermsFound')}</TableCell>
                   </TableRow>
                 ) : (
                   terms.map((term) => {
                     const termId = term.termId || term.id;
                     return (
-                      <TableRow key={termId} hover>
-                        <TableCell>{term.name}</TableCell>
-                        <TableCell>{new Date(term.startDate).toLocaleDateString()}</TableCell>
-                        <TableCell>{new Date(term.endDate).toLocaleDateString()}</TableCell>
-                        <TableCell>
+                      <TableRow key={termId} hover sx={S.TR_HOVER}>
+                        <TableCell sx={S.TD}>{term.name}</TableCell>
+                        <TableCell sx={S.TD}>{new Date(term.startDate).toLocaleDateString()}</TableCell>
+                        <TableCell sx={S.TD}>{new Date(term.endDate).toLocaleDateString()}</TableCell>
+                        <TableCell sx={S.TD}>
                           {term.examStartDate && term.examEndDate
                             ? `${new Date(term.examStartDate).toLocaleDateString()} – ${new Date(term.examEndDate).toLocaleDateString()}`
                             : t('academicYears.notSet')}
                         </TableCell>
-                        <TableCell align="right">
+                        <TableCell align="right" sx={S.TD}>
                           <IconButton
                             size="small"
                             color="primary"

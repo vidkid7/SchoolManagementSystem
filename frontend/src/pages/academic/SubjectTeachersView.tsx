@@ -206,7 +206,7 @@ export const SubjectTeachersView = () => {
             Please return to the previous page and try again.
           </Typography>
           <Button
-            variant="contained"
+            variant="contained" sx={S.BTN_PRIMARY}
             onClick={() => navigate('/academic/classes')}
           >
             Go Back
@@ -283,7 +283,7 @@ export const SubjectTeachersView = () => {
       {teachers.length > 0 ? (
         <TableContainer component={Paper} sx={{ borderRadius: R.lg }}>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow sx={{ bgcolor: alpha(theme.palette.primary.main, 0.04) }}>
                 <TableCell sx={{ fontWeight: 600 }}>Teacher</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Position</TableCell>
@@ -294,8 +294,8 @@ export const SubjectTeachersView = () => {
             </TableHead>
             <TableBody>
               {teachers.map((teacher) => (
-                <TableRow key={teacher.staffId} hover>
-                  <TableCell>
+                <TableRow key={teacher.staffId} hover sx={S.TR_HOVER}>
+                  <TableCell sx={S.TD}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                       <Avatar
                         src={teacher.photoUrl}
@@ -324,19 +324,19 @@ export const SubjectTeachersView = () => {
                       </Box>
                     </Box>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Chip 
                       label={teacher.position || 'Teacher'} 
                       size="small" 
                       variant="outlined"
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Typography variant="body2">
                       {teacher.highestQualification || '-'}
                     </Typography>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                       {teacher.email && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -352,7 +352,7 @@ export const SubjectTeachersView = () => {
                       )}
                     </Box>
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell align="right" sx={S.TD}>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
                       <IconButton
                         size="small"
@@ -387,7 +387,7 @@ export const SubjectTeachersView = () => {
             No teachers have been assigned to teach {subjectName} in {className} yet.
           </Typography>
           <Button
-            variant="contained"
+            variant="contained" sx={S.BTN_PRIMARY}
             onClick={() => navigate('/staff')}
           >
             Go to Staff Management

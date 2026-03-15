@@ -282,7 +282,7 @@ export function BookCirculation() {
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
-            variant="outlined"
+            variant="outlined" sx={S.BTN_OUTLINE}
             startIcon={<ReserveIcon />}
             onClick={() => setReserveDialog(true)}
           >
@@ -314,7 +314,7 @@ export function BookCirculation() {
         <TabPanel value={tabValue} index={0}>
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell>{t('library.bookTitle')}</TableCell>
                   <TableCell>{t('library.accessionNo')}</TableCell>
@@ -327,19 +327,19 @@ export function BookCirculation() {
               </TableHead>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center">{t('library.loading')}</TableCell>
+                  <TableRow sx={S.TR_HOVER}>
+                    <TableCell colSpan={7} align="center" sx={S.TD}>{t('library.loading')}</TableCell>
                   </TableRow>
                 ) : circulations.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center">{t('library.noIssuedBooks')}</TableCell>
+                  <TableRow sx={S.TR_HOVER}>
+                    <TableCell colSpan={7} align="center" sx={S.TD}>{t('library.noIssuedBooks')}</TableCell>
                   </TableRow>
                 ) : (
                   circulations.map((circulation) => (
-                    <TableRow key={circulation.circulationId}>
-                      <TableCell>{circulation.bookTitle}</TableCell>
-                      <TableCell>{circulation.accessionNumber}</TableCell>
-                      <TableCell>
+                    <TableRow key={circulation.circulationId} sx={S.TR_HOVER}>
+                      <TableCell sx={S.TD}>{circulation.bookTitle}</TableCell>
+                      <TableCell sx={S.TD}>{circulation.accessionNumber}</TableCell>
+                      <TableCell sx={S.TD}>
                         {circulation.memberName}
                         <Chip
                           label={circulation.memberType}
@@ -347,28 +347,28 @@ export function BookCirculation() {
                           sx={{ ml: 1 }}
                         />
                       </TableCell>
-                      <TableCell>{new Date(circulation.issueDate).toLocaleDateString()}</TableCell>
-                      <TableCell>{new Date(circulation.dueDate).toLocaleDateString()}</TableCell>
-                      <TableCell>
+                      <TableCell sx={S.TD}>{new Date(circulation.issueDate).toLocaleDateString()}</TableCell>
+                      <TableCell sx={S.TD}>{new Date(circulation.dueDate).toLocaleDateString()}</TableCell>
+                      <TableCell sx={S.TD}>
                         <Chip
                           label={circulation.status}
                           color={circulation.status === 'overdue' ? 'error' : 'success'}
                           size="small"
                         />
                       </TableCell>
-                      <TableCell align="center">
+                      <TableCell align="center" sx={S.TD}>
                         <Button
                           size="small"
                           variant="outlined"
                           startIcon={<RenewIcon />}
                           onClick={() => handleRenew(circulation.circulationId)}
-                          sx={{ mr: 0.5 }}
+                          sx={{ ...S.BTN_OUTLINE,  mr: 0.5 }}
                         >
                           {t('library.renew')}
                         </Button>
                         <Button
                           size="small"
-                          variant="outlined"
+                          variant="outlined" sx={S.BTN_OUTLINE}
                           startIcon={<ReturnIcon />}
                           onClick={() => openReturnDialog(circulation)}
                         >
@@ -386,7 +386,7 @@ export function BookCirculation() {
         <TabPanel value={tabValue} index={1}>
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell>{t('library.bookTitle')}</TableCell>
                   <TableCell>{t('library.member')}</TableCell>
@@ -398,12 +398,12 @@ export function BookCirculation() {
               </TableHead>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">{t('library.loading')}</TableCell>
+                  <TableRow sx={S.TR_HOVER}>
+                    <TableCell colSpan={6} align="center" sx={S.TD}>{t('library.loading')}</TableCell>
                   </TableRow>
                 ) : circulations.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">{t('library.noOverdueBooks')}</TableCell>
+                  <TableRow sx={S.TR_HOVER}>
+                    <TableCell colSpan={6} align="center" sx={S.TD}>{t('library.noOverdueBooks')}</TableCell>
                   </TableRow>
                 ) : (
                   circulations.map((circulation) => {
@@ -411,18 +411,18 @@ export function BookCirculation() {
                       (new Date().getTime() - new Date(circulation.dueDate).getTime()) / (1000 * 60 * 60 * 24)
                     );
                     return (
-                      <TableRow key={circulation.circulationId}>
-                        <TableCell>{circulation.bookTitle}</TableCell>
-                        <TableCell>{circulation.memberName}</TableCell>
-                        <TableCell>{new Date(circulation.dueDate).toLocaleDateString()}</TableCell>
-                        <TableCell>
+                      <TableRow key={circulation.circulationId} sx={S.TR_HOVER}>
+                        <TableCell sx={S.TD}>{circulation.bookTitle}</TableCell>
+                        <TableCell sx={S.TD}>{circulation.memberName}</TableCell>
+                        <TableCell sx={S.TD}>{new Date(circulation.dueDate).toLocaleDateString()}</TableCell>
+                        <TableCell sx={S.TD}>
                           <Chip label={`${daysOverdue} days`} color="error" size="small" />
                         </TableCell>
-                        <TableCell align="right">NPR {(daysOverdue * 10).toLocaleString()}</TableCell>
-                        <TableCell align="center">
+                        <TableCell align="right" sx={S.TD}>NPR {(daysOverdue * 10).toLocaleString()}</TableCell>
+                        <TableCell align="center" sx={S.TD}>
                           <Button
                             size="small"
-                            variant="outlined"
+                            variant="outlined" sx={S.BTN_OUTLINE}
                             startIcon={<ReturnIcon />}
                             onClick={() => openReturnDialog(circulation)}
                           >
@@ -441,7 +441,7 @@ export function BookCirculation() {
         <TabPanel value={tabValue} index={2}>
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell>{t('library.bookTitle')}</TableCell>
                   <TableCell>{t('library.member')}</TableCell>
@@ -453,32 +453,32 @@ export function BookCirculation() {
               </TableHead>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">{t('library.loading')}</TableCell>
+                  <TableRow sx={S.TR_HOVER}>
+                    <TableCell colSpan={6} align="center" sx={S.TD}>{t('library.loading')}</TableCell>
                   </TableRow>
                 ) : circulations.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">{t('library.noReturnHistory')}</TableCell>
+                  <TableRow sx={S.TR_HOVER}>
+                    <TableCell colSpan={6} align="center" sx={S.TD}>{t('library.noReturnHistory')}</TableCell>
                   </TableRow>
                 ) : (
                   circulations.map((circulation) => (
-                    <TableRow key={circulation.circulationId}>
-                      <TableCell>{circulation.bookTitle}</TableCell>
-                      <TableCell>{circulation.memberName}</TableCell>
-                      <TableCell>{new Date(circulation.issueDate).toLocaleDateString()}</TableCell>
-                      <TableCell>
+                    <TableRow key={circulation.circulationId} sx={S.TR_HOVER}>
+                      <TableCell sx={S.TD}>{circulation.bookTitle}</TableCell>
+                      <TableCell sx={S.TD}>{circulation.memberName}</TableCell>
+                      <TableCell sx={S.TD}>{new Date(circulation.issueDate).toLocaleDateString()}</TableCell>
+                      <TableCell sx={S.TD}>
                         {circulation.returnDate
                           ? new Date(circulation.returnDate).toLocaleDateString()
                           : '-'}
                       </TableCell>
-                      <TableCell align="right">
+                      <TableCell align="right" sx={S.TD}>
                         {circulation.fineAmount ? `NPR ${circulation.fineAmount}` : '-'}
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={S.TD}>
                         {circulation.fineAmount && !circulation.finePaid ? (
                           <Button
                             size="small"
-                            variant="outlined"
+                            variant="outlined" sx={S.BTN_OUTLINE}
                             color="error"
                             startIcon={<PaymentIcon />}
                             onClick={() => handlePayFine(circulation.circulationId)}
@@ -507,13 +507,13 @@ export function BookCirculation() {
               placeholder={t('library.enterBookId')}
               sx={{ width: 160 }}
             />
-            <Button variant="contained" onClick={fetchReservations} disabled={!reservationBookId || reservationsLoading}>
+            <Button variant="contained" sx={S.BTN_PRIMARY} onClick={fetchReservations} disabled={!reservationBookId || reservationsLoading}>
               {t('library.loadReservations')}
             </Button>
           </Box>
           <TableContainer>
             <Table size="small">
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell>ID</TableCell>
                   <TableCell>{t('library.book')}</TableCell>
@@ -525,18 +525,18 @@ export function BookCirculation() {
               </TableHead>
               <TableBody>
                 {reservationsLoading ? (
-                  <TableRow><TableCell colSpan={6} align="center">{t('library.loading')}</TableCell></TableRow>
+                  <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('library.loading')}</TableCell></TableRow>
                 ) : reservations.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} align="center">{t('library.noReservations')}</TableCell></TableRow>
+                  <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('library.noReservations')}</TableCell></TableRow>
                 ) : (
                   reservations.map((r: any) => (
-                    <TableRow key={r.reservationId ?? r.id}>
-                      <TableCell>{r.reservationId ?? r.id}</TableCell>
-                      <TableCell>{r.Book?.title ?? r.bookTitle ?? r.bookId}</TableCell>
-                      <TableCell>{r.Student ? `${r.Student.firstNameEn ?? ''} ${r.Student.lastNameEn ?? ''}`.trim() : r.studentId}</TableCell>
-                      <TableCell><Chip label={r.status ?? 'pending'} size="small" /></TableCell>
-                      <TableCell>{r.reservationDate ? new Date(r.reservationDate).toLocaleDateString() : '-'}</TableCell>
-                      <TableCell align="center">
+                    <TableRow key={r.reservationId ?? r.id} sx={S.TR_HOVER}>
+                      <TableCell sx={S.TD}>{r.reservationId ?? r.id}</TableCell>
+                      <TableCell sx={S.TD}>{r.Book?.title ?? r.bookTitle ?? r.bookId}</TableCell>
+                      <TableCell sx={S.TD}>{r.Student ? `${r.Student.firstNameEn ?? ''} ${r.Student.lastNameEn ?? ''}`.trim() : r.studentId}</TableCell>
+                      <TableCell sx={S.TD}><Chip label={r.status ?? 'pending'} size="small" /></TableCell>
+                      <TableCell sx={S.TD}>{r.reservationDate ? new Date(r.reservationDate).toLocaleDateString() : '-'}</TableCell>
+                      <TableCell align="center" sx={S.TD}>
                         {r.status !== 'cancelled' && r.status !== 'fulfilled' && (
                           <Button size="small" color="error" startIcon={<CancelIcon />} onClick={() => handleCancelReservation(r.reservationId ?? r.id)}>
                             {t('library.cancel')}
@@ -561,13 +561,13 @@ export function BookCirculation() {
               placeholder={t('library.enterStudentId')}
               sx={{ width: 160 }}
             />
-            <Button variant="contained" onClick={fetchFines} disabled={!finesStudentId || finesLoading}>
+            <Button variant="contained" sx={S.BTN_PRIMARY} onClick={fetchFines} disabled={!finesStudentId || finesLoading}>
               {t('library.loadFines')}
             </Button>
           </Box>
           <TableContainer>
             <Table size="small">
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell>{t('library.fineId')}</TableCell>
                   <TableCell>{t('library.amount')}</TableCell>
@@ -579,23 +579,23 @@ export function BookCirculation() {
               </TableHead>
               <TableBody>
                 {finesLoading ? (
-                  <TableRow><TableCell colSpan={6} align="center">{t('library.loading')}</TableCell></TableRow>
+                  <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('library.loading')}</TableCell></TableRow>
                 ) : finesList.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} align="center">{t('library.noFines')}</TableCell></TableRow>
+                  <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('library.noFines')}</TableCell></TableRow>
                 ) : (
                   finesList.map((f: any) => {
                     const balance = parseFloat(f.balance ?? f.fineAmount ?? 0);
                     const paid = (f.status ?? '').toLowerCase() === 'paid';
                     return (
-                      <TableRow key={f.fineId ?? f.id}>
-                        <TableCell>{f.fineId ?? f.id}</TableCell>
-                        <TableCell>NPR {parseFloat(f.fineAmount ?? 0).toLocaleString()}</TableCell>
-                        <TableCell>NPR {balance.toLocaleString()}</TableCell>
-                        <TableCell>{f.fineReason ?? '-'}</TableCell>
-                        <TableCell><Chip label={f.status ?? 'pending'} size="small" color={paid ? 'success' : 'warning'} /></TableCell>
-                        <TableCell align="center">
+                      <TableRow key={f.fineId ?? f.id} sx={S.TR_HOVER}>
+                        <TableCell sx={S.TD}>{f.fineId ?? f.id}</TableCell>
+                        <TableCell sx={S.TD}>NPR {parseFloat(f.fineAmount ?? 0).toLocaleString()}</TableCell>
+                        <TableCell sx={S.TD}>NPR {balance.toLocaleString()}</TableCell>
+                        <TableCell sx={S.TD}>{f.fineReason ?? '-'}</TableCell>
+                        <TableCell sx={S.TD}><Chip label={f.status ?? 'pending'} size="small" color={paid ? 'success' : 'warning'} /></TableCell>
+                        <TableCell align="center" sx={S.TD}>
                           {!paid && balance > 0 && (
-                            <Button size="small" variant="outlined" startIcon={<PaymentIcon />} onClick={() => handlePayFineById(f.fineId ?? f.id, balance)}>
+                            <Button size="small" variant="outlined" sx={S.BTN_OUTLINE} startIcon={<PaymentIcon />} onClick={() => handlePayFineById(f.fineId ?? f.id, balance)}>
                               {t('library.pay')}
                             </Button>
                           )}
@@ -671,7 +671,7 @@ export function BookCirculation() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIssueDialog(false)}>{t('library.cancel')}</Button>
-          <Button onClick={handleIssueBook} variant="contained">
+          <Button onClick={handleIssueBook} variant="contained" sx={S.BTN_PRIMARY}>
             {t('library.issueBook')}
           </Button>
         </DialogActions>
@@ -710,7 +710,7 @@ export function BookCirculation() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setReturnDialog(false)}>{t('library.cancel')}</Button>
-          <Button onClick={handleReturnBook} variant="contained" color="success">
+          <Button onClick={handleReturnBook} variant="contained" sx={S.BTN_PRIMARY} color="success">
             {t('library.confirmReturn')}
           </Button>
         </DialogActions>
@@ -745,7 +745,7 @@ export function BookCirculation() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setReserveDialog(false)}>{t('library.cancel')}</Button>
-          <Button onClick={handleReserveBook} variant="contained" disabled={!reserveForm.bookId || !reserveForm.studentId}>
+          <Button onClick={handleReserveBook} variant="contained" sx={S.BTN_PRIMARY} disabled={!reserveForm.bookId || !reserveForm.studentId}>
             {t('library.reserveBook')}
           </Button>
         </DialogActions>

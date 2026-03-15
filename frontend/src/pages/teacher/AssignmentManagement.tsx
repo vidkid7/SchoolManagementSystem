@@ -54,7 +54,7 @@ import {
 import { useSelector } from 'react-redux';
 import apiClient from '../../services/apiClient';
 import { RootState } from '../../store';
-import { C, useAdminStyles } from '../../theme/designTokens';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -429,7 +429,7 @@ export const AssignmentManagement = () => {
 
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell>Student ID / विद्यार्थी ID</TableCell>
                   <TableCell>Student Name / नाम</TableCell>
@@ -441,23 +441,23 @@ export const AssignmentManagement = () => {
               </TableHead>
               <TableBody>
                 {submissions.map((submission) => (
-                  <TableRow key={submission.id}>
-                    <TableCell>{submission.studentId}</TableCell>
-                    <TableCell>{submission.studentName}</TableCell>
-                    <TableCell>{submission.submittedDate || '-'}</TableCell>
-                    <TableCell>
+                  <TableRow key={submission.id} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{submission.studentId}</TableCell>
+                    <TableCell sx={S.TD}>{submission.studentName}</TableCell>
+                    <TableCell sx={S.TD}>{submission.submittedDate || '-'}</TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip
                         label={submission.status}
                         size="small"
                         color={getSubmissionStatusColor(submission.status)}
                       />
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" sx={S.TD}>
                       {submission.marks !== null
                         ? `${submission.marks}/${submission.totalMarks}`
                         : '-'}
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" sx={S.TD}>
                       <IconButton
                         size="small"
                         color="primary"
@@ -547,7 +547,7 @@ export const AssignmentManagement = () => {
 
             <Grid item xs={12}>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 startIcon={<AttachFileIcon />}
                 component="label"
               >

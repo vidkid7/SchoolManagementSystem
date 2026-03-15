@@ -502,7 +502,7 @@ export const GradeEntry = () => {
                 size="small"
                 startIcon={<DownloadIcon />}
                 onClick={handleExport}
-                sx={{
+                sx={{ ...S.BTN_OUTLINE, 
                   borderColor: C.primary,
                   color: C.primary,
                   '&:hover': { borderColor: C.primary, bgcolor: C.primaryBg },
@@ -516,7 +516,7 @@ export const GradeEntry = () => {
                 size="small"
                 startIcon={<UploadIcon />}
                 onClick={handleBulkImport}
-                sx={{
+                sx={{ ...S.BTN_OUTLINE, 
                   borderColor: C.primary,
                   color: C.primary,
                   '&:hover': { borderColor: C.primary, bgcolor: C.primaryBg },
@@ -545,7 +545,7 @@ export const GradeEntry = () => {
         <>
           <TableContainer component={Paper} sx={{ ...S.GLASS }}>
             <Table size="small">
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow sx={{ bgcolor: alpha(C.primary, 0.05) }}>
                   <TableCell sx={{ fontWeight: 600 }}>{t('students.rollNumber')}</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>{t('students.studentId')}</TableCell>
@@ -568,11 +568,11 @@ export const GradeEntry = () => {
               </TableHead>
               <TableBody>
                 {students.map((student) => (
-                  <TableRow key={student.id} hover sx={{ '&:hover': { bgcolor: alpha(C.primary, 0.03) } }}>
-                    <TableCell>{student.roll_number}</TableCell>
-                    <TableCell>{student.student_id}</TableCell>
-                    <TableCell>{`${student.first_name} ${student.last_name}`}</TableCell>
-                    <TableCell align="center">
+                  <TableRow key={student.id} hover sx={{ ...S.TR_HOVER, '&:hover': { bgcolor: alpha(C.primary, 0.03) } }}>
+                    <TableCell sx={S.TD}>{student.roll_number}</TableCell>
+                    <TableCell sx={S.TD}>{student.student_id}</TableCell>
+                    <TableCell sx={S.TD}>{`${student.first_name} ${student.last_name}`}</TableCell>
+                    <TableCell align="center" sx={S.TD}>
                       <TextField
                         type="number"
                         size="small"
@@ -583,7 +583,7 @@ export const GradeEntry = () => {
                       />
                     </TableCell>
                     {hasPractical && (
-                      <TableCell align="center">
+                      <TableCell align="center" sx={S.TD}>
                         <TextField
                           type="number"
                           size="small"
@@ -594,12 +594,12 @@ export const GradeEntry = () => {
                         />
                       </TableCell>
                     )}
-                    <TableCell align="center">
+                    <TableCell align="center" sx={S.TD}>
                       <Typography fontWeight="bold">
                         {student.total_marks?.toFixed(1) || '-'}
                       </Typography>
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" sx={S.TD}>
                       <Chip
                         label={student.grade || '-'}
                         sx={{
@@ -611,10 +611,10 @@ export const GradeEntry = () => {
                         size="small"
                       />
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" sx={S.TD}>
                       {student.grade_point?.toFixed(1) || '-'}
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" sx={S.TD}>
                       {student.status === 'entered' ? (
                         <IconButton size="small" sx={{ color: C.success }}>
                           <CheckIcon />

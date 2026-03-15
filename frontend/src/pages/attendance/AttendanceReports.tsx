@@ -388,7 +388,7 @@ export function AttendanceReports() {
               variant="contained"
               onClick={fetchReport}
               disabled={loading}
-              sx={{ 
+              sx={{ ...S.BTN_PRIMARY,  
                 height: '56px',
                 bgcolor: 'white',
                 color: C.primary,
@@ -409,7 +409,7 @@ export function AttendanceReports() {
               variant="outlined"
               startIcon={<DownloadIcon />}
               onClick={handleExport}
-              sx={{
+              sx={{ ...S.BTN_OUTLINE, 
                 color: 'white',
                 borderColor: alpha('#ffffff', 0.3),
                 '&:hover': {
@@ -424,7 +424,7 @@ export function AttendanceReports() {
               variant="outlined"
               startIcon={<PrintIcon />}
               onClick={handlePrint}
-              sx={{
+              sx={{ ...S.BTN_OUTLINE, 
                 color: 'white',
                 borderColor: alpha('#ffffff', 0.3),
                 '&:hover': {
@@ -540,7 +540,7 @@ export function AttendanceReports() {
           {/* Data Table */}
           <TableContainer component={Paper} sx={{ ...S.GLASS }}>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow sx={{ bgcolor: alpha(C.primary, 0.1) }}>
                   <TableCell sx={{ fontWeight: 600, color: C.primary }}>
                     {reportType === 'student' ? t('students.studentId') : t('staff.staffId')}
@@ -569,16 +569,14 @@ export function AttendanceReports() {
                 {attendanceData.map((row: any, index: number) => (
                   <TableRow 
                     key={row.attendanceId || row.staffAttendanceId || index}
-                    sx={{ 
-                      '&:hover': { bgcolor: alpha(C.primary, 0.05) },
-                      '&:nth-of-type(even)': { bgcolor: alpha(theme.palette.background.paper, 0.5) },
-                    }}
+                    sx={{ ...S.TR_HOVER, '&:hover': { bgcolor: alpha(C.primary, 0.05) },
+                      '&:nth-of-type(even)': { bgcolor: alpha(theme.palette.background.paper, 0.5) }, }}
                   >
-                    <TableCell>{row.studentId || row.staffId}</TableCell>
-                    <TableCell>{row.classId || '-'}</TableCell>
-                    <TableCell>{new Date(row.date).toLocaleDateString()}</TableCell>
-                    <TableCell align="center">{row.periodNumber || '-'}</TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>{row.studentId || row.staffId}</TableCell>
+                    <TableCell sx={S.TD}>{row.classId || '-'}</TableCell>
+                    <TableCell sx={S.TD}>{new Date(row.date).toLocaleDateString()}</TableCell>
+                    <TableCell align="center" sx={S.TD}>{row.periodNumber || '-'}</TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip
                         label={t(`attendance.${row.status}`)}
                         sx={{
@@ -595,10 +593,10 @@ export function AttendanceReports() {
                         size="small"
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>
                       {row.markedAt ? new Date(row.markedAt).toLocaleString() : new Date(row.createdAt).toLocaleString()}
                     </TableCell>
-                    <TableCell>{row.remarks || '-'}</TableCell>
+                    <TableCell sx={S.TD}>{row.remarks || '-'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

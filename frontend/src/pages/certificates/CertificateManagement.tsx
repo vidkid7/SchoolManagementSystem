@@ -354,7 +354,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
-            variant="outlined"
+            variant="outlined" sx={S.BTN_OUTLINE}
             startIcon={<QrCodeIcon />}
             onClick={() => navigate('/certificates/verify')}
           >
@@ -402,7 +402,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
               </Select>
             </FormControl>
             <Button
-              variant="contained"
+              variant="contained" sx={S.BTN_PRIMARY}
               startIcon={<AddIcon />}
               onClick={() => setTemplateDialogOpen(true)}
             >
@@ -413,7 +413,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
 
         <TableContainer component={Paper}>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
                 <TableCell>ID</TableCell>
                 <TableCell>Name / नाम</TableCell>
@@ -425,32 +425,32 @@ const handleRevokeCertificate = async (certificateId: number) => {
             </TableHead>
             <TableBody>
               {templatesLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={6} align="center" sx={S.TD}>
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : templates.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={6} align="center" sx={S.TD}>
                     No templates found / कुनै टेम्पलेट फेला परेन
                   </TableCell>
                 </TableRow>
               ) : (
                 templates.map((template) => (
-                  <TableRow key={template.id} hover>
-                    <TableCell>{template.id}</TableCell>
-                    <TableCell>{template.name}</TableCell>
-                    <TableCell>{getTypeLabel(template.type)}</TableCell>
-                    <TableCell>
+                  <TableRow key={template.id} hover sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{template.id}</TableCell>
+                    <TableCell sx={S.TD}>{template.name}</TableCell>
+                    <TableCell sx={S.TD}>{getTypeLabel(template.type)}</TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip
                         label={template.isActive ? 'Active' : 'Inactive'}
                         color={template.isActive ? 'success' : 'default'}
                         size="small"
                       />
                     </TableCell>
-                    <TableCell>{new Date(template.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell align="right">
+                    <TableCell sx={S.TD}>{new Date(template.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell align="right" sx={S.TD}>
                       <IconButton size="small" title="Edit">
                         <EditIcon />
                       </IconButton>
@@ -521,7 +521,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
               </Select>
             </FormControl>
             <Button
-              variant="outlined"
+              variant="outlined" sx={S.BTN_OUTLINE}
               startIcon={<RefreshIcon />}
               onClick={fetchCertificates}
             >
@@ -532,7 +532,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
 
         <TableContainer component={Paper}>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
                 <TableCell>Certificate No. / प्रमाणपत्र नं.</TableCell>
                 <TableCell>Student / विद्यार्थी</TableCell>
@@ -544,42 +544,42 @@ const handleRevokeCertificate = async (certificateId: number) => {
             </TableHead>
             <TableBody>
               {certificatesLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={6} align="center" sx={S.TD}>
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : certificates.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={6} align="center" sx={S.TD}>
                     No certificates found / कुनै प्रमाणपत्र फेला परेन
                   </TableCell>
                 </TableRow>
               ) : (
                 certificates.map((cert) => (
-                  <TableRow key={cert.id} hover>
-                    <TableCell>
+                  <TableRow key={cert.id} hover sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>
                       <Typography variant="body2" fontWeight="bold">
                         {cert.certificateNumber}
                       </Typography>
                     </TableCell>
-                    <TableCell>{cert.studentName}</TableCell>
-                    <TableCell>{getTypeLabel(cert.type)}</TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>{cert.studentName}</TableCell>
+                    <TableCell sx={S.TD}>{getTypeLabel(cert.type)}</TableCell>
+                    <TableCell sx={S.TD}>
                       {cert.issuedDateBS} BS
                       <br />
                       <Typography variant="caption" color="text.secondary">
                         {cert.issuedDate} AD
                       </Typography>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip
                         label={cert.status}
                         color={getStatusColor(cert.status)}
                         size="small"
                       />
                     </TableCell>
-                    <TableCell align="right">
+                    <TableCell align="right" sx={S.TD}>
                       <IconButton
                         size="small"
                         title="View"
@@ -640,7 +640,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
                   Generate a certificate for a single student using an existing template.
                 </Typography>
                 <Button
-                  variant="contained"
+                  variant="contained" sx={S.BTN_PRIMARY}
                   fullWidth
                   onClick={() => setGenerateDialogOpen(true)}
                 >
@@ -659,7 +659,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
                   Generate certificates for multiple students at once.
                 </Typography>
 <Button
-                  variant="outlined"
+                  variant="outlined" sx={S.BTN_OUTLINE}
                   fullWidth
                   onClick={() => setBulkGenerateDialogOpen(true)}
                 >
@@ -710,7 +710,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setTemplateDialogOpen(false)}>Cancel / रद्द गर्नुहोस्</Button>
-          <Button variant="contained" onClick={handleCreateTemplate}>
+          <Button variant="contained" sx={S.BTN_PRIMARY} onClick={handleCreateTemplate}>
             Create / सिर्जना गर्नुहोस्
           </Button>
         </DialogActions>
@@ -770,7 +770,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
                 {selectedCertificate.pdfUrl && (
                   <Grid item xs={12}>
                     <Button
-                      variant="outlined"
+                      variant="outlined" sx={S.BTN_OUTLINE}
                       startIcon={<DownloadIcon />}
                       onClick={() => window.open(selectedCertificate.pdfUrl, '_blank')}
                     >
@@ -889,7 +889,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
         <DialogActions>
           <Button onClick={() => setGenerateDialogOpen(false)}>Cancel / रद्द गर्नुहोस्</Button>
           <Button 
-            variant="contained" 
+            variant="contained" sx={S.BTN_PRIMARY} 
             onClick={handleGenerateCertificate}
             disabled={generating || !generateForm.templateId || !generateForm.studentId || !generateForm.issuedDateBS}
           >
@@ -980,7 +980,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
         <DialogActions>
           <Button onClick={() => setBulkGenerateDialogOpen(false)}>Cancel / रद्द गर्नुहोस्</Button>
           <Button 
-            variant="contained" 
+            variant="contained" sx={S.BTN_PRIMARY} 
             onClick={handleBulkGenerate}
             disabled={generating || !bulkForm.templateId || bulkForm.selectedStudents.length === 0 || !bulkForm.issuedDateBS}
           >

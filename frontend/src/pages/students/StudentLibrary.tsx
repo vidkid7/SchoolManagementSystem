@@ -35,6 +35,7 @@ import {
 import apiClient from '../../services/apiClient';
 import { motion } from 'framer-motion';
 import { useNepaliNumbers } from '../../hooks/useNepaliNumbers';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 const MotionCard = motion.create(Card);
 
@@ -65,6 +66,7 @@ interface StudentLibraryProps {
 export const StudentLibrary = ({ studentId }: StudentLibraryProps) => {
   const { t } = useTranslation();
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   const { formatNumber } = useNepaliNumbers();
   
   const [records, setRecords] = useState<LibraryRecord[]>([]);
@@ -272,7 +274,7 @@ const getStatusLabel = (status: string) => {
       {/* Library Records Table */}
       <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
         <Table>
-          <TableHead>
+          <TableHead sx={{ bgcolor: S.TH_BG }}>
             <TableRow sx={{ backgroundColor: alpha(theme.palette.primary.main, 0.04) }}>
 <TableCell sx={{ fontWeight: 600 }}>{t('library.bookCode')}</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>{t('library.bookTitle')}</TableCell>
@@ -286,8 +288,8 @@ const getStatusLabel = (status: string) => {
           </TableHead>
           <TableBody>
             {records.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+              <TableRow sx={S.TR_HOVER}>
+                <TableCell colSpan={8} align="center" sx={{ ...S.TD, py: 4 }}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                     <BookIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
                     <Typography color="text.secondary">{t('library.noRecords')}</Typography>
@@ -299,20 +301,18 @@ const getStatusLabel = (status: string) => {
                 <TableRow 
                   key={record.id} 
                   hover
-                  sx={{ 
-                    animation: `fadeInUp 0.4s ease-out ${index * 0.05}s both`,
+                  sx={{ ...S.TR_HOVER, animation: `fadeInUp 0.4s ease-out ${index * 0.05}s both`,
                     '@keyframes fadeInUp': {
                       from: { opacity: 0, transform: 'translateY(10px)' },
                       to: { opacity: 1, transform: 'translateY(0)' },
-                    },
-                  }}
+                    }, }}
                 >
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Typography variant="body2" fontWeight={600} color="primary">
                       {record.bookCode}
                     </Typography>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <BookIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
                       <Typography variant="body2" fontWeight={500}>
@@ -320,27 +320,27 @@ const getStatusLabel = (status: string) => {
                       </Typography>
                     </Box>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Typography variant="body2" color="text.secondary">
                       {record.author}
                     </Typography>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Typography variant="body2">
                       {new Date(record.borrowDate).toLocaleDateString()}
                     </Typography>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Typography variant="body2">
                       {new Date(record.dueDate).toLocaleDateString()}
                     </Typography>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Typography variant="body2">
                       {record.returnDate ? new Date(record.returnDate).toLocaleDateString() : '-'}
                     </Typography>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Chip
                       label={getStatusLabel(record.status)}
                       color={getStatusColor(record.status)}
@@ -348,7 +348,7 @@ const getStatusLabel = (status: string) => {
                       sx={{ fontWeight: 600 }}
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     {record.fine ? (
                       <Typography variant="body2" color="error" fontWeight={600}>
                         रू {formatNumber(record.fine)}

@@ -161,7 +161,7 @@ export function FeeStructures() {
           {t('finance.feeStructures')}
         </Typography>
         <Button
-          variant="contained"
+          variant="contained" sx={S.BTN_PRIMARY}
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
         >
@@ -175,7 +175,7 @@ export function FeeStructures() {
       <Paper sx={{ ...S.GLASS }}>
         <TableContainer>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
                 <TableCell>{t('finance.feeName')}</TableCell>
                 <TableCell>{t('finance.academicYear')}</TableCell>
@@ -188,31 +188,31 @@ export function FeeStructures() {
             </TableHead>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">{t('common.loading')}</TableCell>
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={7} align="center" sx={S.TD}>{t('common.loading')}</TableCell>
                 </TableRow>
               ) : feeStructures.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={7} align="center" sx={S.TD}>
                     {t('finance.noFeeStructures')}
                   </TableCell>
                 </TableRow>
               ) : (
                 feeStructures.map((fee) => (
-                  <TableRow key={fee.feeStructureId}>
-                    <TableCell>{fee.name}</TableCell>
-                    <TableCell>{fee.academicYearName || fee.academicYearId}</TableCell>
-                    <TableCell>{fee.className || fee.classId || t('finance.allClasses')}</TableCell>
-                    <TableCell align="right">NPR {(fee.amount || fee.totalAmount || 0).toLocaleString()}</TableCell>
-                    <TableCell>{fee.dueDate ? new Date(fee.dueDate).toLocaleDateString() : '—'}</TableCell>
-                    <TableCell>
+                  <TableRow key={fee.feeStructureId} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{fee.name}</TableCell>
+                    <TableCell sx={S.TD}>{fee.academicYearName || fee.academicYearId}</TableCell>
+                    <TableCell sx={S.TD}>{fee.className || fee.classId || t('finance.allClasses')}</TableCell>
+                    <TableCell align="right" sx={S.TD}>NPR {(fee.amount || fee.totalAmount || 0).toLocaleString()}</TableCell>
+                    <TableCell sx={S.TD}>{fee.dueDate ? new Date(fee.dueDate).toLocaleDateString() : '—'}</TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip
                         label={fee.isActive ? t('common.active') : t('common.no')}
                         color={fee.isActive ? 'success' : 'default'}
                         size="small"
                       />
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" sx={S.TD}>
                       <IconButton
                         size="small"
                         onClick={() => handleOpenDialog(fee)}
@@ -320,7 +320,7 @@ export function FeeStructures() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>{t('common.cancel')}</Button>
-          <Button onClick={handleSubmit} variant="contained">
+          <Button onClick={handleSubmit} variant="contained" sx={S.BTN_PRIMARY}>
             {editingFee ? t('common.save') : t('common.add')}
           </Button>
         </DialogActions>

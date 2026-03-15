@@ -47,7 +47,7 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { motion } from 'framer-motion';
-import { C } from '../../theme/designTokens';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 const MotionCard = motion.create(Paper);
 const MotionBox = motion.create(Box);
@@ -75,6 +75,7 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; labelKey: strin
 
 const StatCard = ({ icon, label, value, color, delay }: { icon: React.ReactNode; label: string; value: number | string; color: string; delay: number }) => {
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   return (
     <MotionCard
       initial={{ opacity: 0, y: 20 }}
@@ -135,6 +136,7 @@ export const StaffList = () => {
   const navigate = useSlugNavigate();
   const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -257,7 +259,7 @@ export const StaffList = () => {
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => navigate(`/staff/create`)}
-          sx={{
+          sx={{ ...S.BTN_PRIMARY, 
             borderRadius: 2,
             textTransform: 'none',
             fontWeight: 600,
@@ -410,7 +412,7 @@ export const StaffList = () => {
               variant="outlined"
               onClick={clearFilters}
               startIcon={<ClearIcon />}
-              sx={{ 
+              sx={{ ...S.BTN_OUTLINE,  
                 borderRadius: 2.5, 
                 textTransform: 'none',
                 fontWeight: 500,
@@ -437,7 +439,7 @@ export const StaffList = () => {
       >
         <TableContainer>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow sx={{ backgroundColor: alpha(theme.palette.primary.main, 0.03) }}>
                 <TableCell sx={{ fontWeight: 600, py: 2 }}>{t('staff.photo')}</TableCell>
                 <TableCell sx={{ fontWeight: 600, py: 2 }}>{t('staff.staffId')}</TableCell>
@@ -452,14 +454,14 @@ export const StaffList = () => {
             </TableHead>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={9} align="center" sx={{ py: 8 }}>
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={9} align="center" sx={{ ...S.TD, py: 8 }}>
                     <Typography color="text.secondary">{t('staff.loading')}</Typography>
                   </TableCell>
                 </TableRow>
               ) : !staff || staff.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={9} align="center" sx={{ py: 8 }}>
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={9} align="center" sx={{ ...S.TD, py: 8 }}>
                     <Box sx={{ textAlign: 'center' }}>
                       <PeopleIcon sx={{ fontSize: 48, color: alpha(theme.palette.text.secondary, 0.3), mb: 2 }} />
                       <Typography color="text.secondary">{t('staff.noStaffFound')}</Typography>
@@ -471,16 +473,14 @@ export const StaffList = () => {
                   <TableRow 
                     key={member.staffId} 
                     hover 
-                    sx={{ 
-                      '&:hover': { 
+                    sx={{ ...S.TR_HOVER, '&:hover': { 
                         backgroundColor: alpha(theme.palette.primary.main, 0.03),
                         transform: 'scale(1.005)',
                       },
                       transition: 'all 0.2s ease',
-                      cursor: 'pointer',
-                    }}
+                      cursor: 'pointer', }}
                   >
-                    <TableCell>
+                    <TableCell sx={S.TD}>
                       <Avatar
                         src={member.photoUrl}
                         alt={`${member.firstNameEn} ${member.lastNameEn}`}
@@ -494,17 +494,17 @@ export const StaffList = () => {
                         {member.firstNameEn?.[0] || 'S'}
                       </Avatar>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>
                       <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: 'monospace', fontSize: '0.8rem' }}>
                         {member.staffCode}
                       </Typography>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
                         {member.firstNameEn} {member.lastNameEn}
                       </Typography>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip
                         label={t(`staff.positions.${toTranslationKey(member.position)}`)}
                         size="small"
@@ -517,22 +517,22 @@ export const StaffList = () => {
                         }}
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>
                       <Typography variant="body2" color="text.secondary">
                         {t(`staff.departments.${toTranslationKey(member.department)}`)}
                       </Typography>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>
                       <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
                         {member.phone || '-'}
                       </Typography>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>
                       <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 500 }}>
                         {member.email || '-'}
                       </Typography>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip
                         label={t(STATUS_CONFIG[member.status]?.labelKey) || member.status}
                         size="small"
@@ -545,7 +545,7 @@ export const StaffList = () => {
                         }}
                       />
                     </TableCell>
-                    <TableCell align="right">
+                    <TableCell align="right" sx={S.TD}>
                       <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
                         <IconButton
                           size="small"

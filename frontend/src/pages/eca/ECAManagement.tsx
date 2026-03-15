@@ -93,11 +93,11 @@ export function ECAManagement() {
 
         <TabPanel value={tabValue} index={0}>
           <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={openEnrollDialog}>Enroll Student</Button>
+            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<AddIcon />} onClick={openEnrollDialog}>Enroll Student</Button>
           </Box>
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell>Student Name</TableCell>
                   <TableCell>ECA</TableCell>
@@ -106,12 +106,12 @@ export function ECAManagement() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? <TableRow><TableCell colSpan={4} align="center">Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow><TableCell colSpan={4} align="center">No enrollments</TableCell></TableRow> : data.map((item: any, i) => (
-                  <TableRow key={i}>
-                    <TableCell>{item.studentName}</TableCell>
-                    <TableCell>{item.ecaName}</TableCell>
-                    <TableCell>{new Date(item.enrollmentDate).toLocaleDateString()}</TableCell>
-                    <TableCell><Chip label={item.status} color="success" size="small" /></TableCell>
+                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>No enrollments</TableCell></TableRow> : data.map((item: any, i) => (
+                  <TableRow key={i} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{item.studentName}</TableCell>
+                    <TableCell sx={S.TD}>{item.ecaName}</TableCell>
+                    <TableCell sx={S.TD}>{new Date(item.enrollmentDate).toLocaleDateString()}</TableCell>
+                    <TableCell sx={S.TD}><Chip label={item.status} color="success" size="small" /></TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -121,11 +121,11 @@ export function ECAManagement() {
 
         <TabPanel value={tabValue} index={1}>
           <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={openAttendanceDialog}>Mark Attendance</Button>
+            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<AddIcon />} onClick={openAttendanceDialog}>Mark Attendance</Button>
           </Box>
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell>ECA</TableCell>
                   <TableCell>Date</TableCell>
@@ -134,12 +134,12 @@ export function ECAManagement() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? <TableRow><TableCell colSpan={4} align="center">Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow><TableCell colSpan={4} align="center">No attendance records</TableCell></TableRow> : data.map((item: any, i) => (
-                  <TableRow key={i}>
-                    <TableCell>{item.ecaName}</TableCell>
-                    <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
-                    <TableCell>{item.presentCount}</TableCell>
-                    <TableCell>{item.absentCount}</TableCell>
+                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>No attendance records</TableCell></TableRow> : data.map((item: any, i) => (
+                  <TableRow key={i} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{item.ecaName}</TableCell>
+                    <TableCell sx={S.TD}>{new Date(item.date).toLocaleDateString()}</TableCell>
+                    <TableCell sx={S.TD}>{item.presentCount}</TableCell>
+                    <TableCell sx={S.TD}>{item.absentCount}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -149,11 +149,11 @@ export function ECAManagement() {
 
         <TabPanel value={tabValue} index={2}>
           <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={openEventDialog}>Create Event</Button>
+            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<AddIcon />} onClick={openEventDialog}>Create Event</Button>
           </Box>
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell>Event Title</TableCell>
                   <TableCell>ECA</TableCell>
@@ -163,13 +163,13 @@ export function ECAManagement() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? <TableRow><TableCell colSpan={5} align="center">Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow><TableCell colSpan={5} align="center">No events</TableCell></TableRow> : data.map((item: any, i) => (
-                  <TableRow key={i}>
-                    <TableCell>{item.title}</TableCell>
-                    <TableCell>{item.ecaName}</TableCell>
-                    <TableCell>{new Date(item.eventDate).toLocaleDateString()}</TableCell>
-                    <TableCell>{item.venue}</TableCell>
-                    <TableCell><Chip label={item.status} size="small" /></TableCell>
+                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={5} align="center" sx={S.TD}>Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={5} align="center" sx={S.TD}>No events</TableCell></TableRow> : data.map((item: any, i) => (
+                  <TableRow key={i} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{item.title}</TableCell>
+                    <TableCell sx={S.TD}>{item.ecaName}</TableCell>
+                    <TableCell sx={S.TD}>{new Date(item.eventDate).toLocaleDateString()}</TableCell>
+                    <TableCell sx={S.TD}>{item.venue}</TableCell>
+                    <TableCell sx={S.TD}><Chip label={item.status} size="small" /></TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -179,11 +179,11 @@ export function ECAManagement() {
 
         <TabPanel value={tabValue} index={3}>
           <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button variant="contained" startIcon={<TrophyIcon />} onClick={openAchievementDialog}>Record Achievement</Button>
+            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<TrophyIcon />} onClick={openAchievementDialog}>Record Achievement</Button>
           </Box>
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
                   <TableCell>Student Name</TableCell>
                   <TableCell>ECA</TableCell>
@@ -192,12 +192,12 @@ export function ECAManagement() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? <TableRow><TableCell colSpan={4} align="center">Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow><TableCell colSpan={4} align="center">No achievements</TableCell></TableRow> : data.map((item: any, i) => (
-                  <TableRow key={i}>
-                    <TableCell>{item.studentName}</TableCell>
-                    <TableCell>{item.ecaName}</TableCell>
-                    <TableCell>{item.achievement}</TableCell>
-                    <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
+                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>No achievements</TableCell></TableRow> : data.map((item: any, i) => (
+                  <TableRow key={i} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{item.studentName}</TableCell>
+                    <TableCell sx={S.TD}>{item.ecaName}</TableCell>
+                    <TableCell sx={S.TD}>{item.achievement}</TableCell>
+                    <TableCell sx={S.TD}>{new Date(item.date).toLocaleDateString()}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -250,7 +250,7 @@ export function ECAManagement() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">Submit</Button>
+          <Button onClick={handleSubmit} variant="contained" sx={S.BTN_PRIMARY}>Submit</Button>
         </DialogActions>
       </Dialog>
     </Box>

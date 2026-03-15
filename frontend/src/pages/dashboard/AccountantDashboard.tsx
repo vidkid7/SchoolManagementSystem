@@ -22,7 +22,7 @@ import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import apiClient from '../../services/apiClient';
 import { RootState } from '../../store';
 import { getAccountantStyles } from '../../styles/accountantTheme';
-import { C, useAdminStyles } from '../../theme/designTokens';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface FinanceStats {
   totalCollection: number;
@@ -266,7 +266,7 @@ const AccountantDashboard: React.FC = () => {
               variant="outlined"
               startIcon={<InvoiceIcon />}
               onClick={() => nav('/finance/invoices')}
-              sx={{ ...styles.secondaryButton, py: 2 }}
+              sx={{ ...S.BTN_OUTLINE,  ...styles.secondaryButton, py: 2 }}
             >
               Manage Invoices
             </Button>
@@ -277,7 +277,7 @@ const AccountantDashboard: React.FC = () => {
               variant="outlined"
               startIcon={<ReportIcon />}
               onClick={() => nav('/finance/reports')}
-              sx={{ ...styles.secondaryButton, py: 2 }}
+              sx={{ ...S.BTN_OUTLINE,  ...styles.secondaryButton, py: 2 }}
             >
               View Reports
             </Button>
@@ -288,7 +288,7 @@ const AccountantDashboard: React.FC = () => {
               variant="outlined"
               startIcon={<PeopleIcon />}
               onClick={() => nav('/admissions')}
-              sx={{ ...styles.secondaryButton, py: 2 }}
+              sx={{ ...S.BTN_OUTLINE,  ...styles.secondaryButton, py: 2 }}
             >
               Admissions
             </Button>
@@ -305,7 +305,7 @@ const AccountantDashboard: React.FC = () => {
                 </Typography>
                 <TableContainer sx={styles.table.container}>
                   <Table size="small">
-                    <TableHead>
+                    <TableHead sx={{ bgcolor: S.TH_BG }}>
                       <TableRow>
                         <TableCell sx={styles.table.header}>Receipt #</TableCell>
                         <TableCell sx={styles.table.header}>Student</TableCell>
@@ -317,30 +317,30 @@ const AccountantDashboard: React.FC = () => {
                     </TableHead>
                     <TableBody>
                       {recentTransactions.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary', borderBottom: 'none' }}>
+                        <TableRow sx={S.TR_HOVER}>
+                          <TableCell colSpan={6} align="center" sx={{ ...S.TD, py: 4, color: 'text.secondary', borderBottom: 'none' }}>
                             No transactions yet
                           </TableCell>
                         </TableRow>
                       ) : (
                         recentTransactions.map((txn: any, idx) => (
-                          <TableRow key={txn.paymentId || idx} sx={styles.table.row}>
-                            <TableCell sx={{ ...styles.table.cell, fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                          <TableRow key={txn.paymentId || idx} sx={{ ...S.TR_HOVER, ...styles.table.row }}>
+                            <TableCell sx={{ ...S.TD, ...styles.table.cell, fontFamily: 'monospace', fontSize: '0.85rem' }}>
                               {txn.receiptNumber || '—'}
                             </TableCell>
-                            <TableCell sx={styles.table.cell}>{txn.studentName || `Student #${txn.studentId}`}</TableCell>
-                            <TableCell align="right" sx={{ ...styles.table.cell, fontWeight: 700, color: C.neutral }}>
+                            <TableCell sx={{ ...S.TD, ...styles.table.cell }}>{txn.studentName || `Student #${txn.studentId}`}</TableCell>
+                            <TableCell align="right" sx={{ ...S.TD, ...styles.table.cell, fontWeight: 700, color: C.neutral }}>
                               Rs {Number(txn.amount).toLocaleString()}
                             </TableCell>
-                            <TableCell sx={{ ...styles.table.cell, textTransform: 'capitalize' }}>
+                            <TableCell sx={{ ...S.TD, ...styles.table.cell, textTransform: 'capitalize' }}>
                               {String(txn.paymentMethod || txn.method || '—').replace(/_/g, ' ')}
                             </TableCell>
-                            <TableCell sx={styles.table.cell}>
+                            <TableCell sx={{ ...S.TD, ...styles.table.cell }}>
                               {txn.paymentDate
                                 ? new Date(txn.paymentDate).toLocaleDateString()
                                 : '—'}
                             </TableCell>
-                            <TableCell sx={styles.table.cell}>
+                            <TableCell sx={{ ...S.TD, ...styles.table.cell }}>
                               <StatusBadge status={txn.status} />
                             </TableCell>
                           </TableRow>

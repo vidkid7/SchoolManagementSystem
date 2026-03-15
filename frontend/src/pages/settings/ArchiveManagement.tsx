@@ -278,7 +278,7 @@ export const ArchiveManagement = () => {
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
-            variant="outlined"
+            variant="outlined" sx={S.BTN_OUTLINE}
             startIcon={<CleanIcon />}
             onClick={handleCleanupArchives}
             disabled={cleaning}
@@ -287,7 +287,7 @@ export const ArchiveManagement = () => {
             {cleaning ? <CircularProgress size={24} /> : 'Cleanup Expired / म्याद सकिएको सफा गर्नुहोस्'}
           </Button>
           <Button
-            variant="contained"
+            variant="contained" sx={S.BTN_PRIMARY}
             startIcon={<ArchiveIcon />}
             onClick={() => setArchiveDialogOpen(true)}
           >
@@ -382,7 +382,7 @@ export const ArchiveManagement = () => {
               </Select>
             </FormControl>
             <Button
-              variant="outlined"
+              variant="outlined" sx={S.BTN_OUTLINE}
               size="small"
               startIcon={<RefreshIcon />}
               onClick={fetchArchives}
@@ -395,7 +395,7 @@ export const ArchiveManagement = () => {
         <Divider />
         <TableContainer>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
                 <TableCell>ID</TableCell>
                 <TableCell>Academic Year / शैक्षिक वर्ष</TableCell>
@@ -408,14 +408,14 @@ export const ArchiveManagement = () => {
             </TableHead>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={7} align="center" sx={S.TD}>
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : archives.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={7} align="center" sx={S.TD}>
                     <Typography color="text.secondary">
                       No archives found / कुनै अभिलेख फेला परेन
                     </Typography>
@@ -423,18 +423,18 @@ export const ArchiveManagement = () => {
                 </TableRow>
               ) : (
                 archives.map((archive) => (
-                  <TableRow key={archive.archiveId} hover>
-                    <TableCell>{archive.archiveId}</TableCell>
-                    <TableCell>
+                  <TableRow key={archive.archiveId} hover sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{archive.archiveId}</TableCell>
+                    <TableCell sx={S.TD}>
                       <Typography variant="body2" fontWeight="bold">
                         {archive.academicYearName}
                       </Typography>
                     </TableCell>
-                    <TableCell>{formatDate(archive.archivedAt)}</TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>{formatDate(archive.archivedAt)}</TableCell>
+                    <TableCell sx={S.TD}>
                       {getTotalRecords(archive.recordCounts).toLocaleString()}
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip
                         icon={getStatusIcon(archive.status)}
                         label={archive.status.replace('_', ' ').toUpperCase()}
@@ -442,12 +442,12 @@ export const ArchiveManagement = () => {
                         size="small"
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>
                       <Typography variant="body2">
                         {formatDate(archive.retentionUntil)}
                       </Typography>
                     </TableCell>
-                    <TableCell align="right">
+                    <TableCell align="right" sx={S.TD}>
                       <IconButton
                         size="small"
                         title="View Details"
@@ -508,7 +508,7 @@ export const ArchiveManagement = () => {
             Cancel / रद्द गर्नुहोस्
           </Button>
           <Button
-            variant="contained"
+            variant="contained" sx={S.BTN_PRIMARY}
             onClick={handleArchiveYear}
             disabled={archiving || !selectedYearId}
             startIcon={archiving ? <CircularProgress size={20} /> : <ArchiveIcon />}
@@ -647,7 +647,7 @@ export const ArchiveManagement = () => {
             Cancel / रद्द गर्नुहोस्
           </Button>
           <Button
-            variant="contained"
+            variant="contained" sx={S.BTN_PRIMARY}
             color="primary"
             onClick={handleRestoreArchive}
             disabled={restoring}

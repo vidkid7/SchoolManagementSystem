@@ -230,7 +230,7 @@ export function BookCatalog() {
       <Paper sx={S.GLASS}>
         <TableContainer>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
                 <TableCell>{t('library.accessionNo')}</TableCell>
                 <TableCell>{t('library.bookTitle')}</TableCell>
@@ -244,34 +244,34 @@ export function BookCatalog() {
             </TableHead>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={8} align="center">{t('library.loading')}</TableCell>
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={8} align="center" sx={S.TD}>{t('library.loading')}</TableCell>
                 </TableRow>
               ) : books.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} align="center">
+                <TableRow sx={S.TR_HOVER}>
+                  <TableCell colSpan={8} align="center" sx={S.TD}>
                     {t('library.noBooksFoundAdd')}
                   </TableCell>
                 </TableRow>
               ) : (
                 books.map((book) => (
-                  <TableRow key={book.bookId}>
-                    <TableCell>{book.accessionNumber}</TableCell>
-                    <TableCell>{book.title}</TableCell>
-                    <TableCell>{book.author}</TableCell>
-                    <TableCell>
+                  <TableRow key={book.bookId} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{book.accessionNumber}</TableCell>
+                    <TableCell sx={S.TD}>{book.title}</TableCell>
+                    <TableCell sx={S.TD}>{book.author}</TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip label={book.category} size="small" />
                     </TableCell>
-                    <TableCell>{book.isbn || '-'}</TableCell>
-                    <TableCell align="center">{book.totalCopies}</TableCell>
-                    <TableCell align="center">
+                    <TableCell sx={S.TD}>{book.isbn || '-'}</TableCell>
+                    <TableCell align="center" sx={S.TD}>{book.totalCopies}</TableCell>
+                    <TableCell align="center" sx={S.TD}>
                       <Chip
                         label={book.availableCopies}
                         size="small"
                         color={book.availableCopies > 0 ? 'success' : 'error'}
                       />
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" sx={S.TD}>
                       <IconButton
                         size="small"
                         onClick={() => handleOpenDialog(book)}
@@ -414,7 +414,7 @@ export function BookCatalog() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>{t('library.cancel')}</Button>
-          <Button onClick={handleSubmit} variant="contained">
+          <Button onClick={handleSubmit} variant="contained" sx={S.BTN_PRIMARY}>
             {editingBook ? t('library.update') : t('library.addBook')}
           </Button>
         </DialogActions>
