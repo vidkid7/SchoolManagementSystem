@@ -4,6 +4,9 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@mui/material/styles';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import {
   Box,
   Paper,
@@ -33,7 +36,7 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 interface Book {
   bookId: number;
@@ -51,6 +54,9 @@ interface Book {
 }
 
 export function BookCatalog() {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -90,7 +96,7 @@ export function BookCatalog() {
       if (search) params.search = search;
       if (categoryFilter) params.category = categoryFilter;
 
-      const response = await api.get('/library/books', { params });
+      const response = await apiClient.get('/library/books', { params });
       setBooks(response.data?.data || []);
       setTotal(response.data?.meta?.total || 0);
     } catch (err) {
@@ -143,30 +149,30 @@ export function BookCatalog() {
   const handleSubmit = async () => {
     try {
       if (editingBook) {
-        await api.put(`/library/books/${editingBook.bookId}`, formData);
-        setSuccess('Book updated successfully');
+        await apiClient.put(`/library/books/${editingBook.bookId}`, formData);
+        setSuccess(t('library.bookUpdatedSuccess'));
       } else {
-        await api.post('/library/books', formData);
-        setSuccess('Book added successfully');
+        await apiClient.post('/library/books', formData);
+        setSuccess(t('library.bookAddedSuccess'));
       }
       handleCloseDialog();
       fetchBooks();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save book');
+      setError(err.response?.data?.message || t('library.failedToSaveBook'));
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this book?')) return;
+    if (!confirm(t('library.confirmDeleteBook'))) return;
 
     try {
-      await api.delete(`/library/books/${id}`);
-      setSuccess('Book deleted successfully');
+      await apiClient.delete(`/library/books/${id}`);
+      setSuccess(t('library.bookDeletedSuccess'));
       fetchBooks();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete book');
+      setError(err.response?.data?.message || t('library.failedToDeleteBook'));
     }
   };
 
@@ -174,26 +180,27 @@ export function BookCatalog() {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5" fontWeight={600}>
-          Book Catalog
+          {t('library.bookCatalog')}
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
+          sx={S.BTN_PRIMARY}
         >
-          Add Book
+          {t('library.addBook')}
         </Button>
       </Box>
 
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
-      <Paper sx={{ p: 2, mb: 2 }}>
+      <Paper sx={{ ...S.GLASS, p: 2, mb: 2 }}>
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              placeholder="Search by title, author, ISBN..."
+              placeholder={t('library.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               InputProps={{
@@ -205,45 +212,45 @@ export function BookCatalog() {
             <TextField
               select
               fullWidth
-              label="Category"
+              label={t('library.category')}
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
             >
-              <MenuItem value="">All Categories</MenuItem>
-              <MenuItem value="Fiction">Fiction</MenuItem>
-              <MenuItem value="Non-Fiction">Non-Fiction</MenuItem>
-              <MenuItem value="Science">Science</MenuItem>
-              <MenuItem value="History">History</MenuItem>
-              <MenuItem value="Reference">Reference</MenuItem>
+              <MenuItem value="">{t('library.allCategories')}</MenuItem>
+              <MenuItem value="Fiction">{t('library.fiction')}</MenuItem>
+              <MenuItem value="Non-Fiction">{t('library.nonFiction')}</MenuItem>
+              <MenuItem value="Science">{t('library.science')}</MenuItem>
+              <MenuItem value="History">{t('library.history')}</MenuItem>
+              <MenuItem value="Reference">{t('library.reference')}</MenuItem>
             </TextField>
           </Grid>
         </Grid>
       </Paper>
 
-      <Paper>
+      <Paper sx={S.GLASS}>
         <TableContainer>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Accession No.</TableCell>
-                <TableCell>Title</TableCell>
-                <TableCell>Author</TableCell>
-                <TableCell>Category</TableCell>
-                <TableCell>ISBN</TableCell>
-                <TableCell align="center">Total Copies</TableCell>
-                <TableCell align="center">Available</TableCell>
-                <TableCell align="center">Actions</TableCell>
+                <TableCell>{t('library.accessionNo')}</TableCell>
+                <TableCell>{t('library.bookTitle')}</TableCell>
+                <TableCell>{t('library.author')}</TableCell>
+                <TableCell>{t('library.category')}</TableCell>
+                <TableCell>{t('library.isbn')}</TableCell>
+                <TableCell align="center">{t('library.totalCopies')}</TableCell>
+                <TableCell align="center">{t('library.available')}</TableCell>
+                <TableCell align="center">{t('library.actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center">Loading...</TableCell>
+                  <TableCell colSpan={8} align="center">{t('library.loading')}</TableCell>
                 </TableRow>
               ) : books.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} align="center">
-                    No books found. Add books to get started.
+                    {t('library.noBooksFoundAdd')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -268,14 +275,14 @@ export function BookCatalog() {
                       <IconButton
                         size="small"
                         onClick={() => handleOpenDialog(book)}
-                        title="Edit"
+                        title={t('library.edit')}
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
                       <IconButton
                         size="small"
                         onClick={() => handleDelete(book.bookId)}
-                        title="Delete"
+                        title={t('library.delete')}
                         color="error"
                       >
                         <DeleteIcon fontSize="small" />
@@ -302,13 +309,13 @@ export function BookCatalog() {
 
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>
-          {editingBook ? 'Edit Book' : 'Add New Book'}
+          {editingBook ? t('library.editBook') : t('library.addNewBook')}
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12} md={6}>
               <TextField
-                label="Accession Number"
+                label={t('library.accessionNumber')}
                 value={formData.accessionNumber}
                 onChange={(e) => setFormData({ ...formData, accessionNumber: e.target.value })}
                 required
@@ -317,7 +324,7 @@ export function BookCatalog() {
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
-                label="ISBN"
+                label={t('library.isbn')}
                 value={formData.isbn}
                 onChange={(e) => setFormData({ ...formData, isbn: e.target.value })}
                 fullWidth
@@ -325,7 +332,7 @@ export function BookCatalog() {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Title"
+                label={t('library.bookTitle')}
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 required
@@ -334,7 +341,7 @@ export function BookCatalog() {
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
-                label="Author"
+                label={t('library.author')}
                 value={formData.author}
                 onChange={(e) => setFormData({ ...formData, author: e.target.value })}
                 required
@@ -343,7 +350,7 @@ export function BookCatalog() {
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
-                label="Publisher"
+                label={t('library.publisher')}
                 value={formData.publisher}
                 onChange={(e) => setFormData({ ...formData, publisher: e.target.value })}
                 fullWidth
@@ -351,7 +358,7 @@ export function BookCatalog() {
             </Grid>
             <Grid item xs={12} md={4}>
               <TextField
-                label="Publication Year"
+                label={t('library.publicationYear')}
                 type="number"
                 value={formData.publicationYear}
                 onChange={(e) => setFormData({ ...formData, publicationYear: e.target.value })}
@@ -361,23 +368,23 @@ export function BookCatalog() {
             <Grid item xs={12} md={4}>
               <TextField
                 select
-                label="Category"
+                label={t('library.category')}
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 required
                 fullWidth
               >
-                <MenuItem value="Fiction">Fiction</MenuItem>
-                <MenuItem value="Non-Fiction">Non-Fiction</MenuItem>
-                <MenuItem value="Science">Science</MenuItem>
-                <MenuItem value="History">History</MenuItem>
-                <MenuItem value="Reference">Reference</MenuItem>
-                <MenuItem value="Textbook">Textbook</MenuItem>
+                <MenuItem value="Fiction">{t('library.fiction')}</MenuItem>
+                <MenuItem value="Non-Fiction">{t('library.nonFiction')}</MenuItem>
+                <MenuItem value="Science">{t('library.science')}</MenuItem>
+                <MenuItem value="History">{t('library.history')}</MenuItem>
+                <MenuItem value="Reference">{t('library.reference')}</MenuItem>
+                <MenuItem value="Textbook">{t('library.textbook')}</MenuItem>
               </TextField>
             </Grid>
             <Grid item xs={12} md={4}>
               <TextField
-                label="Total Copies"
+                label={t('library.totalCopies')}
                 type="number"
                 value={formData.totalCopies}
                 onChange={(e) => setFormData({ ...formData, totalCopies: e.target.value })}
@@ -387,7 +394,7 @@ export function BookCatalog() {
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
-                label="Location/Shelf"
+                label={t('library.locationShelf')}
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 fullWidth
@@ -395,7 +402,7 @@ export function BookCatalog() {
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
-                label="Price (NPR)"
+                label={t('library.priceNPR')}
                 type="number"
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
@@ -406,9 +413,9 @@ export function BookCatalog() {
           {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handleCloseDialog}>{t('library.cancel')}</Button>
           <Button onClick={handleSubmit} variant="contained">
-            {editingBook ? 'Update' : 'Add'}
+            {editingBook ? t('library.update') : t('library.addBook')}
           </Button>
         </DialogActions>
       </Dialog>

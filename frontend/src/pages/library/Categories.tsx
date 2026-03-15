@@ -4,6 +4,9 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@mui/material/styles';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import {
   Box,
   Paper,
@@ -28,7 +31,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 interface Category {
   categoryId: number;
@@ -38,6 +41,9 @@ interface Category {
 }
 
 export function Categories() {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
@@ -56,7 +62,7 @@ export function Categories() {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/library/categories');
+      const response = await apiClient.get('/library/categories');
       setCategories(response.data?.data || []);
     } catch (err) {
       console.error('Failed to fetch categories:', err);
@@ -83,30 +89,30 @@ export function Categories() {
   const handleSubmit = async () => {
     try {
       if (editingCategory) {
-        await api.put(`/library/categories/${editingCategory.categoryId}`, formData);
-        setSuccess('Category updated successfully');
+        await apiClient.put(`/library/categories/${editingCategory.categoryId}`, formData);
+        setSuccess(t('library.categoryUpdatedSuccess'));
       } else {
-        await api.post('/library/categories', formData);
-        setSuccess('Category created successfully');
+        await apiClient.post('/library/categories', formData);
+        setSuccess(t('library.categoryCreatedSuccess'));
       }
       setOpenDialog(false);
       fetchCategories();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save category');
+      setError(err.response?.data?.message || t('library.failedToSaveCategory'));
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this category?')) return;
+    if (!confirm(t('library.confirmDeleteCategory'))) return;
 
     try {
-      await api.delete(`/library/categories/${id}`);
-      setSuccess('Category deleted successfully');
+      await apiClient.delete(`/library/categories/${id}`);
+      setSuccess(t('library.categoryDeletedSuccess'));
       fetchCategories();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete category');
+      setError(err.response?.data?.message || t('library.failedToDeleteCategory'));
     }
   };
 
@@ -114,40 +120,41 @@ export function Categories() {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5" fontWeight={600}>
-          Book Categories
+          {t('library.bookCategories')}
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
+          sx={S.BTN_PRIMARY}
         >
-          Add Category
+          {t('library.addCategory')}
         </Button>
       </Box>
 
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
-      <Paper>
+      <Paper sx={S.GLASS}>
         <TableContainer>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Category Name</TableCell>
-                <TableCell>Description</TableCell>
-                <TableCell align="center">Books Count</TableCell>
-                <TableCell align="center">Actions</TableCell>
+                <TableCell>{t('library.categoryName')}</TableCell>
+                <TableCell>{t('library.description')}</TableCell>
+                <TableCell align="center">{t('library.booksCount')}</TableCell>
+                <TableCell align="center">{t('library.actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={4} align="center">Loading...</TableCell>
+                  <TableCell colSpan={4} align="center">{t('library.loading')}</TableCell>
                 </TableRow>
               ) : categories.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} align="center">
-                    No categories found. Add categories to organize your library.
+                    {t('library.noCategoriesFound')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -160,14 +167,14 @@ export function Categories() {
                       <IconButton
                         size="small"
                         onClick={() => handleOpenDialog(category)}
-                        title="Edit"
+                        title={t('library.edit')}
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
                       <IconButton
                         size="small"
                         onClick={() => handleDelete(category.categoryId)}
-                        title="Delete"
+                        title={t('library.delete')}
                         color="error"
                         disabled={category.bookCount > 0}
                       >
@@ -184,19 +191,19 @@ export function Categories() {
 
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {editingCategory ? 'Edit Category' : 'Add Category'}
+          {editingCategory ? t('library.editCategory') : t('library.addCategory')}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <TextField
-              label="Category Name"
+              label={t('library.categoryName')}
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
               fullWidth
             />
             <TextField
-              label="Description"
+              label={t('library.description')}
               multiline
               rows={3}
               value={formData.description}
@@ -207,9 +214,9 @@ export function Categories() {
           {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+          <Button onClick={() => setOpenDialog(false)}>{t('library.cancel')}</Button>
           <Button onClick={handleSubmit} variant="contained">
-            {editingCategory ? 'Update' : 'Create'}
+            {editingCategory ? t('library.update') : t('library.create')}
           </Button>
         </DialogActions>
       </Dialog>

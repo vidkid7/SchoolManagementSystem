@@ -4,6 +4,9 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@mui/material/styles';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import {
   Box,
   Paper,
@@ -36,7 +39,7 @@ import {
   Bookmark as ReserveIcon,
   Cancel as CancelIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 interface Circulation {
   circulationId: number;
@@ -68,6 +71,9 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export function BookCirculation() {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const [tabValue, setTabValue] = useState(0);
   const [circulations, setCirculations] = useState<Circulation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,7 +119,7 @@ export function BookCirculation() {
     try {
       setLoading(true);
       const status = tabValue === 0 ? 'issued' : tabValue === 1 ? 'overdue' : 'returned';
-      const response = await api.get('/library/circulation', {
+      const response = await apiClient.get('/library/circulation', {
         params: {
           status,
           page: page + 1,
@@ -132,8 +138,8 @@ export function BookCirculation() {
 
   const handleIssueBook = async () => {
     try {
-      await api.post('/library/issue', issueForm);
-      setSuccess('Book issued successfully');
+      await apiClient.post('/library/issue', issueForm);
+      setSuccess(t('library.bookIssuedSuccess'));
       setIssueDialog(false);
       fetchCirculations();
       setTimeout(() => setSuccess(''), 3000);
@@ -144,7 +150,7 @@ export function BookCirculation() {
         dueDate: '',
       });
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to issue book');
+      setError(err.response?.data?.message || t('library.failedToIssueBook'));
     }
   };
 
@@ -152,38 +158,38 @@ export function BookCirculation() {
     if (!selectedCirculation) return;
 
     try {
-      await api.post(`/library/return/${selectedCirculation.circulationId}`, {
+      await apiClient.post(`/library/return/${selectedCirculation.circulationId}`, {
         fineAmount,
       });
-      setSuccess('Book returned successfully');
+      setSuccess(t('library.bookReturnedSuccess'));
       setReturnDialog(false);
       setSelectedCirculation(null);
       fetchCirculations();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to return book');
+      setError(err.response?.data?.message || t('library.failedToReturnBook'));
     }
   };
 
   const handlePayFine = async (circulationId: number) => {
     try {
-      await api.post(`/library/pay-fine/${circulationId}`);
-      setSuccess('Fine paid successfully');
+      await apiClient.post(`/library/pay-fine/${circulationId}`);
+      setSuccess(t('library.finePaidSuccess'));
       fetchCirculations();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to process payment');
+      setError(err.response?.data?.message || t('library.failedToProcessPayment'));
     }
   };
 
   const handleRenew = async (circulationId: number) => {
     try {
-      await api.post('/library/renew', { circulationId });
-      setSuccess('Book renewed successfully');
+      await apiClient.post('/library/renew', { circulationId });
+      setSuccess(t('library.bookRenewedSuccess'));
       fetchCirculations();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to renew book');
+      setError(err.response?.data?.message || t('library.failedToRenewBook'));
     }
   };
 
@@ -191,7 +197,7 @@ export function BookCirculation() {
     if (!reservationBookId) return;
     setReservationsLoading(true);
     try {
-      const res = await api.get('/library/reservations', { params: { bookId: reservationBookId } });
+      const res = await apiClient.get('/library/reservations', { params: { bookId: reservationBookId } });
       setReservations(res.data?.data ?? []);
     } catch {
       setReservations([]);
@@ -202,28 +208,28 @@ export function BookCirculation() {
 
   const handleCancelReservation = async (reservationId: number) => {
     try {
-      await api.put(`/library/reservations/${reservationId}/cancel`, { reason: 'Cancelled by staff' });
-      setSuccess('Reservation cancelled');
+      await apiClient.put(`/library/reservations/${reservationId}/cancel`, { reason: 'Cancelled by staff' });
+      setSuccess(t('library.reservationCancelled'));
       fetchReservations();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to cancel reservation');
+      setError(err.response?.data?.message || t('library.failedToCancelReservation'));
     }
   };
 
   const handleReserveBook = async () => {
     try {
-      await api.post('/library/reserve', {
+      await apiClient.post('/library/reserve', {
         bookId: parseInt(reserveForm.bookId, 10),
         studentId: parseInt(reserveForm.studentId, 10),
       });
-      setSuccess('Book reserved successfully');
+      setSuccess(t('library.bookReservedSuccess'));
       setReserveDialog(false);
       setReserveForm({ bookId: '', studentId: '' });
       if (reservationBookId) fetchReservations();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to reserve book');
+      setError(err.response?.data?.message || t('library.failedToReserveBook'));
     }
   };
 
@@ -231,7 +237,7 @@ export function BookCirculation() {
     if (!finesStudentId) return;
     setFinesLoading(true);
     try {
-      const res = await api.get(`/library/fines/${finesStudentId}`);
+      const res = await apiClient.get(`/library/fines/${finesStudentId}`);
       setFinesList(Array.isArray(res.data?.data) ? res.data.data : []);
     } catch {
       setFinesList([]);
@@ -242,15 +248,15 @@ export function BookCirculation() {
 
   const handlePayFineById = async (fineId: number, amount: number) => {
     try {
-      await api.post(`/library/fines/${fineId}/pay`, {
+      await apiClient.post(`/library/fines/${fineId}/pay`, {
         amount: Math.max(0.01, amount),
         paymentMethod: 'cash',
       });
-      setSuccess('Fine paid successfully');
+      setSuccess(t('library.finePaidSuccess'));
       fetchFines();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to pay fine');
+      setError(err.response?.data?.message || t('library.failedToProcessPayment'));
     }
   };
 
@@ -272,7 +278,7 @@ export function BookCirculation() {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5" fontWeight={600}>
-          Book Circulation
+          {t('library.bookCirculation')}
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
@@ -280,14 +286,15 @@ export function BookCirculation() {
             startIcon={<ReserveIcon />}
             onClick={() => setReserveDialog(true)}
           >
-            Reserve Book
+            {t('library.reserveBook')}
           </Button>
           <Button
             variant="contained"
             startIcon={<IssueIcon />}
             onClick={() => setIssueDialog(true)}
+            sx={S.BTN_PRIMARY}
           >
-            Issue Book
+            {t('library.issueBook')}
           </Button>
         </Box>
       </Box>
@@ -295,13 +302,13 @@ export function BookCirculation() {
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
-      <Paper>
+      <Paper sx={S.GLASS}>
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
-          <Tab label="Issued Books" />
-          <Tab label="Overdue Books" />
-          <Tab label="Return History" />
-          <Tab label="Reservations" />
-          <Tab label="Fines by Student" />
+          <Tab label={t('library.issuedBooks')} />
+          <Tab label={t('library.overdueBooksTab')} />
+          <Tab label={t('library.returnHistory')} />
+          <Tab label={t('library.reservations')} />
+          <Tab label={t('library.finesByStudent')} />
         </Tabs>
 
         <TabPanel value={tabValue} index={0}>
@@ -309,23 +316,23 @@ export function BookCirculation() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Book Title</TableCell>
-                  <TableCell>Accession No.</TableCell>
-                  <TableCell>Member</TableCell>
-                  <TableCell>Issue Date</TableCell>
-                  <TableCell>Due Date</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="center">Actions</TableCell>
+                  <TableCell>{t('library.bookTitle')}</TableCell>
+                  <TableCell>{t('library.accessionNo')}</TableCell>
+                  <TableCell>{t('library.member')}</TableCell>
+                  <TableCell>{t('library.issueDate')}</TableCell>
+                  <TableCell>{t('library.dueDate')}</TableCell>
+                  <TableCell>{t('library.status')}</TableCell>
+                  <TableCell align="center">{t('library.actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">Loading...</TableCell>
+                    <TableCell colSpan={7} align="center">{t('library.loading')}</TableCell>
                   </TableRow>
                 ) : circulations.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">No issued books</TableCell>
+                    <TableCell colSpan={7} align="center">{t('library.noIssuedBooks')}</TableCell>
                   </TableRow>
                 ) : (
                   circulations.map((circulation) => (
@@ -357,7 +364,7 @@ export function BookCirculation() {
                           onClick={() => handleRenew(circulation.circulationId)}
                           sx={{ mr: 0.5 }}
                         >
-                          Renew
+                          {t('library.renew')}
                         </Button>
                         <Button
                           size="small"
@@ -365,7 +372,7 @@ export function BookCirculation() {
                           startIcon={<ReturnIcon />}
                           onClick={() => openReturnDialog(circulation)}
                         >
-                          Return
+                          {t('library.return')}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -381,22 +388,22 @@ export function BookCirculation() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Book Title</TableCell>
-                  <TableCell>Member</TableCell>
-                  <TableCell>Due Date</TableCell>
-                  <TableCell>Days Overdue</TableCell>
-                  <TableCell align="right">Fine Amount</TableCell>
-                  <TableCell align="center">Actions</TableCell>
+                  <TableCell>{t('library.bookTitle')}</TableCell>
+                  <TableCell>{t('library.member')}</TableCell>
+                  <TableCell>{t('library.dueDate')}</TableCell>
+                  <TableCell>{t('library.daysOverdue')}</TableCell>
+                  <TableCell align="right">{t('library.fineAmount')}</TableCell>
+                  <TableCell align="center">{t('library.actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">Loading...</TableCell>
+                    <TableCell colSpan={6} align="center">{t('library.loading')}</TableCell>
                   </TableRow>
                 ) : circulations.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">No overdue books</TableCell>
+                    <TableCell colSpan={6} align="center">{t('library.noOverdueBooks')}</TableCell>
                   </TableRow>
                 ) : (
                   circulations.map((circulation) => {
@@ -419,7 +426,7 @@ export function BookCirculation() {
                             startIcon={<ReturnIcon />}
                             onClick={() => openReturnDialog(circulation)}
                           >
-                            Return
+                            {t('library.return')}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -436,22 +443,22 @@ export function BookCirculation() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Book Title</TableCell>
-                  <TableCell>Member</TableCell>
-                  <TableCell>Issue Date</TableCell>
-                  <TableCell>Return Date</TableCell>
-                  <TableCell align="right">Fine</TableCell>
-                  <TableCell>Status</TableCell>
+                  <TableCell>{t('library.bookTitle')}</TableCell>
+                  <TableCell>{t('library.member')}</TableCell>
+                  <TableCell>{t('library.issueDate')}</TableCell>
+                  <TableCell>{t('library.returnDate')}</TableCell>
+                  <TableCell align="right">{t('library.fine')}</TableCell>
+                  <TableCell>{t('library.status')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">Loading...</TableCell>
+                    <TableCell colSpan={6} align="center">{t('library.loading')}</TableCell>
                   </TableRow>
                 ) : circulations.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">No return history</TableCell>
+                    <TableCell colSpan={6} align="center">{t('library.noReturnHistory')}</TableCell>
                   </TableRow>
                 ) : (
                   circulations.map((circulation) => (
@@ -476,10 +483,10 @@ export function BookCirculation() {
                             startIcon={<PaymentIcon />}
                             onClick={() => handlePayFine(circulation.circulationId)}
                           >
-                            Pay Fine
+                            {t('library.payFine')}
                           </Button>
                         ) : (
-                          <Chip label="Completed" color="success" size="small" />
+                          <Chip label={t('library.completed')} color="success" size="small" />
                         )}
                       </TableCell>
                     </TableRow>
@@ -494,14 +501,14 @@ export function BookCirculation() {
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
             <TextField
               size="small"
-              label="Book ID"
+              label={t('library.bookId')}
               value={reservationBookId}
               onChange={(e) => setReservationBookId(e.target.value)}
-              placeholder="Enter book ID"
+              placeholder={t('library.enterBookId')}
               sx={{ width: 160 }}
             />
             <Button variant="contained" onClick={fetchReservations} disabled={!reservationBookId || reservationsLoading}>
-              Load Reservations
+              {t('library.loadReservations')}
             </Button>
           </Box>
           <TableContainer>
@@ -509,18 +516,18 @@ export function BookCirculation() {
               <TableHead>
                 <TableRow>
                   <TableCell>ID</TableCell>
-                  <TableCell>Book</TableCell>
-                  <TableCell>Student</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Date</TableCell>
-                  <TableCell align="center">Actions</TableCell>
+                  <TableCell>{t('library.book')}</TableCell>
+                  <TableCell>{t('library.student')}</TableCell>
+                  <TableCell>{t('library.status')}</TableCell>
+                  <TableCell>{t('library.date')}</TableCell>
+                  <TableCell align="center">{t('library.actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {reservationsLoading ? (
-                  <TableRow><TableCell colSpan={6} align="center">Loading...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} align="center">{t('library.loading')}</TableCell></TableRow>
                 ) : reservations.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} align="center">No reservations (enter Book ID and Load)</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} align="center">{t('library.noReservations')}</TableCell></TableRow>
                 ) : (
                   reservations.map((r: any) => (
                     <TableRow key={r.reservationId ?? r.id}>
@@ -532,7 +539,7 @@ export function BookCirculation() {
                       <TableCell align="center">
                         {r.status !== 'cancelled' && r.status !== 'fulfilled' && (
                           <Button size="small" color="error" startIcon={<CancelIcon />} onClick={() => handleCancelReservation(r.reservationId ?? r.id)}>
-                            Cancel
+                            {t('library.cancel')}
                           </Button>
                         )}
                       </TableCell>
@@ -548,33 +555,33 @@ export function BookCirculation() {
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
             <TextField
               size="small"
-              label="Student ID"
+              label={t('library.studentId')}
               value={finesStudentId}
               onChange={(e) => setFinesStudentId(e.target.value)}
-              placeholder="Enter student ID"
+              placeholder={t('library.enterStudentId')}
               sx={{ width: 160 }}
             />
             <Button variant="contained" onClick={fetchFines} disabled={!finesStudentId || finesLoading}>
-              Load Fines
+              {t('library.loadFines')}
             </Button>
           </Box>
           <TableContainer>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Fine ID</TableCell>
-                  <TableCell>Amount</TableCell>
-                  <TableCell>Balance</TableCell>
-                  <TableCell>Reason</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="center">Actions</TableCell>
+                  <TableCell>{t('library.fineId')}</TableCell>
+                  <TableCell>{t('library.amount')}</TableCell>
+                  <TableCell>{t('library.balance')}</TableCell>
+                  <TableCell>{t('library.reason')}</TableCell>
+                  <TableCell>{t('library.status')}</TableCell>
+                  <TableCell align="center">{t('library.actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {finesLoading ? (
-                  <TableRow><TableCell colSpan={6} align="center">Loading...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} align="center">{t('library.loading')}</TableCell></TableRow>
                 ) : finesList.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} align="center">No fines (enter Student ID and Load)</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} align="center">{t('library.noFines')}</TableCell></TableRow>
                 ) : (
                   finesList.map((f: any) => {
                     const balance = parseFloat(f.balance ?? f.fineAmount ?? 0);
@@ -589,7 +596,7 @@ export function BookCirculation() {
                         <TableCell align="center">
                           {!paid && balance > 0 && (
                             <Button size="small" variant="outlined" startIcon={<PaymentIcon />} onClick={() => handlePayFineById(f.fineId ?? f.id, balance)}>
-                              Pay
+                              {t('library.pay')}
                             </Button>
                           )}
                         </TableCell>
@@ -614,12 +621,12 @@ export function BookCirculation() {
 
       {/* Issue Book Dialog */}
       <Dialog open={issueDialog} onClose={() => setIssueDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Issue Book</DialogTitle>
+        <DialogTitle>{t('library.issueBook')}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField
-                label="Book ID / Accession Number"
+                label={t('library.bookIdAccession')}
                 value={issueForm.bookId}
                 onChange={(e) => setIssueForm({ ...issueForm, bookId: e.target.value })}
                 required
@@ -629,19 +636,19 @@ export function BookCirculation() {
             <Grid item xs={12} md={6}>
               <TextField
                 select
-                label="Member Type"
+                label={t('library.memberType')}
                 value={issueForm.memberType}
                 onChange={(e) => setIssueForm({ ...issueForm, memberType: e.target.value })}
                 required
                 fullWidth
               >
-                <MenuItem value="student">Student</MenuItem>
+                <MenuItem value="student">{t('library.student')}</MenuItem>
                 <MenuItem value="staff">Staff</MenuItem>
               </TextField>
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
-                label="Member ID"
+                label={t('library.memberId')}
                 value={issueForm.memberId}
                 onChange={(e) => setIssueForm({ ...issueForm, memberId: e.target.value })}
                 required
@@ -650,7 +657,7 @@ export function BookCirculation() {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Due Date"
+                label={t('library.dueDate')}
                 type="date"
                 value={issueForm.dueDate}
                 onChange={(e) => setIssueForm({ ...issueForm, dueDate: e.target.value })}
@@ -663,38 +670,38 @@ export function BookCirculation() {
           {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIssueDialog(false)}>Cancel</Button>
+          <Button onClick={() => setIssueDialog(false)}>{t('library.cancel')}</Button>
           <Button onClick={handleIssueBook} variant="contained">
-            Issue Book
+            {t('library.issueBook')}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Return Book Dialog */}
       <Dialog open={returnDialog} onClose={() => setReturnDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Return Book</DialogTitle>
+        <DialogTitle>{t('library.returnBook')}</DialogTitle>
         <DialogContent>
           {selectedCirculation && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="body1" gutterBottom>
-                <strong>Book:</strong> {selectedCirculation.bookTitle}
+                <strong>{t('library.book')}:</strong> {selectedCirculation.bookTitle}
               </Typography>
               <Typography variant="body1" gutterBottom>
-                <strong>Member:</strong> {selectedCirculation.memberName}
+                <strong>{t('library.member')}:</strong> {selectedCirculation.memberName}
               </Typography>
               <Typography variant="body1" gutterBottom>
-                <strong>Issue Date:</strong> {new Date(selectedCirculation.issueDate).toLocaleDateString()}
+                <strong>{t('library.issueDate')}:</strong> {new Date(selectedCirculation.issueDate).toLocaleDateString()}
               </Typography>
               <Typography variant="body1" gutterBottom>
-                <strong>Due Date:</strong> {new Date(selectedCirculation.dueDate).toLocaleDateString()}
+                <strong>{t('library.dueDate')}:</strong> {new Date(selectedCirculation.dueDate).toLocaleDateString()}
               </Typography>
               {fineAmount > 0 && (
                 <Alert severity="warning" sx={{ mt: 2 }}>
                   <Typography variant="body1">
-                    <strong>Fine Amount:</strong> NPR {fineAmount.toLocaleString()}
+                    <strong>{t('library.fineAmount')}:</strong> NPR {fineAmount.toLocaleString()}
                   </Typography>
                   <Typography variant="caption">
-                    (NPR 10 per day overdue)
+                    {t('library.finePerDay')}
                   </Typography>
                 </Alert>
               )}
@@ -702,21 +709,21 @@ export function BookCirculation() {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setReturnDialog(false)}>Cancel</Button>
+          <Button onClick={() => setReturnDialog(false)}>{t('library.cancel')}</Button>
           <Button onClick={handleReturnBook} variant="contained" color="success">
-            Confirm Return
+            {t('library.confirmReturn')}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Reserve Book Dialog */}
       <Dialog open={reserveDialog} onClose={() => setReserveDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Reserve Book</DialogTitle>
+        <DialogTitle>{t('library.reserveBook')}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField
-                label="Book ID"
+                label={t('library.bookId')}
                 value={reserveForm.bookId}
                 onChange={(e) => setReserveForm({ ...reserveForm, bookId: e.target.value })}
                 required
@@ -726,7 +733,7 @@ export function BookCirculation() {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Student ID"
+                label={t('library.studentId')}
                 value={reserveForm.studentId}
                 onChange={(e) => setReserveForm({ ...reserveForm, studentId: e.target.value })}
                 required
@@ -737,9 +744,9 @@ export function BookCirculation() {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setReserveDialog(false)}>Cancel</Button>
+          <Button onClick={() => setReserveDialog(false)}>{t('library.cancel')}</Button>
           <Button onClick={handleReserveBook} variant="contained" disabled={!reserveForm.bookId || !reserveForm.studentId}>
-            Reserve
+            {t('library.reserveBook')}
           </Button>
         </DialogActions>
       </Dialog>

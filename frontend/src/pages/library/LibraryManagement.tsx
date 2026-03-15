@@ -5,6 +5,9 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@mui/material/styles';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import {
   Box,
   Paper,
@@ -79,6 +82,9 @@ interface Circulation {
 }
 
 export const LibraryManagement = () => {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const [tabValue, setTabValue] = useState(0);
   const [books, setBooks] = useState<Book[]>([]);
   const [circulations, setCirculations] = useState<Circulation[]>([]);
@@ -172,13 +178,13 @@ export const LibraryManagement = () => {
         book_id: selectedBookId,
       });
 
-      setSuccess('Book issued successfully');
+      setSuccess(t('library.bookIssuedSuccess'));
       handleCloseDialog();
       fetchBooks();
       fetchCirculations();
     } catch (error: any) {
       console.error('Failed to issue book:', error);
-      setError(error.response?.data?.message || 'Failed to issue book');
+      setError(error.response?.data?.message || t('library.failedToIssueBook'));
     }
   };
 
@@ -188,12 +194,12 @@ export const LibraryManagement = () => {
         circulation_id: circulationId,
       });
 
-      setSuccess('Book returned successfully');
+      setSuccess(t('library.bookReturnedSuccess'));
       fetchCirculations();
       fetchBooks();
     } catch (error: any) {
       console.error('Failed to return book:', error);
-      setError(error.response?.data?.message || 'Failed to return book');
+      setError(error.response?.data?.message || t('library.failedToReturnBook'));
     }
   };
 
@@ -210,7 +216,7 @@ export const LibraryManagement = () => {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4">
-          Library Management / पुस्तकालय व्यवस्थापन
+          {t('library.libraryManagement')}
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
@@ -218,14 +224,15 @@ export const LibraryManagement = () => {
             startIcon={<IssueIcon />}
             onClick={handleOpenDialog}
           >
-            Issue Book / पुस्तक जारी गर्नुहोस्
+            {t('library.issueBook')}
           </Button>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => alert('Add Book feature')}
+            onClick={() => alert(t('library.addBook'))}
+            sx={S.BTN_PRIMARY}
           >
-            Add Book / पुस्तक थप्नुहोस्
+            {t('library.addBook')}
           </Button>
         </Box>
       </Box>
@@ -245,49 +252,49 @@ export const LibraryManagement = () => {
       {/* Summary Cards */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} md={3}>
-          <Card>
+          <Card sx={S.GLASS}>
             <CardContent>
               <Typography variant="h4" color="primary">
                 {(books || []).reduce((sum, book) => sum + book.total_copies, 0)}
               </Typography>
               <Typography variant="caption">
-                Total Books / कुल पुस्तकहरू
+                {t('library.totalBooks')}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} md={3}>
-          <Card>
+          <Card sx={S.GLASS}>
             <CardContent>
               <Typography variant="h4" color="success.main">
                 {(books || []).reduce((sum, book) => sum + book.available_copies, 0)}
               </Typography>
               <Typography variant="caption">
-                Available / उपलब्ध
+                {t('library.available')}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} md={3}>
-          <Card>
+          <Card sx={S.GLASS}>
             <CardContent>
               <Typography variant="h4" color="warning.main">
                 {(circulations || []).filter(c => c.status === 'issued').length}
               </Typography>
               <Typography variant="caption">
-                Issued / जारी गरिएको
+                {t('library.issued')}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} md={3}>
-          <Card>
+          <Card sx={S.GLASS}>
             <CardContent>
               <Typography variant="h4" color="error.main">
                 {(circulations || []).filter(c => c.status === 'overdue').length}
               </Typography>
               <Typography variant="caption">
-                Overdue / म्याद नाघेको
+                {t('library.overdue')}
               </Typography>
             </CardContent>
           </Card>
@@ -295,17 +302,17 @@ export const LibraryManagement = () => {
       </Grid>
 
       {/* Tabs */}
-      <Paper>
+      <Paper sx={S.GLASS}>
         <Tabs value={tabValue} onChange={(_e, newValue) => setTabValue(newValue)}>
-          <Tab icon={<BookIcon />} label="Books / पुस्तकहरू" />
-          <Tab icon={<IssueIcon />} label="Issued Books / जारी पुस्तकहरू" />
+          <Tab icon={<BookIcon />} label={t('library.books')} />
+          <Tab icon={<IssueIcon />} label={t('library.issuedBooks')} />
         </Tabs>
 
         {/* Books Tab */}
         <TabPanel value={tabValue} index={0}>
           <Box sx={{ mb: 2 }}>
             <TextField
-              label="Search Books / पुस्तक खोज्नुहोस्"
+              label={t('library.searchBooks')}
               variant="outlined"
               size="small"
               value={search}
@@ -321,26 +328,26 @@ export const LibraryManagement = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Accession No. / प्रवेश नं</TableCell>
-                  <TableCell>Title / शीर्षक</TableCell>
-                  <TableCell>Author / लेखक</TableCell>
-                  <TableCell>Category / वर्ग</TableCell>
-                  <TableCell align="center">Total Copies / कुल प्रतिहरू</TableCell>
-                  <TableCell align="center">Available / उपलब्ध</TableCell>
-                  <TableCell align="center">Status / स्थिति</TableCell>
+                  <TableCell>{t('library.accessionNo')}</TableCell>
+                  <TableCell>{t('library.bookTitle')}</TableCell>
+                  <TableCell>{t('library.author')}</TableCell>
+                  <TableCell>{t('library.category')}</TableCell>
+                  <TableCell align="center">{t('library.totalCopies')}</TableCell>
+                  <TableCell align="center">{t('library.available')}</TableCell>
+                  <TableCell align="center">{t('library.status')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loading ? (
                   <TableRow>
                     <TableCell colSpan={7} align="center">
-                      Loading... / लोड हुँदैछ...
+                      {t('library.loading')}
                     </TableCell>
                   </TableRow>
                 ) : books.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} align="center">
-                      No books found / कुनै पुस्तक फेला परेन
+                      {t('library.noBooksFound')}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -361,7 +368,7 @@ export const LibraryManagement = () => {
                       </TableCell>
                       <TableCell align="center">
                         <Chip
-                          label={book.available_copies > 0 ? 'Available' : 'Not Available'}
+                          label={book.available_copies > 0 ? t('library.available') : t('library.notAvailable')}
                           color={book.available_copies > 0 ? 'success' : 'error'}
                           size="small"
                         />
@@ -389,26 +396,26 @@ export const LibraryManagement = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Student / विद्यार्थी</TableCell>
-                  <TableCell>Book / पुस्तक</TableCell>
-                  <TableCell>Issue Date / जारी मिति</TableCell>
-                  <TableCell>Due Date / म्याद मिति</TableCell>
-                  <TableCell>Status / स्थिति</TableCell>
-                  <TableCell>Fine / जरिवाना</TableCell>
-                  <TableCell align="right">Actions / कार्यहरू</TableCell>
+                  <TableCell>{t('library.student')}</TableCell>
+                  <TableCell>{t('library.book')}</TableCell>
+                  <TableCell>{t('library.issueDate')}</TableCell>
+                  <TableCell>{t('library.dueDate')}</TableCell>
+                  <TableCell>{t('library.status')}</TableCell>
+                  <TableCell>{t('library.fine')}</TableCell>
+                  <TableCell align="right">{t('library.actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loading ? (
                   <TableRow>
                     <TableCell colSpan={7} align="center">
-                      Loading... / लोड हुँदैछ...
+                      {t('library.loading')}
                     </TableCell>
                   </TableRow>
                 ) : circulations.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} align="center">
-                      No issued books / कुनै जारी पुस्तक छैन
+                      {t('library.noIssuedBooks')}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -439,7 +446,7 @@ export const LibraryManagement = () => {
                           size="small"
                           color="primary"
                           onClick={() => handleReturnBook(circulation.id)}
-                          title="Return Book"
+                          title={t('library.returnBook')}
                         >
                           <ReturnIcon />
                         </IconButton>
@@ -447,7 +454,7 @@ export const LibraryManagement = () => {
                           <IconButton
                             size="small"
                             color="success"
-                            title="Pay Fine"
+                            title={t('library.payFine')}
                           >
                             <PaymentIcon />
                           </IconButton>
@@ -474,40 +481,40 @@ export const LibraryManagement = () => {
       {/* Issue Book Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
-          Issue Book / पुस्तक जारी गर्नुहोस्
+          {t('library.issueBook')}
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField
-                label="Student ID / विद्यार्थी ID"
+                label={t('library.studentId')}
                 fullWidth
                 value={selectedStudentId}
                 onChange={(e) => setSelectedStudentId(e.target.value)}
-                placeholder="Enter student ID"
+                placeholder={t('library.enterStudentId')}
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Book Accession Number / पुस्तक प्रवेश नं"
+                label={t('library.bookAccessionNumber')}
                 fullWidth
                 value={selectedBookId}
                 onChange={(e) => setSelectedBookId(e.target.value)}
-                placeholder="Enter accession number"
+                placeholder={t('library.enterAccessionNumber')}
               />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>
-            Cancel / रद्द गर्नुहोस्
+            {t('library.cancel')}
           </Button>
           <Button
             variant="contained"
             onClick={handleIssueBook}
             disabled={!selectedStudentId || !selectedBookId}
           >
-            Issue Book / पुस्तक जारी गर्नुहोस्
+            {t('library.issueBook')}
           </Button>
         </DialogActions>
       </Dialog>

@@ -4,7 +4,11 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useTheme } from '@mui/material/styles';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Grid,
@@ -28,7 +32,7 @@ import {
   Add as AddIcon,
   Category as CategoryIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 interface LibraryStats {
   totalBooks: number;
@@ -48,7 +52,11 @@ interface RecentActivity {
 }
 
 export function LibraryDashboard() {
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
+  const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<LibraryStats>({
     totalBooks: 0,
@@ -68,8 +76,8 @@ export function LibraryDashboard() {
     try {
       setLoading(true);
       const [statsRes, activitiesRes] = await Promise.all([
-        api.get('/library/statistics').catch(() => ({ data: { data: null } })),
-        api.get('/library/recent-activities?limit=5').catch(() => ({ data: { data: [] } })),
+        apiClient.get('/library/statistics').catch(() => ({ data: { data: null } })),
+        apiClient.get('/library/recent-activities?limit=5').catch(() => ({ data: { data: [] } })),
       ]);
 
       if (statsRes.data?.data) {
@@ -85,32 +93,32 @@ export function LibraryDashboard() {
 
   const statCards = [
     {
-      title: 'Total Books',
+      title: t('library.totalBooks'),
       value: stats.totalBooks.toString(),
-      icon: <BookIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
-      color: '#1976d2',
-      action: () => navigate('/library/books'),
+      icon: <BookIcon sx={{ fontSize: 40, color: C.primary }} />,
+      color: C.primary,
+      action: () => navigate(`/library/books`),
     },
     {
-      title: 'Available',
+      title: t('library.available'),
       value: stats.availableBooks.toString(),
-      icon: <TrendingUpIcon sx={{ fontSize: 40, color: 'success.main' }} />,
-      color: '#2e7d32',
-      action: () => navigate('/library/books'),
+      icon: <TrendingUpIcon sx={{ fontSize: 40, color: C.primary }} />,
+      color: C.primary,
+      action: () => navigate(`/library/books`),
     },
     {
-      title: 'Issued',
+      title: t('library.issued'),
       value: stats.issuedBooks.toString(),
-      icon: <IssueIcon sx={{ fontSize: 40, color: 'info.main' }} />,
-      color: '#0288d1',
-      action: () => navigate('/library/circulation'),
+      icon: <IssueIcon sx={{ fontSize: 40, color: C.neutral }} />,
+      color: C.neutral,
+      action: () => navigate(`/library/circulation`),
     },
     {
-      title: 'Overdue',
+      title: t('library.overdue'),
       value: stats.overdueBooks.toString(),
-      icon: <WarningIcon sx={{ fontSize: 40, color: 'error.main' }} />,
-      color: '#d32f2f',
-      action: () => navigate('/library/circulation?status=overdue'),
+      icon: <WarningIcon sx={{ fontSize: 40, color: C.danger }} />,
+      color: C.danger,
+      action: () => navigate(`/library/circulation?status=overdue`),
     },
   ];
 
@@ -118,22 +126,23 @@ export function LibraryDashboard() {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" fontWeight={600}>
-          Library Dashboard
+          {t('library.libraryDashboard')}
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => navigate('/library/books/new')}
+            onClick={() => navigate(`/library/books/new`)}
+            sx={S.BTN_PRIMARY}
           >
-            Add Book
+            {t('library.addBook')}
           </Button>
           <Button
             variant="outlined"
             startIcon={<IssueIcon />}
-            onClick={() => navigate('/library/issue')}
+            onClick={() => navigate(`/library/issue`)}
           >
-            Issue Book
+            {t('library.issueBook')}
           </Button>
         </Box>
       </Box>
@@ -143,6 +152,7 @@ export function LibraryDashboard() {
           <Grid item xs={12} sm={6} md={3} key={index}>
             <Card
               sx={{
+                ...S.GLASS,
                 cursor: 'pointer',
                 transition: 'transform 0.2s',
                 '&:hover': { transform: 'translateY(-4px)' },
@@ -169,14 +179,14 @@ export function LibraryDashboard() {
 
       <Grid container spacing={3} sx={{ mt: 2 }}>
         <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ ...S.GLASS, p: 3 }}>
             <Typography variant="h6" fontWeight={600} gutterBottom>
-              Recent Activities
+              {t('library.recentActivities')}
             </Typography>
             <Divider sx={{ mb: 2 }} />
             {recentActivities.length === 0 ? (
               <Typography color="text.secondary" align="center" py={4}>
-                No recent activities
+                {t('library.noRecentActivities')}
               </Typography>
             ) : (
               <List>
@@ -203,9 +213,9 @@ export function LibraryDashboard() {
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, mb: 3 }}>
+          <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
             <Typography variant="h6" fontWeight={600} gutterBottom>
-              Quick Actions
+              {t('library.quickActions')}
             </Typography>
             <Divider sx={{ mb: 2 }} />
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -213,62 +223,62 @@ export function LibraryDashboard() {
                 variant="outlined"
                 fullWidth
                 startIcon={<BookIcon />}
-                onClick={() => navigate('/library/books')}
+                onClick={() => navigate(`/library/books`)}
               >
-                Manage Books
+                {t('library.manageBooks')}
               </Button>
               <Button
                 variant="outlined"
                 fullWidth
                 startIcon={<IssueIcon />}
-                onClick={() => navigate('/library/circulation')}
+                onClick={() => navigate(`/library/circulation`)}
               >
-                Book Circulation
+                {t('library.bookCirculation')}
               </Button>
               <Button
                 variant="outlined"
                 fullWidth
                 startIcon={<ReturnIcon />}
-                onClick={() => navigate('/library/return')}
+                onClick={() => navigate(`/library/return`)}
               >
-                Return Books
+                {t('library.returnBooks')}
               </Button>
               <Button
                 variant="outlined"
                 fullWidth
                 startIcon={<CategoryIcon />}
-                onClick={() => navigate('/library/categories')}
+                onClick={() => navigate(`/library/categories`)}
               >
-                Manage Categories
+                {t('library.manageCategories')}
               </Button>
               <Button
                 variant="outlined"
                 fullWidth
-                onClick={() => navigate('/library/reports')}
+                onClick={() => navigate(`/library/reports`)}
               >
-                Library Reports
+                {t('library.libraryReports')}
               </Button>
             </Box>
           </Paper>
 
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ ...S.GLASS, p: 3 }}>
             <Typography variant="h6" fontWeight={600} gutterBottom>
-              Statistics
+              {t('library.statistics')}
             </Typography>
             <Divider sx={{ mb: 2 }} />
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography color="text.secondary">Total Members</Typography>
+                <Typography color="text.secondary">{t('library.totalMembers')}</Typography>
                 <Typography fontWeight={600}>{stats.totalMembers}</Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography color="text.secondary">Fines Collected</Typography>
+                <Typography color="text.secondary">{t('library.finesCollected')}</Typography>
                 <Typography fontWeight={600} color="success.main">
                   NPR {(stats.finesCollected ?? 0).toLocaleString()}
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography color="text.secondary">Utilization Rate</Typography>
+                <Typography color="text.secondary">{t('library.utilizationRate')}</Typography>
                 <Typography fontWeight={600}>
                   {stats.totalBooks > 0
                     ? ((stats.issuedBooks / stats.totalBooks) * 100).toFixed(1)
