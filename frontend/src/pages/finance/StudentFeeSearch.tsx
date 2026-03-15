@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -26,6 +27,7 @@ import {
   FormControl,
   InputLabel,
   IconButton,
+  useTheme,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -33,8 +35,10 @@ import {
   Payment as PaymentIcon,
   Visibility as ViewIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
-import api from '../../config/api';
+import { useParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
+import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface StudentFeeInfo {
   studentId: number;
@@ -49,7 +53,11 @@ interface StudentFeeInfo {
 }
 
 export function StudentFeeSearch() {
-  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const navigate = useSlugNavigate();
+  const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [feeStatus, setFeeStatus] = useState('');
@@ -63,7 +71,7 @@ export function StudentFeeSearch() {
       if (searchQuery) params.search = searchQuery;
       if (feeStatus) params.status = feeStatus;
 
-      const response = await api.get('/finance/students/fee-status', { params });
+      const response = await apiClient.get('/finance/students/fee-status', { params });
       setStudents(response.data?.data || []);
     } catch (err) {
       console.error('Failed to search students:', err);
@@ -86,15 +94,15 @@ export function StudentFeeSearch() {
   return (
     <Box>
       <Typography variant="h5" fontWeight={600} gutterBottom>
-        Student Fee Search
+        {t('finance.studentFeeSearch')}
       </Typography>
 
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={4}>
             <TextField
-              label="Search Student"
-              placeholder="Name, ID, or Roll Number"
+              label={t('finance.searchStudent')}
+              placeholder={t('finance.searchStudentPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               fullWidth
@@ -104,17 +112,17 @@ export function StudentFeeSearch() {
 
           <Grid item xs={12} md={3}>
             <FormControl fullWidth>
-              <InputLabel>Fee Status</InputLabel>
+              <InputLabel>{t('finance.feeStatus')}</InputLabel>
               <Select
                 value={feeStatus}
-                label="Fee Status"
+                label={t('finance.feeStatus')}
                 onChange={(e) => setFeeStatus(e.target.value)}
               >
-                <MenuItem value="">All</MenuItem>
-                <MenuItem value="paid">Paid</MenuItem>
-                <MenuItem value="partial">Partial</MenuItem>
-                <MenuItem value="pending">Pending</MenuItem>
-                <MenuItem value="overdue">Overdue</MenuItem>
+                <MenuItem value="">{t('finance.allStatuses')}</MenuItem>
+                <MenuItem value="paid">{t('finance.paid')}</MenuItem>
+                <MenuItem value="partial">{t('finance.partial')}</MenuItem>
+                <MenuItem value="pending">{t('finance.pending')}</MenuItem>
+                <MenuItem value="overdue">{t('finance.overdue')}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -128,7 +136,7 @@ export function StudentFeeSearch() {
               fullWidth
               size="large"
             >
-              Search
+              {t('common.search')}
             </Button>
           </Grid>
 
@@ -144,23 +152,23 @@ export function StudentFeeSearch() {
               fullWidth
               size="large"
             >
-              Clear
+              {t('common.clear')}
             </Button>
           </Grid>
         </Grid>
       </Paper>
 
       {selectedStudent && (
-        <Card sx={{ mb: 3 }}>
+        <Card sx={{ ...S.GLASS, mb: 3 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Student Financial Summary
+              {t('finance.studentFinancialSummary')}
             </Typography>
             <Divider sx={{ mb: 2 }} />
             <Grid container spacing={2}>
               <Grid item xs={12} md={3}>
                 <Typography color="text.secondary" variant="body2">
-                  Student Name
+                  {t('finance.studentName')}
                 </Typography>
                 <Typography variant="body1" fontWeight={600}>
                   {selectedStudent.studentName}
@@ -168,7 +176,7 @@ export function StudentFeeSearch() {
               </Grid>
               <Grid item xs={12} md={3}>
                 <Typography color="text.secondary" variant="body2">
-                  Class
+                  {t('finance.className')}
                 </Typography>
                 <Typography variant="body1" fontWeight={600}>
                   {selectedStudent.className}
@@ -176,7 +184,7 @@ export function StudentFeeSearch() {
               </Grid>
               <Grid item xs={12} md={3}>
                 <Typography color="text.secondary" variant="body2">
-                  Total Invoiced
+                  {t('finance.totalInvoiced')}
                 </Typography>
                 <Typography variant="body1" fontWeight={600}>
                   NPR {selectedStudent.totalInvoiced.toLocaleString()}
@@ -184,7 +192,7 @@ export function StudentFeeSearch() {
               </Grid>
               <Grid item xs={12} md={3}>
                 <Typography color="text.secondary" variant="body2">
-                  Total Paid
+                  {t('finance.totalPaid')}
                 </Typography>
                 <Typography variant="body1" fontWeight={600} color="success.main">
                   NPR {selectedStudent.totalPaid.toLocaleString()}
@@ -192,7 +200,7 @@ export function StudentFeeSearch() {
               </Grid>
               <Grid item xs={12} md={3}>
                 <Typography color="text.secondary" variant="body2">
-                  Balance
+                  {t('finance.balance')}
                 </Typography>
                 <Typography variant="body1" fontWeight={600} color="error.main">
                   NPR {selectedStudent.balance.toLocaleString()}
@@ -200,7 +208,7 @@ export function StudentFeeSearch() {
               </Grid>
               <Grid item xs={12} md={3}>
                 <Typography color="text.secondary" variant="body2">
-                  Overdue Amount
+                  {t('finance.overdueAmount')}
                 </Typography>
                 <Typography variant="body1" fontWeight={600} color="error.main">
                   NPR {selectedStudent.overdueAmount.toLocaleString()}
@@ -208,17 +216,17 @@ export function StudentFeeSearch() {
               </Grid>
               <Grid item xs={12} md={3}>
                 <Typography color="text.secondary" variant="body2">
-                  Last Payment
+                  {t('finance.lastPayment')}
                 </Typography>
                 <Typography variant="body1" fontWeight={600}>
                   {selectedStudent.lastPaymentDate
                     ? new Date(selectedStudent.lastPaymentDate).toLocaleDateString()
-                    : 'No payments'}
+                    : t('finance.noPayments')}
                 </Typography>
               </Grid>
               <Grid item xs={12} md={3}>
                 <Typography color="text.secondary" variant="body2">
-                  Status
+                  {t('finance.status')}
                 </Typography>
                 <Chip
                   label={selectedStudent.status}
@@ -233,14 +241,14 @@ export function StudentFeeSearch() {
                 startIcon={<ReceiptIcon />}
                 onClick={() => navigate(`/finance/invoices?studentId=${selectedStudent.studentId}`)}
               >
-                View Invoices
+                {t('finance.viewInvoices')}
               </Button>
               <Button
                 variant="outlined"
                 startIcon={<PaymentIcon />}
                 onClick={() => navigate(`/finance/payments/student/${selectedStudent.studentId}`)}
               >
-                Payment History
+                {t('finance.paymentHistory')}
               </Button>
             </Box>
           </CardContent>
@@ -248,19 +256,19 @@ export function StudentFeeSearch() {
       )}
 
       {students.length > 0 && (
-        <Paper>
+        <Paper sx={{ ...S.GLASS }}>
           <TableContainer>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Student ID</TableCell>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Class</TableCell>
-                  <TableCell align="right">Total Invoiced</TableCell>
-                  <TableCell align="right">Total Paid</TableCell>
-                  <TableCell align="right">Balance</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="center">Actions</TableCell>
+                  <TableCell>{t('finance.studentId')}</TableCell>
+                  <TableCell>{t('finance.studentName')}</TableCell>
+                  <TableCell>{t('finance.className')}</TableCell>
+                  <TableCell align="right">{t('finance.totalInvoiced')}</TableCell>
+                  <TableCell align="right">{t('finance.totalPaid')}</TableCell>
+                  <TableCell align="right">{t('finance.balance')}</TableCell>
+                  <TableCell>{t('finance.status')}</TableCell>
+                  <TableCell align="center">{t('common.actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -290,14 +298,14 @@ export function StudentFeeSearch() {
                       <IconButton
                         size="small"
                         onClick={() => setSelectedStudent(student)}
-                        title="View Details"
+                        title={t('finance.viewDetails')}
                       >
                         <ViewIcon fontSize="small" />
                       </IconButton>
                       <IconButton
                         size="small"
                         onClick={() => navigate(`/finance/invoices?studentId=${student.studentId}`)}
-                        title="View Invoices"
+                        title={t('finance.viewInvoices')}
                       >
                         <ReceiptIcon fontSize="small" />
                       </IconButton>
@@ -311,9 +319,9 @@ export function StudentFeeSearch() {
       )}
 
       {!loading && students.length === 0 && searchQuery && (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
+        <Paper sx={{ ...S.GLASS, p: 4, textAlign: 'center' }}>
           <Typography color="text.secondary">
-            No students found matching your search criteria
+            {t('finance.noStudentsFound')}
           </Typography>
         </Paper>
       )}

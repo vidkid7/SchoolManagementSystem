@@ -4,7 +4,9 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Grid,
@@ -19,6 +21,7 @@ import {
   ListItem,
   ListItemText,
   Chip,
+  useTheme,
 } from '@mui/material';
 import {
   AccountBalance as BalanceIcon,
@@ -29,7 +32,8 @@ import {
   Add as AddIcon,
   ArrowForward as ArrowForwardIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface FinanceStats {
   totalRevenue: number;
@@ -51,7 +55,11 @@ interface RecentTransaction {
 }
 
 export function FinanceDashboard() {
-  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const navigate = useSlugNavigate();
+  const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<FinanceStats>({
     totalRevenue: 0,
@@ -72,8 +80,8 @@ export function FinanceDashboard() {
     try {
       setLoading(true);
       const [statsRes, transactionsRes] = await Promise.all([
-        api.get('/finance/statistics').catch(() => ({ data: { data: null } })),
-        api.get('/finance/recent-transactions?limit=5').catch(() => ({ data: { data: [] } })),
+        apiClient.get('/finance/statistics').catch(() => ({ data: { data: null } })),
+        apiClient.get('/finance/recent-transactions?limit=5').catch(() => ({ data: { data: [] } })),
       ]);
 
 if (statsRes.data?.data) {
@@ -97,32 +105,32 @@ if (statsRes.data?.data) {
 
   const statCards = [
     {
-      title: 'Total Revenue',
+      title: t('finance.totalRevenue'),
       value: `NPR ${(stats.totalRevenue || 0).toLocaleString()}`,
-      icon: <BalanceIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
-      color: '#1976d2',
-      action: () => navigate('/finance/reports'),
+      icon: <BalanceIcon sx={{ fontSize: 40, color: C.success }} />,
+      color: C.success,
+      action: () => navigate(`/finance/reports`),
     },
     {
-      title: 'Pending Amount',
+      title: t('finance.pendingAmount'),
       value: `NPR ${(stats.pendingAmount || 0).toLocaleString()}`,
-      icon: <WarningIcon sx={{ fontSize: 40, color: 'warning.main' }} />,
-      color: '#ed6c02',
-      action: () => navigate('/finance/invoices?status=pending'),
+      icon: <WarningIcon sx={{ fontSize: 40, color: C.warning }} />,
+      color: C.warning,
+      action: () => navigate(`/finance/invoices?status=pending`),
     },
     {
-      title: 'Collected Today',
+      title: t('finance.collectedToday'),
       value: `NPR ${(stats.collectedToday || 0).toLocaleString()}`,
-      icon: <TrendingUpIcon sx={{ fontSize: 40, color: 'success.main' }} />,
-      color: '#2e7d32',
-      action: () => navigate('/finance/payments'),
+      icon: <TrendingUpIcon sx={{ fontSize: 40, color: C.primary }} />,
+      color: C.primary,
+      action: () => navigate(`/finance/payments`),
     },
     {
-      title: 'Overdue Invoices',
+      title: t('finance.overdueInvoices'),
       value: (stats.overdueInvoices || 0).toString(),
-      icon: <ReceiptIcon sx={{ fontSize: 40, color: 'error.main' }} />,
-      color: '#d32f2f',
-      action: () => navigate('/finance/invoices?status=overdue'),
+      icon: <ReceiptIcon sx={{ fontSize: 40, color: C.danger }} />,
+      color: C.danger,
+      action: () => navigate(`/finance/invoices?status=overdue`),
     },
   ];
 
@@ -130,22 +138,22 @@ if (statsRes.data?.data) {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" fontWeight={600}>
-          Finance Dashboard
+          {t('finance.dashboard')}
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => navigate('/finance/fee-structures/new')}
+            onClick={() => navigate(`/finance/fee-structures/new`)}
           >
-            New Fee Structure
+            {t('finance.newFeeStructure')}
           </Button>
           <Button
             variant="outlined"
             startIcon={<ReceiptIcon />}
-            onClick={() => navigate('/finance/invoices/generate')}
+            onClick={() => navigate(`/finance/invoices/generate`)}
           >
-            Generate Invoice
+            {t('finance.generateInvoice')}
           </Button>
         </Box>
       </Box>
@@ -155,6 +163,7 @@ if (statsRes.data?.data) {
           <Grid item xs={12} sm={6} md={3} key={index}>
             <Card
               sx={{
+                ...S.GLASS,
                 cursor: 'pointer',
                 transition: 'transform 0.2s',
                 '&:hover': { transform: 'translateY(-4px)' },
@@ -181,23 +190,23 @@ if (statsRes.data?.data) {
 
       <Grid container spacing={3} sx={{ mt: 2 }}>
         <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ ...S.GLASS, p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6" fontWeight={600}>
-                Recent Transactions
+                {t('finance.recentTransactions')}
               </Typography>
               <Button
                 size="small"
                 endIcon={<ArrowForwardIcon />}
-                onClick={() => navigate('/finance/payments')}
+                onClick={() => navigate(`/finance/payments`)}
               >
-                View All
+                {t('finance.viewAll')}
               </Button>
             </Box>
             <Divider sx={{ mb: 2 }} />
             {recentTransactions.length === 0 ? (
               <Typography color="text.secondary" align="center" py={4}>
-                No recent transactions
+                {t('finance.noRecentTransactions')}
               </Typography>
             ) : (
               <List>
@@ -229,9 +238,9 @@ if (statsRes.data?.data) {
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, mb: 3 }}>
+          <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
             <Typography variant="h6" fontWeight={600} gutterBottom>
-              Quick Actions
+              {t('finance.quickActions')}
             </Typography>
             <Divider sx={{ mb: 2 }} />
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -239,66 +248,66 @@ if (statsRes.data?.data) {
                 variant="outlined"
                 fullWidth
                 startIcon={<ReceiptIcon />}
-                onClick={() => navigate('/finance/invoices')}
+                onClick={() => navigate(`/finance/invoices`)}
               >
-                Manage Invoices
+                {t('finance.manageInvoices')}
               </Button>
               <Button
                 variant="outlined"
                 fullWidth
                 startIcon={<PaymentIcon />}
-                onClick={() => navigate('/finance/payments')}
+                onClick={() => navigate(`/finance/payments`)}
               >
-                Record Payment
+                {t('finance.recordPayment')}
               </Button>
               <Button
                 variant="outlined"
                 fullWidth
-                onClick={() => navigate('/finance/fee-structures')}
+                onClick={() => navigate(`/finance/fee-structures`)}
               >
-                Fee Structures
+                {t('finance.feeStructuresLink')}
               </Button>
               <Button
                 variant="outlined"
                 fullWidth
-                onClick={() => navigate('/finance/reports')}
+                onClick={() => navigate(`/finance/reports`)}
               >
-                Financial Reports
+                {t('finance.financialReportsLink')}
               </Button>
               <Button
                 variant="outlined"
                 fullWidth
-                onClick={() => navigate('/finance/payment-gateways')}
+                onClick={() => navigate(`/finance/payment-gateways`)}
               >
-                Payment Gateways
+                {t('finance.paymentGatewaysLink')}
               </Button>
             </Box>
           </Paper>
 
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ ...S.GLASS, p: 3 }}>
             <Typography variant="h6" fontWeight={600} gutterBottom>
-              Invoice Summary
+              {t('finance.invoiceSummary')}
             </Typography>
             <Divider sx={{ mb: 2 }} />
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography color="text.secondary">Total Invoices</Typography>
+                <Typography color="text.secondary">{t('finance.totalInvoicesLabel')}</Typography>
                 <Typography fontWeight={600}>{stats.totalInvoices}</Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography color="text.secondary">Paid</Typography>
+                <Typography color="text.secondary">{t('finance.paidLabel')}</Typography>
                 <Typography fontWeight={600} color="success.main">
                   {stats.paidInvoices}
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography color="text.secondary">Partial</Typography>
+                <Typography color="text.secondary">{t('finance.partialLabel')}</Typography>
                 <Typography fontWeight={600} color="warning.main">
                   {stats.partialInvoices}
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography color="text.secondary">Overdue</Typography>
+                <Typography color="text.secondary">{t('finance.overdueLabel')}</Typography>
                 <Typography fontWeight={600} color="error.main">
                   {stats.overdueInvoices}
                 </Typography>

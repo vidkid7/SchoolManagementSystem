@@ -4,7 +4,9 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -26,18 +28,21 @@ import {
   FormControlLabel,
   Radio,
   FormLabel,
+  useTheme,
 } from '@mui/material';
 import {
   Receipt as ReceiptIcon,
   Group as GroupIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface FeeStructure {
   feeStructureId: number;
   name: string;
   amount: number;
+  totalAmount?: number;
   academicYearId: number;
 }
 
@@ -56,7 +61,11 @@ interface Class {
 }
 
 export function InvoiceGeneration() {
-  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const navigate = useSlugNavigate();
+  const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -92,9 +101,9 @@ export function InvoiceGeneration() {
   const fetchData = async () => {
     try {
       const [feeRes, studentsRes, classesRes] = await Promise.all([
-        api.get('/finance/fee-structures'),
-        api.get('/students?limit=1000'),
-        api.get('/academic/classes'),
+        apiClient.get('/finance/fee-structures'),
+        apiClient.get('/students?limit=1000'),
+        apiClient.get('/academic/classes'),
       ]);
 
       setFeeStructures(feeRes.data?.data || []);
@@ -110,7 +119,7 @@ export function InvoiceGeneration() {
       setLoading(true);
       setError('');
 
-      const response = await api.post('/finance/invoices', {
+      const response = await apiClient.post('/finance/invoices', {
         studentId: Number(singleForm.studentId),
         feeStructureId: Number(singleForm.feeStructureId),
         dueDate: singleForm.dueDate,
@@ -119,12 +128,12 @@ export function InvoiceGeneration() {
         remarks: singleForm.remarks,
       });
 
-      setSuccess(`Invoice generated successfully! Invoice #${response.data?.data?.invoiceNumber}`);
+      setSuccess(t('finance.invoiceGeneratedSuccess', { number: response.data?.data?.invoiceNumber }));
       setTimeout(() => {
-        navigate('/finance/invoices');
+        navigate(`/finance/invoices`);
       }, 2000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to generate invoice');
+      setError(err.response?.data?.message || t('finance.failedToGenerateInvoice'));
     } finally {
       setLoading(false);
     }
@@ -135,7 +144,7 @@ export function InvoiceGeneration() {
       setLoading(true);
       setError('');
 
-      const response = await api.post('/finance/invoices/bulk-generate', {
+      const response = await apiClient.post('/finance/invoices/bulk-generate', {
         classId: bulkForm.classId ? Number(bulkForm.classId) : undefined,
         studentIds: bulkForm.studentIds.length > 0 ? bulkForm.studentIds : undefined,
         feeStructureId: Number(bulkForm.feeStructureId),
@@ -144,13 +153,13 @@ export function InvoiceGeneration() {
 
       const result = response.data?.data;
       setSuccess(
-        `Bulk generation completed! Successful: ${result?.successful || 0}, Failed: ${result?.failed || 0}`
+        `${t('finance.generateInvoices')}! ${t('finance.success')}: ${result?.successful || 0}, ${t('finance.error')}: ${result?.failed || 0}`
       );
       setTimeout(() => {
-        navigate('/finance/invoices');
+        navigate(`/finance/invoices`);
       }, 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to generate bulk invoices');
+      setError(err.response?.data?.message || t('finance.failedToLoad'));
     } finally {
       setLoading(false);
     }
@@ -164,19 +173,19 @@ export function InvoiceGeneration() {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5" fontWeight={600}>
-          Generate Invoices
+          {t('finance.generateInvoices')}
         </Typography>
-        <Button variant="outlined" onClick={() => navigate('/finance/invoices')}>
-          Back to Invoices
+        <Button variant="outlined" onClick={() => navigate(`/finance/invoices`)}>
+          {t('finance.invoices')}
         </Button>
       </Box>
 
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
         <FormControl component="fieldset">
-          <FormLabel component="legend">Generation Type</FormLabel>
+          <FormLabel component="legend">{t('finance.generateInvoices')}</FormLabel>
           <RadioGroup
             row
             value={generationType}
@@ -187,7 +196,7 @@ export function InvoiceGeneration() {
               control={<Radio />}
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <PersonIcon /> Single Invoice
+                  <PersonIcon /> {t('finance.createInvoice')}
                 </Box>
               }
             />
@@ -196,7 +205,7 @@ export function InvoiceGeneration() {
               control={<Radio />}
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <GroupIcon /> Bulk Generation
+                  <GroupIcon /> {t('finance.generateInvoices')}
                 </Box>
               }
             />
@@ -205,19 +214,19 @@ export function InvoiceGeneration() {
       </Paper>
 
       {generationType === 'single' ? (
-        <Paper sx={{ p: 3 }}>
+        <Paper sx={{ ...S.GLASS, p: 3 }}>
           <Typography variant="h6" gutterBottom>
-            Single Invoice Generation
+            {t('finance.createInvoice')}
           </Typography>
           <Divider sx={{ mb: 3 }} />
 
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth required>
-                <InputLabel>Student</InputLabel>
+                <InputLabel>{t('finance.student')}</InputLabel>
                 <Select
                   value={singleForm.studentId}
-                  label="Student"
+                  label={t('finance.student')}
                   onChange={(e) => setSingleForm({ ...singleForm, studentId: e.target.value })}
                 >
                   {students.map((student) => (
@@ -231,15 +240,15 @@ export function InvoiceGeneration() {
 
             <Grid item xs={12} md={6}>
               <FormControl fullWidth required>
-                <InputLabel>Fee Structure</InputLabel>
+                <InputLabel>{t('finance.feeStructure')}</InputLabel>
                 <Select
                   value={singleForm.feeStructureId}
-                  label="Fee Structure"
+                  label={t('finance.feeStructure')}
                   onChange={(e) => setSingleForm({ ...singleForm, feeStructureId: e.target.value })}
                 >
                   {feeStructures.map((fee) => (
                     <MenuItem key={fee.feeStructureId} value={fee.feeStructureId}>
-                      {fee.name} - NPR {fee.amount.toLocaleString()}
+                      {fee.name} - NPR {fee.totalAmount?.toLocaleString() || '0'}
                     </MenuItem>
                   ))}
                 </Select>
@@ -248,7 +257,7 @@ export function InvoiceGeneration() {
 
             <Grid item xs={12} md={6}>
               <TextField
-                label="Due Date"
+                label={t('finance.dueDate')}
                 type="date"
                 value={singleForm.dueDate}
                 onChange={(e) => setSingleForm({ ...singleForm, dueDate: e.target.value })}
@@ -260,7 +269,7 @@ export function InvoiceGeneration() {
 
             <Grid item xs={12} md={6}>
               <TextField
-                label="Discount (NPR)"
+                label={t('finance.discount')}
                 type="number"
                 value={singleForm.discount}
                 onChange={(e) => setSingleForm({ ...singleForm, discount: Number(e.target.value) })}
@@ -270,7 +279,7 @@ export function InvoiceGeneration() {
 
             <Grid item xs={12}>
               <TextField
-                label="Discount Reason"
+                label={t('finance.refundReason')}
                 value={singleForm.discountReason}
                 onChange={(e) => setSingleForm({ ...singleForm, discountReason: e.target.value })}
                 fullWidth
@@ -279,7 +288,7 @@ export function InvoiceGeneration() {
 
             <Grid item xs={12}>
               <TextField
-                label="Remarks"
+                label={t('finance.paymentNotes')}
                 multiline
                 rows={3}
                 value={singleForm.remarks}
@@ -297,28 +306,28 @@ export function InvoiceGeneration() {
                 disabled={loading || !singleForm.studentId || !singleForm.feeStructureId || !singleForm.dueDate}
                 fullWidth
               >
-                {loading ? 'Generating...' : 'Generate Invoice'}
+                {loading ? t('finance.processing') : t('finance.generateInvoice')}
               </Button>
             </Grid>
           </Grid>
         </Paper>
       ) : (
-        <Paper sx={{ p: 3 }}>
+        <Paper sx={{ ...S.GLASS, p: 3 }}>
           <Typography variant="h6" gutterBottom>
-            Bulk Invoice Generation
+            {t('finance.generateInvoices')}
           </Typography>
           <Divider sx={{ mb: 3 }} />
 
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
-                <InputLabel>Class (Optional)</InputLabel>
+                <InputLabel>{t('finance.selectClassOptional')}</InputLabel>
                 <Select
                   value={bulkForm.classId}
-                  label="Class (Optional)"
+                  label={t('finance.selectClassOptional')}
                   onChange={(e) => setBulkForm({ ...bulkForm, classId: e.target.value, studentIds: [] })}
                 >
-                  <MenuItem value="">All Classes</MenuItem>
+                  <MenuItem value="">{t('finance.allClasses')}</MenuItem>
                   {classes.map((cls) => (
                     <MenuItem key={cls.classId} value={cls.classId}>
                       {cls.name}
@@ -330,15 +339,15 @@ export function InvoiceGeneration() {
 
             <Grid item xs={12} md={6}>
               <FormControl fullWidth required>
-                <InputLabel>Fee Structure</InputLabel>
+                <InputLabel>{t('finance.feeStructure')}</InputLabel>
                 <Select
                   value={bulkForm.feeStructureId}
-                  label="Fee Structure"
+                  label={t('finance.feeStructure')}
                   onChange={(e) => setBulkForm({ ...bulkForm, feeStructureId: e.target.value })}
                 >
                   {feeStructures.map((fee) => (
                     <MenuItem key={fee.feeStructureId} value={fee.feeStructureId}>
-                      {fee.name} - NPR {fee.amount.toLocaleString()}
+                      {fee.name} - NPR {fee.totalAmount?.toLocaleString() || '0'}
                     </MenuItem>
                   ))}
                 </Select>
@@ -347,7 +356,7 @@ export function InvoiceGeneration() {
 
             <Grid item xs={12} md={6}>
               <TextField
-                label="Due Date"
+                label={t('finance.dueDate')}
                 type="date"
                 value={bulkForm.dueDate}
                 onChange={(e) => setBulkForm({ ...bulkForm, dueDate: e.target.value })}
@@ -369,8 +378,8 @@ export function InvoiceGeneration() {
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Select Specific Students (Optional)"
-                    helperText="Leave empty to generate for all students in selected class"
+                    label={t('finance.selectStudent')}
+                    helperText={t('finance.pleaseWait')}
                   />
                 )}
                 renderTags={(value, getTagProps) =>
@@ -389,15 +398,15 @@ export function InvoiceGeneration() {
               <Card variant="outlined">
                 <CardContent>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Summary
+                    {t('finance.summary')}
                   </Typography>
                   <Typography variant="body1">
                     {bulkForm.classId
-                      ? `Class: ${classes.find((c) => c.classId === Number(bulkForm.classId))?.name}`
-                      : 'All Classes'}
+                      ? `${t('finance.className')}: ${classes.find((c) => c.classId === Number(bulkForm.classId))?.name}`
+                      : t('finance.allClasses')}
                   </Typography>
                   <Typography variant="body1">
-                    Students: {bulkForm.studentIds.length > 0 ? bulkForm.studentIds.length : 'All'}
+                    {t('finance.studentName')}: {bulkForm.studentIds.length > 0 ? bulkForm.studentIds.length : t('finance.allClasses')}
                   </Typography>
                 </CardContent>
               </Card>
@@ -412,7 +421,7 @@ export function InvoiceGeneration() {
                 disabled={loading || !bulkForm.feeStructureId || !bulkForm.dueDate}
                 fullWidth
               >
-                {loading ? 'Generating...' : 'Generate Bulk Invoices'}
+                {loading ? t('finance.processing') : t('finance.generateInvoices')}
               </Button>
             </Grid>
           </Grid>

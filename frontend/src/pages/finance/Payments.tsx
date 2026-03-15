@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -25,13 +26,15 @@ import {
   Chip,
   Alert,
   IconButton,
+  useTheme,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Undo as RefundIcon,
   Print as PrintIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface Payment {
   paymentId: number;
@@ -47,6 +50,9 @@ interface Payment {
 }
 
 export function Payments() {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -72,7 +78,7 @@ export function Payments() {
   const fetchPayments = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/finance/payments', {
+      const response = await apiClient.get('/finance/payments', {
         params: {
           page: page + 1,
           limit: rowsPerPage,
@@ -90,8 +96,8 @@ export function Payments() {
 
   const handleRecordPayment = async () => {
     try {
-      await api.post('/finance/payments', formData);
-      setSuccess('Payment recorded successfully');
+      await apiClient.post('/finance/payments', formData);
+      setSuccess(t('finance.paymentRecordedSuccess'));
       setOpenDialog(false);
       fetchPayments();
       setTimeout(() => setSuccess(''), 3000);
@@ -104,20 +110,20 @@ export function Payments() {
         remarks: '',
       });
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to record payment');
+      setError(err.response?.data?.message || t('finance.failedToRecordPayment'));
     }
   };
 
   const handleRefund = async (paymentId: number) => {
-    if (!confirm('Are you sure you want to process this refund?')) return;
+    if (!confirm(t('finance.confirmRefund'))) return;
 
     try {
-      await api.post(`/finance/payments/${paymentId}/refund`);
-      setSuccess('Refund processed successfully');
+      await apiClient.post(`/finance/payments/${paymentId}/refund`);
+      setSuccess(t('finance.refundProcessedSuccess'));
       fetchPayments();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to process refund');
+      setError(err.response?.data?.message || t('finance.failedToLoad'));
     }
   };
 
@@ -129,45 +135,45 @@ export function Payments() {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5" fontWeight={600}>
-          Payment Management
+          {t('finance.payments')}
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => setOpenDialog(true)}
         >
-          Record Payment
+          {t('finance.recordPayment')}
         </Button>
       </Box>
 
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
-      <Paper>
+      <Paper sx={{ ...S.GLASS }}>
         <TableContainer>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Payment ID</TableCell>
-                <TableCell>Invoice #</TableCell>
-                <TableCell>Student</TableCell>
-                <TableCell align="right">Amount</TableCell>
-                <TableCell>Method</TableCell>
-                <TableCell>Transaction ID</TableCell>
-                <TableCell>Date</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="center">Actions</TableCell>
+                <TableCell>{t('finance.payments')}</TableCell>
+                <TableCell>{t('finance.invoices')}</TableCell>
+                <TableCell>{t('finance.studentName')}</TableCell>
+                <TableCell align="right">{t('finance.amount')}</TableCell>
+                <TableCell>{t('finance.paymentMethod')}</TableCell>
+                <TableCell>{t('finance.transactionRef')}</TableCell>
+                <TableCell>{t('finance.paymentDate')}</TableCell>
+                <TableCell>{t('finance.paymentStatus')}</TableCell>
+                <TableCell align="center">{t('common.actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={9} align="center">Loading...</TableCell>
+                  <TableCell colSpan={9} align="center">{t('common.loading')}</TableCell>
                 </TableRow>
               ) : payments.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} align="center">
-                    No payments found
+                    {t('finance.noPayments')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -193,7 +199,7 @@ export function Payments() {
                       <IconButton
                         size="small"
                         onClick={() => handlePrintReceipt(payment.paymentId)}
-                        title="Print Receipt"
+                        title={t('common.download')}
                       >
                         <PrintIcon fontSize="small" />
                       </IconButton>
@@ -201,7 +207,7 @@ export function Payments() {
                         <IconButton
                           size="small"
                           onClick={() => handleRefund(payment.paymentId)}
-                          title="Process Refund"
+                          title={t('finance.processRefund')}
                           color="error"
                         >
                           <RefundIcon fontSize="small" />
@@ -228,20 +234,20 @@ export function Payments() {
       </Paper>
 
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Record Payment</DialogTitle>
+        <DialogTitle>{t('finance.recordPayment')}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <TextField
-              label="Invoice ID"
+              label={t('finance.invoices')}
               type="number"
               value={formData.invoiceId}
               onChange={(e) => setFormData({ ...formData, invoiceId: e.target.value })}
               required
               fullWidth
-              helperText="Enter the invoice ID to record payment for"
+              helperText={t('finance.selectStudent')}
             />
             <TextField
-              label="Amount (NPR)"
+              label={t('finance.amount')}
               type="number"
               value={formData.amount}
               onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
@@ -249,29 +255,29 @@ export function Payments() {
               fullWidth
             />
             <TextField
-              label="Payment Method"
+              label={t('finance.paymentMethod')}
               select
               value={formData.paymentMethod}
               onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
               required
               fullWidth
             >
-              <MenuItem value="cash">Cash</MenuItem>
-              <MenuItem value="bank_transfer">Bank Transfer</MenuItem>
-              <MenuItem value="cheque">Cheque</MenuItem>
-              <MenuItem value="esewa">eSewa</MenuItem>
-              <MenuItem value="khalti">Khalti</MenuItem>
-              <MenuItem value="ime_pay">IME Pay</MenuItem>
+              <MenuItem value="cash">{t('finance.cash')}</MenuItem>
+              <MenuItem value="bank_transfer">{t('finance.bankTransfer')}</MenuItem>
+              <MenuItem value="cheque">{t('finance.cheque')}</MenuItem>
+              <MenuItem value="esewa">{t('finance.esewa')}</MenuItem>
+              <MenuItem value="khalti">{t('finance.khalti')}</MenuItem>
+              <MenuItem value="ime_pay">{t('finance.imePay')}</MenuItem>
             </TextField>
             <TextField
-              label="Transaction ID (Optional)"
+              label={t('finance.transactionRef')}
               value={formData.transactionId}
               onChange={(e) => setFormData({ ...formData, transactionId: e.target.value })}
               fullWidth
-              helperText="For online payments"
+              helperText={t('finance.onlinePayment')}
             />
             <TextField
-              label="Payment Date"
+              label={t('finance.paymentDate')}
               type="date"
               value={formData.paymentDate}
               onChange={(e) => setFormData({ ...formData, paymentDate: e.target.value })}
@@ -280,7 +286,7 @@ export function Payments() {
               InputLabelProps={{ shrink: true }}
             />
             <TextField
-              label="Remarks"
+              label={t('finance.paymentNotes')}
               multiline
               rows={2}
               value={formData.remarks}
@@ -291,9 +297,9 @@ export function Payments() {
           {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+          <Button onClick={() => setOpenDialog(false)}>{t('common.cancel')}</Button>
           <Button onClick={handleRecordPayment} variant="contained">
-            Record Payment
+            {t('finance.recordPayment')}
           </Button>
         </DialogActions>
       </Dialog>

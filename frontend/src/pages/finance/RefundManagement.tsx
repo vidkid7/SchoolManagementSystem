@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -26,6 +27,7 @@ import {
   IconButton,
   MenuItem,
   Grid,
+  useTheme,
 } from '@mui/material';
 import {
   Undo as RefundIcon,
@@ -33,7 +35,8 @@ import {
   Cancel as RejectIcon,
   Receipt as ReceiptIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface Refund {
   refundId: number;
@@ -48,6 +51,9 @@ interface Refund {
 }
 
 export function RefundManagement() {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const [refunds, setRefunds] = useState<Refund[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -70,7 +76,7 @@ export function RefundManagement() {
   const fetchRefunds = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/finance/refunds', {
+      const response = await apiClient.get('/finance/refunds', {
         params: {
           page: page + 1,
           limit: rowsPerPage,
@@ -88,8 +94,8 @@ export function RefundManagement() {
 
   const handleProcessRefund = async () => {
     try {
-      await api.post('/finance/refunds', formData);
-      setSuccess('Refund processed successfully');
+      await apiClient.post('/finance/refunds', formData);
+      setSuccess(t('finance.refundProcessedSuccess'));
       setOpenDialog(false);
       fetchRefunds();
       setTimeout(() => setSuccess(''), 3000);
@@ -99,7 +105,7 @@ export function RefundManagement() {
         remarks: '',
       });
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to process refund');
+      setError(err.response?.data?.message || t('finance.failedToProcessRefund'));
     }
   };
 
@@ -117,44 +123,44 @@ export function RefundManagement() {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5" fontWeight={600}>
-          Refund Management
+          {t('finance.refundManagement')}
         </Typography>
         <Button
           variant="contained"
           startIcon={<RefundIcon />}
           onClick={() => setOpenDialog(true)}
         >
-          Process Refund
+          {t('finance.processRefund')}
         </Button>
       </Box>
 
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
-      <Paper>
+      <Paper sx={{ ...S.GLASS }}>
         <TableContainer>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Refund ID</TableCell>
-                <TableCell>Receipt #</TableCell>
-                <TableCell>Student</TableCell>
-                <TableCell align="right">Amount</TableCell>
-                <TableCell>Reason</TableCell>
-                <TableCell>Requested Date</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="center">Actions</TableCell>
+                <TableCell>{t('finance.refundId')}</TableCell>
+                <TableCell>{t('finance.receiptNumber')}</TableCell>
+                <TableCell>{t('finance.student')}</TableCell>
+                <TableCell align="right">{t('finance.amount')}</TableCell>
+                <TableCell>{t('finance.reason')}</TableCell>
+                <TableCell>{t('finance.requestedDate')}</TableCell>
+                <TableCell>{t('finance.status')}</TableCell>
+                <TableCell align="center">{t('common.actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center">Loading...</TableCell>
+                  <TableCell colSpan={8} align="center">{t('common.loading')}</TableCell>
                 </TableRow>
               ) : refunds.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} align="center">
-                    No refunds found
+                    {t('finance.noRefunds')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -176,7 +182,7 @@ export function RefundManagement() {
                     <TableCell align="center">
                       <IconButton
                         size="small"
-                        title="View Receipt"
+                        title={t('finance.viewReceipt')}
                       >
                         <ReceiptIcon fontSize="small" />
                       </IconButton>
@@ -201,48 +207,48 @@ export function RefundManagement() {
       </Paper>
 
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Process Refund</DialogTitle>
+        <DialogTitle>{t('finance.processRefund')}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <TextField
-              label="Payment ID"
+              label={t('finance.paymentId')}
               type="number"
               value={formData.paymentId}
               onChange={(e) => setFormData({ ...formData, paymentId: e.target.value })}
               required
               fullWidth
-              helperText="Enter the payment ID to refund"
+              helperText={t('finance.enterPaymentIdToRefund')}
             />
             <TextField
-              label="Reason"
+              label={t('finance.reason')}
               select
               value={formData.reason}
               onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
               required
               fullWidth
             >
-              <MenuItem value="duplicate_payment">Duplicate Payment</MenuItem>
-              <MenuItem value="overpayment">Overpayment</MenuItem>
-              <MenuItem value="student_withdrawal">Student Withdrawal</MenuItem>
-              <MenuItem value="fee_waiver">Fee Waiver</MenuItem>
-              <MenuItem value="other">Other</MenuItem>
+              <MenuItem value="duplicate_payment">{t('finance.duplicatePayment')}</MenuItem>
+              <MenuItem value="overpayment">{t('finance.overpayment')}</MenuItem>
+              <MenuItem value="student_withdrawal">{t('finance.studentWithdrawal')}</MenuItem>
+              <MenuItem value="fee_waiver">{t('finance.feeWaiver')}</MenuItem>
+              <MenuItem value="other">{t('finance.other')}</MenuItem>
             </TextField>
             <TextField
-              label="Remarks"
+              label={t('finance.remarks')}
               multiline
               rows={3}
               value={formData.remarks}
               onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
               fullWidth
-              helperText="Additional details about the refund"
+              helperText={t('finance.additionalRefundDetails')}
             />
           </Box>
           {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+          <Button onClick={() => setOpenDialog(false)}>{t('common.cancel')}</Button>
           <Button onClick={handleProcessRefund} variant="contained">
-            Process Refund
+            {t('finance.processRefund')}
           </Button>
         </DialogActions>
       </Dialog>

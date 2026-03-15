@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -23,13 +24,15 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  useTheme,
 } from '@mui/material';
 import {
   CheckCircle as CheckIcon,
   Cancel as CancelIcon,
   Settings as SettingsIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface GatewayConfig {
   name: string;
@@ -50,6 +53,9 @@ interface Transaction {
 }
 
 export function PaymentGateways() {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -85,7 +91,7 @@ export function PaymentGateways() {
 
   const fetchGatewayConfigs = async () => {
     try {
-      const response = await api.get('/finance/payment-gateways/config');
+      const response = await apiClient.get('/finance/payment-gateways/config');
       if (response.data?.data) {
         setGateways(response.data.data);
       }
@@ -96,7 +102,7 @@ export function PaymentGateways() {
 
   const fetchTransactions = async () => {
     try {
-      const response = await api.get('/finance/payment-gateways/transactions?limit=10');
+      const response = await apiClient.get('/finance/payment-gateways/transactions?limit=10');
       setTransactions(response.data?.data || []);
     } catch (err) {
       console.error('Failed to fetch transactions:', err);
@@ -126,38 +132,38 @@ export function PaymentGateways() {
 
   const handleSaveConfig = async (gatewayKey: string) => {
     try {
-      await api.put(`/finance/payment-gateways/${gatewayKey}`, gateways[gatewayKey]);
-      setSuccess(`${gateways[gatewayKey].name} configuration saved successfully`);
+      await apiClient.put(`/finance/payment-gateways/${gatewayKey}`, gateways[gatewayKey]);
+      setSuccess(t('finance.configSavedSuccess', { name: gateways[gatewayKey].name }));
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save configuration');
+      setError(err.response?.data?.message || t('finance.failedToSaveConfig'));
     }
   };
 
   const handleTestConnection = async (gatewayKey: string) => {
     try {
-      const response = await api.post(`/finance/payment-gateways/${gatewayKey}/test`);
+      const response = await apiClient.post(`/finance/payment-gateways/${gatewayKey}/test`);
       if (response.data?.success) {
-        setSuccess(`${gateways[gatewayKey].name} connection test successful`);
+        setSuccess(t('finance.connectionTestSuccess', { name: gateways[gatewayKey].name }));
       } else {
-        setError(`${gateways[gatewayKey].name} connection test failed`);
+        setError(t('finance.connectionTestFailed', { name: gateways[gatewayKey].name }));
       }
       setTimeout(() => {
         setSuccess('');
         setError('');
       }, 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Connection test failed');
+      setError(err.response?.data?.message || t('finance.connectionTestFailed', { name: '' }));
     }
   };
 
   return (
     <Box>
       <Typography variant="h5" fontWeight={600} gutterBottom>
-        Payment Gateway Configuration
+        {t('finance.paymentGateways')}
       </Typography>
       <Typography color="text.secondary" paragraph>
-        Configure and manage payment gateway integrations for online fee collection
+        {t('finance.gatewaySettings')}
       </Typography>
 
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
@@ -166,7 +172,7 @@ export function PaymentGateways() {
       <Grid container spacing={3}>
         {Object.entries(gateways).map(([key, gateway]) => (
           <Grid item xs={12} md={4} key={key}>
-            <Card>
+            <Card sx={{ ...S.GLASS }}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -184,7 +190,7 @@ export function PaymentGateways() {
 
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <TextField
-                    label="Merchant ID"
+                    label={t('finance.merchantId')}
                     value={gateway.merchantId}
                     onChange={(e) => handleUpdateConfig(key, 'merchantId', e.target.value)}
                     disabled={!gateway.enabled}
@@ -192,7 +198,7 @@ export function PaymentGateways() {
                     size="small"
                   />
                   <TextField
-                    label="Secret Key"
+                    label={t('finance.secretKey')}
                     type="password"
                     value={gateway.secretKey}
                     onChange={(e) => handleUpdateConfig(key, 'secretKey', e.target.value)}
@@ -201,7 +207,7 @@ export function PaymentGateways() {
                     size="small"
                   />
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Typography variant="body2">Test Mode</Typography>
+                    <Typography variant="body2">{t('finance.testMode')}</Typography>
                     <Switch
                       checked={gateway.testMode}
                       onChange={(e) => handleUpdateConfig(key, 'testMode', e.target.checked)}
@@ -217,7 +223,7 @@ export function PaymentGateways() {
                       onClick={() => handleSaveConfig(key)}
                       disabled={!gateway.enabled}
                     >
-                      Save
+                      {t('common.save')}
                     </Button>
                     <Button
                       variant="outlined"
@@ -226,7 +232,7 @@ export function PaymentGateways() {
                       onClick={() => handleTestConnection(key)}
                       disabled={!gateway.enabled}
                     >
-                      Test
+                      {t('finance.testGateway')}
                     </Button>
                   </Box>
                 </Box>
@@ -236,14 +242,14 @@ export function PaymentGateways() {
                     <>
                       <CheckIcon color="success" fontSize="small" />
                       <Typography variant="caption" color="success.main">
-                        Active
+                        {t('common.active')}
                       </Typography>
                     </>
                   ) : (
                     <>
                       <CancelIcon color="disabled" fontSize="small" />
                       <Typography variant="caption" color="text.secondary">
-                        Inactive
+                        {t('finance.inactive')}
                       </Typography>
                     </>
                   )}
@@ -254,28 +260,28 @@ export function PaymentGateways() {
         ))}
       </Grid>
 
-      <Paper sx={{ mt: 4, p: 3 }}>
+      <Paper sx={{ ...S.GLASS, mt: 4, p: 3 }}>
         <Typography variant="h6" fontWeight={600} gutterBottom>
-          Recent Gateway Transactions
+          {t('finance.gatewayTransactions')}
         </Typography>
         <Divider sx={{ mb: 2 }} />
         <TableContainer>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Transaction ID</TableCell>
-                <TableCell>Gateway</TableCell>
-                <TableCell>Student</TableCell>
-                <TableCell align="right">Amount</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Date</TableCell>
+                <TableCell>{t('finance.transactionId')}</TableCell>
+                <TableCell>{t('finance.gateway')}</TableCell>
+                <TableCell>{t('finance.student')}</TableCell>
+                <TableCell align="right">{t('finance.amount')}</TableCell>
+                <TableCell>{t('finance.status')}</TableCell>
+                <TableCell>{t('finance.date')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {transactions.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} align="center">
-                    No transactions found
+                    {t('finance.noTransactions')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -303,52 +309,52 @@ export function PaymentGateways() {
         </TableContainer>
       </Paper>
 
-      <Paper sx={{ mt: 3, p: 3 }}>
+      <Paper sx={{ ...S.GLASS, mt: 3, p: 3 }}>
         <Typography variant="h6" fontWeight={600} gutterBottom>
-          Integration Guide
+          {t('finance.integrationGuide')}
         </Typography>
         <Divider sx={{ mb: 2 }} />
         <Grid container spacing={2}>
           <Grid item xs={12} md={4}>
             <Typography variant="subtitle2" gutterBottom>
-              eSewa Integration
+              {t('finance.esewaIntegration')}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              1. Register at esewa.com.np
+              {t('finance.esewaStep1')}
               <br />
-              2. Get Merchant ID and Secret Key
+              {t('finance.esewaStep2')}
               <br />
-              3. Configure webhook URL
+              {t('finance.esewaStep3')}
               <br />
-              4. Test in sandbox mode first
+              {t('finance.esewaStep4')}
             </Typography>
           </Grid>
           <Grid item xs={12} md={4}>
             <Typography variant="subtitle2" gutterBottom>
-              Khalti Integration
+              {t('finance.khaltiIntegration')}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              1. Register at khalti.com
+              {t('finance.khaltiStep1')}
               <br />
-              2. Get Public and Secret Keys
+              {t('finance.khaltiStep2')}
               <br />
-              3. Configure return URL
+              {t('finance.khaltiStep3')}
               <br />
-              4. Enable test mode for testing
+              {t('finance.khaltiStep4')}
             </Typography>
           </Grid>
           <Grid item xs={12} md={4}>
             <Typography variant="subtitle2" gutterBottom>
-              IME Pay Integration
+              {t('finance.imepayIntegration')}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              1. Contact IME Pay for merchant account
+              {t('finance.imepayStep1')}
               <br />
-              2. Get Merchant Code and credentials
+              {t('finance.imepayStep2')}
               <br />
-              3. Configure callback URL
+              {t('finance.imepayStep3')}
               <br />
-              4. Test with provided test credentials
+              {t('finance.imepayStep4')}
             </Typography>
           </Grid>
         </Grid>

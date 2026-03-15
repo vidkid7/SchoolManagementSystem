@@ -5,7 +5,9 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -30,6 +32,7 @@ import {
   DialogContent,
   DialogActions,
   Grid,
+  useTheme,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -39,9 +42,12 @@ import {
   Search as SearchIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface Invoice {
-  id: number;
+  id?: number;
+  invoiceId?: number;
+  invoice_id?: number;
   invoice_number: string;
   student_name: string;
   class_name: string;
@@ -53,7 +59,11 @@ interface Invoice {
 }
 
 export const InvoiceList = () => {
-  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const navigate = useSlugNavigate();
+  const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -126,7 +136,7 @@ export const InvoiceList = () => {
 
     try {
       await apiClient.post('/api/v1/finance/payments', {
-        invoice_id: selectedInvoice.id,
+        invoice_id: selectedInvoice.invoiceId || selectedInvoice.invoice_id || selectedInvoice.id,
         amount: parseFloat(paymentAmount),
         payment_method: paymentMethod,
         payment_date: new Date().toISOString(),
@@ -142,7 +152,7 @@ export const InvoiceList = () => {
   const handleSendReminder = async (invoiceId: number) => {
     try {
       await apiClient.post(`/api/v1/finance/invoices/${invoiceId}/send-reminder`);
-      alert('Reminder sent successfully / रिमाइन्डर सफलतापूर्वक पठाइयो');
+      alert(t('finance.success'));
     } catch (error) {
       console.error('Failed to send reminder:', error);
     }
@@ -152,30 +162,30 @@ export const InvoiceList = () => {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4">
-          Invoices / बीजकहरू
+          {t('finance.invoices')}
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
             variant="outlined"
-            onClick={() => navigate('/finance/invoices/bulk-generate')}
+            onClick={() => navigate(`/finance/invoices/bulk-generate`)}
           >
-            Bulk Generate / थोक उत्पन्न
+            {t('finance.generateInvoices')}
           </Button>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => navigate('/finance/invoices/create')}
+            onClick={() => navigate(`/finance/invoices/create`)}
           >
-            Create Invoice / बीजक बनाउनुहोस्
+            {t('finance.createInvoice')}
           </Button>
         </Box>
       </Box>
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 2, mb: 3 }}>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           <TextField
-            label="Search / खोज्नुहोस्"
+            label={t('common.search')}
             variant="outlined"
             size="small"
             value={search}
@@ -187,17 +197,17 @@ export const InvoiceList = () => {
           />
 
           <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>Status / स्थिति</InputLabel>
+            <InputLabel>{t('finance.paymentStatus')}</InputLabel>
             <Select
               value={statusFilter}
-              label="Status / स्थिति"
+              label={t('finance.paymentStatus')}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <MenuItem value="">All / सबै</MenuItem>
-              <MenuItem value="pending">Pending / बाँकी</MenuItem>
-              <MenuItem value="partial">Partial / आंशिक</MenuItem>
-              <MenuItem value="paid">Paid / भुक्तानी</MenuItem>
-              <MenuItem value="overdue">Overdue / म्याद नाघेको</MenuItem>
+              <MenuItem value="">{t('finance.allStatuses')}</MenuItem>
+              <MenuItem value="pending">{t('finance.pending')}</MenuItem>
+              <MenuItem value="partial">{t('finance.partial')}</MenuItem>
+              <MenuItem value="paid">{t('finance.paid')}</MenuItem>
+              <MenuItem value="overdue">{t('finance.overdue')}</MenuItem>
             </Select>
           </FormControl>
 
@@ -208,60 +218,60 @@ export const InvoiceList = () => {
               setStatusFilter('');
             }}
           >
-            Clear Filters / फिल्टर हटाउनुहोस्
+            {t('common.clear')}
           </Button>
         </Box>
       </Paper>
 
       {/* Invoice Table */}
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} sx={{ ...S.GLASS }}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Invoice # / बीजक नं</TableCell>
-              <TableCell>Student / विद्यार्थी</TableCell>
-              <TableCell>Class / कक्षा</TableCell>
-              <TableCell align="right">Total / कुल</TableCell>
-              <TableCell align="right">Paid / भुक्तानी</TableCell>
-              <TableCell align="right">Balance / बाँकी</TableCell>
-              <TableCell>Due Date / म्याद</TableCell>
-              <TableCell>Status / स्थिति</TableCell>
-              <TableCell align="right">Actions / कार्यहरू</TableCell>
+              <TableCell>{t('finance.invoices')}</TableCell>
+              <TableCell>{t('finance.studentName')}</TableCell>
+              <TableCell>{t('finance.className')}</TableCell>
+              <TableCell align="right">{t('finance.totalAmount')}</TableCell>
+              <TableCell align="right">{t('finance.paidAmount')}</TableCell>
+              <TableCell align="right">{t('finance.balance')}</TableCell>
+              <TableCell>{t('finance.dueDate')}</TableCell>
+              <TableCell>{t('finance.paymentStatus')}</TableCell>
+              <TableCell align="right">{t('common.actions')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
                 <TableCell colSpan={9} align="center">
-                  Loading... / लोड हुँदैछ...
+                  {t('common.loading')}
                 </TableCell>
               </TableRow>
             ) : (invoices || []).length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} align="center">
-                  No invoices found / कुनै बीजक फेला परेन
+                  {t('finance.noInvoices')}
                 </TableCell>
               </TableRow>
             ) : (
-              (invoices || []).map((invoice) => (
-                <TableRow key={invoice.id} hover>
+              (invoices || []).map((invoice, index) => (
+                <TableRow key={invoice.invoiceId || invoice.invoice_id || invoice.id || invoice.invoice_number || index} hover>
                   <TableCell>{invoice.invoice_number}</TableCell>
                   <TableCell>{invoice.student_name}</TableCell>
                   <TableCell>{invoice.class_name}</TableCell>
-                  <TableCell align="right">रू {invoice.total_amount.toLocaleString()}</TableCell>
-                  <TableCell align="right">रू {invoice.paid_amount.toLocaleString()}</TableCell>
+                  <TableCell align="right">रू {(invoice.total_amount || 0).toLocaleString()}</TableCell>
+                  <TableCell align="right">रू {(invoice.paid_amount || 0).toLocaleString()}</TableCell>
                   <TableCell align="right">
                     <Typography
                       color={invoice.balance > 0 ? 'error' : 'success'}
                       fontWeight="bold"
                     >
-                      रू {invoice.balance.toLocaleString()}
+                      रू {(invoice.balance || 0).toLocaleString()}
                     </Typography>
                   </TableCell>
                   <TableCell>{invoice.due_date}</TableCell>
                   <TableCell>
                     <Chip
-                      label={invoice.status}
+                      label={t(`finance.${invoice.status}`)}
                       color={getStatusColor(invoice.status)}
                       size="small"
                     />
@@ -272,15 +282,15 @@ export const InvoiceList = () => {
                         <IconButton
                           size="small"
                           onClick={() => handlePayment(invoice)}
-                          title="Make Payment"
+                          title={t('finance.addPayment')}
                           color="primary"
                         >
                           <PaymentIcon />
                         </IconButton>
                         <IconButton
                           size="small"
-                          onClick={() => handleSendReminder(invoice.id)}
-                          title="Send Reminder"
+                          onClick={() => handleSendReminder(invoice.invoiceId || invoice.invoice_id || invoice.id!)}
+                          title={t('finance.sendReminders')}
                         >
                           <SendIcon />
                         </IconButton>
@@ -288,8 +298,8 @@ export const InvoiceList = () => {
                     )}
                     <IconButton
                       size="small"
-                      onClick={() => navigate(`/finance/invoices/${invoice.id}`)}
-                      title="View Receipt"
+                      onClick={() => navigate(`/finance/invoices/${invoice.invoiceId || invoice.invoice_id || invoice.id}`)}
+                      title={t('common.view')}
                     >
                       <ReceiptIcon />
                     </IconButton>
@@ -313,26 +323,26 @@ export const InvoiceList = () => {
       {/* Payment Dialog */}
       <Dialog open={paymentDialog} onClose={() => setPaymentDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          Process Payment / भुक्तानी प्रशोधन गर्नुहोस्
+          {t('finance.processRefund')}
         </DialogTitle>
         <DialogContent>
           {selectedInvoice && (
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12}>
                 <Typography variant="body2" color="text.secondary">
-                  Invoice: {selectedInvoice.invoice_number}
+                  {t('finance.invoices')}: {selectedInvoice.invoice_number}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Student: {selectedInvoice.student_name}
+                  {t('finance.studentName')}: {selectedInvoice.student_name}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Balance: रू {selectedInvoice.balance.toLocaleString()}
+                  {t('finance.balance')}: रू {(selectedInvoice.balance || 0).toLocaleString()}
                 </Typography>
               </Grid>
 
               <Grid item xs={12}>
                 <TextField
-                  label="Payment Amount / भुक्तानी रकम"
+                  label={t('finance.amount')}
                   type="number"
                   fullWidth
                   value={paymentAmount}
@@ -343,17 +353,17 @@ export const InvoiceList = () => {
 
               <Grid item xs={12}>
                 <FormControl fullWidth>
-                  <InputLabel>Payment Method / भुक्तानी विधि</InputLabel>
+                  <InputLabel>{t('finance.paymentMethod')}</InputLabel>
                   <Select
                     value={paymentMethod}
-                    label="Payment Method / भुक्तानी विधि"
+                    label={t('finance.paymentMethod')}
                     onChange={(e) => setPaymentMethod(e.target.value)}
                   >
-                    <MenuItem value="cash">Cash / नगद</MenuItem>
-                    <MenuItem value="bank_transfer">Bank Transfer / बैंक स्थानान्तरण</MenuItem>
-                    <MenuItem value="esewa">eSewa</MenuItem>
-                    <MenuItem value="khalti">Khalti</MenuItem>
-                    <MenuItem value="ime_pay">IME Pay</MenuItem>
+                    <MenuItem value="cash">{t('finance.cash')}</MenuItem>
+                    <MenuItem value="bank_transfer">{t('finance.bankTransfer')}</MenuItem>
+                    <MenuItem value="esewa">{t('finance.esewa')}</MenuItem>
+                    <MenuItem value="khalti">{t('finance.khalti')}</MenuItem>
+                    <MenuItem value="ime_pay">{t('finance.imePay')}</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -362,14 +372,14 @@ export const InvoiceList = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setPaymentDialog(false)}>
-            Cancel / रद्द गर्नुहोस्
+            {t('common.cancel')}
           </Button>
           <Button
             variant="contained"
             onClick={handlePaymentSubmit}
             disabled={!paymentAmount || parseFloat(paymentAmount) <= 0}
           >
-            Process Payment / भुक्तानी प्रशोधन गर्नुहोस्
+            {t('finance.addPayment')}
           </Button>
         </DialogActions>
       </Dialog>
