@@ -311,7 +311,7 @@ export const AcademicYears = () => {
         </Card>
       )}
 
-      <Paper sx={{ ...S.GLASS, borderRadius: R.lg }}>
+      <Paper sx={{ ...S.GLASS }}>
         <TableContainer>
           <Table>
             <TableHead>
@@ -388,7 +388,7 @@ export const AcademicYears = () => {
       </Paper>
 
       {selectedYearId && (
-        <Paper ref={termsRef} sx={{ ...S.GLASS, mt: 3, p: 3, borderRadius: R.lg, border: 2, borderColor: 'primary.main' }}>
+        <Paper ref={termsRef} sx={{ ...S.GLASS, mt: 3, p: 3, border: 2, borderColor: 'primary.main' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Box>
               <Typography variant="h6" fontWeight={600} color="primary">

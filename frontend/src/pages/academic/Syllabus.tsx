@@ -343,7 +343,7 @@ export const Syllabus = () => {
       {selectedClass && selectedSubject && (
         <>
           {syllabus ? (
-            <Paper sx={{ ...S.GLASS, borderRadius: 2 }}>
+            <Paper sx={{ ...S.GLASS }}>
               {/* Header */}
               <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -377,7 +377,7 @@ export const Syllabus = () => {
                   <LinearProgress
                     variant="determinate"
                     value={progress}
-                    sx={{ height: 8, borderRadius: 1 }}
+                    sx={{ height: 8, borderRadius: R.sm }}
                   />
                 </Box>
               </Box>
@@ -435,7 +435,7 @@ export const Syllabus = () => {
                               <LinearProgress
                                 variant="determinate"
                                 value={Math.min(topicProgress, 100)}
-                                sx={{ height: 6, borderRadius: 1 }}
+                                sx={{ height: 6, borderRadius: R.sm }}
                                 color={isCompleted ? 'success' : 'primary'}
                               />
                             </>

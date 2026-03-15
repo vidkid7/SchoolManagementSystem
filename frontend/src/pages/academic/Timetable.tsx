@@ -355,7 +355,7 @@ export const Timetable = () => {
 
       {/* Timetable Grid */}
       {selectedClass && (
-        <Paper sx={{ ...S.GLASS, borderRadius: 2, overflow: 'hidden' }}>
+        <Paper sx={{ ...S.GLASS, overflow: 'hidden' }}>
           <TableContainer>
             <Table sx={{ minWidth: 800 }}>
               <TableHead>

@@ -249,7 +249,7 @@ export const SubjectTeachersView = () => {
           <MotionCard
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            sx={{ ...S.GLASS, borderRadius: R.lg }}
+            sx={{ ...S.GLASS }}
           >
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -378,7 +378,7 @@ export const SubjectTeachersView = () => {
           </Table>
         </TableContainer>
       ) : (
-        <Paper sx={{ ...S.GLASS, p: 4, textAlign: 'center', borderRadius: R.lg }}>
+        <Paper sx={{ ...S.GLASS, p: 4, textAlign: 'center' }}>
           <SchoolIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
           <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
             No Teachers Assigned

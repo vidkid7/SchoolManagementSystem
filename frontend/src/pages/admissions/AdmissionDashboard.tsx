@@ -148,7 +148,7 @@ export function AdmissionDashboard() {
                       backgroundColor: card.bgColor,
                       color: card.color,
                       p: 1.5,
-                      borderRadius: 2,
+                      borderRadius: R.lg,
                     }}
                   >
                     {card.icon}

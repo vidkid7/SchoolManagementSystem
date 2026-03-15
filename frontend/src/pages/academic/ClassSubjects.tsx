@@ -264,7 +264,7 @@ export const ClassSubjects = () => {
 
       {/* Assigned Subjects Table */}
       {selectedClass && (
-        <Paper sx={{ ...S.GLASS, borderRadius: R.lg }}>
+        <Paper sx={{ ...S.GLASS }}>
           <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="h6" fontWeight={600}>
               {t('classSubjects.assignedSubjects')}

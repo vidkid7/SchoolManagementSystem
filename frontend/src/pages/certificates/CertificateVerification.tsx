@@ -318,7 +318,7 @@ export const CertificateVerification = () => {
             <Box
               sx={{
                 width: '100%',
-                borderRadius: 1,
+                borderRadius: R.sm,
                 overflow: 'hidden',
                 bgcolor: 'black',
                 aspectRatio: '4 / 3',
@@ -431,7 +431,7 @@ export const CertificateVerification = () => {
               )}
 
               {result.valid && (
-                <Box sx={{ mt: 3, p: 2, bgcolor: 'success.light', borderRadius: 1 }}>
+                <Box sx={{ mt: 3, p: 2, bgcolor: 'success.light', borderRadius: R.sm }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <CheckCircleIcon color="success" />
                     <Typography variant="body2">
