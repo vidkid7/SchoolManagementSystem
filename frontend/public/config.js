@@ -1,5 +1,5 @@
-// Runtime configuration
+// Runtime configuration for development
 // This file is replaced at deployment time with actual values
 window.ENV = {
-  API_BASE_URL: "https://schoolmanagementsystem-production-4bb7.up.railway.app/api/v1"
+  API_BASE_URL: "/api/v1"
 };

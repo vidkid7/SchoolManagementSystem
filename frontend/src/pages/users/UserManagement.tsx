@@ -39,6 +39,7 @@ import {
   ListItemText,
   Divider,
   Snackbar,
+  useTheme,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -54,6 +55,8 @@ import {
   History as HistoryIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useTranslation } from 'react-i18next';
 
 interface User {
   userId: number;
@@ -86,6 +89,9 @@ interface UserActivity {
 }
 
 export const UserManagement = () => {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
@@ -309,7 +315,7 @@ export const UserManagement = () => {
       {/* Stats Cards */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={6} md={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography color="text.secondary" variant="body2">
                 Total Users
@@ -319,7 +325,7 @@ export const UserManagement = () => {
           </Card>
         </Grid>
         <Grid item xs={6} md={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography color="text.secondary" variant="body2">
                 Active
@@ -329,7 +335,7 @@ export const UserManagement = () => {
           </Card>
         </Grid>
         <Grid item xs={6} md={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography color="text.secondary" variant="body2">
                 Inactive
@@ -339,7 +345,7 @@ export const UserManagement = () => {
           </Card>
         </Grid>
         <Grid item xs={6} md={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography color="text.secondary" variant="body2">
                 Suspended
@@ -351,7 +357,7 @@ export const UserManagement = () => {
       </Grid>
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 2, mb: 3 }}>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           <TextField
             label="Search / खोज्नुहोस्"

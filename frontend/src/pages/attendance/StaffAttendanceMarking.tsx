@@ -5,6 +5,9 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import {
   Box,
   Paper,
@@ -29,7 +32,7 @@ import {
   Save as SaveIcon,
   PersonAdd as StaffIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 interface Staff {
   staffId: number;
@@ -43,6 +46,9 @@ interface Staff {
 }
 
 export function StaffAttendanceMarking() {
+  const theme = useTheme();
+  const { t } = useTranslation();
+  const S = useAdminStyles(theme);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [staff, setStaff] = useState<Staff[]>([]);
@@ -61,7 +67,7 @@ export function StaffAttendanceMarking() {
       const params: any = { status: 'active' };
       if (department !== 'all') params.department = department;
 
-      const response = await api.get('/staff', { params });
+      const response = await apiClient.get('/staff', { params });
       const staffData = response.data?.data || response.data || [];
       
       const staffWithStatus = Array.isArray(staffData)
@@ -75,7 +81,7 @@ export function StaffAttendanceMarking() {
       setStaff(staffWithStatus);
     } catch (error) {
       console.error('Failed to fetch staff:', error);
-      setError('Failed to load staff members');
+      setError(t('attendance.noStaffFound'));
       setStaff([]);
     } finally {
       setLoading(false);
@@ -118,21 +124,19 @@ export function StaffAttendanceMarking() {
         remarks: s.remarks || '',
       }));
 
-      // Convert date to ISO format
       const dateISO = new Date(selectedDate).toISOString();
 
-      // Save to backend API
-      await api.post('/attendance/staff/bulk', {
+      await apiClient.post('/attendance/staff/bulk', {
         date: dateISO,
         records: attendanceRecords,
       });
 
-      setSuccess('Staff attendance marked successfully! / कर्मचारी उपस्थिति सफलतापूर्वक चिन्ह लगाइयो!');
+      setSuccess(t('attendance.staffAttendanceSaved'));
       setTimeout(() => setSuccess(''), 5000);
     } catch (error: any) {
       console.error('Failed to mark attendance:', error);
-      const errorMsg = error.response?.data?.message || error.message || 'Failed to mark attendance';
-      setError(`Error: ${errorMsg}`);
+      const errorMsg = error.response?.data?.message || error.message || t('attendance.failedToMarkAttendance');
+      setError(errorMsg);
     } finally {
       setSaving(false);
     }
@@ -144,47 +148,49 @@ export function StaffAttendanceMarking() {
 
   return (
     <Box>
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
           <StaffIcon sx={{ fontSize: 32, color: 'primary.main' }} />
           <Typography variant="h5" fontWeight={600}>
-            Mark Staff Attendance
+            {t('attendance.staffAttendanceTitle')}
           </Typography>
         </Box>
 
         <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
           <TextField
-            label="Date"
+            label={t('attendance.date')}
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
             InputLabelProps={{ shrink: true }}
-            sx={{ width: 200 }}
+            sx={{ ...S.TF, width: 200 }}
           />
           <FormControl sx={{ width: 200 }}>
-            <InputLabel>Department</InputLabel>
+            <InputLabel>{t('attendance.department')}</InputLabel>
             <Select
               value={department}
-              label="Department"
+              label={t('attendance.department')}
               onChange={(e) => setDepartment(e.target.value)}
+              sx={S.SELECT}
             >
-              <MenuItem value="all">All Departments</MenuItem>
-              <MenuItem value="teaching">Teaching</MenuItem>
-              <MenuItem value="administration">Administration</MenuItem>
-              <MenuItem value="support">Support</MenuItem>
+              <MenuItem value="all">{t('attendance.allDepartments')}</MenuItem>
+              <MenuItem value="teaching">{t('attendance.teaching')}</MenuItem>
+              <MenuItem value="administration">{t('attendance.administration')}</MenuItem>
+              <MenuItem value="support">{t('attendance.support')}</MenuItem>
             </Select>
           </FormControl>
           <Button
             variant="outlined"
             onClick={handleMarkAllPresent}
             disabled={loading || staff.length === 0}
+            sx={S.BTN_OUTLINE}
           >
-            Mark All Present
+            {t('attendance.markAllPresentStaff')}
           </Button>
         </Box>
 
-        {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {success && <Alert severity="success" sx={{ mb: 2, borderRadius: R.md }}>{success}</Alert>}
+        {error && <Alert severity="error" sx={{ mb: 2, borderRadius: R.md }}>{error}</Alert>}
       </Paper>
 
       {loading ? (
@@ -192,52 +198,54 @@ export function StaffAttendanceMarking() {
           <CircularProgress />
         </Box>
       ) : staff.length === 0 ? (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
+        <Paper sx={{ ...S.GLASS, p: 4, textAlign: 'center' }}>
           <Typography color="text.secondary">
-            No staff members found
+            {t('attendance.noStaffFound')}
           </Typography>
         </Paper>
       ) : (
         <>
-          <TableContainer component={Paper}>
+          <TableContainer component={Paper} sx={S.GLASS}>
             <Table>
               <TableHead>
-                <TableRow>
-                  <TableCell>Staff Name</TableCell>
-                  <TableCell>Designation</TableCell>
-                  <TableCell>Department</TableCell>
-                  <TableCell width={200}>Status</TableCell>
-                  <TableCell width={300}>Remarks</TableCell>
+                <TableRow sx={{ bgcolor: S.TH_BG }}>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('attendance.staffName')}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('attendance.designation')}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('attendance.department')}</TableCell>
+                  <TableCell width={200} sx={{ fontWeight: 600 }}>{t('common.status')}</TableCell>
+                  <TableCell width={300} sx={{ fontWeight: 600 }}>{t('attendance.remarks')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {staff.map((s) => (
-                  <TableRow key={s.staffId}>
-                    <TableCell>{getFullName(s)}</TableCell>
-                    <TableCell>{s.designation}</TableCell>
-                    <TableCell>
+                  <TableRow key={s.staffId} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{getFullName(s)}</TableCell>
+                    <TableCell sx={S.TD}>{s.designation}</TableCell>
+                    <TableCell sx={S.TD}>
                       <Chip label={s.department} size="small" />
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>
                       <FormControl fullWidth size="small">
                         <Select
                           value={s.attendance_status}
                           onChange={(e) => handleStatusChange(s.staffId, e.target.value)}
+                          sx={S.SELECT}
                         >
-                          <MenuItem value="present">Present</MenuItem>
-                          <MenuItem value="absent">Absent</MenuItem>
-                          <MenuItem value="late">Late</MenuItem>
-                          <MenuItem value="on_leave">On Leave</MenuItem>
+                          <MenuItem value="present">{t('attendance.present')}</MenuItem>
+                          <MenuItem value="absent">{t('attendance.absent')}</MenuItem>
+                          <MenuItem value="late">{t('attendance.late')}</MenuItem>
+                          <MenuItem value="on_leave">{t('attendance.onLeave')}</MenuItem>
                         </Select>
                       </FormControl>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={S.TD}>
                       <TextField
                         fullWidth
                         size="small"
-                        placeholder="Add remarks..."
+                        placeholder={t('attendance.addRemarks')}
                         value={s.remarks}
                         onChange={(e) => handleRemarksChange(s.staffId, e.target.value)}
+                        sx={S.TF}
                       />
                     </TableCell>
                   </TableRow>
@@ -253,8 +261,9 @@ export function StaffAttendanceMarking() {
               startIcon={<SaveIcon />}
               onClick={handleSubmit}
               disabled={saving}
+              sx={S.BTN_PRIMARY}
             >
-              {saving ? 'Saving...' : 'Save Attendance'}
+              {saving ? t('common.saving') : t('attendance.saveAttendance')}
             </Button>
           </Box>
         </>

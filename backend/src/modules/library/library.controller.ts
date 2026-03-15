@@ -632,19 +632,52 @@ export class LibraryController {
    */
   async getLibraryReports(_req: Request, res: Response): Promise<void> {
     try {
+      console.log('Fetching library stats...');
       const libraryStats = await libraryService.getLibraryStats();
+      console.log('Library stats:', libraryStats);
+      
+      console.log('Fetching fine stats...');
       const fineStats = await lateFeeService.getFineStats();
-      const reservationStats = await reservationService.getReservationStats();
+      console.log('Fine stats:', fineStats);
+      
+      console.log('Fetching reservation stats...');
+      let reservationStats;
+      try {
+        reservationStats = await reservationService.getReservationStats();
+        console.log('Reservation stats:', reservationStats);
+      } catch (error: any) {
+        // Handle case where reservations table doesn't exist yet
+        if (error?.original?.code === 'ER_NO_SUCH_TABLE') {
+          console.log('Reservations table does not exist yet, using zero values');
+          reservationStats = {
+            totalReservations: 0,
+            pendingReservations: 0,
+            availableReservations: 0,
+            fulfilledReservations: 0,
+            expiredReservations: 0,
+            cancelledReservations: 0,
+          };
+        } else {
+          throw error;
+        }
+      }
 
       res.status(200).json({
         success: true,
         data: {
+          booksIssuedMonth: libraryStats.totalCirculations || 0,
+          booksReturned: libraryStats.totalCirculations - libraryStats.borrowedBooks || 0,
+          overdueBooks: libraryStats.overdueBooks || 0,
+          finesCollected: fineStats.totalPaid || 0,
+          totalBooks: libraryStats.totalBooks || 0,
           library: libraryStats,
           fines: fineStats,
           reservations: reservationStats,
         },
       });
     } catch (error) {
+      console.error('Error in getLibraryReports:', error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       res.status(500).json({
         success: false,
         message: 'Failed to fetch library reports',

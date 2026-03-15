@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2c2c2c; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        button {
+            background: #2c2c2c;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background: #4a5568; }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Dashboard API Diagnostic Tool</h1>
+        
+        <div>
+            <h3>Step 1: Login</h3>
+            <input type="text" id="username" placeholder="Username" value="admin">
+            <input type="password" id="password" placeholder="Password" value="admin123">
+            <button onclick="testLogin()">Login</button>
+        </div>
+        
+        <div id="loginResult"></div>
+        
+        <div>
+            <h3>Step 2: Test Dashboard API</h3>
+            <button onclick="testDashboard()" id="dashboardBtn" disabled>Fetch Dashboard Data</button>
+        </div>
+        
+        <div id="dashboardResult"></div>
+    </div>
+
+    <script>
+        let authToken = null;
+
+        async function testLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('loginResult');
+            
+            resultDiv.innerHTML = '<div class="status info">Logging in...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    authToken = data.data.accessToken;
+                    const user = data.data.user;
+                    
+                    resultDiv.innerHTML = `
+                        <div class="status success">
+                            ✓ Login Successful!
+                            <pre>${JSON.stringify({
+                                username: user.username,
+                                role: user.role,
+                                userId: user.userId,
+                                schoolConfigId: user.schoolConfigId,
+                                municipalityId: user.municipalityId
+                            }, null, 2)}</pre>
+                        </div>
+                    `;
+                    
+                    document.getElementById('dashboardBtn').disabled = false;
+                } else {
+                    resultDiv.innerHTML = `<div class="status error">✗ Login Failed: ${data.message}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">✗ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testDashboard() {
+            const resultDiv = document.getElementById('dashboardResult');
+            
+            if (!authToken) {
+                resultDiv.innerHTML = '<div class="status error">Please login first!</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div class="status info">Fetching dashboard data...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/v1/reports/dashboard', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const summary = data.data.summary;
+                    const charts = data.data.charts;
+                    
+                    resultDiv.innerHTML = `
+                        <div class="status success">
+                            ✓ Dashboard Data Received!
+                            
+                            <h4>Summary Statistics:</h4>
+                            <pre>${JSON.stringify(summary, null, 2)}</pre>
+                            
+                            <h4>Chart Data:</h4>
+                            <pre>Gender Distribution: ${JSON.stringify(charts.genderDistribution, null, 2)}</pre>
+                            <pre>Class-wise Enrollment: ${JSON.stringify(charts.classWiseEnrollment, null, 2)}</pre>
+                            <pre>Staff Distribution: ${JSON.stringify(charts.staffDistribution, null, 2)}</pre>
+                            <pre>Fee Status: ${JSON.stringify(charts.feeStatus, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="status error">✗ API Error: ${data.message}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">✗ Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

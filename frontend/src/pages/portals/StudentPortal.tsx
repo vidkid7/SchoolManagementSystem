@@ -17,7 +17,11 @@ import {
   Button,
   Divider,
   Avatar,
+  CircularProgress,
+  Alert,
+  useTheme,
 } from '@mui/material';
+import { C, useAdminStyles } from '../../theme/designTokens';
 import {
   School as SchoolIcon,
   Assignment as AssignmentIcon,
@@ -32,6 +36,7 @@ import {
   Warning as WarningIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { useTranslation } from 'react-i18next';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -48,241 +53,259 @@ function TabPanel({ children, value, index }: TabPanelProps) {
 }
 
 interface DashboardData {
-  attendance: { present: number; total: number; percentage: number };
+  attendance: { present: number; total: number; percentage: number } | null;
   grades: Array<{ subject: string; grade: string; gpa: number }>;
-  fees: { paid: number; pending: number; total: number };
+  fees: { paid: number; pending: number; total: number } | null;
   assignments: Array<{ title: string; subject: string; dueDate: string; status: string }>;
   notices: Array<{ id: number; title: string; date: string }>;
   timetable: Array<{ period: number; subject: string; teacher: string; time: string }>;
 }
 
 const StudentPortal: React.FC = () => {
+  const { t } = useTranslation();
   const [tabValue, setTabValue] = useState(0);
   const [data, setData] = useState<DashboardData>({
-    attendance: { present: 185, total: 200, percentage: 92.5 },
-    grades: [
-      { subject: 'Mathematics', grade: 'A+', gpa: 4.0 },
-      { subject: 'Science', grade: 'A', gpa: 3.6 },
-      { subject: 'English', grade: 'B+', gpa: 3.2 },
-      { subject: 'Nepali', grade: 'A', gpa: 3.6 },
-      { subject: 'Social Studies', grade: 'A+', gpa: 4.0 },
-    ],
-    fees: { paid: 45000, pending: 15000, total: 60000 },
-    assignments: [
-      { title: 'Math Homework Ch. 5', subject: 'Mathematics', dueDate: '2082-11-05', status: 'pending' },
-      { title: 'Science Lab Report', subject: 'Science', dueDate: '2082-11-03', status: 'submitted' },
-      { title: 'English Essay', subject: 'English', dueDate: '2082-11-07', status: 'pending' },
-    ],
-    notices: [
-      { id: 1, title: 'Annual Sports Day - Falgun 15', date: '2082-10-28' },
-      { id: 2, title: 'Parent-Teacher Meeting', date: '2082-11-01' },
-      { id: 3, title: 'Science Exhibition', date: '2082-11-10' },
-    ],
-    timetable: [
-      { period: 1, subject: 'Mathematics', teacher: 'Mr. Sharma', time: '10:00 - 10:45' },
-      { period: 2, subject: 'Science', teacher: 'Mrs. Thapa', time: '10:45 - 11:30' },
-      { period: 3, subject: 'English', teacher: 'Mr. Adhikari', time: '11:45 - 12:30' },
-      { period: 4, subject: 'Nepali', teacher: 'Mrs. Poudel', time: '12:30 - 13:15' },
-      { period: 5, subject: 'Social Studies', teacher: 'Mr. KC', time: '14:00 - 14:45' },
-    ],
+    attendance: null,
+    grades: [],
+    fees: null,
+    assignments: [],
+    notices: [],
+    timetable: [],
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setError(null);
       try {
-        const [attendanceRes, gradesRes, feesRes] = await Promise.allSettled([
+        const [attendanceRes, gradesRes, feesRes, assignmentsRes, noticesRes, timetableRes] = await Promise.allSettled([
           apiClient.get('/api/v1/students/me/attendance/summary'),
           apiClient.get('/api/v1/students/me/grades'),
           apiClient.get('/api/v1/students/me/fees/summary'),
+          apiClient.get('/api/v1/students/me/assignments'),
+          apiClient.get('/api/v1/announcements'),
+          apiClient.get('/api/v1/students/me/timetable'),
         ]);
 
-        setData(prev => {
-          const updated = { ...prev };
-          if (attendanceRes.status === 'fulfilled') updated.attendance = attendanceRes.value.data.data;
-          if (gradesRes.status === 'fulfilled') updated.grades = gradesRes.value.data.data;
-          if (feesRes.status === 'fulfilled') updated.fees = feesRes.value.data.data;
-          return updated;
+        setData({
+          attendance: attendanceRes.status === 'fulfilled' ? attendanceRes.value.data?.data : null,
+          grades: gradesRes.status === 'fulfilled' ? (gradesRes.value.data?.data || []) : [],
+          fees: feesRes.status === 'fulfilled' ? feesRes.value.data?.data : null,
+          assignments: assignmentsRes.status === 'fulfilled' ? (assignmentsRes.value.data?.data || []) : [],
+          notices: noticesRes.status === 'fulfilled' ? (noticesRes.value.data?.data || []) : [],
+          timetable: timetableRes.status === 'fulfilled' ? (timetableRes.value.data?.data || []) : [],
         });
       } catch {
-        // Use default data
+        setError(t('common.error'));
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, []);
+  }, [t]);
 
-  const attendanceColor = data.attendance.percentage >= 75 ? 'success' : 'error';
+  const attendancePct = data.attendance?.percentage ?? 0;
+  const attendanceColor = attendancePct >= 75 ? 'success' : 'error';
+  const avgGpa = data.grades.length > 0
+    ? (data.grades.reduce((sum, g) => sum + g.gpa, 0) / data.grades.length).toFixed(2)
+    : '—';
+  const pendingAssignments = data.assignments.filter(a => a.status === 'pending').length;
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>Student Portal</Typography>
+      {/* Header */}
+      <Box sx={{ ...S.PAGE_HEADER, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={S.ICON_BOX(C.primary, 48)}>
+          <SchoolIcon />
+        </Box>
+        <Box>
+          <Typography variant="h4" fontWeight={700}>{t('portal.studentPortal')}</Typography>
+          <Typography variant="body2" color="text.secondary">{t('common.overview')}</Typography>
+        </Box>
+      </Box>
 
-      {loading && <LinearProgress sx={{ mb: 2 }} />}
+      {error && <Alert severity="error" sx={{ mb: 2, borderRadius: '12px' }} onClose={() => setError(null)}>{error}</Alert>}
 
       {/* Quick Stats */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Box sx={S.STAT_CARD(C.primary)}>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <SchoolIcon color="primary" />
-                <Typography color="textSecondary">Attendance</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Box sx={S.ICON_BOX(C.primary, 36)}><SchoolIcon fontSize="small" /></Box>
+                <Typography variant="body2" color="text.secondary">{t('portal.attendance')}</Typography>
               </Box>
-              <Typography variant="h4" color={`${attendanceColor}.main`}>
-                {data.attendance.percentage}%
+              <Typography variant="h4" fontWeight={700} color={`${attendanceColor}.main`}>
+                {data.attendance ? `${attendancePct}%` : '—'}
               </Typography>
-              <LinearProgress
-                variant="determinate"
-                value={data.attendance.percentage}
-                color={attendanceColor}
-                sx={{ mt: 1 }}
-              />
+              {data.attendance && (
+                <LinearProgress variant="determinate" value={attendancePct} color={attendanceColor} sx={{ mt: 1, borderRadius: 1 }} />
+              )}
             </CardContent>
-          </Card>
+          </Box>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Box sx={S.STAT_CARD(C.info)}>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <AssignmentIcon color="info" />
-                <Typography color="textSecondary">GPA</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Box sx={S.ICON_BOX(C.info, 36)}><AssignmentIcon fontSize="small" /></Box>
+                <Typography variant="body2" color="text.secondary">{t('portal.gpa')}</Typography>
               </Box>
-              <Typography variant="h4" color="info.main">
-                {(data.grades.reduce((sum, g) => sum + g.gpa, 0) / data.grades.length).toFixed(2)}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                {data.grades.length} subjects
+              <Typography variant="h4" fontWeight={700} color="info.main">{avgGpa}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                {data.grades.length} {t('portal.subjectsLabel')}
               </Typography>
             </CardContent>
-          </Card>
+          </Box>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Box sx={S.STAT_CARD(C.warning)}>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <ReceiptIcon color="warning" />
-                <Typography color="textSecondary">Fee Status</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Box sx={S.ICON_BOX(C.warning, 36)}><ReceiptIcon fontSize="small" /></Box>
+                <Typography variant="body2" color="text.secondary">{t('portal.feeStatus')}</Typography>
               </Box>
-              <Typography variant="h4" color={data.fees.pending > 0 ? 'warning.main' : 'success.main'}>
-                Rs. {data.fees.pending.toLocaleString()}
+              <Typography variant="h4" fontWeight={700} color={data.fees && data.fees.pending > 0 ? 'warning.main' : 'success.main'}>
+                {data.fees ? `${t('common.currency')} ${data.fees.pending.toLocaleString()}` : '—'}
               </Typography>
-              <Typography variant="body2" color="textSecondary">
-                pending of Rs. {data.fees.total.toLocaleString()}
-              </Typography>
+              {data.fees && (
+                <Typography variant="body2" color="text.secondary">
+                  {t('portal.pendingOf')} {t('common.currency')} {data.fees.total.toLocaleString()}
+                </Typography>
+              )}
             </CardContent>
-          </Card>
+          </Box>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Box sx={S.STAT_CARD(C.purple)}>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <AssignmentIcon color="secondary" />
-                <Typography color="textSecondary">Assignments</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Box sx={S.ICON_BOX(C.purple, 36)}><AssignmentIcon fontSize="small" /></Box>
+                <Typography variant="body2" color="text.secondary">{t('portal.assignments')}</Typography>
               </Box>
-              <Typography variant="h4" color="secondary.main">
-                {data.assignments.filter(a => a.status === 'pending').length}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                pending assignments
-              </Typography>
+              <Typography variant="h4" fontWeight={700} color="secondary.main">{pendingAssignments}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('portal.pendingAssignments')}</Typography>
             </CardContent>
-          </Card>
+          </Box>
         </Grid>
       </Grid>
 
       {/* Tabs Section */}
-      <Paper sx={{ mb: 3 }}>
-        <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)} variant="scrollable" scrollButtons="auto">
-          <Tab icon={<CalendarIcon />} label="Timetable" />
-          <Tab icon={<AssignmentIcon />} label="Assignments" />
-          <Tab icon={<SchoolIcon />} label="Grades" />
-          <Tab icon={<NotificationIcon />} label="Notices" />
+      <Paper sx={{ ...S.GLASS_ELEVATED, mb: 3, overflow: 'hidden' }}>
+        <Tabs
+          value={tabValue}
+          onChange={(_, v) => setTabValue(v)}
+          variant="scrollable"
+          scrollButtons="auto"
+          TabIndicatorProps={{ sx: S.TAB_INDICATOR }}
+        >
+          <Tab icon={<CalendarIcon />} label={t('academic.timetable')} sx={S.TAB_ACTIVE} />
+          <Tab icon={<AssignmentIcon />} label={t('portal.assignments')} sx={S.TAB_ACTIVE} />
+          <Tab icon={<SchoolIcon />} label={t('portal.performance')} sx={S.TAB_ACTIVE} />
+          <Tab icon={<NotificationIcon />} label={t('communication.announcements')} sx={S.TAB_ACTIVE} />
         </Tabs>
 
         <Box sx={{ p: 2 }}>
+          {/* Timetable */}
           <TabPanel value={tabValue} index={0}>
-            <List>
-              {data.timetable.map((item) => (
-                <ListItem key={item.period} divider>
-                  <ListItemIcon>
-                    <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32, fontSize: 14 }}>
-                      {item.period}
-                    </Avatar>
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={item.subject}
-                    secondary={`${item.teacher} | ${item.time}`}
-                  />
-                </ListItem>
-              ))}
-            </List>
+            {data.timetable.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" sx={S.EMPTY_STATE}>{t('portal.noData')}</Typography>
+            ) : (
+              <List>
+                {data.timetable.map((item) => (
+                  <ListItem key={item.period} divider sx={S.TR_HOVER}>
+                    <ListItemIcon>
+                      <Avatar sx={{ bgcolor: C.primary, width: 32, height: 32, fontSize: 14, borderRadius: '8px' }}>
+                        {item.period}
+                      </Avatar>
+                    </ListItemIcon>
+                    <ListItemText primary={item.subject} secondary={`${item.teacher} | ${item.time}`} />
+                  </ListItem>
+                ))}
+              </List>
+            )}
           </TabPanel>
 
+          {/* Assignments */}
           <TabPanel value={tabValue} index={1}>
-            <List>
-              {data.assignments.map((item, idx) => (
-                <ListItem key={idx} divider>
-                  <ListItemIcon>
-                    {item.status === 'submitted' ? (
-                      <CheckIcon color="success" />
-                    ) : (
-                      <WarningIcon color="warning" />
-                    )}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={item.title}
-                    secondary={`${item.subject} | Due: ${item.dueDate}`}
-                  />
-                  <Chip
-                    label={item.status}
-                    color={item.status === 'submitted' ? 'success' : 'warning'}
-                    size="small"
-                  />
-                </ListItem>
-              ))}
-            </List>
+            {data.assignments.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" sx={S.EMPTY_STATE}>{t('portal.noData')}</Typography>
+            ) : (
+              <List>
+                {data.assignments.map((item, idx) => (
+                  <ListItem key={idx} divider sx={S.TR_HOVER}>
+                    <ListItemIcon>
+                      {item.status === 'submitted' ? <CheckIcon color="success" /> : <WarningIcon color="warning" />}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.title}
+                      secondary={`${item.subject} | ${t('portal.due')}: ${item.dueDate}`}
+                    />
+                    <Chip
+                      label={item.status}
+                      color={item.status === 'submitted' ? 'success' : 'warning'}
+                      size="small"
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            )}
           </TabPanel>
 
+          {/* Grades */}
           <TabPanel value={tabValue} index={2}>
-            <List>
-              {data.grades.map((item, idx) => (
-                <ListItem key={idx} divider>
-                  <ListItemIcon>
-                    <BookIcon color="primary" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={item.subject}
-                    secondary={`GPA: ${item.gpa}`}
-                  />
-                  <Chip label={item.grade} color="primary" />
-                </ListItem>
-              ))}
-            </List>
-            <Divider sx={{ my: 2 }} />
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Button startIcon={<DownloadIcon />} variant="outlined">
-                Download Report Card
-              </Button>
-              <Button startIcon={<DownloadIcon />} variant="outlined">
-                Download CV
-              </Button>
-            </Box>
+            {data.grades.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" sx={S.EMPTY_STATE}>{t('portal.noData')}</Typography>
+            ) : (
+              <>
+                <List>
+                  {data.grades.map((item, idx) => (
+                    <ListItem key={idx} divider sx={S.TR_HOVER}>
+                      <ListItemIcon><BookIcon color="primary" /></ListItemIcon>
+                      <ListItemText primary={item.subject} secondary={`${t('portal.gpa')}: ${item.gpa}`} />
+                      <Chip label={item.grade} color="primary" />
+                    </ListItem>
+                  ))}
+                </List>
+                <Divider sx={{ my: 2 }} />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+                  <Button startIcon={<DownloadIcon />} sx={S.BTN_OUTLINE}>
+                    {t('portal.downloadReportCard')}
+                  </Button>
+                  <Button startIcon={<DownloadIcon />} sx={S.BTN_OUTLINE}>
+                    {t('portal.downloadCV')}
+                  </Button>
+                </Box>
+              </>
+            )}
           </TabPanel>
 
+          {/* Announcements */}
           <TabPanel value={tabValue} index={3}>
-            <List>
-              {data.notices.map((item) => (
-                <ListItem key={item.id} divider>
-                  <ListItemIcon>
-                    <EventIcon color="info" />
-                  </ListItemIcon>
-                  <ListItemText primary={item.title} secondary={item.date} />
-                </ListItem>
-              ))}
-            </List>
+            {data.notices.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" sx={S.EMPTY_STATE}>{t('portal.noData')}</Typography>
+            ) : (
+              <List>
+                {data.notices.map((item) => (
+                  <ListItem key={item.id} divider sx={S.TR_HOVER}>
+                    <ListItemIcon><EventIcon color="info" /></ListItemIcon>
+                    <ListItemText primary={item.title} secondary={item.date} />
+                  </ListItem>
+                ))}
+              </List>
+            )}
           </TabPanel>
         </Box>
       </Paper>

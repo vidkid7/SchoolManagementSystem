@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Paper,
   Typography,
   Table,
   TableBody,
@@ -17,27 +16,34 @@ import {
   IconButton,
   Collapse,
   Grid,
-  Card,
-  CardContent,
   FormControl,
   InputLabel,
   Select,
+  InputAdornment,
   CircularProgress,
-  Alert
+  Alert,
+  Tooltip,
 } from '@mui/material';
+import { useTheme } from '@mui/material';
 import {
+  History as HistoryIcon,
   Search as SearchIcon,
   FilterList as FilterIcon,
   Refresh as RefreshIcon,
   Download as DownloadIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Restore as RestoreIcon,
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { useTranslation } from 'react-i18next';
 import apiClient from '../../services/apiClient';
+import { useAdminStyles, C, getStatusColor } from '../../theme/designTokens';
 
 /**
  * Audit Logs Page
@@ -68,6 +74,10 @@ interface AuditLogStats {
 }
 
 const AuditLogs: React.FC = () => {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [stats, setStats] = useState<AuditLogStats | null>(null);
   const [loading, setLoading] = useState(false);
@@ -87,7 +97,7 @@ const AuditLogs: React.FC = () => {
     startDate: null as Date | null,
     endDate: null as Date | null,
     ipAddress: '',
-    search: ''
+    search: '',
   });
 
   useEffect(() => {
@@ -102,7 +112,7 @@ const AuditLogs: React.FC = () => {
     try {
       const params: any = {
         page: page + 1,
-        limit: rowsPerPage
+        limit: rowsPerPage,
       };
 
       if (filters.userId) params.userId = filters.userId;
@@ -119,7 +129,7 @@ const AuditLogs: React.FC = () => {
       setLogs(response.data.data);
       setTotalLogs(response.data.pagination.total);
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to fetch audit logs');
+      setError(err.response?.data?.error?.message || t('audit.failedToFetch'));
     } finally {
       setLoading(false);
     }
@@ -152,7 +162,7 @@ const AuditLogs: React.FC = () => {
       startDate: null,
       endDate: null,
       ipAddress: '',
-      search: ''
+      search: '',
     });
     setPage(0);
   };
@@ -168,7 +178,7 @@ const AuditLogs: React.FC = () => {
       if (filters.endDate) params.endDate = filters.endDate.toISOString();
 
       const response = await apiClient.get('/api/v1/audit/export', { params });
-      
+
       // Download as JSON
       const dataStr = JSON.stringify(response.data.data, null, 2);
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -178,32 +188,22 @@ const AuditLogs: React.FC = () => {
       link.download = `audit-logs-${new Date().toISOString()}.json`;
       link.click();
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to export audit logs');
+      setError(err.response?.data?.error?.message || t('audit.failedToExport'));
     }
   };
 
   const handleRotateLogs = async () => {
-    if (!window.confirm('Are you sure you want to delete logs older than 1 year? This action cannot be undone.')) {
+    if (!window.confirm(t('audit.rotateConfirm'))) {
       return;
     }
 
     try {
       const response = await apiClient.post('/api/v1/audit/rotate', { retentionDays: 365 });
-      alert(`Successfully deleted ${response.data.data.deletedCount} old audit logs`);
+      alert(t('audit.rotateSuccess', { count: response.data.data.deletedCount }));
       fetchAuditLogs();
       fetchStats();
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to rotate audit logs');
-    }
-  };
-
-  const getActionColor = (action: string) => {
-    switch (action) {
-      case 'create': return 'success';
-      case 'update': return 'info';
-      case 'delete': return 'error';
-      case 'restore': return 'warning';
-      default: return 'default';
+      setError(err.response?.data?.error?.message || t('audit.failedToRotate'));
     }
   };
 
@@ -211,195 +211,242 @@ const AuditLogs: React.FC = () => {
     return new Date(dateString).toLocaleString();
   };
 
+  const TH_CELL_SX = {
+    background: S.TH_BG,
+    color: theme.palette.text.secondary,
+    fontWeight: 700,
+    fontSize: '0.72rem',
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase' as const,
+  };
+
+  const statCards = [
+    {
+      label: t('audit.totalLogs'),
+      value: stats?.totalLogs ?? 0,
+      accent: C.primary,
+      icon: <HistoryIcon sx={{ fontSize: 18 }} />,
+    },
+    {
+      label: t('audit.creates'),
+      value: stats?.logsByAction?.create ?? 0,
+      accent: C.success,
+      icon: <AddIcon sx={{ fontSize: 18 }} />,
+    },
+    {
+      label: t('audit.updates'),
+      value: stats?.logsByAction?.update ?? 0,
+      accent: C.info,
+      icon: <EditIcon sx={{ fontSize: 18 }} />,
+    },
+    {
+      label: t('audit.deletes'),
+      value: stats?.logsByAction?.delete ?? 0,
+      accent: C.danger,
+      icon: <DeleteIcon sx={{ fontSize: 18 }} />,
+    },
+    {
+      label: t('audit.restores'),
+      value: stats?.logsByAction?.restore ?? 0,
+      accent: C.warning,
+      icon: <RestoreIcon sx={{ fontSize: 18 }} />,
+    },
+  ];
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h4">Audit Logs</Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              variant="outlined"
-              startIcon={<RefreshIcon />}
-              onClick={fetchAuditLogs}
-            >
-              Refresh
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<DownloadIcon />}
-              onClick={handleExport}
-            >
-              Export
-            </Button>
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<DeleteIcon />}
-              onClick={handleRotateLogs}
-            >
-              Rotate Logs
-            </Button>
+      <Box sx={{ p: { xs: 2, md: 3 }, minHeight: '100vh' }}>
+
+        {/* Page Header */}
+        <Box
+          sx={{
+            ...S.PAGE_HEADER,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 2,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={S.ICON_BOX(C.primary, 44)}>
+              <HistoryIcon sx={{ fontSize: 22 }} />
+            </Box>
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
+                {t('audit.title')}
+              </Typography>
+              <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                {t('audit.subtitle')}
+              </Typography>
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Tooltip title={t('audit.refresh')}>
+              <Button variant="outlined" startIcon={<RefreshIcon />} onClick={fetchAuditLogs} sx={S.BTN_OUTLINE}>
+                {t('audit.refresh')}
+              </Button>
+            </Tooltip>
+            <Tooltip title={t('audit.export')}>
+              <Button variant="outlined" startIcon={<DownloadIcon />} onClick={handleExport} sx={S.BTN_OUTLINE}>
+                {t('audit.export')}
+              </Button>
+            </Tooltip>
+            <Tooltip title={t('audit.rotateLogs')}>
+              <Button variant="text" startIcon={<DeleteIcon />} onClick={handleRotateLogs} sx={{ ...S.BTN_GHOST, color: C.danger }}>
+                {t('audit.rotateLogs')}
+              </Button>
+            </Tooltip>
           </Box>
         </Box>
 
-        {/* Statistics Cards */}
-        {stats && (
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card>
-                <CardContent>
-                  <Typography color="textSecondary" gutterBottom>
-                    Total Logs
+        {/* Stats Grid */}
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3, 1fr)', md: 'repeat(5, 1fr)' },
+            gap: 2,
+            mb: 3,
+          }}
+        >
+          {statCards.map(({ label, value, accent, icon }) => (
+            <Box key={label} sx={{ ...S.STAT_CARD(accent), p: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box sx={S.ICON_BOX(accent, 36)}>
+                  {icon}
+                </Box>
+                <Box>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: theme.palette.text.secondary, display: 'block', lineHeight: 1.3 }}
+                  >
+                    {label}
                   </Typography>
-                  <Typography variant="h4">{stats.totalLogs.toLocaleString()}</Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card>
-                <CardContent>
-                  <Typography color="textSecondary" gutterBottom>
-                    Creates
+                  <Typography variant="h4" sx={{ color: accent, fontWeight: 700, lineHeight: 1.2 }}>
+                    {value.toLocaleString()}
                   </Typography>
-                  <Typography variant="h4" color="success.main">
-                    {stats.logsByAction.create || 0}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card>
-                <CardContent>
-                  <Typography color="textSecondary" gutterBottom>
-                    Updates
-                  </Typography>
-                  <Typography variant="h4" color="info.main">
-                    {stats.logsByAction.update || 0}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card>
-                <CardContent>
-                  <Typography color="textSecondary" gutterBottom>
-                    Deletes
-                  </Typography>
-                  <Typography variant="h4" color="error.main">
-                    {stats.logsByAction.delete || 0}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-        )}
+                </Box>
+              </Box>
+            </Box>
+          ))}
+        </Box>
 
-        {/* Filters */}
-        <Paper sx={{ p: 2, mb: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6">Filters</Typography>
-            <IconButton onClick={() => setShowFilters(!showFilters)}>
+        {/* Filters Card */}
+        <Box sx={{ ...S.GLASS, p: 2, mb: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+              {t('audit.filters')}
+            </Typography>
+            <IconButton size="small" sx={S.BTN_ICON} onClick={() => setShowFilters(!showFilters)}>
               {showFilters ? <ExpandLessIcon /> : <ExpandMoreIcon />}
             </IconButton>
           </Box>
 
           <Collapse in={showFilters}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField
-                  fullWidth
-                  label="User ID"
-                  value={filters.userId}
-                  onChange={(e) => handleFilterChange('userId', e.target.value)}
-                  type="number"
-                />
+            <Box sx={{ mt: 2 }}>
+              <Grid container spacing={2}>
+                {/* Search — full width at top */}
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label={t('audit.search')}
+                    value={filters.search}
+                    onChange={(e) => handleFilterChange('search', e.target.value)}
+                    placeholder={t('audit.searchPlaceholder')}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={S.TF}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <TextField
+                    fullWidth
+                    label={t('audit.userId')}
+                    value={filters.userId}
+                    onChange={(e) => handleFilterChange('userId', e.target.value)}
+                    type="number"
+                    sx={S.TF}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <TextField
+                    fullWidth
+                    label={t('audit.entityType')}
+                    value={filters.entityType}
+                    onChange={(e) => handleFilterChange('entityType', e.target.value)}
+                    sx={S.TF}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <TextField
+                    fullWidth
+                    label={t('audit.entityId')}
+                    value={filters.entityId}
+                    onChange={(e) => handleFilterChange('entityId', e.target.value)}
+                    type="number"
+                    sx={S.TF}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth sx={S.TF}>
+                    <InputLabel>{t('audit.action')}</InputLabel>
+                    <Select
+                      value={filters.action}
+                      onChange={(e) => handleFilterChange('action', e.target.value)}
+                      label={t('audit.action')}
+                    >
+                      <MenuItem value="">{t('audit.allActions')}</MenuItem>
+                      <MenuItem value="create">Create</MenuItem>
+                      <MenuItem value="update">Update</MenuItem>
+                      <MenuItem value="delete">Delete</MenuItem>
+                      <MenuItem value="restore">Restore</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <DatePicker
+                    label={t('audit.startDate')}
+                    value={filters.startDate}
+                    onChange={(date) => handleFilterChange('startDate', date)}
+                    slotProps={{ textField: { fullWidth: true, sx: S.TF } }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <DatePicker
+                    label={t('audit.endDate')}
+                    value={filters.endDate}
+                    onChange={(date) => handleFilterChange('endDate', date)}
+                    slotProps={{ textField: { fullWidth: true, sx: S.TF } }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <TextField
+                    fullWidth
+                    label={t('audit.ipAddress')}
+                    value={filters.ipAddress}
+                    onChange={(e) => handleFilterChange('ipAddress', e.target.value)}
+                    sx={S.TF}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button variant="contained" startIcon={<FilterIcon />} onClick={handleApplyFilters} sx={S.BTN_PRIMARY}>
+                      {t('audit.applyFilters')}
+                    </Button>
+                    <Button variant="outlined" onClick={handleClearFilters} sx={S.BTN_OUTLINE}>
+                      {t('audit.clearFilters')}
+                    </Button>
+                  </Box>
+                </Grid>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField
-                  fullWidth
-                  label="Entity Type"
-                  value={filters.entityType}
-                  onChange={(e) => handleFilterChange('entityType', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField
-                  fullWidth
-                  label="Entity ID"
-                  value={filters.entityId}
-                  onChange={(e) => handleFilterChange('entityId', e.target.value)}
-                  type="number"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <FormControl fullWidth>
-                  <InputLabel>Action</InputLabel>
-                  <Select
-                    value={filters.action}
-                    onChange={(e) => handleFilterChange('action', e.target.value)}
-                    label="Action"
-                  >
-                    <MenuItem value="">All</MenuItem>
-                    <MenuItem value="create">Create</MenuItem>
-                    <MenuItem value="update">Update</MenuItem>
-                    <MenuItem value="delete">Delete</MenuItem>
-                    <MenuItem value="restore">Restore</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <DatePicker
-                  label="Start Date"
-                  value={filters.startDate}
-                  onChange={(date) => handleFilterChange('startDate', date)}
-                  slotProps={{ textField: { fullWidth: true } }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <DatePicker
-                  label="End Date"
-                  value={filters.endDate}
-                  onChange={(date) => handleFilterChange('endDate', date)}
-                  slotProps={{ textField: { fullWidth: true } }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField
-                  fullWidth
-                  label="IP Address"
-                  value={filters.ipAddress}
-                  onChange={(e) => handleFilterChange('ipAddress', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField
-                  fullWidth
-                  label="Search"
-                  value={filters.search}
-                  onChange={(e) => handleFilterChange('search', e.target.value)}
-                  placeholder="Search entity type or fields"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button
-                    variant="contained"
-                    startIcon={<FilterIcon />}
-                    onClick={handleApplyFilters}
-                  >
-                    Apply Filters
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={handleClearFilters}
-                  >
-                    Clear Filters
-                  </Button>
-                </Box>
-              </Grid>
-            </Grid>
+            </Box>
           </Collapse>
-        </Paper>
+        </Box>
 
         {/* Error Alert */}
         {error && (
@@ -409,119 +456,163 @@ const AuditLogs: React.FC = () => {
         )}
 
         {/* Audit Logs Table */}
-        <Paper>
+        <Box sx={{ ...S.GLASS, overflow: 'hidden' }}>
           <TableContainer>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Timestamp</TableCell>
-                  <TableCell>User ID</TableCell>
-                  <TableCell>Entity</TableCell>
-                  <TableCell>Action</TableCell>
-                  <TableCell>Changed Fields</TableCell>
-                  <TableCell>IP Address</TableCell>
-                  <TableCell>Details</TableCell>
+                  <TableCell sx={TH_CELL_SX}>{t('audit.id')}</TableCell>
+                  <TableCell sx={TH_CELL_SX}>{t('audit.timestamp')}</TableCell>
+                  <TableCell sx={TH_CELL_SX}>{t('audit.userId')}</TableCell>
+                  <TableCell sx={TH_CELL_SX}>{t('audit.entity')}</TableCell>
+                  <TableCell sx={TH_CELL_SX}>{t('audit.action')}</TableCell>
+                  <TableCell sx={TH_CELL_SX}>{t('audit.changedFields')}</TableCell>
+                  <TableCell sx={TH_CELL_SX}>{t('audit.ipAddress')}</TableCell>
+                  <TableCell sx={TH_CELL_SX}>{t('audit.details')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center">
-                      <CircularProgress />
+                    <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
+                      <CircularProgress size={32} sx={{ color: C.primary }} />
                     </TableCell>
                   </TableRow>
                 ) : logs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center">
-                      No audit logs found
+                    <TableCell colSpan={8} align="center" sx={{ py: 6, color: theme.palette.text.secondary }}>
+                      {t('audit.noLogsFound')}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  logs.map((log) => (
-                    <React.Fragment key={log.auditLogId}>
-                      <TableRow hover>
-                        <TableCell>{log.auditLogId}</TableCell>
-                        <TableCell>{formatDate(log.timestamp)}</TableCell>
-                        <TableCell>{log.userId || 'System'}</TableCell>
-                        <TableCell>
-                          {log.entityType} #{log.entityId}
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={log.action.toUpperCase()}
-                            color={getActionColor(log.action) as any}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {log.changedFields && log.changedFields.length > 0 ? (
-                            <Typography variant="body2">
-                              {log.changedFields.join(', ')}
-                            </Typography>
-                          ) : (
-                            '-'
-                          )}
-                        </TableCell>
-                        <TableCell>{log.ipAddress || '-'}</TableCell>
-                        <TableCell>
-                          <IconButton
-                            size="small"
-                            onClick={() => setExpandedRow(
-                              expandedRow === log.auditLogId ? null : log.auditLogId
-                            )}
-                          >
-                            {expandedRow === log.auditLogId ? (
-                              <ExpandLessIcon />
+                  logs.map((log) => {
+                    const { fg, bg, border } = getStatusColor(log.action);
+                    return (
+                      <React.Fragment key={log.auditLogId}>
+                        <TableRow sx={S.TR_HOVER}>
+                          <TableCell sx={S.TD}>{log.auditLogId}</TableCell>
+                          <TableCell sx={S.TD}>{formatDate(log.timestamp)}</TableCell>
+                          <TableCell sx={S.TD}>{log.userId ?? t('audit.system')}</TableCell>
+                          <TableCell sx={S.TD}>
+                            {log.entityType} #{log.entityId}
+                          </TableCell>
+                          <TableCell sx={S.TD}>
+                            <Chip
+                              label={log.action.toUpperCase()}
+                              size="small"
+                              sx={{
+                                color: fg,
+                                background: bg,
+                                border: `1px solid ${border}`,
+                                fontWeight: 600,
+                                fontSize: '0.72rem',
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell sx={S.TD}>
+                            {log.changedFields && log.changedFields.length > 0 ? (
+                              <Typography variant="body2">
+                                {log.changedFields.join(', ')}
+                              </Typography>
                             ) : (
-                              <ExpandMoreIcon />
+                              '-'
                             )}
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell colSpan={8} sx={{ py: 0 }}>
-                          <Collapse in={expandedRow === log.auditLogId}>
-                            <Box sx={{ p: 2, bgcolor: 'grey.50' }}>
-                              <Grid container spacing={2}>
-                                {log.oldValue && (
-                                  <Grid item xs={12} md={6}>
-                                    <Typography variant="subtitle2" gutterBottom>
-                                      Old Value:
-                                    </Typography>
-                                    <Paper sx={{ p: 1, bgcolor: 'white' }}>
-                                      <pre style={{ margin: 0, fontSize: '0.75rem', overflow: 'auto' }}>
-                                        {JSON.stringify(log.oldValue, null, 2)}
-                                      </pre>
-                                    </Paper>
-                                  </Grid>
-                                )}
-                                {log.newValue && (
-                                  <Grid item xs={12} md={6}>
-                                    <Typography variant="subtitle2" gutterBottom>
-                                      New Value:
-                                    </Typography>
-                                    <Paper sx={{ p: 1, bgcolor: 'white' }}>
-                                      <pre style={{ margin: 0, fontSize: '0.75rem', overflow: 'auto' }}>
-                                        {JSON.stringify(log.newValue, null, 2)}
-                                      </pre>
-                                    </Paper>
-                                  </Grid>
-                                )}
-                                {log.userAgent && (
-                                  <Grid item xs={12}>
-                                    <Typography variant="subtitle2">
-                                      User Agent: {log.userAgent}
-                                    </Typography>
-                                  </Grid>
-                                )}
-                              </Grid>
-                            </Box>
-                          </Collapse>
-                        </TableCell>
-                      </TableRow>
-                    </React.Fragment>
-                  ))
+                          </TableCell>
+                          <TableCell sx={S.TD}>{log.ipAddress || '-'}</TableCell>
+                          <TableCell sx={S.TD}>
+                            <IconButton
+                              size="small"
+                              sx={S.BTN_ICON}
+                              onClick={() =>
+                                setExpandedRow(expandedRow === log.auditLogId ? null : log.auditLogId)
+                              }
+                            >
+                              {expandedRow === log.auditLogId ? (
+                                <ExpandLessIcon fontSize="small" />
+                              ) : (
+                                <ExpandMoreIcon fontSize="small" />
+                              )}
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell colSpan={8} sx={{ py: 0, ...S.TD }}>
+                            <Collapse in={expandedRow === log.auditLogId}>
+                              <Box
+                                sx={{
+                                  p: 2,
+                                  background: S.dark
+                                    ? 'rgba(255,255,255,0.03)'
+                                    : 'rgba(0,122,255,0.02)',
+                                }}
+                              >
+                                <Grid container spacing={2}>
+                                  {log.oldValue && (
+                                    <Grid item xs={12} md={6}>
+                                      <Typography
+                                        variant="subtitle2"
+                                        gutterBottom
+                                        sx={{ color: theme.palette.text.secondary }}
+                                      >
+                                        {t('audit.oldValue')}:
+                                      </Typography>
+                                      <Box sx={{ ...S.GLASS, p: 1.5 }}>
+                                        <Box
+                                          component="pre"
+                                          sx={{
+                                            margin: 0,
+                                            fontSize: '0.75rem',
+                                            overflow: 'auto',
+                                            color: 'inherit',
+                                          }}
+                                        >
+                                          {JSON.stringify(log.oldValue, null, 2)}
+                                        </Box>
+                                      </Box>
+                                    </Grid>
+                                  )}
+                                  {log.newValue && (
+                                    <Grid item xs={12} md={6}>
+                                      <Typography
+                                        variant="subtitle2"
+                                        gutterBottom
+                                        sx={{ color: theme.palette.text.secondary }}
+                                      >
+                                        {t('audit.newValue')}:
+                                      </Typography>
+                                      <Box sx={{ ...S.GLASS, p: 1.5 }}>
+                                        <Box
+                                          component="pre"
+                                          sx={{
+                                            margin: 0,
+                                            fontSize: '0.75rem',
+                                            overflow: 'auto',
+                                            color: 'inherit',
+                                          }}
+                                        >
+                                          {JSON.stringify(log.newValue, null, 2)}
+                                        </Box>
+                                      </Box>
+                                    </Grid>
+                                  )}
+                                  {log.userAgent && (
+                                    <Grid item xs={12}>
+                                      <Typography
+                                        variant="subtitle2"
+                                        sx={{ color: theme.palette.text.secondary }}
+                                      >
+                                        {t('audit.userAgent')}: {log.userAgent}
+                                      </Typography>
+                                    </Grid>
+                                  )}
+                                </Grid>
+                              </Box>
+                            </Collapse>
+                          </TableCell>
+                        </TableRow>
+                      </React.Fragment>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
@@ -538,7 +629,7 @@ const AuditLogs: React.FC = () => {
             }}
             rowsPerPageOptions={[10, 20, 50, 100]}
           />
-        </Paper>
+        </Box>
       </Box>
     </LocalizationProvider>
   );

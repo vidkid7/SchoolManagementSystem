@@ -7,6 +7,7 @@
  */
 
 import { DataTypes, Model, Optional } from 'sequelize';
+import sequelize from '../config/database';
 
 export interface ReservationAttributes {
   reservationId: number;
@@ -94,104 +95,100 @@ export class Reservation
   }
 }
 
-export function initReservation(sequelize: any): typeof Reservation {
-  Reservation.init(
-    {
-      reservationId: {
-        type: DataTypes.INTEGER.UNSIGNED,
-        autoIncrement: true,
-        primaryKey: true,
-      },
-      bookId: {
-        type: DataTypes.INTEGER.UNSIGNED,
-        allowNull: false,
-        references: {
-          model: 'books',
-          key: 'book_id',
-        },
-      },
-      studentId: {
-        type: DataTypes.INTEGER.UNSIGNED,
-        allowNull: false,
-        references: {
-          model: 'students',
-          key: 'student_id',
-        },
-      },
-      reservationDate: {
-        type: DataTypes.DATEONLY,
-        allowNull: false,
-        defaultValue: DataTypes.NOW,
-      },
-      expiryDate: {
-        type: DataTypes.DATEONLY,
-        allowNull: false,
-      },
-      status: {
-        type: DataTypes.ENUM('pending', 'available', 'fulfilled', 'expired', 'cancelled'),
-        allowNull: false,
-        defaultValue: 'pending',
-      },
-      notificationSent: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: false,
-      },
-      fulfilledDate: {
-        type: DataTypes.DATEONLY,
-        allowNull: true,
-      },
-      cancelledDate: {
-        type: DataTypes.DATEONLY,
-        allowNull: true,
-      },
-      cancelReason: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-      cancelledBy: {
-        type: DataTypes.INTEGER.UNSIGNED,
-        allowNull: true,
-      },
-      availableDate: {
-        type: DataTypes.DATEONLY,
-        allowNull: true,
-      },
-      queuePosition: {
-        type: DataTypes.INTEGER.UNSIGNED,
-        allowNull: true,
+Reservation.init(
+  {
+    reservationId: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    bookId: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: false,
+      references: {
+        model: 'books',
+        key: 'book_id',
       },
     },
-    {
-      sequelize,
-      tableName: 'reservations',
-      timestamps: true,
-      indexes: [
-        {
-          name: 'idx_reservations_book_id',
-          fields: ['book_id'],
-        },
-        {
-          name: 'idx_reservations_student_id',
-          fields: ['student_id'],
-        },
-        {
-          name: 'idx_reservations_status',
-          fields: ['status'],
-        },
-        {
-          name: 'idx_reservations_expiry_date',
-          fields: ['expiry_date'],
-        },
-        {
-          name: 'idx_reservations_queue_position',
-          fields: ['queue_position'],
-        },
-      ],
-    }
-  );
-
-  return Reservation;
-}
+    studentId: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: false,
+      references: {
+        model: 'students',
+        key: 'student_id',
+      },
+    },
+    reservationDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+    },
+    expiryDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: false,
+    },
+    status: {
+      type: DataTypes.ENUM('pending', 'available', 'fulfilled', 'expired', 'cancelled'),
+      allowNull: false,
+      defaultValue: 'pending',
+    },
+    notificationSent: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    fulfilledDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    cancelledDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    cancelReason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    cancelledBy: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: true,
+    },
+    availableDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    queuePosition: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: true,
+    },
+  },
+  {
+    sequelize,
+    tableName: 'reservations',
+    timestamps: true,
+    indexes: [
+      {
+        name: 'idx_reservations_book_id',
+        fields: ['book_id'],
+      },
+      {
+        name: 'idx_reservations_student_id',
+        fields: ['student_id'],
+      },
+      {
+        name: 'idx_reservations_status',
+        fields: ['status'],
+      },
+      {
+        name: 'idx_reservations_expiry_date',
+        fields: ['expiry_date'],
+      },
+      {
+        name: 'idx_reservations_queue_position',
+        fields: ['queue_position'],
+      },
+    ],
+  }
+);
 
 export default Reservation;

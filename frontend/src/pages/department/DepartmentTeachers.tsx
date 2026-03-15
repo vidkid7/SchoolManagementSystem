@@ -27,6 +27,7 @@ import {
   Alert,
   Tabs,
   Tab,
+  useTheme,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -36,7 +37,9 @@ import {
   Assessment as AssessmentIcon,
   Schedule as ScheduleIcon,
 } from '@mui/icons-material';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import api from '../../config/api';
+import { useTranslation } from 'react-i18next';
 
 interface Teacher {
   staffId: number;
@@ -60,6 +63,9 @@ interface DepartmentStats {
 }
 
 export function DepartmentTeachers() {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [stats, setStats] = useState<DepartmentStats>({
@@ -112,7 +118,7 @@ export function DepartmentTeachers() {
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={6} sm={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent sx={{ textAlign: 'center' }}>
               <Typography variant="h4" fontWeight={700}>{stats.totalTeachers}</Typography>
               <Typography variant="body2" color="text.secondary">Total Teachers</Typography>
@@ -120,7 +126,7 @@ export function DepartmentTeachers() {
           </Card>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent sx={{ textAlign: 'center' }}>
               <Typography variant="h4" fontWeight={700} color="success.main">{stats.activeTeachers}</Typography>
               <Typography variant="body2" color="text.secondary">Active</Typography>
@@ -128,7 +134,7 @@ export function DepartmentTeachers() {
           </Card>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent sx={{ textAlign: 'center' }}>
               <Typography variant="h4" fontWeight={700} color="warning.main">{stats.onLeave}</Typography>
               <Typography variant="body2" color="text.secondary">On Leave</Typography>
@@ -136,7 +142,7 @@ export function DepartmentTeachers() {
           </Card>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent sx={{ textAlign: 'center' }}>
               <Typography variant="h4" fontWeight={700} color="info.main">{stats.avgAttendance.toFixed(1)}%</Typography>
               <Typography variant="body2" color="text.secondary">Avg Attendance</Typography>
@@ -145,7 +151,7 @@ export function DepartmentTeachers() {
         </Grid>
       </Grid>
 
-      <Paper sx={{ p: 2, mb: 2 }}>
+      <Paper sx={{ ...S.GLASS, p: 2, mb: 2 }}>
         <TextField
           fullWidth
           placeholder="Search by name or position..."
@@ -161,7 +167,7 @@ export function DepartmentTeachers() {
         />
       </Paper>
 
-      <Paper sx={{ mb: 2 }}>
+      <Paper sx={{ ...S.GLASS, mb: 2 }}>
         <Tabs value={tab} onChange={(_, newValue) => setTab(newValue)}>
           <Tab label={`All (${filteredTeachers.length})`} />
           <Tab label={`Active (${activeTeachers.length})`} />

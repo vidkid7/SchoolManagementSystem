@@ -25,7 +25,7 @@ import {
   Person as PersonIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 
 interface Sibling {
   studentId: number;
@@ -48,7 +48,7 @@ interface SiblingsListProps {
 export const SiblingsList = ({ siblings, loading }: SiblingsListProps) => {
   const { t } = useTranslation();
   const theme = useTheme();
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
 
   if (loading) {
     return (
@@ -56,7 +56,7 @@ export const SiblingsList = ({ siblings, loading }: SiblingsListProps) => {
         elevation={0}
         sx={{
           p: 3,
-          borderRadius: 3,
+          borderRadius: 2,
           border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
           textAlign: 'center',
         }}
@@ -74,7 +74,7 @@ export const SiblingsList = ({ siblings, loading }: SiblingsListProps) => {
         elevation={0}
         sx={{
           p: 3,
-          borderRadius: 3,
+          borderRadius: 2,
           border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
           textAlign: 'center',
         }}
@@ -91,7 +91,7 @@ export const SiblingsList = ({ siblings, loading }: SiblingsListProps) => {
     <Paper
       elevation={0}
       sx={{
-        borderRadius: 3,
+        borderRadius: 2,
         border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
         overflow: 'hidden',
       }}

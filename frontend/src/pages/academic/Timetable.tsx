@@ -29,6 +29,7 @@ import {
   IconButton,
   Alert,
   Chip,
+  useTheme,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -36,7 +37,10 @@ import {
   Delete as DeleteIcon,
   Schedule as ScheduleIcon,
 } from '@mui/icons-material';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import api from '../../config/api';
+
+import { useTranslation } from 'react-i18next';
 
 interface Class {
   classId: number;
@@ -87,6 +91,9 @@ const PERIODS = [
 ];
 
 export const Timetable = () => {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -310,7 +317,7 @@ export const Timetable = () => {
       )}
 
       {/* Class Selector */}
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
@@ -348,7 +355,7 @@ export const Timetable = () => {
 
       {/* Timetable Grid */}
       {selectedClass && (
-        <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
+        <Paper sx={{ ...S.GLASS, borderRadius: 2, overflow: 'hidden' }}>
           <TableContainer>
             <Table sx={{ minWidth: 800 }}>
               <TableHead>
@@ -425,7 +432,7 @@ export const Timetable = () => {
       )}
 
       {!selectedClass && (
-        <Paper sx={{ p: 5, textAlign: 'center' }}>
+        <Paper sx={{ ...S.GLASS, p: 5, textAlign: 'center' }}>
           <ScheduleIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h6" color="text.secondary">
             Select a class to view and manage timetable

@@ -37,13 +37,20 @@ import Certificate from './Certificate.model';
 import GradingScheme from './GradingScheme.model';
 import NotificationTemplate from './NotificationTemplate.model';
 import AuditLog from './AuditLog.model';
-import { Notification } from './Notification.model';
 import ArchiveMetadata from './ArchiveMetadata.model';
 import CertificateTemplate from './CertificateTemplate.model';
 import Document from './Document.model';
 import DocumentAccessLog from './DocumentAccessLog.model';
 import { Timetable } from './Timetable.model';
 import AcademicHistory from './AcademicHistory.model';
+import Assignment from './Assignment.model';
+import AssignmentSubmission from './AssignmentSubmission.model';
+import LessonPlan from './LessonPlan.model';
+import SyllabusProgress from './SyllabusProgress.model';
+import HostelRoom from './HostelRoom.model';
+import HostelResident from './HostelResident.model';
+import HostelIncident from './HostelIncident.model';
+import HostelVisitor from './HostelVisitor.model';
 
 type TenantOptions = {
   where?: Record<string, unknown>;
@@ -98,13 +105,20 @@ const TENANT_MODELS: Array<ModelStatic<Model>> = [
   GradingScheme,
   NotificationTemplate,
   AuditLog,
-  Notification as unknown as ModelStatic<Model>,
   ArchiveMetadata,
   CertificateTemplate as unknown as ModelStatic<Model>,
   Document as unknown as ModelStatic<Model>,
   DocumentAccessLog as unknown as ModelStatic<Model>,
   Timetable as unknown as ModelStatic<Model>,
   AcademicHistory,
+  Assignment,
+  AssignmentSubmission,
+  LessonPlan,
+  SyllabusProgress,
+  HostelRoom,
+  HostelResident,
+  HostelIncident,
+  HostelVisitor,
 ];
 
 function getScopedSchoolIds(): string[] | null {
@@ -121,7 +135,10 @@ function getMunicipalityCondition(): Record<string, unknown> | null {
   if (!context?.enforceIsolation || !context.municipalityId) {
     return null;
   }
-  return { municipalityId: context.municipalityId };
+  // Use snake_case field names (actual DB column names) because these conditions
+  // are added in hooks that fire AFTER Sequelize's mapOptionFieldNames has already
+  // run — Sequelize won't re-map them, so they must match the column names directly.
+  return { municipality_id: context.municipalityId };
 }
 
 function getTenantCondition(): Record<string, unknown> | null {
@@ -130,19 +147,18 @@ function getTenantCondition(): Record<string, unknown> | null {
 
   const conditions: Record<string, unknown> = {};
 
-  // Always filter by municipality if available
+  // Use snake_case field names (actual DB column names) for the same reason as above.
   if (context.municipalityId) {
-    conditions.municipalityId = context.municipalityId;
+    conditions.municipality_id = context.municipalityId;
   }
 
-  // Also filter by school if available
   const scopedIds = context.schoolConfigIds ?? [];
   if (scopedIds.length === 1) {
-    conditions.schoolConfigId = scopedIds[0];
+    conditions.school_config_id = scopedIds[0];
   } else if (scopedIds.length > 1) {
-    conditions.schoolConfigId = { [Op.in]: scopedIds };
+    conditions.school_config_id = { [Op.in]: scopedIds };
   } else if (scopedIds.length === 0 && !context.municipalityId) {
-    conditions.schoolConfigId = NO_ACCESS_TENANT_ID;
+    conditions.school_config_id = NO_ACCESS_TENANT_ID;
   }
 
   return Object.keys(conditions).length > 0 ? conditions : null;
@@ -178,7 +194,8 @@ function assertTenantWriteAccess(instance: Model, options?: TenantOptions): void
     return;
   }
 
-  // Validate and assign municipalityId
+  // Validate and assign municipalityId using camelCase attribute names so
+  // Sequelize applies the field mapping when persisting to the DB.
   if (context.municipalityId) {
     const existingMunicipalityId = instance.getDataValue('municipalityId') as string | undefined;
     if (existingMunicipalityId && existingMunicipalityId !== context.municipalityId) {
@@ -192,7 +209,7 @@ function assertTenantWriteAccess(instance: Model, options?: TenantOptions): void
   // Validate and assign schoolConfigId
   const scopedIds = context.schoolConfigIds ?? [];
   if (scopedIds.length === 0) {
-    // Municipality admin might not need school_config_id for some tables
+    // Municipality admin might not need schoolConfigId for some tables
     return;
   }
 
@@ -366,7 +383,7 @@ function registerHooks(model: ModelStatic<Model>): void {
         return;
       }
 
-      // Validate and assign municipalityId
+      // Validate and assign municipalityId (camelCase attribute name)
       if (context.municipalityId) {
         const municipalityId = values.municipalityId as string | undefined;
         if (municipalityId && municipalityId !== context.municipalityId) {
@@ -377,7 +394,7 @@ function registerHooks(model: ModelStatic<Model>): void {
         }
       }
 
-      // Validate and assign schoolConfigId
+      // Validate and assign schoolConfigId (camelCase attribute name)
       const scopedIds = context.schoolConfigIds ?? [];
       if (scopedIds.length === 0) {
         return;

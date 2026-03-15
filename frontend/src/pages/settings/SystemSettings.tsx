@@ -30,7 +30,6 @@ import {
   FormControlLabel,
   Checkbox,
   Switch,
-  alpha,
   useTheme,
   CircularProgress,
   Alert,
@@ -45,6 +44,7 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { motion } from 'framer-motion';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 const MotionCard = motion.create(Card);
 
@@ -88,6 +88,7 @@ interface DateFormatSettings {
 export const SystemSettings = () => {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   
   const [tabValue, setTabValue] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -246,8 +247,8 @@ export const SystemSettings = () => {
           sx={{
             width: 48,
             height: 48,
-            borderRadius: 2,
-            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+            borderRadius: R.lg,
+            background: `linear-gradient(135deg, ${C.primary} 0%, ${C.purple} 100%)`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -276,7 +277,7 @@ export const SystemSettings = () => {
       )}
 
       {/* Tabs */}
-      <Paper sx={{ borderRadius: 2 }}>
+      <Paper sx={{ ...S.GLASS }}>
         <Tabs
           value={tabValue}
           onChange={(_, newValue) => setTabValue(newValue)}
@@ -295,7 +296,7 @@ export const SystemSettings = () => {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <Typography variant="h6">{t('systemSettings.gradingSchemes')}</Typography>
                 <Button
-                  variant="contained"
+                  sx={S.BTN_PRIMARY}
                   startIcon={<AddIcon />}
                   onClick={() => setGradingDialog({ open: true, mode: 'create' })}
                 >
@@ -309,7 +310,7 @@ export const SystemSettings = () => {
                 <TableContainer>
                   <Table>
                     <TableHead>
-                      <TableRow sx={{ backgroundColor: alpha(theme.palette.primary.main, 0.04) }}>
+                      <TableRow sx={{ backgroundColor: S.TH_BG }}>
                         <TableCell sx={{ fontWeight: 600 }}>{t('systemSettings.schemeName')}</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>{t('systemSettings.grades')}</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>{t('systemSettings.isDefault')}</TableCell>
@@ -355,7 +356,7 @@ export const SystemSettings = () => {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <Typography variant="h6">{t('systemSettings.attendanceRules')}</Typography>
                 <Button
-                  variant="contained"
+                  sx={S.BTN_PRIMARY}
                   startIcon={<AddIcon />}
                   onClick={() => setAttendanceDialog({ open: true, mode: 'create' })}
                 >
@@ -369,7 +370,7 @@ export const SystemSettings = () => {
                 <TableContainer>
                   <Table>
                     <TableHead>
-                      <TableRow sx={{ backgroundColor: alpha(theme.palette.primary.main, 0.04) }}>
+                      <TableRow sx={{ backgroundColor: S.TH_BG }}>
                         <TableCell sx={{ fontWeight: 600 }}>{t('systemSettings.ruleName')}</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>{t('systemSettings.presentWeight')}</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>{t('systemSettings.minAttendance')}</TableCell>
@@ -413,7 +414,7 @@ export const SystemSettings = () => {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <Typography variant="h6">{t('systemSettings.notificationTemplates')}</Typography>
                 <Button
-                  variant="contained"
+                  sx={S.BTN_PRIMARY}
                   startIcon={<AddIcon />}
                   onClick={() => setTemplateDialog({ open: true, mode: 'create' })}
                 >
@@ -427,7 +428,7 @@ export const SystemSettings = () => {
                 <TableContainer>
                   <Table>
                     <TableHead>
-                      <TableRow sx={{ backgroundColor: alpha(theme.palette.primary.main, 0.04) }}>
+                      <TableRow sx={{ backgroundColor: S.TH_BG }}>
                         <TableCell sx={{ fontWeight: 600 }}>{t('systemSettings.templateName')}</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>{t('systemSettings.templateCode')}</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>{t('roles.active')}</TableCell>
@@ -491,7 +492,7 @@ export const SystemSettings = () => {
                   />
                 </Grid>
                 <Grid item xs={12}>
-                  <Button variant="contained" onClick={handleSaveDateFormat}>
+                  <Button sx={S.BTN_PRIMARY} onClick={handleSaveDateFormat}>
                     {t('common.save')}
                   </Button>
                 </Grid>
@@ -541,6 +542,8 @@ interface GradingSchemeDialogProps {
 
 const GradingSchemeDialog = ({ open, mode, data, onClose, onSave }: GradingSchemeDialogProps) => {
   const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const [formData, setFormData] = useState({
     name: '',
     isDefault: false,
@@ -670,7 +673,7 @@ const GradingSchemeDialog = ({ open, mode, data, onClose, onSave }: GradingSchem
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>{t('common.cancel')}</Button>
-        <Button variant="contained" onClick={() => onSave(formData)}>{t('common.save')}</Button>
+        <Button sx={S.BTN_PRIMARY} onClick={() => onSave(formData)}>{t('common.save')}</Button>
       </DialogActions>
     </Dialog>
   );
@@ -686,6 +689,8 @@ interface AttendanceRuleDialogProps {
 
 const AttendanceRuleDialog = ({ open, mode, data, onClose, onSave }: AttendanceRuleDialogProps) => {
   const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const [formData, setFormData] = useState({
     name: '',
     presentWeight: 100,
@@ -784,7 +789,7 @@ const AttendanceRuleDialog = ({ open, mode, data, onClose, onSave }: AttendanceR
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>{t('common.cancel')}</Button>
-        <Button variant="contained" onClick={() => onSave(formData)}>{t('common.save')}</Button>
+        <Button sx={S.BTN_PRIMARY} onClick={() => onSave(formData)}>{t('common.save')}</Button>
       </DialogActions>
     </Dialog>
   );
@@ -800,6 +805,8 @@ interface TemplateDialogProps {
 
 const TemplateDialog = ({ open, mode, data, onClose, onSave }: TemplateDialogProps) => {
   const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -863,7 +870,7 @@ const TemplateDialog = ({ open, mode, data, onClose, onSave }: TemplateDialogPro
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>{t('common.cancel')}</Button>
-        <Button variant="contained" onClick={() => onSave(formData)}>{t('common.save')}</Button>
+        <Button sx={S.BTN_PRIMARY} onClick={() => onSave(formData)}>{t('common.save')}</Button>
       </DialogActions>
     </Dialog>
   );

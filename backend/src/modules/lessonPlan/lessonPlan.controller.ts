@@ -1,36 +1,24 @@
 import { Request, Response } from 'express';
-import User, { UserRole } from '@models/User.model';
 import { logger } from '@utils/logger';
-
-// In-memory stores for lesson plan data (persists during server runtime)
-// In production these would be DB tables
-const lessonPlans: Map<number, any> = new Map();
-const syllabusProgress: Map<string, any> = new Map(); // `${teacherId}_${subject}_${unit}` -> progress
-let nextLessonPlanId = 1;
-let nextProgressId = 1;
+import LessonPlan from '@models/LessonPlan.model';
+import SyllabusProgress from '@models/SyllabusProgress.model';
 
 class LessonPlanController {
   async getDashboard(req: Request, res: Response): Promise<void> {
     try {
-      const plans = Array.from(lessonPlans.values());
-      const total = plans.length;
-      const completed = plans.filter(p => p.status === 'completed').length;
-      const inProgress = plans.filter(p => p.status === 'scheduled').length;
-      const draft = plans.filter(p => p.status === 'draft').length;
-      const reviewed = plans.filter(p => p.status === 'reviewed').length;
-      const approved = plans.filter(p => p.status === 'approved').length;
+      const [total, completed, inProgress, draft, reviewed, approved] = await Promise.all([
+        LessonPlan.count(),
+        LessonPlan.count({ where: { status: 'completed' } }),
+        LessonPlan.count({ where: { status: 'scheduled' } }),
+        LessonPlan.count({ where: { status: 'draft' } }),
+        LessonPlan.count({ where: { status: 'reviewed' } }),
+        LessonPlan.count({ where: { status: 'approved' } }),
+      ]);
 
       res.status(200).json({
         success: true,
         data: {
-          summary: {
-            total,
-            completed,
-            inProgress,
-            draft,
-            reviewed,
-            approved
-          },
+          summary: { total, completed, inProgress, draft, reviewed, approved },
           quickLinks: [
             { label: 'Create Lesson Plan', path: '/lesson-plans/create' },
             { label: 'Syllabus Progress', path: '/lesson-plans/syllabus-progress' },
@@ -52,16 +40,20 @@ class LessonPlanController {
   async getLessonPlans(req: Request, res: Response): Promise<void> {
     try {
       const { subject, className, status, teacherId, page = 1, limit = 20 } = req.query;
-      let plans = Array.from(lessonPlans.values());
 
-      if (subject) plans = plans.filter(p => p.subject === String(subject));
-      if (className) plans = plans.filter(p => p.className === String(className));
-      if (status) plans = plans.filter(p => p.status === String(status));
-      if (teacherId) plans = plans.filter(p => String(p.createdBy) === String(teacherId));
+      const where: any = {};
+      if (subject) where.subject = String(subject);
+      if (className) where.className = String(className);
+      if (status) where.status = String(status);
+      if (teacherId) where.createdBy = Number(teacherId);
 
-      const total = plans.length;
       const offset = (Number(page) - 1) * Number(limit);
-      const paginatedPlans = plans.slice(offset, offset + Number(limit));
+      const { count: total, rows: paginatedPlans } = await LessonPlan.findAndCountAll({
+        where,
+        limit: Number(limit),
+        offset,
+        order: [['createdAt', 'DESC']],
+      });
 
       res.status(200).json({
         success: true,
@@ -88,7 +80,7 @@ class LessonPlanController {
   async getLessonPlanById(req: Request, res: Response): Promise<void> {
     try {
       const id = Number(req.params.id);
-      const plan = lessonPlans.get(id);
+      const plan = await LessonPlan.findByPk(id);
       if (!plan) {
         res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Lesson plan not found' } });
         return;
@@ -111,13 +103,12 @@ class LessonPlanController {
         return;
       }
 
-      const plan = {
-        id: nextLessonPlanId++,
+      const plan = await LessonPlan.create({
         subject,
         className: className ?? '',
         section: section ?? '',
         topic,
-        date: date ?? new Date().toISOString(),
+        date: date ? new Date(date) : new Date(),
         duration: duration ?? 45,
         objectives: objectives ?? [],
         materials: materials ?? '',
@@ -125,11 +116,8 @@ class LessonPlanController {
         assessment: assessment ?? '',
         status: status ?? 'draft',
         createdBy: req.user?.userId,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      });
 
-      lessonPlans.set(plan.id, plan);
       res.status(201).json({ success: true, data: plan, message: 'Lesson plan created successfully' });
     } catch (error: any) {
       logger.error('Create lesson plan error:', error);
@@ -143,15 +131,16 @@ class LessonPlanController {
   async updateLessonPlan(req: Request, res: Response): Promise<void> {
     try {
       const id = Number(req.params.id);
-      const plan = lessonPlans.get(id);
+      const plan = await LessonPlan.findByPk(id);
       if (!plan) {
         res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Lesson plan not found' } });
         return;
       }
 
-      const updated = { ...plan, ...req.body, id, updatedAt: new Date().toISOString() };
-      lessonPlans.set(id, updated);
-      res.status(200).json({ success: true, data: updated, message: 'Lesson plan updated successfully' });
+      // Strip id from body to prevent overwriting PK
+      const { id: _id, ...updateData } = req.body;
+      await plan.update(updateData);
+      res.status(200).json({ success: true, data: plan, message: 'Lesson plan updated successfully' });
     } catch (error: any) {
       logger.error('Update lesson plan error:', error);
       res.status(500).json({
@@ -164,12 +153,13 @@ class LessonPlanController {
   async deleteLessonPlan(req: Request, res: Response): Promise<void> {
     try {
       const id = Number(req.params.id);
-      if (!lessonPlans.has(id)) {
+      const plan = await LessonPlan.findByPk(id);
+      if (!plan) {
         res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Lesson plan not found' } });
         return;
       }
 
-      lessonPlans.delete(id);
+      await plan.destroy();
       res.status(200).json({ success: true, message: 'Lesson plan deleted successfully' });
     } catch (error: any) {
       logger.error('Delete lesson plan error:', error);
@@ -194,15 +184,13 @@ class LessonPlanController {
         return;
       }
 
-      const plan = lessonPlans.get(id);
+      const plan = await LessonPlan.findByPk(id);
       if (!plan) {
         res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Lesson plan not found' } });
         return;
       }
 
-      plan.status = status;
-      plan.updatedAt = new Date().toISOString();
-      lessonPlans.set(id, plan);
+      await plan.update({ status });
       res.status(200).json({ success: true, data: plan, message: 'Lesson plan status updated successfully' });
     } catch (error: any) {
       logger.error('Update lesson plan status error:', error);
@@ -218,11 +206,13 @@ class LessonPlanController {
   async getSyllabusProgress(req: Request, res: Response): Promise<void> {
     try {
       const { subject, className, teacherId } = req.query;
-      let entries = Array.from(syllabusProgress.values());
 
-      if (subject) entries = entries.filter(e => e.subject === String(subject));
-      if (className) entries = entries.filter(e => e.className === String(className));
-      if (teacherId) entries = entries.filter(e => String(e.teacherId) === String(teacherId));
+      const where: any = {};
+      if (subject) where.subject = String(subject);
+      if (className) where.className = String(className);
+      if (teacherId) where.teacherId = Number(teacherId);
+
+      const entries = await SyllabusProgress.findAll({ where, order: [['updatedAt', 'DESC']] });
 
       res.status(200).json({
         success: true,
@@ -246,24 +236,31 @@ class LessonPlanController {
         return;
       }
 
-      const teacherId = req.user?.userId;
-      const key = `${teacherId}_${subject}_${unit}`;
-      const existing = syllabusProgress.get(key);
+      const teacherId = req.user?.userId!;
+      const clampedProgress = progress != null ? Math.min(100, Math.max(0, Number(progress))) : undefined;
 
-      const entry = {
-        id: existing?.id ?? nextProgressId++,
-        teacherId,
-        subject,
-        className: className ?? '',
-        unit,
-        topic: topic ?? '',
-        status: status ?? 'not-started',
-        progress: progress != null ? Math.min(100, Math.max(0, Number(progress))) : (existing?.progress ?? 0),
-        createdAt: existing?.createdAt ?? new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      const [entry] = await SyllabusProgress.findOrCreate({
+        where: { teacherId, subject, unit },
+        defaults: {
+          teacherId,
+          subject,
+          className: className ?? '',
+          unit,
+          topic: topic ?? '',
+          status: status ?? 'not-started',
+          progress: clampedProgress ?? 0,
+        },
+      });
 
-      syllabusProgress.set(key, entry);
+      if (entry && (status != null || clampedProgress != null || topic != null || className != null)) {
+        await entry.update({
+          ...(className != null && { className }),
+          ...(topic != null && { topic }),
+          ...(status != null && { status }),
+          ...(clampedProgress != null && { progress: clampedProgress }),
+        });
+      }
+
       res.status(200).json({ success: true, data: entry, message: 'Syllabus progress updated successfully' });
     } catch (error: any) {
       logger.error('Update syllabus progress error:', error);

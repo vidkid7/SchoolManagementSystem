@@ -3,6 +3,7 @@ import { AcademicYear, Term } from '@models/AcademicYear.model';
 import { logger } from '@utils/logger';
 import auditLogger from '@utils/auditLogger';
 import { Request } from 'express';
+import { getCurrentAcademicYearInfo, getAcademicYearInfo, getCurrentBSAcademicYear } from '@utils/nepaliCalendar';
 
 /**
  * Academic Repository
@@ -277,6 +278,81 @@ class AcademicRepository {
     } catch (error) {
       logger.error('Error checking academic year name existence', { error, name });
       throw error;
+    }
+  }
+
+  /**
+   * Auto-detect and set the current academic year based on today's Bikram Sambat date.
+   * If no record exists for the current BS academic year it is automatically created.
+   * Always ensures exactly one record has isCurrent = true.
+   * Safe to call on every server startup and as a daily cron job.
+   */
+  async autoDetectCurrentAcademicYear(): Promise<AcademicYear> {
+    const today = new Date();
+    const info = getCurrentAcademicYearInfo(today);
+
+    try {
+      // Find any existing year whose AD date range contains today
+      let current = await AcademicYear.findOne({
+        where: {
+          startDateAD: { [Op.lte]: today },
+          endDateAD: { [Op.gte]: today },
+        },
+      });
+
+      if (!current) {
+        // No year covers today — create the correct one automatically
+        logger.info('No academic year covers today. Auto-creating.', { name: info.name });
+
+        // Unset any stale current flags first
+        await AcademicYear.update({ isCurrent: false }, { where: {} });
+
+        current = await AcademicYear.create({
+          name: info.name,
+          startDateBS: info.startDateBS,
+          endDateBS: info.endDateBS,
+          startDateAD: info.startDateAD,
+          endDateAD: info.endDateAD,
+          isCurrent: true,
+        });
+
+        logger.info(`✅ Auto-created academic year: ${info.name}`);
+      } else if (!current.isCurrent) {
+        // The correct year exists but is not flagged as current — fix that
+        await AcademicYear.update({ isCurrent: false }, { where: {} });
+        await current.update({ isCurrent: true });
+        logger.info(`✅ Academic year activated: ${current.name}`);
+      } else {
+        logger.info(`✅ Academic year already current: ${current.name}`);
+      }
+
+      return current;
+    } catch (error) {
+      logger.error('Error in autoDetectCurrentAcademicYear', { error });
+      throw error;
+    }
+  }
+
+  /**
+   * Pre-create the next academic year record so it is ready before Shrawan 1.
+   * Call this once per year (e.g. 30 days before year-end).
+   */
+  async ensureNextAcademicYearExists(): Promise<void> {
+    const today = new Date();
+    const currentBSYear = getCurrentBSAcademicYear(today);
+    const nextInfo = getAcademicYearInfo(currentBSYear + 1);
+
+    const exists = await AcademicYear.findOne({ where: { name: nextInfo.name } });
+    if (!exists) {
+      await AcademicYear.create({
+        name: nextInfo.name,
+        startDateBS: nextInfo.startDateBS,
+        endDateBS: nextInfo.endDateBS,
+        startDateAD: nextInfo.startDateAD,
+        endDateAD: nextInfo.endDateAD,
+        isCurrent: false,
+      });
+      logger.info(`✅ Pre-created next academic year: ${nextInfo.name}`);
     }
   }
 

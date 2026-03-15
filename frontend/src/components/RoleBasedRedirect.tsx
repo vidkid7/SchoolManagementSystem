@@ -30,7 +30,7 @@ export const RoleBasedRedirect = () => {
       case 'Librarian':
         return '/portal/librarian';
       case 'Municipality_Admin':
-        return '/admin/municipality/dashboard';
+        return '/municipality';
       case 'Transport_Manager':
         return '/portal/transport';
       case 'Hostel_Warden':

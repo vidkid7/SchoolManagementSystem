@@ -3,10 +3,15 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Box, Paper, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination, TextField, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Chip, Alert, Grid } from '@mui/material';
+import { Box, Paper, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination, TextField, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Chip, Alert, Grid,
+  useTheme,
+} from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, People as PeopleIcon } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
-import api from '../../config/api';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
+import apiClient from '../../services/apiClient';
+
+import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useTranslation } from 'react-i18next';
 
 interface ECA {
   ecaId: number;
@@ -19,7 +24,10 @@ interface ECA {
 }
 
 export function ECAList() {
-  const navigate = useNavigate();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
+  const navigate = useSlugNavigate();
   const [ecas, setEcas] = useState<ECA[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -43,7 +51,7 @@ export function ECAList() {
       const params: any = { page: page + 1, limit: rowsPerPage };
       if (categoryFilter) params.category = categoryFilter;
       if (statusFilter) params.status = statusFilter;
-      const response = await api.get('/eca/list', { params });
+      const response = await apiClient.get('/eca/list', { params });
       setEcas(response.data?.data || []);
       setTotal(response.data?.meta?.total || 0);
     } catch (err) {
@@ -67,10 +75,10 @@ export function ECAList() {
   const handleSubmit = async () => {
     try {
       if (editingECA) {
-        await api.put(`/eca/${editingECA.ecaId}`, formData);
+        await apiClient.put(`/eca/${editingECA.ecaId}`, formData);
         setSuccess('ECA updated successfully');
       } else {
-        await api.post('/eca', formData);
+        await apiClient.post('/eca', formData);
         setSuccess('ECA created successfully');
       }
       setOpenDialog(false);
@@ -84,7 +92,7 @@ export function ECAList() {
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure?')) return;
     try {
-      await api.delete(`/eca/${id}`);
+      await apiClient.delete(`/eca/${id}`);
       setSuccess('ECA deleted successfully');
       fetchECAs();
       setTimeout(() => setSuccess(''), 3000);
@@ -103,7 +111,7 @@ export function ECAList() {
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
-      <Paper sx={{ p: 2, mb: 2 }}>
+      <Paper sx={{ ...S.GLASS, p: 2, mb: 2 }}>
         <Grid container spacing={2}>
           <Grid item xs={12} md={4}>
             <TextField select fullWidth label="Category" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
@@ -126,7 +134,7 @@ export function ECAList() {
         </Grid>
       </Paper>
 
-      <Paper>
+      <Paper sx={{ ...S.GLASS }}>
         <TableContainer>
           <Table>
             <TableHead>

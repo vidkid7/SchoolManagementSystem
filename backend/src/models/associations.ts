@@ -26,8 +26,17 @@ import Circulation from './Circulation.model';
 import Sport from './Sport.model';
 import SportsEnrollment from './SportsEnrollment.model';
 import Staff from './Staff.model';
+import StaffAssignment from './StaffAssignment.model';
 import StaffAttendance from './StaffAttendance.model';
 import LeaveApplication from './LeaveApplication.model';
+import Assignment from './Assignment.model';
+import AssignmentSubmission from './AssignmentSubmission.model';
+import LessonPlan from './LessonPlan.model';
+import SyllabusProgress from './SyllabusProgress.model';
+import HostelRoom from './HostelRoom.model';
+import HostelResident from './HostelResident.model';
+import HostelIncident from './HostelIncident.model';
+import HostelVisitor from './HostelVisitor.model';
 import { initializeTenantIsolation } from './tenantIsolation';
 
 /**
@@ -165,6 +174,7 @@ export function initializeAssociations(): void {
   setupStudentCVAssociations();
   setupEventAssociations();
   setupStudentClassAssociations();
+  setupStaffAssignmentAssociations();
   setupFinanceAssociations();
   setupGradeAssociations();
   setupLibraryAssociations();
@@ -172,6 +182,9 @@ export function initializeAssociations(): void {
   setupClassSubjectAssociations();
   setupStaffAttendanceAssociations();
   setupLeaveApplicationAssociations();
+  setupAssignmentAssociations();
+  setupLessonPlanAssociations();
+  setupHostelAssociations();
   initializeTenantIsolation();
   // Add other association setups here as needed
 }
@@ -239,6 +252,39 @@ export function setupStudentClassAssociations(): void {
   Class.hasMany(Student, {
     foreignKey: 'currentClassId',
     as: 'students'
+  });
+
+  // Class belongs to Staff (class teacher)
+  if (Staff && Staff.sequelize) {
+    Class.belongsTo(Staff, {
+      foreignKey: 'classTeacherId',
+      as: 'classTeacher'
+    });
+
+    // Staff has many Classes as class teacher
+    Staff.hasMany(Class, {
+      foreignKey: 'classTeacherId',
+      as: 'classesAsTeacher'
+    });
+  }
+}
+
+/**
+ * Set up StaffAssignment-Class associations
+ */
+export function setupStaffAssignmentAssociations(): void {
+  if (!StaffAssignment.sequelize || !Class.sequelize) {
+    return;
+  }
+
+  StaffAssignment.belongsTo(Class, {
+    foreignKey: 'classId',
+    as: 'class'
+  });
+
+  Class.hasMany(StaffAssignment, {
+    foreignKey: 'classId',
+    as: 'staffAssignments'
   });
 }
 
@@ -534,5 +580,90 @@ export function setupLeaveApplicationAssociations(): void {
     });
   } catch (error) {
     console.warn('LeaveApplication associations not set up:', error);
+  }
+}
+
+/**
+ * Set up Assignment and AssignmentSubmission associations
+ */
+export function setupAssignmentAssociations(): void {
+  try {
+    if (!Assignment || !AssignmentSubmission) {
+      return;
+    }
+
+    if (!Assignment.sequelize || !AssignmentSubmission.sequelize) {
+      return;
+    }
+
+    Assignment.hasMany(AssignmentSubmission, {
+      foreignKey: 'assignmentId',
+      as: 'submissions'
+    });
+
+    AssignmentSubmission.belongsTo(Assignment, {
+      foreignKey: 'assignmentId',
+      as: 'assignment'
+    });
+  } catch (error) {
+    console.warn('Assignment associations not set up:', error);
+  }
+}
+
+/**
+ * Set up LessonPlan and SyllabusProgress associations
+ */
+export function setupLessonPlanAssociations(): void {
+  try {
+    if (!LessonPlan || !SyllabusProgress) {
+      return;
+    }
+
+    if (!LessonPlan.sequelize || !SyllabusProgress.sequelize) {
+      return;
+    }
+
+    // LessonPlan has no FK relations to SyllabusProgress — both are standalone
+    // but share a createdBy/teacherId -> User relationship if User is available
+    if (User && User.sequelize) {
+      LessonPlan.belongsTo(User, {
+        foreignKey: 'createdBy',
+        as: 'lessonPlanCreator'
+      });
+
+      SyllabusProgress.belongsTo(User, {
+        foreignKey: 'teacherId',
+        as: 'syllabusTeacher'
+      });
+    }
+  } catch (error) {
+    console.warn('LessonPlan associations not set up:', error);
+  }
+}
+
+/**
+ * Set up Hostel model associations
+ */
+export function setupHostelAssociations(): void {
+  try {
+    if (!HostelRoom || !HostelResident || !HostelIncident || !HostelVisitor) {
+      return;
+    }
+
+    if (!HostelRoom.sequelize || !HostelResident.sequelize) {
+      return;
+    }
+
+    HostelRoom.hasMany(HostelResident, {
+      foreignKey: 'roomId',
+      as: 'residents'
+    });
+
+    HostelResident.belongsTo(HostelRoom, {
+      foreignKey: 'roomId',
+      as: 'room'
+    });
+  } catch (error) {
+    console.warn('Hostel associations not set up:', error);
   }
 }

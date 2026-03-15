@@ -34,6 +34,7 @@ import {
   CircularProgress,
   Alert,
   InputAdornment,
+  useTheme,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -44,6 +45,7 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
 } from '@mui/icons-material';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { RootState } from '../../store';
 import { communicationApi, Announcement, CreateAnnouncementRequest } from '../../services/api/communication';
 import { formatDistanceToNow, format } from 'date-fns';
@@ -51,6 +53,8 @@ import { formatDistanceToNow, format } from 'date-fns';
 export const Announcements: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useSelector((state: RootState) => state.auth);
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
 
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -192,16 +196,31 @@ export const Announcements: React.FC = () => {
   });
 
   return (
-    <Box>
+    <Box sx={{ p: 3 }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <NotificationsIcon color="primary" />
-          <Typography variant="h5">{t('communication.announcements')}</Typography>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        mb: 4 
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
+            <NotificationsIcon />
+          </Avatar>
+          <Box>
+            <Typography variant="h4" fontWeight={600}>
+              {t('communication.announcements')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {filteredAnnouncements.length} {t('communication.announcements').toLowerCase()}
+            </Typography>
+          </Box>
         </Box>
         {canCreateAnnouncement && (
           <Button
             variant="contained"
+            size="large"
             startIcon={<AddIcon />}
             onClick={() => {
               setEditingAnnouncement(null);
@@ -213,6 +232,10 @@ export const Announcements: React.FC = () => {
               });
               setCreateDialogOpen(true);
             }}
+            sx={{
+              ...S.BTN_PRIMARY,
+              px: 3,
+            }}
           >
             {t('communication.createAnnouncement')}
           </Button>
@@ -220,32 +243,46 @@ export const Announcements: React.FC = () => {
       </Box>
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper 
+        elevation={0}
+        sx={{ 
+          p: 3, 
+          mb: 3,
+          ...S.GLASS,
+        }}
+      >
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={isStudent || isParent ? 9 : 6}>
+          <Grid item xs={12} md={isStudent || isParent ? 12 : 8}>
             <TextField
               fullWidth
-              size="small"
+              size="medium"
               placeholder={t('communication.searchAnnouncements')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: R.sm,
+                  bgcolor: 'action.hover',
+                },
+              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon />
+                    <SearchIcon color="action" />
                   </InputAdornment>
                 ),
               }}
             />
           </Grid>
           {!isStudent && !isParent && (
-            <Grid item xs={12} md={3}>
-              <FormControl fullWidth size="small">
+            <Grid item xs={12} md={4}>
+              <FormControl fullWidth size="medium">
                 <InputLabel>{t('communication.filterByAudience')}</InputLabel>
                 <Select
                   value={filterAudience}
                   label={t('communication.filterByAudience')}
                   onChange={(e) => setFilterAudience(e.target.value)}
+                  sx={{ ...S.SELECT }}
                 >
                   <MenuItem value="all">{t('communication.allAudiences')}</MenuItem>
                   <MenuItem value="students">{t('communication.audienceStudents')}</MenuItem>
@@ -256,83 +293,91 @@ export const Announcements: React.FC = () => {
               </FormControl>
             </Grid>
           )}
-          <Grid item xs={12} md={3}>
-            <Typography variant="body2" color="text.secondary">
-              {filteredAnnouncements.length} {t('communication.announcements').toLowerCase()}
-            </Typography>
-          </Grid>
         </Grid>
       </Paper>
 
       {/* Announcements List */}
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-          <CircularProgress />
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }}>
+          <CircularProgress size={48} />
         </Box>
       ) : filteredAnnouncements.length === 0 ? (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <NotificationsIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" color="text.secondary">
+        <Paper 
+          elevation={0}
+          sx={{ 
+            p: 8, 
+            textAlign: 'center',
+            ...S.GLASS,
+          }}
+        >
+          <NotificationsIcon sx={{ fontSize: 80, color: 'text.disabled', mb: 3 }} />
+          <Typography variant="h5" fontWeight={600} color="text.primary" gutterBottom>
             {t('communication.noAnnouncements')}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body1" color="text.secondary">
             {t('communication.noAnnouncementsDesc')}
           </Typography>
         </Paper>
       ) : (
-        <Grid container spacing={2}>
+        <Grid container spacing={3}>
           {filteredAnnouncements.map((announcement) => (
             <Grid item xs={12} key={announcement.id}>
               <Card
+                elevation={0}
                 sx={{
-                  borderLeft: 4,
-                  borderColor: `${getPriorityColor(announcement.priority)}.main`,
+                  ...S.GLASS,
+                  borderLeft: 6,
+                  borderLeftColor: `${getPriorityColor(announcement.priority)}.main`,
+                  '&:hover': {
+                    boxShadow: 2,
+                    transform: 'translateY(-1px)',
+                  },
                 }}
               >
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Avatar sx={{ bgcolor: 'primary.main' }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
                         <PersonIcon />
                       </Avatar>
                       <Box>
-                        <Typography variant="subtitle1" fontWeight="bold">
+                        <Typography variant="subtitle1" fontWeight={600}>
                           {announcement.publishedByName}
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <TimeIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                          <Typography variant="caption" color="text.secondary">
+                          <TimeIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                          <Typography variant="body2" color="text.secondary">
                             {formatDistanceToNow(new Date(announcement.publishedAt), { addSuffix: true })}
                           </Typography>
                         </Box>
                       </Box>
                     </Box>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                       <Chip
                         label={getAudienceLabel(announcement.targetAudience)}
-                        size="small"
+                        size="medium"
                         color="primary"
                         variant="outlined"
                       />
                       <Chip
-                        label={announcement.priority}
-                        size="small"
+                        label={announcement.priority.toUpperCase()}
+                        size="medium"
                         color={getPriorityColor(announcement.priority)}
                       />
                     </Box>
                   </Box>
 
-                  <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+                  <Typography variant="h5" fontWeight={600} sx={{ mt: 2, mb: 1.5 }}>
                     {announcement.title}
                   </Typography>
 
-                  <Typography variant="body1" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
+                  <Typography variant="body1" color="text.secondary" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>
                     {announcement.content}
                   </Typography>
 
                   {announcement.targetClasses && announcement.targetClasses.length > 0 && (
-                    <Box sx={{ mt: 2, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                      <Typography variant="caption" color="text.secondary">
+                    <Box sx={{ mt: 3, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                      <Typography variant="body2" fontWeight={500} color="text.secondary">
                         {t('communication.targetClasses')}:
                       </Typography>
                       {announcement.targetClasses.map((classNum) => (
@@ -342,22 +387,36 @@ export const Announcements: React.FC = () => {
                   )}
 
                   {announcement.expiresAt && (
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                      {t('communication.expiresOn')}: {format(new Date(announcement.expiresAt), 'PPP')}
-                    </Typography>
+                    <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <TimeIcon sx={{ fontSize: 16, color: 'warning.main' }} />
+                      <Typography variant="body2" color="warning.main" fontWeight={500}>
+                        {t('communication.expiresOn')}: {format(new Date(announcement.expiresAt), 'PPP')}
+                      </Typography>
+                    </Box>
                   )}
                 </CardContent>
 
                 {(user?.userId === announcement.publishedBy || user?.role === 'School_Admin' || user?.role === 'Municipality_Admin') && (
                   <>
                     <Divider />
-                    <CardActions>
-                      <IconButton size="small" onClick={() => handleEdit(announcement)}>
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton size="small" color="error" onClick={() => handleDelete(announcement.id)}>
-                        <DeleteIcon />
-                      </IconButton>
+                    <CardActions sx={{ px: 3, py: 2 }}>
+                      <Button
+                        size="small"
+                        startIcon={<EditIcon />}
+                        onClick={() => handleEdit(announcement)}
+                        sx={{ textTransform: 'none' }}
+                      >
+                        {t('common.edit')}
+                      </Button>
+                      <Button
+                        size="small"
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => handleDelete(announcement.id)}
+                        sx={{ textTransform: 'none' }}
+                      >
+                        {t('common.delete')}
+                      </Button>
                     </CardActions>
                   </>
                 )}
@@ -375,86 +434,105 @@ export const Announcements: React.FC = () => {
           setEditingAnnouncement(null);
           setError(null);
         }}
-        maxWidth="sm"
+        maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: { borderRadius: R.lg },
+        }}
       >
-        <DialogTitle>
-          {editingAnnouncement
-            ? t('communication.editAnnouncement')
-            : t('communication.createAnnouncement')}
+        <DialogTitle sx={{ pb: 1 }}>
+          <Typography variant="h5" fontWeight={600}>
+            {editingAnnouncement
+              ? t('communication.editAnnouncement')
+              : t('communication.createAnnouncement')}
+          </Typography>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ pt: 3 }}>
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert severity="error" sx={{ mb: 3, borderRadius: R.sm }}>
               {error}
             </Alert>
           )}
 
-          <TextField
-            fullWidth
-            label={t('communication.announcementTitle')}
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            margin="normal"
-            required
-          />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            <TextField
+              fullWidth
+              label={t('communication.announcementTitle')}
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              required
+              placeholder={t('communication.enterTitle')}
+              sx={S.TF}
+            />
 
-          <TextField
-            fullWidth
-            label={t('communication.announcementContent')}
-            value={formData.content}
-            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-            margin="normal"
-            multiline
-            rows={4}
-            required
-          />
+            <TextField
+              fullWidth
+              label={t('communication.announcementContent')}
+              value={formData.content}
+              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+              multiline
+              rows={6}
+              required
+              placeholder={t('communication.enterContent')}
+              sx={S.TF}
+            />
 
-          <FormControl fullWidth margin="normal">
-            <InputLabel>{t('communication.targetAudience')}</InputLabel>
-            <Select
-              value={formData.targetAudience}
-              label={t('communication.targetAudience')}
-              onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value as any })}
-            >
-              <MenuItem value="all">{t('communication.audienceAll')}</MenuItem>
-              <MenuItem value="students">{t('communication.audienceStudents')}</MenuItem>
-              <MenuItem value="parents">{t('communication.audienceParents')}</MenuItem>
-              <MenuItem value="teachers">{t('communication.audienceTeachers')}</MenuItem>
-              <MenuItem value="staff">{t('communication.audienceStaff')}</MenuItem>
-            </Select>
-          </FormControl>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth>
+                  <InputLabel>{t('communication.targetAudience')}</InputLabel>
+                  <Select
+                    value={formData.targetAudience}
+                    label={t('communication.targetAudience')}
+                    onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value as any })}
+                    sx={{ ...S.SELECT }}
+                  >
+                    <MenuItem value="all">{t('communication.audienceAll')}</MenuItem>
+                    <MenuItem value="students">{t('communication.audienceStudents')}</MenuItem>
+                    <MenuItem value="parents">{t('communication.audienceParents')}</MenuItem>
+                    <MenuItem value="teachers">{t('communication.audienceTeachers')}</MenuItem>
+                    <MenuItem value="staff">{t('communication.audienceStaff')}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
 
-          <FormControl fullWidth margin="normal">
-            <InputLabel>{t('communication.priority')}</InputLabel>
-            <Select
-              value={formData.priority}
-              label={t('communication.priority')}
-              onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
-            >
-              <MenuItem value="low">{t('communication.priorityLow')}</MenuItem>
-              <MenuItem value="medium">{t('communication.priorityMedium')}</MenuItem>
-              <MenuItem value="high">{t('communication.priorityHigh')}</MenuItem>
-            </Select>
-          </FormControl>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth>
+                  <InputLabel>{t('communication.priority')}</InputLabel>
+                  <Select
+                    value={formData.priority}
+                    label={t('communication.priority')}
+                    onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
+                    sx={{ ...S.SELECT }}
+                  >
+                    <MenuItem value="low">{t('communication.priorityLow')}</MenuItem>
+                    <MenuItem value="medium">{t('communication.priorityMedium')}</MenuItem>
+                    <MenuItem value="high">{t('communication.priorityHigh')}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
 
-          <TextField
-            fullWidth
-            label={t('communication.expiryDate')}
-            type="date"
-            value={formData.expiresAt || ''}
-            onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
-            margin="normal"
-            InputLabelProps={{ shrink: true }}
-          />
+            <TextField
+              fullWidth
+              label={t('communication.expiryDate')}
+              type="date"
+              value={formData.expiresAt || ''}
+              onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+              sx={S.TF}
+            />
+          </Box>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
           <Button
             onClick={() => {
               setCreateDialogOpen(false);
               setEditingAnnouncement(null);
               setError(null);
             }}
+            size="large"
+            sx={{ textTransform: 'none', px: 3 }}
           >
             {t('common.cancel')}
           </Button>
@@ -462,8 +540,10 @@ export const Announcements: React.FC = () => {
             variant="contained"
             onClick={handleSubmit}
             disabled={submitting}
+            size="large"
+            sx={{ ...S.BTN_PRIMARY, px: 4, minWidth: 120 }}
           >
-            {submitting ? <CircularProgress size={20} /> : t('common.save')}
+            {submitting ? <CircularProgress size={24} /> : t('common.save')}
           </Button>
         </DialogActions>
       </Dialog>

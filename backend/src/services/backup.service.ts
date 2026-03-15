@@ -1,6 +1,7 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
+import os from 'os';
 import path from 'path';
 import { env } from '../config/env';
 import logger from '../utils/logger';
@@ -53,13 +54,43 @@ export class BackupService {
 
   constructor() {
     this.config = {
-      enabled: process.env.BACKUP_ENABLED === 'true',
-      schedule: process.env.BACKUP_SCHEDULE || '0 2 * * *', // 2 AM daily
-      retentionDays: parseInt(process.env.BACKUP_RETENTION_DAYS || '30'),
-      backupPath: process.env.BACKUP_PATH || path.join(__dirname, '../../backups'),
-      externalStoragePath: process.env.BACKUP_EXTERNAL_PATH,
-      compressionEnabled: process.env.BACKUP_COMPRESSION !== 'false',
+      enabled: env.BACKUP_ENABLED,
+      schedule: env.BACKUP_SCHEDULE,
+      retentionDays: env.BACKUP_RETENTION_DAYS,
+      backupPath: env.BACKUP_PATH,
+      externalStoragePath: env.BACKUP_EXTERNAL_PATH,
+      compressionEnabled: env.BACKUP_COMPRESSION,
     };
+  }
+
+  private isPermissionError(error: unknown): error is NodeJS.ErrnoException {
+    return (
+      error instanceof Error &&
+      'code' in error &&
+      (error.code === 'EACCES' || error.code === 'EPERM' || error.code === 'EROFS')
+    );
+  }
+
+  private async ensureLocalBackupDirectory(): Promise<void> {
+    try {
+      await fs.mkdir(this.config.backupPath, { recursive: true });
+      logger.info('Backup directory initialized', { path: this.config.backupPath });
+    } catch (error) {
+      if (!this.isPermissionError(error)) {
+        throw error;
+      }
+
+      const fallbackPath = path.join(os.tmpdir(), 'school-management-system-backups');
+      logger.warn('Primary backup path is not writable, using temporary backup directory instead', {
+        requestedPath: this.config.backupPath,
+        fallbackPath,
+        error
+      });
+
+      this.config.backupPath = fallbackPath;
+      await fs.mkdir(this.config.backupPath, { recursive: true });
+      logger.info('Fallback backup directory initialized', { path: this.config.backupPath });
+    }
   }
 
   /**
@@ -68,9 +99,7 @@ export class BackupService {
    */
   async initialize(): Promise<void> {
     try {
-      // Create local backup directory
-      await fs.mkdir(this.config.backupPath, { recursive: true });
-      logger.info('Backup directory initialized', { path: this.config.backupPath });
+      await this.ensureLocalBackupDirectory();
 
       // Create external storage directory if configured
       if (this.config.externalStoragePath) {

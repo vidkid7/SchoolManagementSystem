@@ -6,7 +6,8 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
   Paper,
@@ -46,6 +47,7 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { motion } from 'framer-motion';
+import { C } from '../../theme/designTokens';
 
 const MotionCard = motion.create(Paper);
 const MotionBox = motion.create(Box);
@@ -66,9 +68,9 @@ interface Staff {
 }
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; labelKey: string }> = {
-  active: { color: '#10b981', bg: '#10b981', labelKey: 'staff.active' },
-  inactive: { color: '#6b7280', bg: '#6b7280', labelKey: 'staff.inactive' },
-  on_leave: { color: '#f59e0b', bg: '#f59e0b', labelKey: 'staff.onLeave' },
+  active: { color: C.success, bg: C.successBg, labelKey: 'staff.active' },
+  inactive: { color: C.neutral, bg: C.neutralBg, labelKey: 'staff.inactive' },
+  on_leave: { color: C.warning, bg: C.warningBg, labelKey: 'staff.onLeave' },
 };
 
 const StatCard = ({ icon, label, value, color, delay }: { icon: React.ReactNode; label: string; value: number | string; color: string; delay: number }) => {
@@ -81,7 +83,7 @@ const StatCard = ({ icon, label, value, color, delay }: { icon: React.ReactNode;
       whileHover={{ y: -4, boxShadow: '0 12px 40px rgba(0,0,0,0.12)' }}
       sx={{ 
         p: 3, 
-        borderRadius: 3, 
+        borderRadius: 2, 
         cursor: 'pointer',
         transition: 'all 0.3s ease',
         border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
@@ -92,7 +94,7 @@ const StatCard = ({ icon, label, value, color, delay }: { icon: React.ReactNode;
           sx={{
             width: 52,
             height: 52,
-            borderRadius: 3,
+            borderRadius: 2,
             backgroundColor: alpha(color, 0.12),
             display: 'flex',
             alignItems: 'center',
@@ -115,9 +117,23 @@ const StatCard = ({ icon, label, value, color, delay }: { icon: React.ReactNode;
   );
 };
 
+// Helper function to convert position/department values to translation keys
+const toTranslationKey = (value: string): string => {
+  if (!value) return '';
+  // Convert "Office Staff" -> "officeStaff", "Vice Principal" -> "vicePrincipal"
+  return value
+    .split(/[\s_-]+/) // Split by space, underscore, or hyphen
+    .map((word, index) => {
+      const lower = word.toLowerCase();
+      return index === 0 ? lower : lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join('');
+};
+
 export const StaffList = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
+  const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
   const theme = useTheme();
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
@@ -168,11 +184,11 @@ export const StaffList = () => {
   };
 
   const getStatusColor = (status: string) => {
-    return STATUS_CONFIG[status]?.color || '#6b7280';
+    return STATUS_CONFIG[status]?.color || C.neutral;
   };
 
   const getStatusBg = (status: string) => {
-    return STATUS_CONFIG[status]?.bg || '#6b7280';
+    return STATUS_CONFIG[status]?.bg || C.neutralBg;
   };
 
   const clearFilters = () => {
@@ -208,7 +224,7 @@ export const StaffList = () => {
           alignItems: 'center', 
           mb: 4,
           p: 3,
-          borderRadius: 4,
+          borderRadius: 2,
           background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.secondary.main, 0.08)} 100%)`,
           border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
         }}
@@ -218,7 +234,7 @@ export const StaffList = () => {
             sx={{
               width: 56,
               height: 56,
-              borderRadius: 3,
+              borderRadius: 2,
               background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
               display: 'flex',
               alignItems: 'center',
@@ -240,9 +256,9 @@ export const StaffList = () => {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => navigate('/staff/create')}
+          onClick={() => navigate(`/staff/create`)}
           sx={{
-            borderRadius: 3,
+            borderRadius: 2,
             textTransform: 'none',
             fontWeight: 600,
             px: 4,
@@ -263,28 +279,28 @@ export const StaffList = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard 
-            icon={<PeopleIcon sx={{ color: '#10b981', fontSize: 24 }} />}
+            icon={<PeopleIcon sx={{ color: C.success, fontSize: 24 }} />}
             label={t('staff.active')}
             value={staff.filter(s => s.status === 'active').length}
-            color="#10b981"
+            color={C.success}
             delay={0}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard 
-            icon={<PeopleIcon sx={{ color: '#6b7280', fontSize: 24 }} />}
+            icon={<PeopleIcon sx={{ color: C.neutral, fontSize: 24 }} />}
             label={t('staff.inactive')}
             value={staff.filter(s => s.status === 'inactive').length}
-            color="#6b7280"
+            color={C.neutral}
             delay={0.1}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard 
-            icon={<SchoolIcon sx={{ color: '#f59e0b', fontSize: 24 }} />}
+            icon={<SchoolIcon sx={{ color: C.warning, fontSize: 24 }} />}
             label={t('staff.onLeave')}
             value={staff.filter(s => s.status === 'on_leave').length}
-            color="#f59e0b"
+            color={C.warning}
             delay={0.2}
           />
         </Grid>
@@ -304,12 +320,12 @@ export const StaffList = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.35 }}
-        sx={{ p: 3, mb: 4, borderRadius: 3, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}
+        sx={{ p: 3, mb: 4, borderRadius: 2, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
           <FilterIcon sx={{ color: 'primary.main', fontSize: 22 }} />
           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>
-            {t('reports.filters')}
+            {t('common.filters')}
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -417,7 +433,7 @@ export const StaffList = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        sx={{ borderRadius: 3, overflow: 'hidden', border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}
+        sx={{ borderRadius: 2, overflow: 'hidden', border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}
       >
         <TableContainer>
           <Table>
@@ -490,7 +506,7 @@ export const StaffList = () => {
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={t(`staff.positions.${member.position}`) || member.position}
+                        label={t(`staff.positions.${toTranslationKey(member.position)}`)}
                         size="small"
                         sx={{
                           borderRadius: 2,
@@ -503,7 +519,7 @@ export const StaffList = () => {
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" color="text.secondary">
-                        {t(`staff.departments.${member.department}`) || member.department}
+                        {t(`staff.departments.${toTranslationKey(member.department)}`)}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -552,11 +568,11 @@ export const StaffList = () => {
                           onClick={() => navigate(`/staff/${member.staffId}/edit`)}
                           title={t('staff.edit')}
                           sx={{ 
-                            color: '#6b7280',
-                            bgcolor: alpha('#6b7280', 0.08),
+                            color: C.neutral,
+                            bgcolor: alpha(C.neutral, 0.08),
                             transition: 'all 0.2s ease',
                             '&:hover': { 
-                              bgcolor: alpha('#6b7280', 0.15),
+                              bgcolor: alpha(C.neutral, 0.15),
                               transform: 'scale(1.1)',
                             }
                           }}

@@ -31,7 +31,9 @@ import {
   CircularProgress,
   Tabs,
   Tab,
+  useTheme,
 } from '@mui/material';
+import { C, useAdminStyles } from '../../theme/designTokens';
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -42,6 +44,8 @@ import {
   Cancel as InactiveIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+
+import { useTranslation } from 'react-i18next';
 
 const CERTIFICATE_TYPES = [
   { value: 'character', label: 'Character Certificate' },
@@ -83,6 +87,9 @@ const TabPanel = (props: TabPanelProps) => {
 };
 
 export const TemplateManagement = () => {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -256,7 +263,7 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
 .header h1 {
   font-size: 32px;
   margin: 0;
-  color: #1976d2;
+  color: #4a5568;
 }
 
 .title h2 {
@@ -306,7 +313,7 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
           Certificate Templates / प्रमाणपत्र टेम्पलेट
         </Typography>
         <Button
-          variant="contained"
+          sx={S.BTN_PRIMARY}
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
         >
@@ -329,7 +336,7 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
       <Grid container spacing={3}>
         {templates.length === 0 ? (
           <Grid item xs={12}>
-            <Paper sx={{ p: 4, textAlign: 'center' }}>
+            <Paper sx={{ ...S.GLASS, p: 4, textAlign: 'center' }}>
               <Typography color="text.secondary">
                 No templates found. Create your first template to get started.
               </Typography>
@@ -437,7 +444,7 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
               </Grid>
             </Grid>
 
-            <Paper sx={{ mt: 3 }}>
+            <Paper sx={{ ...S.GLASS, mt: 3 }}>
               <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
                 <Tab label="HTML Template" />
                 <Tab label="CSS Styles" />
@@ -485,7 +492,7 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button variant="contained" onClick={handleSubmit}>
+          <Button sx={S.BTN_PRIMARY} onClick={handleSubmit}>
             {selectedTemplate ? 'Update' : 'Create'}
           </Button>
         </DialogActions>
@@ -502,8 +509,8 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
               </Alert>
               <Paper
                 sx={{
+                  ...S.GLASS,
                   p: 3,
-                  border: '1px solid #e0e0e0',
                   minHeight: 400,
                 }}
               >

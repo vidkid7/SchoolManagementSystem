@@ -45,6 +45,18 @@ router.get(
 );
 
 /**
+ * @route   GET /api/v1/finance/summary
+ * @desc    Get financial summary for reports
+ * @access  Private (School_Admin, Accountant)
+ */
+router.get(
+  '/summary',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.ACCOUNTANT),
+  financeController.getSummary
+);
+
+/**
  * @route   GET /api/v1/finance/statistics
  * @desc    Get finance dashboard statistics
  * @access  Private (School_Admin, Accountant)
@@ -99,12 +111,12 @@ router.get(
 /**
  * @route   POST /api/v1/finance/fee-structures
  * @desc    Create fee structure
- * @access  Private (School_Admin)
+ * @access  Private (School_Admin, Accountant)
  */
 router.post(
   '/fee-structures',
   authenticate,
-  authorize(UserRole.SCHOOL_ADMIN),
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.ACCOUNTANT),
   validate(createFeeStructureSchema, 'body'),
   financeController.createFeeStructure
 );
@@ -112,12 +124,12 @@ router.post(
 /**
  * @route   PUT /api/v1/finance/fee-structures/:id
  * @desc    Update fee structure
- * @access  Private (School_Admin)
+ * @access  Private (School_Admin, Accountant)
  */
 router.put(
   '/fee-structures/:id',
   authenticate,
-  authorize(UserRole.SCHOOL_ADMIN),
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.ACCOUNTANT),
   validate(feeStructureIdParamSchema, 'params'),
   validate(updateFeeStructureSchema, 'body'),
   financeController.updateFeeStructure
@@ -126,12 +138,12 @@ router.put(
 /**
  * @route   DELETE /api/v1/finance/fee-structures/:id
  * @desc    Delete fee structure
- * @access  Private (School_Admin)
+ * @access  Private (School_Admin, Accountant)
  */
 router.delete(
   '/fee-structures/:id',
   authenticate,
-  authorize(UserRole.SCHOOL_ADMIN),
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.ACCOUNTANT),
   validate(feeStructureIdParamSchema, 'params'),
   financeController.deleteFeeStructure
 );

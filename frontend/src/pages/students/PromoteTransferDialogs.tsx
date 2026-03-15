@@ -5,6 +5,7 @@
  */
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogTitle,
@@ -42,6 +43,7 @@ interface PromoteDialogProps {
 
 export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentName, onSuccess }: PromoteDialogProps) => {
   const theme = useTheme();
+  const { t } = useTranslation();
   const { formatNumber } = useNepaliNumbers();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -60,7 +62,7 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
 
   const handlePromote = async () => {
     if (!canPromote) {
-      setError('Cannot promote beyond Class 12');
+      setError(t('students.promote.cannotPromote'));
       return;
     }
 
@@ -86,7 +88,7 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
       onClose();
     } catch (err: any) {
       console.error('Failed to promote student:', err);
-      setError(err.response?.data?.message || 'Failed to promote student');
+      setError(err.response?.data?.message || t('students.promote.failed'));
     } finally {
       setLoading(false);
     }
@@ -105,7 +107,7 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
             <PromoteIcon sx={{ color: 'success.main' }} />
           </Box>
           <Box>
-            <Typography variant="h6" fontWeight={700}>Promote Student</Typography>
+            <Typography variant="h6" fontWeight={700}>{t('students.promote.title')}</Typography>
             <Typography variant="caption" color="text.secondary">
               {studentName}
             </Typography>
@@ -121,7 +123,7 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
 
         {!canPromote && (
           <Alert severity="warning" sx={{ mb: 2 }}>
-            Student is in Class 12. Cannot promote beyond this grade.
+            {t('students.promote.cannotPromoteWarning')}
           </Alert>
         )}
 
@@ -134,9 +136,9 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
         }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
             <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="caption" color="text.secondary">Current Class</Typography>
+              <Typography variant="caption" color="text.secondary">{t('students.promote.currentClass')}</Typography>
               <Chip 
-                label={`Class ${formatNumber(currentClass)}`}
+                label={`${t('students.class')} ${formatNumber(currentClass)}`}
                 sx={{ 
                   mt: 0.5,
                   bgcolor: alpha(theme.palette.warning.main, 0.1),
@@ -147,9 +149,9 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
             </Box>
             <PromoteIcon sx={{ fontSize: 32, color: 'success.main' }} />
             <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="caption" color="text.secondary">Next Class</Typography>
+              <Typography variant="caption" color="text.secondary">{t('students.promote.nextClass')}</Typography>
               <Chip 
-                label={`Class ${formatNumber(nextClass)}`}
+                label={`${t('students.class')} ${formatNumber(nextClass)}`}
                 sx={{ 
                   mt: 0.5,
                   bgcolor: alpha(theme.palette.success.main, 0.1),
@@ -164,12 +166,12 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
         <Grid container spacing={2}>
           <Grid item xs={12}>
             <Typography variant="subtitle2" gutterBottom fontWeight={600}>
-              Academic Performance (Optional)
+              {t('students.promote.academicPerformance')}
             </Typography>
           </Grid>
           <Grid item xs={6}>
             <TextField
-              label="Total Marks"
+              label={t('students.promote.totalMarks')}
               type="number"
               fullWidth
               value={formData.totalMarks}
@@ -179,7 +181,7 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
           </Grid>
           <Grid item xs={6}>
             <TextField
-              label="Obtained Marks"
+              label={t('students.promote.obtainedMarks')}
               type="number"
               fullWidth
               value={formData.obtainedMarks}
@@ -189,7 +191,7 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
           </Grid>
           <Grid item xs={6}>
             <TextField
-              label="Percentage"
+              label={t('students.promote.percentage')}
               type="number"
               fullWidth
               value={formData.percentage}
@@ -199,7 +201,7 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
           </Grid>
           <Grid item xs={6}>
             <TextField
-              label="Rank"
+              label={t('students.promote.rank')}
               type="number"
               fullWidth
               value={formData.rank}
@@ -209,7 +211,7 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
           </Grid>
           <Grid item xs={12}>
             <TextField
-              label="Remarks"
+              label={t('students.promote.remarks')}
               multiline
               rows={3}
               fullWidth
@@ -222,7 +224,7 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={onClose} disabled={loading}>
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button
           variant="contained"
@@ -231,7 +233,7 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
           disabled={loading || !canPromote}
           startIcon={<PromoteIcon />}
         >
-          {loading ? 'Promoting...' : 'Promote Student'}
+          {loading ? t('students.promote.promoting') : t('students.promote.promoteButton')}
         </Button>
       </DialogActions>
     </Dialog>
@@ -250,12 +252,18 @@ interface TransferDialogProps {
 
 export const TransferDialog = ({ open, onClose, studentId, currentClass, currentSection, studentName, onSuccess }: TransferDialogProps) => {
   const theme = useTheme();
+  const { t } = useTranslation();
   const { formatNumber } = useNepaliNumbers();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // Validate and sanitize initial values
+  const validClass = currentClass >= 1 && currentClass <= 12 ? currentClass : 1;
+  const validSection = ['A', 'B', 'C'].includes(currentSection) ? currentSection : 'A';
+  
   const [formData, setFormData] = useState({
-    newClassId: currentClass,
-    newSection: currentSection,
+    newClassId: validClass,
+    newSection: validSection,
     newRollNumber: '',
     reason: '',
     transferType: 'internal', // internal or external
@@ -263,7 +271,7 @@ export const TransferDialog = ({ open, onClose, studentId, currentClass, current
 
   const handleTransfer = async () => {
     if (!formData.reason) {
-      setError('Please provide a reason for transfer');
+      setError(t('students.transfer.reasonRequired'));
       return;
     }
 
@@ -285,7 +293,7 @@ export const TransferDialog = ({ open, onClose, studentId, currentClass, current
       onClose();
     } catch (err: any) {
       console.error('Failed to transfer student:', err);
-      setError(err.response?.data?.message || 'Failed to transfer student');
+      setError(err.response?.data?.message || t('students.transfer.failed'));
     } finally {
       setLoading(false);
     }
@@ -304,7 +312,7 @@ export const TransferDialog = ({ open, onClose, studentId, currentClass, current
             <TransferIcon sx={{ color: 'info.main' }} />
           </Box>
           <Box>
-            <Typography variant="h6" fontWeight={700}>Transfer Student</Typography>
+            <Typography variant="h6" fontWeight={700}>{t('students.transfer.title')}</Typography>
             <Typography variant="caption" color="text.secondary">
               {studentName}
             </Typography>
@@ -326,11 +334,11 @@ export const TransferDialog = ({ open, onClose, studentId, currentClass, current
           border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
         }}>
           <Typography variant="caption" color="text.secondary" gutterBottom display="block">
-            Current Assignment
+            {t('students.transfer.currentAssignment')}
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
             <Chip 
-              label={`Class ${formatNumber(currentClass)}`}
+              label={`${t('students.class')} ${formatNumber(currentClass)}`}
               size="small"
               sx={{ 
                 bgcolor: alpha(theme.palette.warning.main, 0.1),
@@ -339,7 +347,7 @@ export const TransferDialog = ({ open, onClose, studentId, currentClass, current
               }}
             />
             <Chip 
-              label={`Section ${currentSection}`}
+              label={`${t('students.section')} ${currentSection}`}
               size="small"
               sx={{ 
                 bgcolor: alpha(theme.palette.warning.main, 0.1),
@@ -353,14 +361,14 @@ export const TransferDialog = ({ open, onClose, studentId, currentClass, current
         <Grid container spacing={2}>
           <Grid item xs={12}>
             <FormControl fullWidth>
-              <InputLabel>Transfer Type</InputLabel>
+              <InputLabel>{t('students.transfer.transferType')}</InputLabel>
               <Select
                 value={formData.transferType}
-                label="Transfer Type"
+                label={t('students.transfer.transferType')}
                 onChange={(e) => setFormData({ ...formData, transferType: e.target.value })}
               >
-                <MenuItem value="internal">Internal (Within School)</MenuItem>
-                <MenuItem value="external">External (To Another School)</MenuItem>
+                <MenuItem value="internal">{t('students.transfer.internal')}</MenuItem>
+                <MenuItem value="external">{t('students.transfer.external')}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -369,15 +377,15 @@ export const TransferDialog = ({ open, onClose, studentId, currentClass, current
             <>
               <Grid item xs={6}>
                 <FormControl fullWidth>
-                  <InputLabel>New Class</InputLabel>
+                  <InputLabel>{t('students.transfer.newClass')}</InputLabel>
                   <Select
                     value={formData.newClassId}
-                    label="New Class"
+                    label={t('students.transfer.newClass')}
                     onChange={(e) => setFormData({ ...formData, newClassId: Number(e.target.value) })}
                   >
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((cls) => (
                       <MenuItem key={cls} value={cls}>
-                        Class {formatNumber(cls)}
+                        {t('students.class')} {formatNumber(cls)}
                       </MenuItem>
                     ))}
                   </Select>
@@ -385,15 +393,15 @@ export const TransferDialog = ({ open, onClose, studentId, currentClass, current
               </Grid>
               <Grid item xs={6}>
                 <FormControl fullWidth>
-                  <InputLabel>New Section</InputLabel>
+                  <InputLabel>{t('students.transfer.newSection')}</InputLabel>
                   <Select
                     value={formData.newSection}
-                    label="New Section"
+                    label={t('students.transfer.newSection')}
                     onChange={(e) => setFormData({ ...formData, newSection: e.target.value })}
                   >
                     {['A', 'B', 'C'].map((sec) => (
                       <MenuItem key={sec} value={sec}>
-                        Section {sec}
+                        {t('students.section')} {sec}
                       </MenuItem>
                     ))}
                   </Select>
@@ -401,7 +409,7 @@ export const TransferDialog = ({ open, onClose, studentId, currentClass, current
               </Grid>
               <Grid item xs={12}>
                 <TextField
-                  label="New Roll Number (Optional)"
+                  label={t('students.transfer.newRollNumber')}
                   type="number"
                   fullWidth
                   value={formData.newRollNumber}
@@ -413,21 +421,21 @@ export const TransferDialog = ({ open, onClose, studentId, currentClass, current
 
           <Grid item xs={12}>
             <TextField
-              label="Reason for Transfer *"
+              label={t('students.transfer.reason')}
               multiline
               rows={4}
               fullWidth
               value={formData.reason}
               onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
               required
-              helperText="Please provide a detailed reason for the transfer"
+              helperText={t('students.transfer.reasonHelper')}
             />
           </Grid>
         </Grid>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={onClose} disabled={loading}>
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button
           variant="contained"
@@ -436,7 +444,7 @@ export const TransferDialog = ({ open, onClose, studentId, currentClass, current
           disabled={loading || !formData.reason}
           startIcon={<TransferIcon />}
         >
-          {loading ? 'Transferring...' : 'Transfer Student'}
+          {loading ? t('students.transfer.transferring') : t('students.transfer.transferButton')}
         </Button>
       </DialogActions>
     </Dialog>

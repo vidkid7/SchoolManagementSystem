@@ -7,6 +7,8 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTheme } from '@mui/material/styles';
+import { C, useAdminStyles } from '../../theme/designTokens';
 import {
   Box,
   Grid,
@@ -35,7 +37,7 @@ import {
   Groups as MeetingIcon,
   TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import { useTranslation } from 'react-i18next';
 import apiClient from '../../services/apiClient';
 
@@ -65,7 +67,9 @@ interface CalendarStats {
 }
 
 export const CalendarDashboard = () => {
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const { i18n } = useTranslation();
   const isNepali = i18n.language === 'ne';
   const [stats, setStats] = useState<CalendarStats | null>(null);
@@ -73,13 +77,13 @@ export const CalendarDashboard = () => {
   const [error, setError] = useState('');
 
   const categoryConfig: Record<string, { color: string; icon: JSX.Element; label: string }> = {
-    academic: { color: '#1976d2', icon: <SchoolIcon />, label: 'Academic' },
-    sports: { color: '#2e7d32', icon: <SportsIcon />, label: 'Sports' },
-    cultural: { color: '#9c27b0', icon: <CulturalIcon />, label: 'Cultural' },
-    holiday: { color: '#d32f2f', icon: <HolidayIcon />, label: 'Holiday' },
-    exam: { color: '#ed6c02', icon: <ExamIcon />, label: 'Exam' },
-    meeting: { color: '#0288d1', icon: <MeetingIcon />, label: 'Meeting' },
-    other: { color: '#757575', icon: <EventIcon />, label: 'Other' },
+    academic: { color: C.primary, icon: <SchoolIcon />, label: 'Academic' },
+    sports: { color: C.primary, icon: <SportsIcon />, label: 'Sports' },
+    cultural: { color: C.neutral, icon: <CulturalIcon />, label: 'Cultural' },
+    holiday: { color: C.danger, icon: <HolidayIcon />, label: 'Holiday' },
+    exam: { color: C.neutral, icon: <ExamIcon />, label: 'Exam' },
+    meeting: { color: C.neutral, icon: <MeetingIcon />, label: 'Meeting' },
+    other: { color: C.neutral, icon: <EventIcon />, label: 'Other' },
   };
 
   useEffect(() => {
@@ -157,6 +161,7 @@ export const CalendarDashboard = () => {
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => navigate('/calendar?action=create')}
+            sx={S.BTN_PRIMARY}
           >
             {isNepali ? 'कार्यक्रम थप्नुहोस्' : 'Add Event'}
           </Button>
@@ -166,7 +171,7 @@ export const CalendarDashboard = () => {
       <Grid container spacing={3}>
         {/* Statistics Cards */}
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
@@ -184,7 +189,7 @@ export const CalendarDashboard = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
@@ -202,7 +207,7 @@ export const CalendarDashboard = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
@@ -220,7 +225,7 @@ export const CalendarDashboard = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
@@ -239,7 +244,7 @@ export const CalendarDashboard = () => {
 
         {/* Events by Category */}
         <Grid item xs={12} md={6}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 {isNepali ? 'प्रकार अनुसार कार्यक्रम' : 'Events by Category'}
@@ -253,7 +258,7 @@ export const CalendarDashboard = () => {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       py: 1,
-                      borderBottom: '1px solid #e0e0e0',
+                      borderBottom: `1px solid ${theme.palette.divider}`,
                     }}
                   >
                     <Box display="flex" alignItems="center" gap={1}>
@@ -264,7 +269,7 @@ export const CalendarDashboard = () => {
                       label={count}
                       size="small"
                       sx={{
-                        bgcolor: categoryConfig[category]?.color || '#757575',
+                        bgcolor: categoryConfig[category]?.color || C.neutral,
                         color: 'white',
                       }}
                     />
@@ -277,7 +282,7 @@ export const CalendarDashboard = () => {
 
         {/* Upcoming Holidays */}
         <Grid item xs={12} md={6}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 {isNepali ? 'आगामी बिदाहरू' : 'Upcoming Holidays'}
@@ -328,7 +333,7 @@ export const CalendarDashboard = () => {
 
         {/* Upcoming Events */}
         <Grid item xs={12}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 {isNepali ? 'आगामी कार्यक्रमहरू' : 'Upcoming Events'}
@@ -340,7 +345,7 @@ export const CalendarDashboard = () => {
                       <ListItem
                         sx={{
                           cursor: 'pointer',
-                          '&:hover': { bgcolor: '#f5f5f5' },
+                          '&:hover': { bgcolor: 'action.hover' },
                         }}
                         onClick={() => navigate(`/calendar?date=${event.startDate}`)}
                       >
@@ -357,7 +362,7 @@ export const CalendarDashboard = () => {
                                 label={categoryConfig[event.category]?.label || event.category}
                                 size="small"
                                 sx={{
-                                  bgcolor: categoryConfig[event.category]?.color || '#757575',
+                                  bgcolor: categoryConfig[event.category]?.color || C.neutral,
                                   color: 'white',
                                 }}
                               />
@@ -398,7 +403,7 @@ export const CalendarDashboard = () => {
 
         {/* Quick Actions */}
         <Grid item xs={12}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 {isNepali ? 'द्रुत कार्यहरू' : 'Quick Actions'}

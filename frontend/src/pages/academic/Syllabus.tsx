@@ -28,6 +28,7 @@ import {
   Alert,
   LinearProgress,
   Chip,
+  useTheme,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -36,7 +37,10 @@ import {
   MenuBook as BookIcon,
   CheckCircle as CheckIcon,
 } from '@mui/icons-material';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import api from '../../config/api';
+
+import { useTranslation } from 'react-i18next';
 
 interface Class {
   classId: number;
@@ -68,6 +72,9 @@ interface Syllabus {
 }
 
 export const Syllabus = () => {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -295,7 +302,7 @@ export const Syllabus = () => {
       )}
 
       {/* Class & Subject Selector */}
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
@@ -336,7 +343,7 @@ export const Syllabus = () => {
       {selectedClass && selectedSubject && (
         <>
           {syllabus ? (
-            <Paper sx={{ borderRadius: 2 }}>
+            <Paper sx={{ ...S.GLASS, borderRadius: 2 }}>
               {/* Header */}
               <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -449,7 +456,7 @@ export const Syllabus = () => {
               </List>
             </Paper>
           ) : (
-            <Paper sx={{ p: 5, textAlign: 'center' }}>
+            <Paper sx={{ ...S.GLASS, p: 5, textAlign: 'center' }}>
               <BookIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
               <Typography variant="h6" color="text.secondary" gutterBottom>
                 No syllabus found for this class-subject combination
@@ -468,7 +475,7 @@ export const Syllabus = () => {
       )}
 
       {!selectedClass || !selectedSubject ? (
-        <Paper sx={{ p: 5, textAlign: 'center' }}>
+        <Paper sx={{ ...S.GLASS, p: 5, textAlign: 'center' }}>
           <BookIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h6" color="text.secondary">
             Select a class and subject to manage syllabus

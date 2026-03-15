@@ -40,6 +40,21 @@ class AcademicService {
     await academicRepository.setCurrentAcademicYear(id);
   }
 
+  /**
+   * Auto-detect the current academic year from today's BS date.
+   * Creates the record if it does not exist. Safe to call on every startup.
+   */
+  autoDetectCurrentAcademicYear(): Promise<AcademicYear> {
+    return academicRepository.autoDetectCurrentAcademicYear();
+  }
+
+  /**
+   * Pre-create next year's record (call ~30 days before year-end).
+   */
+  ensureNextAcademicYearExists(): Promise<void> {
+    return academicRepository.ensureNextAcademicYearExists();
+  }
+
   updateAcademicYear(
     academicYearId: number,
     data: Partial<{
@@ -277,7 +292,12 @@ class AcademicService {
   }
 
   async deleteClass(classId: number): Promise<void> {
-    await Class.destroy({ where: { classId } });
+    // Soft delete the class (paranoid mode)
+    const deleted = await Class.destroy({ where: { classId } });
+    
+    if (deleted === 0) {
+      throw new Error('Class not found or already deleted');
+    }
   }
 
   async deleteSubject(subjectId: number): Promise<void> {
@@ -402,13 +422,23 @@ class AcademicService {
     if (academicYearId) where.academicYearId = academicYearId;
     return Syllabus.findOne({ 
       where,
-      include: [{ model: SyllabusTopic, as: 'topics', order: [['topicId', 'ASC']] }]
+      include: [{ 
+        model: SyllabusTopic, 
+        as: 'topics',
+        separate: true,
+        order: [['orderIndex', 'ASC']]
+      }]
     });
   }
 
   getSyllabusWithTopics(syllabusId: number): Promise<Syllabus | null> {
     return Syllabus.findByPk(syllabusId, {
-      include: [{ model: SyllabusTopic, as: 'topics', order: [['topicId', 'ASC']] }]
+      include: [{ 
+        model: SyllabusTopic, 
+        as: 'topics',
+        separate: true,
+        order: [['orderIndex', 'ASC']]
+      }]
     });
   }
 

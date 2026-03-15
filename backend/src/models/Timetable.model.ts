@@ -19,12 +19,12 @@ export enum DayOfWeek {
  * Requirements: 5.6, 5.7
  */
 class Timetable extends Model {
-  public timetableId!: number;
-  public classId!: number;
-  public academicYearId!: number;
-  public dayOfWeek!: DayOfWeek;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare timetableId: number;
+  declare classId: number;
+  declare academicYearId: number;
+  declare dayOfWeek: DayOfWeek;
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
 Timetable.init(
@@ -75,16 +75,16 @@ Timetable.init(
  * Period Model
  */
 class Period extends Model {
-  public periodId!: number;
-  public timetableId!: number;
-  public periodNumber!: number;
-  public startTime!: string;
-  public endTime!: string;
-  public subjectId?: number;
-  public teacherId?: number;
-  public roomNumber?: string;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare periodId: number;
+  declare timetableId: number;
+  declare periodNumber: number;
+  declare startTime: string;
+  declare endTime: string;
+  declare subjectId?: number;
+  declare teacherId?: number;
+  declare roomNumber?: string;
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
 Period.init(
@@ -161,13 +161,13 @@ Period.init(
  * Requirements: 5.8, 5.9
  */
 class Syllabus extends Model {
-  public syllabusId!: number;
-  public subjectId!: number;
-  public classId!: number;
-  public academicYearId!: number;
-  public completedPercentage!: number;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare syllabusId: number;
+  declare subjectId: number;
+  declare classId: number;
+  declare academicYearId: number;
+  declare completedPercentage: number;
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
 Syllabus.init(
@@ -227,15 +227,15 @@ Syllabus.init(
  * Syllabus Topic Model
  */
 class SyllabusTopic extends Model {
-  public topicId!: number;
-  public syllabusId!: number;
-  public title!: string;
-  public description?: string;
-  public estimatedHours!: number;
-  public completedHours!: number;
-  public status!: 'not_started' | 'in_progress' | 'completed';
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare topicId: number;
+  declare syllabusId: number;
+  declare title: string;
+  declare description?: string;
+  declare estimatedHours: number;
+  declare completedHours: number;
+  declare status: 'not_started' | 'in_progress' | 'completed';
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
 SyllabusTopic.init(

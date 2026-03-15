@@ -2,17 +2,17 @@
 
 ## 🔐 Login Credentials
 
-**Username:** `municipalityadmin`  
-**Password:** `Municipality@123`  
-**Email:** `municipality.admin@school.edu.np`  
+**Username:** `municipalityadmin`
+**Password:** `Municipality@123`
+**Email:** `municipality.admin@school.edu.np`
 **Role:** Municipality_Admin
 
 ---
 
 ## Role Overview
 
-**Role Code:** `Municipality_Admin`  
-**Access Level:** Municipality-wide  
+**Role Code:** `Municipality_Admin`
+**Access Level:** Municipality-wide
 **Primary Purpose:** Oversee multiple schools within a municipality, assign school administrators, monitor school performance
 
 ---
@@ -34,6 +34,7 @@
 **Full Access**
 
 #### Dashboard Features
+
 - ✅ View total schools count
 - ✅ View total students across all schools
 - ✅ View total staff across all schools
@@ -50,6 +51,7 @@
 **Full Access (MANAGE permission)**
 
 #### School Operations
+
 - ✅ Create new schools
 - ✅ View all schools in municipality
 - ✅ Update school information
@@ -60,6 +62,7 @@
 - ✅ Search schools by name/code
 
 #### School Configuration
+
 - ✅ View school configurations
 - ✅ Monitor school settings
 - ✅ Ensure compliance with standards
@@ -71,6 +74,7 @@
 **Full Access**
 
 #### Admin Assignment
+
 - ✅ Assign school administrators to schools
 - ✅ View all school administrators
 - ✅ Update admin assignments
@@ -79,6 +83,7 @@
 - ✅ Monitor admin performance
 
 #### User Management
+
 - ✅ Create school admin accounts
 - ✅ Reset school admin passwords
 - ✅ Deactivate school admin accounts
@@ -91,6 +96,7 @@
 **Read-Only Access**
 
 #### Municipality Reports
+
 - ✅ View consolidated student reports
 - ✅ View consolidated staff reports
 - ✅ View attendance statistics across schools
@@ -100,6 +106,7 @@
 - ✅ View comparative school performance
 
 #### Analytics Dashboard
+
 - ✅ School performance metrics
 - ✅ Enrollment trends
 - ✅ Staff distribution
@@ -114,6 +121,7 @@
 **Limited Access**
 
 #### Communication Features
+
 - ✅ Send announcements to all schools
 - ✅ Send messages to school administrators
 - ✅ View communication history
@@ -127,6 +135,7 @@
 **Read Access**
 
 #### Calendar Features
+
 - ✅ View municipality calendar
 - ✅ View school-specific calendars
 - ✅ View holidays and events
@@ -139,6 +148,7 @@
 **Full Access**
 
 #### Audit Operations
+
 - ✅ View audit logs for all schools
 - ✅ Monitor system usage
 - ✅ Track administrative actions
@@ -152,6 +162,7 @@
 When Municipality Admin logs in, they see:
 
 ### Main Dashboard
+
 - 📊 Total schools count
 - 📊 Total students (all schools)
 - 📊 Total staff (all schools)
@@ -162,6 +173,7 @@ When Municipality Admin logs in, they see:
 - 📊 System health status
 
 ### Quick Actions
+
 - ➕ Add new school
 - ➕ Assign school admin
 - 📊 View reports
@@ -196,6 +208,7 @@ When Municipality Admin logs in, they see:
 **Total Endpoints:** 25+
 
 ### By Category:
+
 - Municipality Dashboard: 3 endpoints
 - School Management: 8 endpoints
 - School Admin Management: 6 endpoints
@@ -207,12 +220,14 @@ When Municipality Admin logs in, they see:
 ## Security Features
 
 ### Authentication
+
 - JWT-based authentication
 - Municipality-specific access control
 - Session management
 - Multi-factor authentication support
 
 ### Authorization
+
 - Municipality-level data isolation
 - Role-based access control
 - Audit trail for all actions
@@ -254,18 +269,21 @@ When Municipality Admin logs in, they see:
 ## Best Practices
 
 ### School Management
+
 - Regularly review school performance metrics
 - Ensure all schools have assigned administrators
 - Monitor inactive schools and take action
 - Keep school information up-to-date
 
 ### Admin Management
+
 - Assign qualified administrators to schools
 - Monitor admin activity and performance
 - Provide training and support to admins
 - Regularly review admin access logs
 
 ### Reporting
+
 - Generate monthly performance reports
 - Compare school performance metrics
 - Identify schools needing support
@@ -276,12 +294,14 @@ When Municipality Admin logs in, they see:
 ## Support & Resources
 
 ### Getting Help
+
 - Contact system administrator
 - View user documentation
 - Access training materials
 - Submit support tickets
 
 ### Training Resources
+
 - Municipality admin user guide
 - Video tutorials
 - Best practices documentation

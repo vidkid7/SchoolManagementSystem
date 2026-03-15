@@ -35,7 +35,7 @@ import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 interface BehaviorRecord {
   id: number;
@@ -81,8 +81,8 @@ export function BehaviorTracking() {
     try {
       setLoading(true);
       const [recordsRes, studentsRes] = await Promise.all([
-        api.get('/teacher/behavior-records'),
-        api.get('/teacher/my-class'),
+        apiClient.get('/teacher/behavior-records'),
+        apiClient.get('/teacher/my-class'),
       ]);
       setRecords(recordsRes.data?.data || []);
       setStudents(studentsRes.data?.data?.students || []);
@@ -95,7 +95,7 @@ export function BehaviorTracking() {
 
   const handleSubmit = async () => {
     try {
-      await api.post('/teacher/behavior-records', formData);
+      await apiClient.post('/teacher/behavior-records', formData);
       setSuccess('Behavior record added successfully');
       setOpenDialog(false);
       fetchData();

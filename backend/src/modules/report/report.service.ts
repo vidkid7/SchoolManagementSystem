@@ -343,7 +343,12 @@ class ReportService {
 
   async generateTeacherPerformanceReport(
     params: TeacherPerformanceReportParams
-  ): Promise<TeacherPerformanceReport> {
+  ): Promise<TeacherPerformanceReport | null> {
+    // If no teacherId is provided, return null
+    if (!params.teacherId) {
+      return null;
+    }
+
     const teacher = await Staff.findByPk(params.teacherId);
     if (!teacher) {
       throw new Error('Teacher not found');
@@ -485,6 +490,12 @@ class ReportService {
 
       const fineCollected = fines.reduce((sum, f) => sum + (f.paidAmount || 0), 0);
 
+      // Calculate circulation rate (percentage of books currently in circulation)
+      const totalStudents = await Student.count({ where: { status: 'active' } });
+      const circulationRate = totalStudents > 0 && totalBooks > 0
+        ? Math.round((totalIssued / totalBooks) * 100)
+        : 0;
+
       return {
         totalBooks,
         totalIssued,
@@ -493,6 +504,7 @@ class ReportService {
         mostBorrowedBooks: [],
         activeMembers: [],
         fineCollected,
+        circulationRate,
       };
     } catch (error: any) {
       logger.warn('Library report: Tables not available yet', { error: error.message });
@@ -504,6 +516,7 @@ class ReportService {
         mostBorrowedBooks: [],
         activeMembers: [],
         fineCollected: 0,
+        circulationRate: 0,
       };
     }
   }
@@ -543,6 +556,12 @@ class ReportService {
         byCategoryMap.set(eca.category, currentCategoryCount + 1);
       });
 
+      // Calculate participation rate (percentage of students participating in ECAs)
+      const totalStudents = await Student.count({ where: { status: 'active' } });
+      const participationRate = totalStudents > 0
+        ? Math.round((totalParticipants / totalStudents) * 100)
+        : 0;
+
       return {
         totalActivities,
         totalParticipants,
@@ -554,6 +573,7 @@ class ReportService {
           count,
         })),
         achievements: [],
+        participationRate,
       };
     } catch (error: any) {
       logger.warn('ECA report: Tables not available yet', { error: error.message });
@@ -563,6 +583,7 @@ class ReportService {
         byActivity: [],
         byCategory: [],
         achievements: [],
+        participationRate: 0,
       };
     }
   }

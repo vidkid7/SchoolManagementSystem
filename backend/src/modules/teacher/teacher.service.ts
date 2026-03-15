@@ -48,11 +48,19 @@ interface Notification {
   time: string;
 }
 
-type ClassSummary = Pick<Class, 'gradeLevel' | 'section'>;
+type ClassSummary = Pick<Class, 'classId' | 'gradeLevel' | 'section'>;
 type AssignmentWithClass = StaffAssignment & { class?: ClassSummary };
 type PeriodWithTimetable = Period & { timetable?: Pick<Timetable, 'classId'> };
 
 class TeacherService {
+  private formatClassLabel(classInfo?: ClassSummary | null): string {
+    if (!classInfo) {
+      return 'N/A';
+    }
+
+    return `Grade ${classInfo.gradeLevel}${classInfo.section ? ` ${classInfo.section}` : ''}`;
+  }
+
   async getStaffFromUserId(userId: number): Promise<Staff | null> {
     return Staff.findOne({
       where: { userId },
@@ -72,7 +80,7 @@ class TeacherService {
         {
           model: Class,
           as: 'class',
-          attributes: ['className', 'section'],
+          attributes: ['classId', 'gradeLevel', 'section'],
         },
       ],
     });
@@ -80,10 +88,7 @@ class TeacherService {
     const classLabelMap = new Map<number, string>();
     for (const assignment of assignments as AssignmentWithClass[]) {
       if (assignment.classId && assignment.class) {
-        classLabelMap.set(
-          assignment.classId,
-          `${assignment.class.gradeLevel} ${assignment.class.section || ''}`.trim()
-        );
+        classLabelMap.set(assignment.classId, this.formatClassLabel(assignment.class));
       }
     }
 
@@ -383,10 +388,10 @@ class TeacherService {
         {
           model: Class,
           as: 'class',
-          attributes: ['classId', 'className', 'section', 'gradeLevel'],
+          attributes: ['classId', 'gradeLevel', 'section'],
         },
       ],
-    });
+    }) as AssignmentWithClass | null;
 
     if (!assignment || !assignment.classId) {
       return {
@@ -398,7 +403,7 @@ class TeacherService {
     // Get students in the class
     const students = await Student.findAll({
       where: {
-        classId: assignment.classId,
+        currentClassId: assignment.classId,
         status: StudentStatus.ACTIVE,
       },
       attributes: [
@@ -407,14 +412,14 @@ class TeacherService {
         'firstNameEn',
         'lastNameEn',
         'gender',
-        'dateOfBirth',
+        'dateOfBirthAD',
         'phone',
         'email',
         'fatherName',
         'motherName',
         'fatherPhone',
         'motherPhone',
-        'address',
+        'addressEn',
       ],
       order: [['rollNumber', 'ASC']],
     });
@@ -434,6 +439,8 @@ class TeacherService {
 
         return {
           ...student.toJSON(),
+          dateOfBirth: student.dateOfBirthAD,
+          address: student.addressEn,
           attendanceRate,
           averageGrade: null, // Can be calculated from exam results if needed
         };
@@ -443,7 +450,7 @@ class TeacherService {
     const classInfo = assignment.class
       ? {
           classId: assignment.class.classId,
-          name: assignment.class.className,
+          name: this.formatClassLabel(assignment.class),
           section: assignment.class.section,
           gradeLevel: assignment.class.gradeLevel,
           totalStudents: students.length,

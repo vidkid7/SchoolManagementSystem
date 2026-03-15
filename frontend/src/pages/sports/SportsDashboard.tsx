@@ -3,20 +3,27 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useTheme } from '@mui/material/styles';
+import { C, useAdminStyles } from '../../theme/designTokens';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import { Box, Grid, Paper, Typography, Card, CardContent, Button, List, ListItem, ListItemText, Chip } from '@mui/material';
 import { Add as AddIcon, EmojiEvents as TrophyIcon, Groups as TeamIcon, SportsScore as MatchIcon } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
+
+import { useTranslation } from 'react-i18next';
 
 export function SportsDashboard() {
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const [stats, setStats] = useState({ totalSports: 0, activeSports: 0, totalTeams: 0, upcomingMatches: 0, totalPlayers: 0 });
   const [recentMatches, setRecentMatches] = useState<any[]>([]);
 
   useEffect(() => {
     Promise.all([
-      api.get('/sports/statistics').catch(() => ({ data: { data: null } })),
-      api.get('/sports/recent-matches?limit=5').catch(() => ({ data: { data: [] } })),
+      apiClient.get('/sports/statistics').catch(() => ({ data: { data: null } })),
+      apiClient.get('/sports/recent-matches?limit=5').catch(() => ({ data: { data: [] } })),
     ]).then(([statsRes, matchesRes]) => {
       if (statsRes.data?.data) setStats(statsRes.data.data);
       setRecentMatches(matchesRes.data?.data || []);
@@ -35,7 +42,7 @@ export function SportsDashboard() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h4" fontWeight={600}>Sports Dashboard</Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/sports/new')}>New Sport</Button>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/sports/new')} sx={S.BTN_PRIMARY}>New Sport</Button>
           <Button variant="outlined" startIcon={<TeamIcon />} onClick={() => navigate('/sports/teams/new')}>Create Team</Button>
         </Box>
       </Box>
@@ -57,7 +64,7 @@ export function SportsDashboard() {
 
       <Grid container spacing={3} sx={{ mt: 2 }}>
         <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ ...S.GLASS, p: 3 }}>
             <Typography variant="h6" fontWeight={600} gutterBottom>Recent Matches</Typography>
             {recentMatches.length === 0 ? (
               <Typography color="text.secondary" align="center" py={4}>No recent matches</Typography>
@@ -74,7 +81,7 @@ export function SportsDashboard() {
           </Paper>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ ...S.GLASS, p: 3 }}>
             <Typography variant="h6" fontWeight={600} gutterBottom>Quick Actions</Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <Button variant="outlined" fullWidth onClick={() => navigate('/sports/list')}>Manage Sports</Button>

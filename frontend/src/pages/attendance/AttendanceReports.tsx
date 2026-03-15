@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -27,13 +28,17 @@ import {
   Chip,
   CircularProgress,
   Alert,
+  alpha,
+  useTheme,
 } from '@mui/material';
 import {
   Assessment as ReportIcon,
   Download as DownloadIcon,
   Print as PrintIcon,
+  BarChart as ChartIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface AttendanceRecord {
   attendanceId: number;
@@ -47,6 +52,9 @@ interface AttendanceRecord {
 }
 
 export function AttendanceReports() {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const [loading, setLoading] = useState(false);
   const [reportType, setReportType] = useState('student');
   const [startDate, setStartDate] = useState('');
@@ -69,7 +77,7 @@ export function AttendanceReports() {
 
   const fetchClasses = async () => {
     try {
-      const response = await api.get('/academic/classes');
+      const response = await apiClient.get('/academic/classes');
       const classesData = response.data?.data || [];
       setClasses(classesData);
     } catch (error) {
@@ -108,7 +116,6 @@ export function AttendanceReports() {
       }
 
       // For student reports, add class filter (only if it has a value)
-      // Note: Section filter is not supported by the backend API
       if (reportType === 'student') {
         if (selectedClass && selectedClass !== '') {
           params.classId = parseInt(selectedClass);
@@ -121,9 +128,8 @@ export function AttendanceReports() {
 
       console.log('Fetching report with params:', params);
 
-      const response = await api.get(endpoint, { params });
+      const response = await apiClient.get(endpoint, { params });
       console.log('Response:', response.data);
-      console.log('Response data structure:', JSON.stringify(response.data.data, null, 2));
       
       // The backend returns { records: [...], total, page, limit, totalPages }
       const responseData = response.data?.data;
@@ -213,69 +219,136 @@ export function AttendanceReports() {
 
   return (
     <Box>
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-          <ReportIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-          <Typography variant="h5" fontWeight={600}>
-            Attendance Reports
-          </Typography>
+      {/* Header Card with Blue Theme */}
+      <Paper 
+        sx={{ 
+          ...S.GLASS,
+          p: 3, 
+          mb: 3,
+          background: `linear-gradient(135deg, ${C.primary} 0%, ${C.primary} 100%)`,
+          color: 'white',
+          borderRadius: R.lg,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+          <Box
+            sx={{
+              width: 56,
+              height: 56,
+              borderRadius: R.lg,
+              background: alpha('#ffffff', 0.2),
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <ReportIcon sx={{ fontSize: 32 }} />
+          </Box>
+          <Box>
+            <Typography variant="h5" fontWeight={700}>
+              {t('attendance.attendanceReport')}
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+              {t('dashboard.attendanceSubtitle')}
+            </Typography>
+          </Box>
         </Box>
 
-        <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid container spacing={2}>
           <Grid item xs={12} md={3}>
             <FormControl fullWidth>
-              <InputLabel>Report Type</InputLabel>
+              <InputLabel sx={{ color: 'white', '&.Mui-focused': { color: 'white' } }}>
+                {t('common.reportType')}
+              </InputLabel>
               <Select
                 value={reportType}
-                label="Report Type"
+                label={t('common.reportType')}
                 onChange={(e) => setReportType(e.target.value)}
+                sx={{
+                  color: 'white',
+                  '.MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.3) },
+                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.5) },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
+                  '.MuiSvgIcon-root': { color: 'white' },
+                }}
               >
-                <MenuItem value="student">Student Attendance</MenuItem>
-                <MenuItem value="staff">Staff Attendance</MenuItem>
+                <MenuItem value="student">{t('students.title')}</MenuItem>
+                <MenuItem value="staff">{t('staff.title')}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
           <Grid item xs={12} md={2}>
             <TextField
               fullWidth
-              label="Start Date"
+              label={t('common.startDate')}
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
+              InputLabelProps={{ 
+                shrink: true,
+                sx: { color: 'white', '&.Mui-focused': { color: 'white' } }
+              }}
+              sx={{
+                '.MuiOutlinedInput-root': {
+                  color: 'white',
+                  '.MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.3) },
+                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.5) },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
+                },
+              }}
             />
           </Grid>
           <Grid item xs={12} md={2}>
             <TextField
               fullWidth
-              label="End Date"
+              label={t('common.endDate')}
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
+              InputLabelProps={{ 
+                shrink: true,
+                sx: { color: 'white', '&.Mui-focused': { color: 'white' } }
+              }}
+              sx={{
+                '.MuiOutlinedInput-root': {
+                  color: 'white',
+                  '.MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.3) },
+                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.5) },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
+                },
+              }}
             />
           </Grid>
           {reportType === 'student' && (
             <>
               <Grid item xs={12} md={2}>
                 <FormControl fullWidth>
-                  <InputLabel>Class (Optional)</InputLabel>
+                  <InputLabel sx={{ color: 'white', '&.Mui-focused': { color: 'white' } }}>
+                    {t('common.class')} ({t('common.optional')})
+                  </InputLabel>
                   <Select
                     value={selectedClass}
-                    label="Class (Optional)"
+                    label={`${t('common.class')} (${t('common.optional')})`}
                     onChange={(e) => setSelectedClass(e.target.value)}
+                    sx={{
+                      color: 'white',
+                      '.MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.3) },
+                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.5) },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
+                      '.MuiSvgIcon-root': { color: 'white' },
+                    }}
                   >
-                    <MenuItem value="">All Classes</MenuItem>
+                    <MenuItem value="">{t('common.allClasses')}</MenuItem>
                     {classes.length > 0 ? (
                       classes.map((cls) => (
                         <MenuItem key={cls.classId} value={cls.classLevel?.toString() || cls.classId?.toString()}>
-                          Class {cls.classLevel || cls.classId} {cls.className ? `- ${cls.className}` : ''}
+                          {t('common.class')} {cls.classLevel || cls.classId} {cls.className ? `- ${cls.className}` : ''}
                         </MenuItem>
                       ))
                     ) : (
                       [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((cls) => (
                         <MenuItem key={cls} value={cls.toString()}>
-                          Class {cls}
+                          {t('common.class')} {cls}
                         </MenuItem>
                       ))
                     )}
@@ -284,17 +357,26 @@ export function AttendanceReports() {
               </Grid>
               <Grid item xs={12} md={2}>
                 <FormControl fullWidth>
-                  <InputLabel>Section (Optional)</InputLabel>
+                  <InputLabel sx={{ color: 'white', '&.Mui-focused': { color: 'white' } }}>
+                    {t('common.section')} ({t('common.optional')})
+                  </InputLabel>
                   <Select
                     value={selectedSection}
-                    label="Section (Optional)"
+                    label={`${t('common.section')} (${t('common.optional')})`}
                     onChange={(e) => setSelectedSection(e.target.value)}
+                    sx={{
+                      color: 'white',
+                      '.MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.3) },
+                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.5) },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
+                      '.MuiSvgIcon-root': { color: 'white' },
+                    }}
                   >
-                    <MenuItem value="">All Sections</MenuItem>
-                    <MenuItem value="A">Section A</MenuItem>
-                    <MenuItem value="B">Section B</MenuItem>
-                    <MenuItem value="C">Section C</MenuItem>
-                    <MenuItem value="D">Section D</MenuItem>
+                    <MenuItem value="">{t('common.allSections')}</MenuItem>
+                    <MenuItem value="A">{t('common.section')} A</MenuItem>
+                    <MenuItem value="B">{t('common.section')} B</MenuItem>
+                    <MenuItem value="C">{t('common.section')} C</MenuItem>
+                    <MenuItem value="D">{t('common.section')} D</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -306,28 +388,52 @@ export function AttendanceReports() {
               variant="contained"
               onClick={fetchReport}
               disabled={loading}
-              sx={{ height: '56px' }}
+              sx={{ 
+                height: '56px',
+                bgcolor: 'white',
+                color: C.primary,
+                fontWeight: 600,
+                '&:hover': {
+                  bgcolor: alpha('#ffffff', 0.9),
+                },
+              }}
             >
-              Generate
+              {t('common.generate')}
             </Button>
           </Grid>
         </Grid>
 
         {attendanceData.length > 0 && (
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
             <Button
               variant="outlined"
               startIcon={<DownloadIcon />}
               onClick={handleExport}
+              sx={{
+                color: 'white',
+                borderColor: alpha('#ffffff', 0.3),
+                '&:hover': {
+                  borderColor: 'white',
+                  bgcolor: alpha('#ffffff', 0.1),
+                },
+              }}
             >
-              Export CSV
+              {t('common.exportCSV')}
             </Button>
             <Button
               variant="outlined"
               startIcon={<PrintIcon />}
               onClick={handlePrint}
+              sx={{
+                color: 'white',
+                borderColor: alpha('#ffffff', 0.3),
+                '&:hover': {
+                  borderColor: 'white',
+                  bgcolor: alpha('#ffffff', 0.1),
+                },
+              }}
             >
-              Print
+              {t('common.print')}
             </Button>
           </Box>
         )}
@@ -341,63 +447,89 @@ export function AttendanceReports() {
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-          <CircularProgress />
+          <CircularProgress sx={{ color: C.primary }} />
         </Box>
       ) : attendanceData.length === 0 && (startDate || endDate) ? (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
+        <Paper sx={{ ...S.GLASS, p: 4, textAlign: 'center' }}>
+          <ChartIcon sx={{ fontSize: 64, color: C.neutral, mb: 2 }} />
           <Typography variant="h6" color="text.secondary" gutterBottom>
-            No attendance records found
+            {t('common.noRecordsFound')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Try adjusting your filters or date range
+            {t('common.tryAdjustingFilters')}
           </Typography>
         </Paper>
       ) : attendanceData.length > 0 ? (
         <>
+          {/* Summary Cards with Blue Theme */}
           <Grid container spacing={3} sx={{ mb: 3 }}>
             <Grid item xs={12} md={3}>
-              <Card>
+              <Card 
+                sx={{ 
+                  borderRadius: R.lg,
+                  background: `linear-gradient(135deg, ${C.primary} 0%, ${C.primary} 100%)`,
+                  color: 'white',
+                }}
+              >
                 <CardContent>
-                  <Typography color="text.secondary" gutterBottom>
-                    Unique {reportType === 'student' ? 'Students' : 'Staff'}
+                  <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                    {reportType === 'student' ? t('students.title') : t('staff.title')}
                   </Typography>
-                  <Typography variant="h4" fontWeight={600}>
+                  <Typography variant="h3" fontWeight={700}>
                     {summary.totalStudents}
                   </Typography>
                 </CardContent>
               </Card>
             </Grid>
             <Grid item xs={12} md={3}>
-              <Card>
+              <Card 
+                sx={{ 
+                  borderRadius: R.lg,
+                  background: 'linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%)',
+                  color: 'white',
+                }}
+              >
                 <CardContent>
-                  <Typography color="text.secondary" gutterBottom>
-                    Attendance Rate
+                  <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                    {t('reports.averageAttendance')}
                   </Typography>
-                  <Typography variant="h4" fontWeight={600} color="primary">
+                  <Typography variant="h3" fontWeight={700}>
                     {summary.averageAttendance.toFixed(1)}%
                   </Typography>
                 </CardContent>
               </Card>
             </Grid>
             <Grid item xs={12} md={3}>
-              <Card>
+              <Card 
+                sx={{ 
+                  borderRadius: R.lg,
+                  background: 'linear-gradient(135deg, #60a5fa 0%, #38bdf8 100%)',
+                  color: 'white',
+                }}
+              >
                 <CardContent>
-                  <Typography color="text.secondary" gutterBottom>
-                    Total Present Records
+                  <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                    {t('attendance.present')}
                   </Typography>
-                  <Typography variant="h4" fontWeight={600} color="success.main">
+                  <Typography variant="h3" fontWeight={700}>
                     {summary.totalPresent}
                   </Typography>
                 </CardContent>
               </Card>
             </Grid>
             <Grid item xs={12} md={3}>
-              <Card>
+              <Card 
+                sx={{ 
+                  borderRadius: R.lg,
+                  background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+                  color: 'white',
+                }}
+              >
                 <CardContent>
-                  <Typography color="text.secondary" gutterBottom>
-                    Total Absent Records
+                  <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                    {t('attendance.absent')}
                   </Typography>
-                  <Typography variant="h4" fontWeight={600} color="error.main">
+                  <Typography variant="h3" fontWeight={700}>
                     {summary.totalAbsent}
                   </Typography>
                 </CardContent>
@@ -405,38 +537,67 @@ export function AttendanceReports() {
             </Grid>
           </Grid>
 
-          <TableContainer component={Paper}>
+          {/* Data Table */}
+          <TableContainer component={Paper} sx={{ ...S.GLASS }}>
             <Table>
               <TableHead>
-                <TableRow>
-                  <TableCell>{reportType === 'student' ? 'Student ID' : 'Staff ID'}</TableCell>
-                  <TableCell>Class ID</TableCell>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Period</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Marked At</TableCell>
-                  <TableCell>Remarks</TableCell>
+                <TableRow sx={{ bgcolor: alpha(C.primary, 0.1) }}>
+                  <TableCell sx={{ fontWeight: 600, color: C.primary }}>
+                    {reportType === 'student' ? t('students.studentId') : t('staff.staffId')}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: C.primary }}>
+                    {t('common.classId')}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: C.primary }}>
+                    {t('attendance.date')}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: C.primary }}>
+                    {t('attendance.period')}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: C.primary }}>
+                    {t('common.status')}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: C.primary }}>
+                    {t('common.markedAt')}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: C.primary }}>
+                    {t('common.remarks')}
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {attendanceData.map((row: any, index: number) => (
-                  <TableRow key={row.attendanceId || row.staffAttendanceId || index}>
+                  <TableRow 
+                    key={row.attendanceId || row.staffAttendanceId || index}
+                    sx={{ 
+                      '&:hover': { bgcolor: alpha(C.primary, 0.05) },
+                      '&:nth-of-type(even)': { bgcolor: alpha(theme.palette.background.paper, 0.5) },
+                    }}
+                  >
                     <TableCell>{row.studentId || row.staffId}</TableCell>
                     <TableCell>{row.classId || '-'}</TableCell>
                     <TableCell>{new Date(row.date).toLocaleDateString()}</TableCell>
                     <TableCell align="center">{row.periodNumber || '-'}</TableCell>
                     <TableCell>
                       <Chip
-                        label={row.status}
-                        color={
-                          row.status === 'present' ? 'success' :
-                          row.status === 'absent' ? 'error' :
-                          row.status === 'late' || row.status === 'on_leave' ? 'warning' : 'default'
-                        }
+                        label={t(`attendance.${row.status}`)}
+                        sx={{
+                          bgcolor: 
+                            row.status === 'present' ? alpha(C.primary, 0.15) :
+                            row.status === 'absent' ? alpha(C.neutral, 0.15) :
+                            alpha(C.primary, 0.15),
+                          color:
+                            row.status === 'present' ? C.primary :
+                            row.status === 'absent' ? C.neutral :
+                            C.primary,
+                          fontWeight: 600,
+                        }}
                         size="small"
                       />
                     </TableCell>
-                    <TableCell>{row.markedAt ? new Date(row.markedAt).toLocaleString() : new Date(row.createdAt).toLocaleString()}</TableCell>
+                    <TableCell>
+                      {row.markedAt ? new Date(row.markedAt).toLocaleString() : new Date(row.createdAt).toLocaleString()}
+                    </TableCell>
                     <TableCell>{row.remarks || '-'}</TableCell>
                   </TableRow>
                 ))}
@@ -445,24 +606,35 @@ export function AttendanceReports() {
           </TableContainer>
         </>
       ) : (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <ReportIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" gutterBottom>
-            Generate Attendance Report
+        <Paper sx={{ ...S.GLASS, p: 4, textAlign: 'center' }}>
+          <ChartIcon sx={{ fontSize: 64, color: C.neutral, mb: 2 }} />
+          <Typography variant="h6" gutterBottom fontWeight={600}>
+            {t('common.generateReport')}
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Select a date range and click "Generate" to view attendance reports
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            {t('common.selectDateRangeToGenerate')}
           </Typography>
-          <Box sx={{ mt: 3, textAlign: 'left', maxWidth: 600, mx: 'auto' }}>
-            <Typography variant="subtitle2" gutterBottom>
-              Instructions:
+          <Box 
+            sx={{ 
+              mt: 3, 
+              textAlign: 'left', 
+              maxWidth: 600, 
+              mx: 'auto',
+              p: 3,
+              bgcolor: alpha(C.primary, 0.05),
+              borderRadius: R.lg,
+              border: `1px solid ${alpha(C.primary, 0.1)}`,
+            }}
+          >
+            <Typography variant="subtitle2" gutterBottom fontWeight={600} color={C.primary}>
+              {t('common.instructions')}:
             </Typography>
-            <Typography variant="body2" color="text.secondary" component="div">
-              1. Select report type (Student or Staff)<br />
-              2. Choose start date and end date<br />
-              3. Optionally filter by class and section<br />
-              4. Click "Generate" button to view the report<br />
-              5. Export to CSV or print the report
+            <Typography variant="body2" color="text.secondary" component="div" sx={{ lineHeight: 1.8 }}>
+              1. {t('common.selectReportType')}<br />
+              2. {t('common.chooseDateRange')}<br />
+              3. {t('common.optionallyFilterByClass')}<br />
+              4. {t('common.clickGenerateButton')}<br />
+              5. {t('common.exportOrPrintReport')}
             </Typography>
           </Box>
         </Paper>

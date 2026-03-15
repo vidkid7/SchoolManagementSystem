@@ -13,6 +13,7 @@ import {
   CardContent,
   Button,
   CircularProgress,
+  useTheme,
 } from '@mui/material';
 import {
   PersonAdd as InquiryIcon,
@@ -21,8 +22,11 @@ import {
   CheckCircle as EnrolledIcon,
   TrendingUp as TrendIcon,
 } from '@mui/icons-material';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { useNavigate } from 'react-router-dom';
 import api from '../../config/api';
+
+import { useTranslation } from 'react-i18next';
 
 interface AdmissionStats {
   totalInquiries: number;
@@ -35,6 +39,9 @@ interface AdmissionStats {
 }
 
 export function AdmissionDashboard() {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<AdmissionStats>({
@@ -104,7 +111,7 @@ export function AdmissionDashboard() {
 
   return (
     <Box>
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <TrendIcon sx={{ fontSize: 32, color: 'primary.main' }} />
@@ -125,7 +132,7 @@ export function AdmissionDashboard() {
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {statCards.map((card, index) => (
           <Grid item xs={12} sm={6} md={3} key={index}>
-            <Card sx={{ height: '100%' }}>
+            <Card sx={{ ...S.GLASS, height: '100%' }}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <Box>
@@ -155,7 +162,7 @@ export function AdmissionDashboard() {
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ ...S.GLASS, p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Pending Actions
             </Typography>
@@ -181,7 +188,7 @@ export function AdmissionDashboard() {
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ ...S.GLASS, p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Quick Actions
             </Typography>

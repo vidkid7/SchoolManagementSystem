@@ -16,7 +16,9 @@ import {
   Button,
   CircularProgress,
   Alert,
+  useTheme,
 } from '@mui/material';
+import { C, useAdminStyles } from '../../theme/designTokens';
 import {
   Description as DescriptionIcon,
   Add as AddIcon,
@@ -25,8 +27,10 @@ import {
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import apiClient from '../../services/apiClient';
+
+import { useTranslation } from 'react-i18next';
 
 interface CertificateStats {
   totalCertificates: number;
@@ -43,7 +47,10 @@ interface CertificateStats {
 }
 
 export const CertificateDashboard = () => {
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const [stats, setStats] = useState<CertificateStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -127,7 +134,7 @@ export const CertificateDashboard = () => {
             Verify / प्रमाणित गर्नुहोस्
           </Button>
           <Button
-            variant="contained"
+            sx={S.BTN_PRIMARY}
             startIcon={<AddIcon />}
             onClick={() => navigate('/certificates/manage')}
           >
@@ -139,7 +146,7 @@ export const CertificateDashboard = () => {
       <Grid container spacing={3}>
         {/* Statistics Cards */}
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
@@ -157,7 +164,7 @@ export const CertificateDashboard = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
@@ -175,7 +182,7 @@ export const CertificateDashboard = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
@@ -193,7 +200,7 @@ export const CertificateDashboard = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
@@ -212,7 +219,7 @@ export const CertificateDashboard = () => {
 
         {/* Certificates by Type */}
         <Grid item xs={12} md={6}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Certificates by Type / प्रकार अनुसार
@@ -239,7 +246,7 @@ export const CertificateDashboard = () => {
 
         {/* Recent Certificates */}
         <Grid item xs={12} md={6}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Recent Certificates / हालैका प्रमाणपत्र
@@ -275,7 +282,7 @@ export const CertificateDashboard = () => {
 
         {/* Quick Actions */}
         <Grid item xs={12}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Quick Actions / द्रुत कार्यहरू

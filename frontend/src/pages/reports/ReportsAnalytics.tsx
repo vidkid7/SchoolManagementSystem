@@ -67,6 +67,7 @@ import {
 import { motion } from 'framer-motion';
 import { apiClient } from '../../services/apiClient';
 import { useNepaliNumbers } from '../../hooks/useNepaliNumbers';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 const MotionCard = motion.create(Card);
 
@@ -85,8 +86,8 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-const COLORS = ['#667eea', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-const GRADIENT_COLORS = ['#667eea', '#764ba2', '#f093fb', '#f5576c'];
+const COLORS = [C.neutral, C.neutral, C.neutral, C.danger, C.neutral, C.danger, C.neutral, C.neutral];
+const GRADIENT_COLORS = [C.neutral, C.purple, C.neutral, C.danger];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -116,9 +117,9 @@ const TAB_ICONS = [
 ];
 
 const GRADIENTS = {
-  enrollment: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  enrollment: 'linear-gradient(135deg, #2c2c2c 0%, #5856D6 100%)',
   attendance: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
-  fee: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+  fee: 'linear-gradient(135deg, #6b7280 0%, #8b5a5a 100%)',
   exam: 'linear-gradient(135deg, #614385 0%, #516395 100%)',
   library: 'linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%)',
   sports: 'linear-gradient(135deg, #ff9966 0%, #ff5e62 100%)',
@@ -184,6 +185,7 @@ interface TeacherPerformanceData {
   const ReportsAnalytics: React.FC = () => {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   const { formatNumber, formatWithSeparators, formatPercentage } = useNepaliNumbers();
   const [tabValue, setTabValue] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -205,6 +207,11 @@ interface TeacherPerformanceData {
   const [ecaData, setEcaData] = useState<ECAData | null>(null);
   const [sportsData, setSportsData] = useState<SportsData | null>(null);
   const [teacherPerformanceData, setTeacherPerformanceData] = useState<TeacherPerformanceData | null>(null);
+
+  // Print functionality
+  const handlePrint = () => {
+    window.print();
+  };
 
   useEffect(() => {
     fetchAllData();
@@ -298,14 +305,14 @@ interface TeacherPerformanceData {
       link.remove();
       window.URL.revokeObjectURL(url);
       
-      setSnackbar({ open: true, message: `${format.toUpperCase()} exported successfully!`, severity: 'success' });
+      setSnackbar({ open: true, message: t('reports.exportSuccess'), severity: 'success' });
     } catch (error: any) {
       console.error('Export failed:', error);
-      let errorMessage = 'Failed to export report';
+      let errorMessage = t('reports.exportFailed');
       if (error.response?.status === 401) {
-        errorMessage = 'Please login to export reports';
+        errorMessage = t('reports.loginRequired');
       } else if (error.response?.status === 403) {
-        errorMessage = 'You do not have permission to export this report';
+        errorMessage = t('reports.noPermission');
       } else if (error.response?.data?.error?.message) {
         errorMessage = error.response.data.error.message;
       }
@@ -357,7 +364,7 @@ interface TeacherPerformanceData {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <Paper sx={{ p: 2, boxShadow: 3, borderRadius: 2 }}>
+        <Paper sx={{ ...S.GLASS, p: 2 }}>
           <Typography variant="body2" fontWeight={600}>{label}</Typography>
           {payload.map((entry: any, index: number) => (
             <Typography key={index} variant="body2" component="div" sx={{ color: entry.color }}>
@@ -404,16 +411,19 @@ interface TeacherPerformanceData {
   const gradeChartData = examData?.gradeDistribution?.map((item: any) => ({
     grade: item.grade,
     students: item.count,
-    fill: item.percentage >= 20 ? '#10b981' : item.percentage >= 10 ? '#f59e0b' : '#ef4444',
+    fill: item.percentage >= 20 ? C.neutral : item.percentage >= 10 ? C.neutral : C.danger,
   })) || [];
 
-  const libraryTreemapData = useMemo(() => [
-    { name: t('reports.science'), size: libraryData ? Math.max(libraryData.totalIssued * 0.3, 50) : 120 },
-    { name: t('reports.mathematics'), size: libraryData ? Math.max(libraryData.totalIssued * 0.25, 40) : 100 },
-    { name: t('reports.english'), size: libraryData ? Math.max(libraryData.totalIssued * 0.2, 30) : 80 },
-    { name: t('reports.nepali'), size: libraryData ? Math.max(libraryData.totalIssued * 0.15, 25) : 60 },
-    { name: t('reports.history'), size: libraryData ? Math.max(libraryData.totalIssued * 0.1, 20) : 40 },
-  ], [libraryData, t, i18n.language]);
+  const libraryTreemapData = useMemo(() => {
+    if (!libraryData?.totalIssued) return [];
+    return [
+      { name: t('reports.science'), size: Math.max(libraryData.totalIssued * 0.3, 1) },
+      { name: t('reports.mathematics'), size: Math.max(libraryData.totalIssued * 0.25, 1) },
+      { name: t('reports.english'), size: Math.max(libraryData.totalIssued * 0.2, 1) },
+      { name: t('reports.nepali'), size: Math.max(libraryData.totalIssued * 0.15, 1) },
+      { name: t('reports.history'), size: Math.max(libraryData.totalIssued * 0.1, 1) },
+    ];
+  }, [libraryData, t, i18n.language]);
 
   const ecaChartData = ecaData?.byActivity?.map((item: any, index: number) => ({
     activity: item.activityName,
@@ -427,37 +437,25 @@ interface TeacherPerformanceData {
     fill: GRADIENT_COLORS[index % GRADIENT_COLORS.length],
   })) || [];
 
-  // Default ECA data with translations
-  const defaultEcaData = useMemo(() => [
-    { activity: t('reports.art'), participants: 85, fill: '#667eea' },
-    { activity: t('reports.music'), participants: 62, fill: '#764ba2' },
-    { activity: t('reports.dance'), participants: 48, fill: '#f093fb' },
-    { activity: t('reports.scout'), participants: 35, fill: '#f5576c' },
-    { activity: t('reports.coding'), participants: 72, fill: '#10b981' },
-  ], [t, i18n.language]);
+  const radarData = useMemo(() => {
+    if (!examData?.averageMarks) return [];
+    return [
+      { subject: t('reports.math'), A: examData.averageMarks, fullMark: 100 },
+      { subject: t('reports.science'), A: examData.averageMarks - 5, fullMark: 100 },
+      { subject: t('reports.english'), A: examData.averageMarks - 8, fullMark: 100 },
+      { subject: t('reports.nepali'), A: examData.averageMarks - 10, fullMark: 100 },
+      { subject: t('reports.social'), A: examData.averageMarks - 5, fullMark: 100 },
+      { subject: t('reports.computer'), A: examData.averageMarks - 15, fullMark: 100 },
+    ];
+  }, [examData, t, i18n.language]);
 
-  // Default Sports data with translations
-  const defaultSportsData = useMemo(() => [
-    { sport: t('reports.football'), participants: 120 },
-    { sport: t('reports.basketball'), participants: 85 },
-    { sport: t('reports.volleyball'), participants: 65 },
-    { sport: t('reports.cricket'), participants: 45 },
-    { sport: t('reports.other'), participants: 30 },
-  ], [t, i18n.language]);
-
-  const radarData = useMemo(() => [
-    { subject: t('reports.math'), A: examData?.averageMarks || 75, fullMark: 100 },
-    { subject: t('reports.science'), A: (examData?.averageMarks || 72) - 5, fullMark: 100 },
-    { subject: t('reports.english'), A: (examData?.averageMarks || 78) - 8, fullMark: 100 },
-    { subject: t('reports.nepali'), A: (examData?.averageMarks || 80) - 10, fullMark: 100 },
-    { subject: t('reports.social'), A: (examData?.averageMarks || 70) - 5, fullMark: 100 },
-    { subject: t('reports.computer'), A: (examData?.averageMarks || 85) - 15, fullMark: 100 },
-  ], [examData, t, i18n.language]);
-
-  const radialData = useMemo(() => [
-    { name: t('reports.collected'), value: feeData?.collectionRate || 75, fill: '#10b981' },
-    { name: t('reports.pending'), value: 100 - (feeData?.collectionRate || 75), fill: '#e5e7eb' },
-  ], [feeData, t, i18n.language]);
+  const radialData = useMemo(() => {
+    if (!feeData?.collectionRate) return [];
+    return [
+      { name: t('reports.collected'), value: feeData.collectionRate, fill: C.neutral },
+      { name: t('reports.pending'), value: 100 - feeData.collectionRate, fill: '#e5e7eb' },
+    ];
+  }, [feeData, t, i18n.language]);
 
   if (loading) {
     return (
@@ -478,7 +476,7 @@ interface TeacherPerformanceData {
   const tabGradients = [GRADIENTS.enrollment, GRADIENTS.attendance, GRADIENTS.fee, GRADIENTS.exam, GRADIENTS.library, GRADIENTS.sports];
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 2, mb: 4 }} key={i18n.language}>
+    <Container maxWidth="xl" sx={{ mt: 2, mb: 4 }} key={i18n.language} className="print-container">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -512,8 +510,9 @@ interface TeacherPerformanceData {
               <Button 
                 variant="outlined" 
                 startIcon={<Print />}
+                onClick={handlePrint}
                 sx={{ 
-                  borderRadius: 2,
+                  borderRadius: R.lg,
                   borderColor: alpha(theme.palette.primary.main, 0.3),
                   '&:hover': { borderColor: theme.palette.primary.main, bgcolor: alpha(theme.palette.primary.main, 0.05) }
                 }}
@@ -526,7 +525,7 @@ interface TeacherPerformanceData {
                 onClick={fetchAllData}
                 disabled={loading}
                 sx={{ 
-                  borderRadius: 2,
+                  borderRadius: R.lg,
                   borderColor: alpha(theme.palette.primary.main, 0.3),
                   '&:hover': { borderColor: theme.palette.primary.main, bgcolor: alpha(theme.palette.primary.main, 0.05) }
                 }}
@@ -545,18 +544,7 @@ interface TeacherPerformanceData {
       >
         <Paper 
           elevation={0}
-          sx={{ 
-            mb: 3, 
-            p: 2.5,
-            borderRadius: 4,
-            border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.4)'}`,
-            background: theme.palette.mode === 'dark' 
-              ? 'rgba(28,28,30,0.6)' 
-              : 'rgba(255,255,255,0.65)',
-            backdropFilter: 'blur(40px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.04)',
-          }}
+          sx={{ ...S.GLASS, mb: 3, p: 2.5, borderRadius: R.lg }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <FilterList sx={{ color: theme.palette.primary.main }} />
@@ -577,7 +565,7 @@ interface TeacherPerformanceData {
                 size="small"
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
+                    borderRadius: R.lg,
                     bgcolor: alpha(theme.palette.background.default, 0.5),
                   }
                 }}
@@ -594,7 +582,7 @@ interface TeacherPerformanceData {
                 size="small"
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
+                    borderRadius: R.lg,
                     bgcolor: alpha(theme.palette.background.default, 0.5),
                   }
                 }}
@@ -610,7 +598,7 @@ interface TeacherPerformanceData {
                 size="small"
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
+                    borderRadius: R.lg,
                     bgcolor: alpha(theme.palette.background.default, 0.5),
                   }
                 }}
@@ -631,7 +619,7 @@ interface TeacherPerformanceData {
                 size="small"
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
+                    borderRadius: R.lg,
                     bgcolor: alpha(theme.palette.background.default, 0.5),
                   }
                 }}
@@ -645,19 +633,9 @@ interface TeacherPerformanceData {
             <Grid item xs={12} sm={6} md={2}>
               <Button 
                 fullWidth 
-                variant="contained" 
                 startIcon={<FilterList />}
                 onClick={fetchAllData}
-                sx={{ 
-                  borderRadius: 2,
-                  py: 1,
-                  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                  boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.4)}`,
-                  '&:hover': {
-                    background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
-                    boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.5)}`,
-                  }
-                }}
+                sx={{ ...S.BTN_PRIMARY, py: 1 }}
               >
                 {t('reports.applyFilters')}
               </Button>
@@ -668,17 +646,7 @@ interface TeacherPerformanceData {
 
       <Paper 
         elevation={0}
-        sx={{ 
-          borderRadius: 4,
-          overflow: 'hidden',
-          border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.4)'}`,
-          background: theme.palette.mode === 'dark' 
-            ? 'rgba(28,28,30,0.6)' 
-            : 'rgba(255,255,255,0.65)',
-          backdropFilter: 'blur(40px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.04)',
-        }}
+        sx={{ ...S.GLASS, borderRadius: R.lg, overflow: 'hidden' }}
       >
         <Box 
           sx={{ 
@@ -731,7 +699,7 @@ interface TeacherPerformanceData {
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {t('reports.enrollment')}
-                  <Chip label={formatNumber(enrollmentData?.totalStudents || 0)} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha('#667eea', 0.15), color: '#667eea' }} />
+                  <Chip label={formatNumber(enrollmentData?.totalStudents || 0)} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(C.neutral, 0.15), color: C.neutral }} />
                 </Box>
               } 
             />
@@ -741,7 +709,7 @@ interface TeacherPerformanceData {
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {t('reports.attendance')}
-                  <Chip label={`${formatPercentage(attendanceData?.averageAttendance || 0)}`} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha('#10b981', 0.15), color: '#10b981' }} />
+                  <Chip label={`${formatPercentage(attendanceData?.averageAttendance || 0)}`} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(C.neutral, 0.15), color: C.neutral }} />
                 </Box>
               } 
             />
@@ -751,7 +719,7 @@ interface TeacherPerformanceData {
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {t('reports.feeCollection')}
-                  <Chip label={`${formatPercentage(feeData?.collectionRate || 0)}`} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha('#f59e0b', 0.15), color: '#f59e0b' }} />
+                  <Chip label={`${formatPercentage(feeData?.collectionRate || 0)}`} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(C.neutral, 0.15), color: C.neutral }} />
                 </Box>
               } 
             />
@@ -761,7 +729,7 @@ interface TeacherPerformanceData {
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {t('reports.examination')}
-                  <Chip label={`${formatPercentage(examData?.passRate || 0)}`} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha('#8b5cf6', 0.15), color: '#8b5cf6' }} />
+                  <Chip label={`${formatPercentage(examData?.passRate || 0)}`} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(C.neutral, 0.15), color: C.neutral }} />
                 </Box>
               } 
             />
@@ -771,7 +739,7 @@ interface TeacherPerformanceData {
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {t('reports.library')}
-                  <Chip label={formatNumber(libraryData?.totalBooks || 0)} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha('#06b6d4', 0.15), color: '#06b6d4' }} />
+                  <Chip label={formatNumber(libraryData?.totalBooks || 0)} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(C.neutral, 0.15), color: C.neutral }} />
                 </Box>
               } 
             />
@@ -781,7 +749,7 @@ interface TeacherPerformanceData {
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {t('reports.ecaSports')}
-                  <Chip label={formatNumber((ecaData?.totalActivities || 0) + (sportsData?.totalSports || 0))} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha('#ec4899', 0.15), color: '#ec4899' }} />
+                  <Chip label={formatNumber((ecaData?.totalActivities || 0) + (sportsData?.totalSports || 0))} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(C.danger, 0.15), color: C.danger }} />
                 </Box>
               } 
             />
@@ -792,7 +760,7 @@ interface TeacherPerformanceData {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {t('reports.teacherPerformance') || 'Teacher performance'}
                   {teacherPerformanceData && (
-                    <Chip label={formatPercentage(teacherPerformanceData.attendanceRate || 0)} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha('#8b5cf6', 0.15), color: '#8b5cf6' }} />
+                    <Chip label={formatPercentage(teacherPerformanceData.attendanceRate || 0)} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(C.neutral, 0.15), color: C.neutral }} />
                   )}
                 </Box>
               } 
@@ -805,7 +773,7 @@ interface TeacherPerformanceData {
           <motion.div variants={containerVariants} initial="hidden" animate="visible">
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
               <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <People sx={{ color: '#667eea' }} />
+                <People sx={{ color: C.neutral }} />
                 {t('reports.enrollment')} {t('reports.overview')}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
@@ -815,7 +783,7 @@ interface TeacherPerformanceData {
                   startIcon={exporting === 'enrollment' ? <CircularProgress size={16} /> : <FileCopy />} 
                   onClick={() => handleExport('enrollment', 'pdf')}
                   disabled={exporting === 'enrollment'}
-                  sx={{ borderRadius: 2, borderColor: alpha('#667eea', 0.3), color: '#667eea', '&:hover': { borderColor: '#667eea', bgcolor: alpha('#667eea', 0.05) } }}
+                  sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}
                 >
                   {t('reports.pdf')}
                 </Button>
@@ -825,7 +793,7 @@ interface TeacherPerformanceData {
                   startIcon={exporting === 'enrollment' ? <CircularProgress size={16} /> : <Download />} 
                   onClick={() => handleExport('enrollment', 'excel')}
                   disabled={exporting === 'enrollment'}
-                  sx={{ borderRadius: 2, borderColor: alpha('#10b981', 0.3), color: '#10b981', '&:hover': { borderColor: '#10b981', bgcolor: alpha('#10b981', 0.05) } }}
+                  sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}
                 >
                   {t('reports.excel')}
                 </Button>
@@ -839,7 +807,7 @@ interface TeacherPerformanceData {
                   sx={{ 
                     background: GRADIENTS.enrollment, 
                     color: 'white',
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     position: 'relative',
                     overflow: 'hidden',
                     '&::before': {
@@ -872,7 +840,7 @@ interface TeacherPerformanceData {
                     <Typography variant="h3" fontWeight={800}>{formatWithSeparators(enrollmentData?.totalStudents || 0)}</Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
                       <TrendingUp sx={{ fontSize: 16 }} />
-                      <Typography variant="caption" sx={{ opacity: 0.9 }}>+12% from last year</Typography>
+                      <Typography variant="caption" sx={{ opacity: 0.9 }}>{t('reports.yearGrowth')}</Typography>
                     </Box>
                   </CardContent>
                 </MotionCard>
@@ -883,7 +851,7 @@ interface TeacherPerformanceData {
                   sx={{ 
                     background: GRADIENTS.attendance, 
                     color: 'white',
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     position: 'relative',
                     overflow: 'hidden',
                     '&::before': {
@@ -917,7 +885,7 @@ interface TeacherPerformanceData {
                   sx={{ 
                     background: GRADIENTS.fee, 
                     color: 'white',
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     position: 'relative',
                     overflow: 'hidden',
                     '&::before': {
@@ -954,26 +922,26 @@ interface TeacherPerformanceData {
                   variants={itemVariants as any}
                   elevation={0}
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
                     transition: 'all 0.3s ease',
                     '&:hover': {
-                      boxShadow: `0 12px 40px ${alpha('#667eea', 0.15)}`,
-                      borderColor: alpha('#667eea', 0.3),
+                      boxShadow: `0 12px 40px ${alpha(C.neutral, 0.15)}`,
+                      borderColor: alpha(C.neutral, 0.3),
                     }
                   }}
                 >
                   <CardContent>
                     <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <School sx={{ color: '#667eea', fontSize: 20 }} />
+                      <School sx={{ color: C.neutral, fontSize: 20 }} />
                       {t('reports.enrollmentByClass')}
                     </Typography>
                     <ResponsiveContainer width="100%" height={350}>
                       <BarChart data={enrollmentChartData}>
                         <defs>
                           <linearGradient id="enrollmentGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#667eea" stopOpacity={1} />
-                            <stop offset="95%" stopColor="#667eea" stopOpacity={0.6} />
+                            <stop offset="5%" stopColor={C.neutral} stopOpacity={1} />
+                            <stop offset="95%" stopColor={C.neutral} stopOpacity={0.6} />
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.palette.divider} opacity={0.5} />
@@ -998,42 +966,44 @@ interface TeacherPerformanceData {
                   variants={itemVariants as any}
                   elevation={0}
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
                     transition: 'all 0.3s ease',
                     '&:hover': {
-                      boxShadow: `0 12px 40px ${alpha('#ec4899', 0.15)}`,
-                      borderColor: alpha('#ec4899', 0.3),
+                      boxShadow: `0 12px 40px ${alpha(C.danger, 0.15)}`,
+                      borderColor: alpha(C.danger, 0.3),
                     }
                   }}
                 >
                   <CardContent>
                     <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <People sx={{ color: '#ec4899', fontSize: 20 }} />
+                      <People sx={{ color: C.danger, fontSize: 20 }} />
                       {t('dashboard.genderDistribution')}
                     </Typography>
                     <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={genderChartData.length ? genderChartData : [{ name: t('dashboard.male'), value: 52 }, { name: t('dashboard.female'), value: 45 }, { name: t('dashboard.other'), value: 3 }]}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={100}
-                          paddingAngle={5}
-                          dataKey="value"
-                          label={({ name, percent }) => `${name} ${formatPercentage(Math.round(percent * 100))}`}
-                        >
-                          {genderChartData.length ? genderChartData.map((_entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          )) : [
-                            <Cell key="1" fill="#3b82f6" />,
-                            <Cell key="2" fill="#ec4899" />,
-                            <Cell key="3" fill="#8b5cf6" />,
-                          ]}
-                        </Pie>
-                        <Tooltip content={<CustomTooltip />} />
-                      </PieChart>
+                      {genderChartData.length > 0 ? (
+                        <PieChart>
+                          <Pie
+                            data={genderChartData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={100}
+                            paddingAngle={5}
+                            dataKey="value"
+                            label={({ name, percent }) => `${name} ${formatPercentage(Math.round(percent * 100))}`}
+                          >
+                            {genderChartData.map((_entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<CustomTooltip />} />
+                        </PieChart>
+                      ) : (
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
+                          <Typography variant="body2" color="text.secondary">{t('reports.noData')}</Typography>
+                        </Box>
+                      )}
                     </ResponsiveContainer>
                   </CardContent>
                 </MotionCard>
@@ -1047,14 +1017,14 @@ interface TeacherPerformanceData {
           <motion.div variants={containerVariants} initial="hidden" animate="visible">
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
               <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CheckCircle sx={{ color: '#10b981' }} />
+                <CheckCircle sx={{ color: C.neutral }} />
                 {t('reports.attendance')} {t('reports.overview')}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('attendance', 'pdf')} sx={{ borderRadius: 2, borderColor: alpha('#10b981', 0.3), color: '#10b981', '&:hover': { borderColor: '#10b981', bgcolor: alpha('#10b981', 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('attendance', 'pdf')} sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.pdf')}
                 </Button>
-                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('attendance', 'excel')} sx={{ borderRadius: 2, borderColor: alpha('#10b981', 0.3), color: '#10b981', '&:hover': { borderColor: '#10b981', bgcolor: alpha('#10b981', 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('attendance', 'excel')} sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.excel')}
                 </Button>
               </Box>
@@ -1064,9 +1034,9 @@ interface TeacherPerformanceData {
                 <MotionCard 
                   variants={itemVariants as any} 
                   sx={{ 
-                    bgcolor: '#10b981', 
+                    bgcolor: C.neutral, 
                     color: 'white',
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     position: 'relative',
                     overflow: 'hidden',
                     '&::before': {
@@ -1089,7 +1059,7 @@ interface TeacherPerformanceData {
                     <Typography variant="h3" fontWeight={800}>{formatPercentage(attendanceData?.averageAttendance || 0)}</Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
                       <TrendingUp sx={{ fontSize: 16 }} />
-                      <Typography variant="caption" sx={{ opacity: 0.9 }}>+5% improvement</Typography>
+                      <Typography variant="caption" sx={{ opacity: 0.9 }}>{t('reports.improvement')}</Typography>
                     </Box>
                   </CardContent>
                 </MotionCard>
@@ -1099,33 +1069,27 @@ interface TeacherPerformanceData {
                   variants={itemVariants as any}
                   elevation={0}
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
                     transition: 'all 0.3s ease',
                     '&:hover': {
-                      boxShadow: `0 12px 40px ${alpha('#10b981', 0.15)}`,
-                      borderColor: alpha('#10b981', 0.3),
+                      boxShadow: `0 12px 40px ${alpha(C.neutral, 0.15)}`,
+                      borderColor: alpha(C.neutral, 0.3),
                     }
                   }}
                 >
                   <CardContent>
                     <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <CalendarMonth sx={{ color: '#10b981', fontSize: 20 }} />
+                      <CalendarMonth sx={{ color: C.neutral, fontSize: 20 }} />
                       {t('reports.attendanceTrend')}
                     </Typography>
                     <ResponsiveContainer width="100%" height={300}>
-                      <AreaChart data={attendanceChartData.length ? attendanceChartData : [
-                        { date: t('dashboard.jan'), present: 85, absent: 10, late: 5 },
-                        { date: t('dashboard.feb'), present: 88, absent: 8, late: 4 },
-                        { date: t('dashboard.mar'), present: 82, absent: 12, late: 6 },
-                        { date: t('dashboard.apr'), present: 90, absent: 6, late: 4 },
-                        { date: t('dashboard.may'), present: 87, absent: 8, late: 5 },
-                        { date: t('dashboard.jun'), present: 92, absent: 5, late: 3 },
-                      ]}>
+                      {attendanceChartData.length > 0 ? (
+                      <AreaChart data={attendanceChartData}>
                         <defs>
                           <linearGradient id="presentGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                            <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                            <stop offset="5%" stopColor={C.neutral} stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor={C.neutral} stopOpacity={0.1}/>
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.palette.divider} opacity={0.5} />
@@ -1133,10 +1097,15 @@ interface TeacherPerformanceData {
                         <YAxis axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} />
                         <Tooltip content={<CustomTooltip />} />
                         <Legend />
-                        <Area type="monotone" dataKey="present" name={t('reports.present')} stroke="#10b981" fill="url(#presentGradient)" stackId="1" />
-                        <Area type="monotone" dataKey="late" name={t('reports.late')} stroke="#f59e0b" fill="#f59e0b" stackId="2" />
-                        <Area type="monotone" dataKey="absent" name={t('reports.absent')} stroke="#ef4444" fill="#ef4444" stackId="3" />
+                        <Area type="monotone" dataKey="present" name={t('reports.present')} stroke={C.neutral} fill="url(#presentGradient)" stackId="1" />
+                        <Area type="monotone" dataKey="late" name={t('reports.late')} stroke={C.neutral} fill={C.neutral} stackId="2" />
+                        <Area type="monotone" dataKey="absent" name={t('reports.absent')} stroke={C.danger} fill={C.danger} stackId="3" />
                       </AreaChart>
+                      ) : (
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
+                          <Typography variant="body2" color="text.secondary">{t('reports.noData')}</Typography>
+                        </Box>
+                      )}
                     </ResponsiveContainer>
                   </CardContent>
                 </MotionCard>
@@ -1150,14 +1119,14 @@ interface TeacherPerformanceData {
           <motion.div variants={containerVariants} initial="hidden" animate="visible">
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
               <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <AttachMoney sx={{ color: '#f59e0b' }} />
+                <AttachMoney sx={{ color: C.neutral }} />
                 {t('reports.feeCollection')} {t('reports.overview')}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('fee-collection', 'pdf')} sx={{ borderRadius: 2, borderColor: alpha('#f59e0b', 0.3), color: '#f59e0b', '&:hover': { borderColor: '#f59e0b', bgcolor: alpha('#f59e0b', 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('fee-collection', 'pdf')} sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.pdf')}
                 </Button>
-                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('fee-collection', 'excel')} sx={{ borderRadius: 2, borderColor: alpha('#f59e0b', 0.3), color: '#f59e0b', '&:hover': { borderColor: '#f59e0b', bgcolor: alpha('#f59e0b', 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('fee-collection', 'excel')} sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.excel')}
                 </Button>
               </Box>
@@ -1167,9 +1136,9 @@ interface TeacherPerformanceData {
                 <MotionCard 
                   variants={itemVariants as any} 
                   sx={{ 
-                    bgcolor: '#667eea', 
+                    bgcolor: C.neutral, 
                     color: 'white',
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     position: 'relative',
                     overflow: 'hidden',
                     '&::before': {
@@ -1197,9 +1166,9 @@ interface TeacherPerformanceData {
                 <MotionCard 
                   variants={itemVariants as any} 
                   sx={{ 
-                    bgcolor: '#10b981', 
+                    bgcolor: C.neutral, 
                     color: 'white',
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     position: 'relative',
                     overflow: 'hidden',
                     '&::before': {
@@ -1227,9 +1196,9 @@ interface TeacherPerformanceData {
                 <MotionCard 
                   variants={itemVariants as any} 
                   sx={{ 
-                    bgcolor: '#f59e0b', 
+                    bgcolor: C.neutral, 
                     color: 'white',
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     position: 'relative',
                     overflow: 'hidden',
                     '&::before': {
@@ -1260,26 +1229,32 @@ interface TeacherPerformanceData {
                   variants={itemVariants as any}
                   elevation={0}
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
                     transition: 'all 0.3s ease',
                     '&:hover': {
-                      boxShadow: `0 12px 40px ${alpha('#10b981', 0.15)}`,
-                      borderColor: alpha('#10b981', 0.3),
+                      boxShadow: `0 12px 40px ${alpha(C.neutral, 0.15)}`,
+                      borderColor: alpha(C.neutral, 0.3),
                     }
                   }}
                 >
                   <CardContent>
                     <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <TrendingUp sx={{ color: '#10b981', fontSize: 20 }} />
+                      <TrendingUp sx={{ color: C.neutral, fontSize: 20 }} />
                       {t('reports.collectionRate')}
                     </Typography>
                     <ResponsiveContainer width="100%" height={300}>
-                      <RadialBarChart innerRadius="30%" outerRadius="100%" data={radialData} startAngle={90} endAngle={-270}>
-                        <RadialBar background dataKey="value" cornerRadius={10} label={{ position: 'insideStart', fill: '#fff', fontSize: 24, fontWeight: 'bold' }} />
-                        <Legend iconSize={8} layout="vertical" verticalAlign="middle" wrapperStyle={{ paddingTop: '20px' }} />
-                        <Tooltip content={<CustomTooltip />} />
-                      </RadialBarChart>
+                      {radialData.length > 0 ? (
+                        <RadialBarChart innerRadius="30%" outerRadius="100%" data={radialData} startAngle={90} endAngle={-270}>
+                          <RadialBar background dataKey="value" cornerRadius={10} label={{ position: 'insideStart', fill: '#fff', fontSize: 24, fontWeight: 'bold' }} />
+                          <Legend iconSize={8} layout="vertical" verticalAlign="middle" wrapperStyle={{ paddingTop: '20px' }} />
+                          <Tooltip content={<CustomTooltip />} />
+                        </RadialBarChart>
+                      ) : (
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
+                          <Typography variant="body2" color="text.secondary">{t('reports.noData')}</Typography>
+                        </Box>
+                      )}
                     </ResponsiveContainer>
                   </CardContent>
                 </MotionCard>
@@ -1291,37 +1266,36 @@ interface TeacherPerformanceData {
                   variants={itemVariants as any}
                   elevation={0}
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
                     transition: 'all 0.3s ease',
                     '&:hover': {
-                      boxShadow: `0 12px 40px ${alpha('#667eea', 0.15)}`,
-                      borderColor: alpha('#667eea', 0.3),
+                      boxShadow: `0 12px 40px ${alpha(C.neutral, 0.15)}`,
+                      borderColor: alpha(C.neutral, 0.3),
                     }
                   }}
                 >
                   <CardContent>
                     <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <AttachMoney sx={{ color: '#667eea', fontSize: 20 }} />
+                      <AttachMoney sx={{ color: C.neutral, fontSize: 20 }} />
                       {t('reports.feeCollectionTrend')}
                     </Typography>
                     <ResponsiveContainer width="100%" height={300}>
-                      <ComposedChart data={feeChartData.length ? feeChartData : [
-                        { date: t('dashboard.jan'), collected: 450 },
-                        { date: t('dashboard.feb'), collected: 480 },
-                        { date: t('dashboard.mar'), collected: 520 },
-                        { date: t('dashboard.apr'), collected: 550 },
-                        { date: t('dashboard.may'), collected: 580 },
-                        { date: t('dashboard.jun'), collected: 620 },
-                      ]}>
+                      {feeChartData.length > 0 ? (
+                      <ComposedChart data={feeChartData}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.palette.divider} opacity={0.5} />
                         <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} dy={10} />
                         <YAxis axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} />
                         <Tooltip content={<CustomTooltip />} />
                         <Legend />
-                        <Area type="monotone" dataKey="collected" name={t('reports.collected') + ' (K)'} fill="#667eea" stroke="#667eea" fillOpacity={0.3} />
-                        <Bar dataKey="collected" name={t('reports.amount')} barSize={20} fill="#10b981" radius={[4, 4, 0, 0]} />
+                        <Area type="monotone" dataKey="collected" name={t('reports.collected') + ' (K)'} fill={C.neutral} stroke={C.neutral} fillOpacity={0.3} />
+                        <Bar dataKey="collected" name={t('reports.amount')} barSize={20} fill={C.neutral} radius={[4, 4, 0, 0]} />
                       </ComposedChart>
+                      ) : (
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
+                          <Typography variant="body2" color="text.secondary">{t('reports.noData')}</Typography>
+                        </Box>
+                      )}
                     </ResponsiveContainer>
                   </CardContent>
                 </MotionCard>
@@ -1335,14 +1309,14 @@ interface TeacherPerformanceData {
           <motion.div variants={containerVariants} initial="hidden" animate="visible">
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
               <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Assessment sx={{ color: '#8b5cf6' }} />
+                <Assessment sx={{ color: C.neutral }} />
                 {t('reports.examination')} {t('reports.overview')}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('examination', 'pdf')} sx={{ borderRadius: 2, borderColor: alpha('#8b5cf6', 0.3), color: '#8b5cf6', '&:hover': { borderColor: '#8b5cf6', bgcolor: alpha('#8b5cf6', 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('examination', 'pdf')} sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.pdf')}
                 </Button>
-                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('examination', 'excel')} sx={{ borderRadius: 2, borderColor: alpha('#8b5cf6', 0.3), color: '#8b5cf6', '&:hover': { borderColor: '#8b5cf6', bgcolor: alpha('#8b5cf6', 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('examination', 'excel')} sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.excel')}
                 </Button>
               </Box>
@@ -1352,9 +1326,9 @@ interface TeacherPerformanceData {
                 <MotionCard 
                   variants={itemVariants as any} 
                   sx={{ 
-                    bgcolor: '#3b82f6', 
+                    bgcolor: C.neutral, 
                     color: 'white',
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     position: 'relative',
                     overflow: 'hidden',
                     '&::before': {
@@ -1382,9 +1356,9 @@ interface TeacherPerformanceData {
                 <MotionCard 
                   variants={itemVariants as any} 
                   sx={{ 
-                    bgcolor: '#8b5cf6', 
+                    bgcolor: C.neutral, 
                     color: 'white',
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     position: 'relative',
                     overflow: 'hidden',
                     '&::before': {
@@ -1412,9 +1386,9 @@ interface TeacherPerformanceData {
                 <MotionCard 
                   variants={itemVariants as any} 
                   sx={{ 
-                    bgcolor: '#10b981', 
+                    bgcolor: C.neutral, 
                     color: 'white',
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     position: 'relative',
                     overflow: 'hidden',
                     '&::before': {
@@ -1445,29 +1419,35 @@ interface TeacherPerformanceData {
                   variants={itemVariants as any}
                   elevation={0}
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
                     transition: 'all 0.3s ease',
                     '&:hover': {
-                      boxShadow: `0 12px 40px ${alpha('#8b5cf6', 0.15)}`,
-                      borderColor: alpha('#8b5cf6', 0.3),
+                      boxShadow: `0 12px 40px ${alpha(C.neutral, 0.15)}`,
+                      borderColor: alpha(C.neutral, 0.3),
                     }
                   }}
                 >
                   <CardContent>
                     <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Assessment sx={{ color: '#8b5cf6', fontSize: 20 }} />
+                      <Assessment sx={{ color: C.neutral, fontSize: 20 }} />
                       {t('reports.subjectPerformance')}
                     </Typography>
                     <ResponsiveContainer width="100%" height={300}>
-                      <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                        <PolarGrid />
-                        <PolarAngleAxis dataKey="subject" />
-                        <PolarRadiusAxis angle={30} domain={[0, 100]} />
-                        <Radar name={t('reports.marks')} dataKey="A" stroke="#667eea" fill="#667eea" fillOpacity={0.6} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Legend />
-                      </RadarChart>
+                      {radarData.length > 0 ? (
+                        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                          <PolarGrid />
+                          <PolarAngleAxis dataKey="subject" />
+                          <PolarRadiusAxis angle={30} domain={[0, 100]} />
+                          <Radar name={t('reports.marks')} dataKey="A" stroke={C.neutral} fill={C.neutral} fillOpacity={0.6} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Legend />
+                        </RadarChart>
+                      ) : (
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
+                          <Typography variant="body2" color="text.secondary">{t('reports.noData')}</Typography>
+                        </Box>
+                      )}
                     </ResponsiveContainer>
                   </CardContent>
                 </MotionCard>
@@ -1479,44 +1459,38 @@ interface TeacherPerformanceData {
                   variants={itemVariants as any}
                   elevation={0}
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
                     transition: 'all 0.3s ease',
                     '&:hover': {
-                      boxShadow: `0 12px 40px ${alpha('#10b981', 0.15)}`,
-                      borderColor: alpha('#10b981', 0.3),
+                      boxShadow: `0 12px 40px ${alpha(C.neutral, 0.15)}`,
+                      borderColor: alpha(C.neutral, 0.3),
                     }
                   }}
                 >
                   <CardContent>
                     <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <School sx={{ color: '#10b981', fontSize: 20 }} />
+                      <School sx={{ color: C.neutral, fontSize: 20 }} />
                       {t('dashboard.gradeDistribution')}
                     </Typography>
                     <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={gradeChartData.length ? gradeChartData : [
-                        { grade: 'A+', students: 25, fill: '#10b981' },
-                        { grade: 'A', students: 40, fill: '#10b981' },
-                        { grade: 'B+', students: 35, fill: '#10b981' },
-                        { grade: 'B', students: 30, fill: '#f59e0b' },
-                        { grade: 'C+', students: 20, fill: '#f59e0b' },
-                      ]}>
+                      {gradeChartData.length > 0 ? (
+                      <BarChart data={gradeChartData}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.palette.divider} opacity={0.5} />
                         <XAxis dataKey="grade" axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} dy={10} />
                         <YAxis axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} />
                         <Tooltip content={<CustomTooltip />} />
                         <Bar dataKey="students" name={t('reports.students')} radius={[4, 4, 0, 0]}>
-                          {gradeChartData.length ? gradeChartData.map((entry, index) => (
+                          {gradeChartData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.fill} />
-                          )) : [
-                            <Cell key="1" fill="#10b981" />,
-                            <Cell key="2" fill="#10b981" />,
-                            <Cell key="3" fill="#10b981" />,
-                            <Cell key="4" fill="#f59e0b" />,
-                            <Cell key="5" fill="#f59e0b" />,
-                          ]}
+                          ))}
                         </Bar>
                       </BarChart>
+                      ) : (
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
+                          <Typography variant="body2" color="text.secondary">{t('reports.noData')}</Typography>
+                        </Box>
+                      )}
                     </ResponsiveContainer>
                   </CardContent>
                 </MotionCard>
@@ -1530,14 +1504,14 @@ interface TeacherPerformanceData {
           <motion.div variants={containerVariants} initial="hidden" animate="visible">
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
               <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <LibraryBooks sx={{ color: '#06b6d4' }} />
+                <LibraryBooks sx={{ color: C.neutral }} />
                 {t('reports.library')} {t('reports.overview')}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('library', 'pdf')} sx={{ borderRadius: 2, borderColor: alpha('#06b6d4', 0.3), color: '#06b6d4', '&:hover': { borderColor: '#06b6d4', bgcolor: alpha('#06b6d4', 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('library', 'pdf')} sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.pdf')}
                 </Button>
-                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('library', 'excel')} sx={{ borderRadius: 2, borderColor: alpha('#06b6d4', 0.3), color: '#06b6d4', '&:hover': { borderColor: '#06b6d4', bgcolor: alpha('#06b6d4', 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('library', 'excel')} sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.excel')}
                 </Button>
               </Box>
@@ -1548,22 +1522,22 @@ interface TeacherPerformanceData {
                   variants={itemVariants as any}
                   elevation={0}
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
                     transition: 'all 0.3s ease',
                     '&:hover': {
                       transform: 'translateY(-4px)',
-                      boxShadow: `0 12px 40px ${alpha('#3b82f6', 0.15)}`,
-                      borderColor: alpha('#3b82f6', 0.3),
+                      boxShadow: `0 12px 40px ${alpha(C.neutral, 0.15)}`,
+                      borderColor: alpha(C.neutral, 0.3),
                     }
                   }}
                 >
                   <CardContent sx={{ textAlign: 'center' }}>
-                    <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha('#3b82f6', 0.1), display: 'inline-flex', mb: 2 }}>
-                      <LibraryBooks sx={{ fontSize: 28, color: '#3b82f6' }} />
+                    <Box sx={{ p: 1.5, borderRadius: R.lg, bgcolor: alpha(C.neutral, 0.1), display: 'inline-flex', mb: 2 }}>
+                      <LibraryBooks sx={{ fontSize: 28, color: C.neutral }} />
                     </Box>
                     <Typography variant="h6" color="text.secondary" fontWeight={500}>{t('reports.totalBooks')}</Typography>
-                    <Typography variant="h3" fontWeight={800} color="primary">{formatWithSeparators(libraryData?.totalBooks || 3456)}</Typography>
+                    <Typography variant="h3" fontWeight={800} color="primary">{formatWithSeparators(libraryData?.totalBooks || 0)}</Typography>
                   </CardContent>
                 </MotionCard>
               </Grid>
@@ -1572,22 +1546,22 @@ interface TeacherPerformanceData {
                   variants={itemVariants as any}
                   elevation={0}
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
                     transition: 'all 0.3s ease',
                     '&:hover': {
                       transform: 'translateY(-4px)',
-                      boxShadow: `0 12px 40px ${alpha('#06b6d4', 0.15)}`,
-                      borderColor: alpha('#06b6d4', 0.3),
+                      boxShadow: `0 12px 40px ${alpha(C.neutral, 0.15)}`,
+                      borderColor: alpha(C.neutral, 0.3),
                     }
                   }}
                 >
                   <CardContent sx={{ textAlign: 'center' }}>
-                    <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha('#06b6d4', 0.1), display: 'inline-flex', mb: 2 }}>
-                      <School sx={{ fontSize: 28, color: '#06b6d4' }} />
+                    <Box sx={{ p: 1.5, borderRadius: R.lg, bgcolor: alpha(C.neutral, 0.1), display: 'inline-flex', mb: 2 }}>
+                      <School sx={{ fontSize: 28, color: C.neutral }} />
                     </Box>
                     <Typography variant="h6" color="text.secondary" fontWeight={500}>{t('reports.booksIssued')}</Typography>
-                    <Typography variant="h3" fontWeight={800} color="info.main">{formatNumber(libraryData?.totalIssued || 495)}</Typography>
+                    <Typography variant="h3" fontWeight={800} color="info.main">{formatNumber(libraryData?.totalIssued || 0)}</Typography>
                   </CardContent>
                 </MotionCard>
               </Grid>
@@ -1596,22 +1570,22 @@ interface TeacherPerformanceData {
                   variants={itemVariants as any}
                   elevation={0}
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
                     transition: 'all 0.3s ease',
                     '&:hover': {
                       transform: 'translateY(-4px)',
-                      boxShadow: `0 12px 40px ${alpha('#10b981', 0.15)}`,
-                      borderColor: alpha('#10b981', 0.3),
+                      boxShadow: `0 12px 40px ${alpha(C.neutral, 0.15)}`,
+                      borderColor: alpha(C.neutral, 0.3),
                     }
                   }}
                 >
                   <CardContent sx={{ textAlign: 'center' }}>
-                    <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha('#10b981', 0.1), display: 'inline-flex', mb: 2 }}>
-                      <CheckCircle sx={{ fontSize: 28, color: '#10b981' }} />
+                    <Box sx={{ p: 1.5, borderRadius: R.lg, bgcolor: alpha(C.neutral, 0.1), display: 'inline-flex', mb: 2 }}>
+                      <CheckCircle sx={{ fontSize: 28, color: C.neutral }} />
                     </Box>
                     <Typography variant="h6" color="text.secondary" fontWeight={500}>{t('reports.returned')}</Typography>
-                    <Typography variant="h3" fontWeight={800} color="success.main">{formatNumber(libraryData?.totalReturned || 480)}</Typography>
+                    <Typography variant="h3" fontWeight={800} color="success.main">{formatNumber(libraryData?.totalReturned || 0)}</Typography>
                   </CardContent>
                 </MotionCard>
               </Grid>
@@ -1620,22 +1594,22 @@ interface TeacherPerformanceData {
                   variants={itemVariants as any}
                   elevation={0}
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
                     transition: 'all 0.3s ease',
                     '&:hover': {
                       transform: 'translateY(-4px)',
-                      boxShadow: `0 12px 40px ${alpha('#ef4444', 0.15)}`,
-                      borderColor: alpha('#ef4444', 0.3),
+                      boxShadow: `0 12px 40px ${alpha(C.danger, 0.15)}`,
+                      borderColor: alpha(C.danger, 0.3),
                     }
                   }}
                 >
                   <CardContent sx={{ textAlign: 'center' }}>
-                    <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha('#ef4444', 0.1), display: 'inline-flex', mb: 2 }}>
-                      <CalendarMonth sx={{ fontSize: 28, color: '#ef4444' }} />
+                    <Box sx={{ p: 1.5, borderRadius: R.lg, bgcolor: alpha(C.danger, 0.1), display: 'inline-flex', mb: 2 }}>
+                      <CalendarMonth sx={{ fontSize: 28, color: C.danger }} />
                     </Box>
                     <Typography variant="h6" color="text.secondary" fontWeight={500}>{t('reports.overdue')}</Typography>
-                    <Typography variant="h3" fontWeight={800} color="error.main">{formatNumber(libraryData?.overdueBooks || 15)}</Typography>
+                    <Typography variant="h3" fontWeight={800} color="error.main">{formatNumber(libraryData?.overdueBooks || 0)}</Typography>
                   </CardContent>
                 </MotionCard>
               </Grid>
@@ -1646,33 +1620,39 @@ interface TeacherPerformanceData {
                   variants={itemVariants as any}
                   elevation={0}
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
                     transition: 'all 0.3s ease',
                     '&:hover': {
-                      boxShadow: `0 12px 40px ${alpha('#667eea', 0.15)}`,
-                      borderColor: alpha('#667eea', 0.3),
+                      boxShadow: `0 12px 40px ${alpha(C.neutral, 0.15)}`,
+                      borderColor: alpha(C.neutral, 0.3),
                     }
                   }}
                 >
                   <CardContent>
                     <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <LibraryBooks sx={{ color: '#667eea', fontSize: 20 }} />
+                      <LibraryBooks sx={{ color: C.neutral, fontSize: 20 }} />
                       {t('reports.bookCategories')}
                     </Typography>
                     <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={libraryTreemapData}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.palette.divider} opacity={0.5} />
-                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} dy={10} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Legend />
-                        <Bar dataKey="size" name={t('reports.books')} radius={[8, 8, 0, 0]}>
-                          {libraryTreemapData.map((_entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Bar>
-                      </BarChart>
+                      {libraryTreemapData.length > 0 ? (
+                        <BarChart data={libraryTreemapData}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.palette.divider} opacity={0.5} />
+                          <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} dy={10} />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Legend />
+                          <Bar dataKey="size" name={t('reports.books')} radius={[8, 8, 0, 0]}>
+                            {libraryTreemapData.map((_entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      ) : (
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
+                          <Typography variant="body2" color="text.secondary">{t('reports.noData')}</Typography>
+                        </Box>
+                      )}
                     </ResponsiveContainer>
                   </CardContent>
                 </MotionCard>
@@ -1684,37 +1664,24 @@ interface TeacherPerformanceData {
                   variants={itemVariants as any}
                   elevation={0}
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
                     transition: 'all 0.3s ease',
                     '&:hover': {
-                      boxShadow: `0 12px 40px ${alpha('#10b981', 0.15)}`,
-                      borderColor: alpha('#10b981', 0.3),
+                      boxShadow: `0 12px 40px ${alpha(C.neutral, 0.15)}`,
+                      borderColor: alpha(C.neutral, 0.3),
                     }
                   }}
                 >
                   <CardContent>
                     <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <TrendingUp sx={{ color: '#10b981', fontSize: 20 }} />
+                      <TrendingUp sx={{ color: C.neutral, fontSize: 20 }} />
                       {t('reports.monthlyCirculation')}
                     </Typography>
                     <ResponsiveContainer width="100%" height={300}>
-                      <ComposedChart data={[
-                        { month: t('dashboard.jan'), issued: 120, returned: 115 },
-                        { month: t('dashboard.feb'), issued: 145, returned: 140 },
-                        { month: t('dashboard.mar'), issued: 132, returned: 128 },
-                        { month: t('dashboard.apr'), issued: 98, returned: 95 },
-                        { month: t('dashboard.may'), issued: 125, returned: 120 },
-                        { month: t('dashboard.jun'), issued: 110, returned: 108 },
-                      ]}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.palette.divider} opacity={0.5} />
-                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} dy={10} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Legend />
-                        <Area type="monotone" dataKey="issued" name={t('reports.issued')} fill="#3b82f6" stroke="#3b82f6" fillOpacity={0.3} />
-                        <Line type="monotone" dataKey="returned" name={t('reports.returned')} stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
-                      </ComposedChart>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
+                        <Typography variant="body2" color="text.secondary">{t('reports.noData')}</Typography>
+                      </Box>
                     </ResponsiveContainer>
                   </CardContent>
                 </MotionCard>
@@ -1728,14 +1695,14 @@ interface TeacherPerformanceData {
           <motion.div variants={containerVariants} initial="hidden" animate="visible">
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
               <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <SportsScore sx={{ color: '#ec4899' }} />
+                <SportsScore sx={{ color: C.danger }} />
                 {t('reports.ecaSports')} {t('reports.overview')}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('eca', 'pdf')} sx={{ borderRadius: 2, borderColor: alpha('#ec4899', 0.3), color: '#ec4899', '&:hover': { borderColor: '#ec4899', bgcolor: alpha('#ec4899', 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('eca', 'pdf')} sx={{ borderRadius: R.lg, borderColor: alpha(C.danger, 0.3), color: C.danger, '&:hover': { borderColor: C.danger, bgcolor: alpha(C.danger, 0.05) } }}>
                   {t('reports.pdf')}
                 </Button>
-                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('eca', 'excel')} sx={{ borderRadius: 2, borderColor: alpha('#ec4899', 0.3), color: '#ec4899', '&:hover': { borderColor: '#ec4899', bgcolor: alpha('#ec4899', 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('eca', 'excel')} sx={{ borderRadius: R.lg, borderColor: alpha(C.danger, 0.3), color: C.danger, '&:hover': { borderColor: C.danger, bgcolor: alpha(C.danger, 0.05) } }}>
                   {t('reports.excel')}
                 </Button>
               </Box>
@@ -1747,41 +1714,41 @@ interface TeacherPerformanceData {
                   variants={itemVariants as any}
                   elevation={0}
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
                     transition: 'all 0.3s ease',
                     '&:hover': {
-                      boxShadow: `0 12px 40px ${alpha('#667eea', 0.15)}`,
-                      borderColor: alpha('#667eea', 0.3),
+                      boxShadow: `0 12px 40px ${alpha(C.neutral, 0.15)}`,
+                      borderColor: alpha(C.neutral, 0.3),
                     }
                   }}
                 >
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                       <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <People sx={{ color: '#667eea', fontSize: 20 }} />
+                        <People sx={{ color: C.neutral, fontSize: 20 }} />
                         {t('reports.ecaSports')}
                       </Typography>
-                      <Chip label={`${formatNumber(ecaData?.totalActivities || 15)} ${t('reports.activities')}`} sx={{ bgcolor: alpha('#667eea', 0.1), color: '#667eea', fontWeight: 600 }} />
+                      <Chip label={`${formatNumber(ecaData?.totalActivities || 0)} ${t('reports.activities')}`} sx={{ bgcolor: alpha(C.neutral, 0.1), color: C.neutral, fontWeight: 600 }} />
                     </Box>
                     <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={ecaChartData.length ? ecaChartData : defaultEcaData} layout="vertical">
+                      {ecaChartData.length > 0 ? (
+                      <BarChart data={ecaChartData} layout="vertical">
                         <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={theme.palette.divider} opacity={0.5} />
                         <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} />
                         <YAxis dataKey="activity" type="category" width={60} axisLine={false} tickLine={false} tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} />
                         <Tooltip content={<CustomTooltip />} />
                         <Bar dataKey="participants" name={t('reports.participants')} radius={[0, 4, 4, 0]}>
-                          {ecaChartData.length ? ecaChartData.map((entry, index) => (
+                          {ecaChartData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.fill} />
-                          )) : [
-                            <Cell key="1" fill="#667eea" />,
-                            <Cell key="2" fill="#764ba2" />,
-                            <Cell key="3" fill="#f093fb" />,
-                            <Cell key="4" fill="#f5576c" />,
-                            <Cell key="5" fill="#10b981" />,
-                          ]}
+                          ))}
                         </Bar>
                       </BarChart>
+                      ) : (
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
+                          <Typography variant="body2" color="text.secondary">{t('reports.noData')}</Typography>
+                        </Box>
+                      )}
                     </ResponsiveContainer>
                   </CardContent>
                 </MotionCard>
@@ -1793,27 +1760,28 @@ interface TeacherPerformanceData {
                   variants={itemVariants as any}
                   elevation={0}
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
                     transition: 'all 0.3s ease',
                     '&:hover': {
-                      boxShadow: `0 12px 40px ${alpha('#f59e0b', 0.15)}`,
-                      borderColor: alpha('#f59e0b', 0.3),
+                      boxShadow: `0 12px 40px ${alpha(C.neutral, 0.15)}`,
+                      borderColor: alpha(C.neutral, 0.3),
                     }
                   }}
                 >
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                       <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <SportsScore sx={{ color: '#f59e0b', fontSize: 20 }} />
+                        <SportsScore sx={{ color: C.neutral, fontSize: 20 }} />
                         {t('reports.sports')}
                       </Typography>
-                      <Chip label={`${formatNumber(sportsData?.totalParticipants || 345)} ${t('reports.participants')}`} sx={{ bgcolor: alpha('#f59e0b', 0.1), color: '#f59e0b', fontWeight: 600 }} />
+                      <Chip label={`${formatNumber(sportsData?.totalParticipants || 0)} ${t('reports.participants')}`} sx={{ bgcolor: alpha(C.neutral, 0.1), color: C.neutral, fontWeight: 600 }} />
                     </Box>
                     <ResponsiveContainer width="100%" height={300}>
+                      {sportsChartData.length > 0 ? (
                       <PieChart>
                         <Pie
-                          data={sportsChartData.length ? sportsChartData : defaultSportsData}
+                          data={sportsChartData}
                           cx="50%"
                           cy="50%"
                           labelLine={false}
@@ -1823,19 +1791,18 @@ interface TeacherPerformanceData {
                           nameKey="sport"
                           label={({ sport, percent }) => `${sport} ${formatPercentage(Math.round(percent * 100))}`}
                         >
-                          {(sportsChartData.length ? sportsChartData : [
-                            { fill: '#667eea' },
-                            { fill: '#10b981' },
-                            { fill: '#f59e0b' },
-                            { fill: '#ef4444' },
-                            { fill: '#8b5cf6' },
-                          ]).map((_entry, index) => (
+                          {sportsChartData.map((_entry, index) => (
                             <Cell key={`cell-${index}`} fill={_entry.fill} />
                           ))}
                         </Pie>
                         <Tooltip content={<CustomTooltip />} />
                         <Legend />
                       </PieChart>
+                      ) : (
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
+                          <Typography variant="body2" color="text.secondary">{t('reports.noData')}</Typography>
+                        </Box>
+                      )}
                     </ResponsiveContainer>
                   </CardContent>
                 </MotionCard>
@@ -1847,9 +1814,9 @@ interface TeacherPerformanceData {
                   variants={itemVariants as any}
                   elevation={0}
                   sx={{
-                    borderRadius: 3,
+                    borderRadius: R.lg,
                     border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
-                    background: `linear-gradient(135deg, ${alpha('#667eea', 0.05)} 0%, ${alpha('#ec4899', 0.05)} 100%)`,
+                    background: `linear-gradient(135deg, ${alpha(C.neutral, 0.05)} 0%, ${alpha(C.danger, 0.05)} 100%)`,
                   }}
                 >
                   <CardContent>
@@ -1859,26 +1826,26 @@ interface TeacherPerformanceData {
                     </Typography>
                     <Grid container spacing={2}>
                       <Grid item xs={6} sm={3}>
-                        <Box sx={{ p: 2.5, bgcolor: alpha('#667eea', 0.1), borderRadius: 3, textAlign: 'center', transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-2px)', bgcolor: alpha('#667eea', 0.15) } }}>
-                          <Typography variant="h4" fontWeight={800} color="primary">{formatNumber(ecaData?.totalActivities || 15)}</Typography>
+                        <Box sx={{ p: 2.5, bgcolor: alpha(C.neutral, 0.1), borderRadius: R.lg, textAlign: 'center', transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-2px)', bgcolor: alpha(C.neutral, 0.15) } }}>
+                          <Typography variant="h4" fontWeight={800} color="primary">{formatNumber(ecaData?.totalActivities || 0)}</Typography>
                           <Typography variant="body2" color="text.secondary" fontWeight={500}>{t('reports.ecaActivities')}</Typography>
                         </Box>
                       </Grid>
                       <Grid item xs={6} sm={3}>
-                        <Box sx={{ p: 2.5, bgcolor: alpha('#10b981', 0.1), borderRadius: 3, textAlign: 'center', transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-2px)', bgcolor: alpha('#10b981', 0.15) } }}>
-                          <Typography variant="h4" fontWeight={800} color="success.main">{formatNumber(ecaData?.totalParticipants || 302)}</Typography>
+                        <Box sx={{ p: 2.5, bgcolor: alpha(C.neutral, 0.1), borderRadius: R.lg, textAlign: 'center', transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-2px)', bgcolor: alpha(C.neutral, 0.15) } }}>
+                          <Typography variant="h4" fontWeight={800} color="success.main">{formatNumber(ecaData?.totalParticipants || 0)}</Typography>
                           <Typography variant="body2" color="text.secondary" fontWeight={500}>{t('reports.ecaParticipants')}</Typography>
                         </Box>
                       </Grid>
                       <Grid item xs={6} sm={3}>
-                        <Box sx={{ p: 2.5, bgcolor: alpha('#f59e0b', 0.1), borderRadius: 3, textAlign: 'center', transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-2px)', bgcolor: alpha('#f59e0b', 0.15) } }}>
-                          <Typography variant="h4" fontWeight={800} color="warning.main">{formatNumber(sportsData?.totalSports || 8)}</Typography>
+                        <Box sx={{ p: 2.5, bgcolor: alpha(C.neutral, 0.1), borderRadius: R.lg, textAlign: 'center', transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-2px)', bgcolor: alpha(C.neutral, 0.15) } }}>
+                          <Typography variant="h4" fontWeight={800} color="warning.main">{formatNumber(sportsData?.totalSports || 0)}</Typography>
                           <Typography variant="body2" color="text.secondary" fontWeight={500}>{t('reports.sportsActivities')}</Typography>
                         </Box>
                       </Grid>
                       <Grid item xs={6} sm={3}>
-                        <Box sx={{ p: 2.5, bgcolor: alpha('#ec4899', 0.1), borderRadius: 3, textAlign: 'center', transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-2px)', bgcolor: alpha('#ec4899', 0.15) } }}>
-                          <Typography variant="h4" fontWeight={800} color="secondary.main">{formatNumber(sportsData?.totalParticipants || 345)}</Typography>
+                        <Box sx={{ p: 2.5, bgcolor: alpha(C.danger, 0.1), borderRadius: R.lg, textAlign: 'center', transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-2px)', bgcolor: alpha(C.danger, 0.15) } }}>
+                          <Typography variant="h4" fontWeight={800} color="secondary.main">{formatNumber(sportsData?.totalParticipants || 0)}</Typography>
                           <Typography variant="body2" color="text.secondary" fontWeight={500}>{t('reports.sportsParticipants')}</Typography>
                         </Box>
                       </Grid>
@@ -1895,23 +1862,23 @@ interface TeacherPerformanceData {
           <motion.div variants={containerVariants} initial="hidden" animate="visible">
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
               <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <School sx={{ color: '#8b5cf6' }} />
+                <School sx={{ color: C.neutral }} />
                 {t('reports.teacherPerformance') || 'Teacher performance'} {t('reports.overview')}
               </Typography>
               <TextField
                 size="small"
-                label="Teacher ID"
+                label={t('reports.teacherId')}
                 value={filters.teacherId}
                 onChange={(e) => handleFilterChange('teacherId', e.target.value)}
                 placeholder="1"
                 sx={{ width: 120 }}
               />
-              <Button variant="outlined" size="small" startIcon={<Refresh />} onClick={fetchAllData}>Refresh</Button>
+              <Button variant="outlined" size="small" startIcon={<Refresh />} onClick={fetchAllData}>{t('reports.refresh')}</Button>
             </Box>
             {teacherPerformanceData ? (
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6} lg={3}>
-                  <Card sx={{ borderRadius: 3, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
+                  <Card sx={{ borderRadius: R.lg, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
                     <CardContent sx={{ textAlign: 'center' }}>
                       <Typography variant="body2" color="text.secondary">{t('reports.teacher') || 'Teacher'}</Typography>
                       <Typography variant="h6" fontWeight={700}>{teacherPerformanceData.teacherName}</Typography>
@@ -1919,7 +1886,7 @@ interface TeacherPerformanceData {
                   </Card>
                 </Grid>
                 <Grid item xs={12} md={6} lg={3}>
-                  <Card sx={{ borderRadius: 3, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
+                  <Card sx={{ borderRadius: R.lg, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
                     <CardContent sx={{ textAlign: 'center' }}>
                       <Typography variant="body2" color="text.secondary">{t('reports.attendanceRate') || 'Attendance rate'}</Typography>
                       <Typography variant="h5" fontWeight={700} color="primary">{formatPercentage(teacherPerformanceData.attendanceRate ?? 0)}</Typography>
@@ -1927,7 +1894,7 @@ interface TeacherPerformanceData {
                   </Card>
                 </Grid>
                 <Grid item xs={12} md={6} lg={3}>
-                  <Card sx={{ borderRadius: 3, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
+                  <Card sx={{ borderRadius: R.lg, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
                     <CardContent sx={{ textAlign: 'center' }}>
                       <Typography variant="body2" color="text.secondary">{t('reports.classesAttended') || 'Classes attended'}</Typography>
                       <Typography variant="h5" fontWeight={700}>{teacherPerformanceData.classesAttended ?? 0} / {teacherPerformanceData.totalClasses ?? 0}</Typography>
@@ -1935,7 +1902,7 @@ interface TeacherPerformanceData {
                   </Card>
                 </Grid>
                 <Grid item xs={12} md={6} lg={3}>
-                  <Card sx={{ borderRadius: 3, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
+                  <Card sx={{ borderRadius: R.lg, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
                     <CardContent sx={{ textAlign: 'center' }}>
                       <Typography variant="body2" color="text.secondary">{t('reports.syllabusCompletion') || 'Syllabus completion'}</Typography>
                       <Typography variant="h5" fontWeight={700} color="success.main">{formatPercentage(teacherPerformanceData.syllabusCompletion ?? 0)}</Typography>
@@ -1965,5 +1932,67 @@ interface TeacherPerformanceData {
     </Container>
   );
 };
+
+// Print-specific styles
+const printStyles = `
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    
+    .print-container, .print-container * {
+      visibility: visible;
+    }
+    
+    .print-container {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+    }
+    
+    /* Hide navigation, filters, and action buttons when printing */
+    nav, header, .MuiAppBar-root, .MuiDrawer-root,
+    button, .MuiButton-root, .MuiIconButton-root,
+    .MuiBreadcrumbs-root, .MuiTabs-root {
+      display: none !important;
+    }
+    
+    /* Optimize chart sizes for print */
+    .recharts-wrapper {
+      width: 100% !important;
+      height: auto !important;
+    }
+    
+    /* Remove shadows and borders for cleaner print */
+    .MuiPaper-root {
+      box-shadow: none !important;
+      border: 1px solid #e0e0e0 !important;
+    }
+    
+    /* Ensure proper page breaks */
+    .MuiGrid-item {
+      page-break-inside: avoid;
+    }
+    
+    /* Adjust colors for print */
+    * {
+      color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  }
+`;
+
+// Inject print styles
+if (typeof document !== 'undefined') {
+  const styleElement = document.getElementById('print-styles');
+  if (!styleElement) {
+    const style = document.createElement('style');
+    style.id = 'print-styles';
+    style.textContent = printStyles;
+    document.head.appendChild(style);
+  }
+}
 
 export default ReportsAnalytics;

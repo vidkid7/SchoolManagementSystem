@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
   Typography,
@@ -22,7 +22,6 @@ import {
   Chip,
   Card,
   CardContent,
-  alpha,
   useTheme,
 } from '@mui/material';
 import {
@@ -35,6 +34,7 @@ import {
   Description as TemplateIcon,
 } from '@mui/icons-material';
 import { apiClient } from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { motion } from 'framer-motion';
 import { useNepaliNumbers } from '../../hooks/useNepaliNumbers';
 
@@ -51,8 +51,9 @@ interface ImportResult {
 
 export const BulkImport = () => {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   const { formatNumber } = useNepaliNumbers();
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -131,15 +132,8 @@ export const BulkImport = () => {
         transition={{ duration: 0.5 }}
         elevation={0}
         sx={{ 
+          ...S.PAGE_HEADER,
           mb: 3,
-          borderRadius: 4,
-          background: theme.palette.mode === 'dark' 
-            ? 'linear-gradient(135deg, rgba(28,28,30,0.4) 0%, rgba(28,28,30,0.6) 100%)' 
-            : 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.5) 100%)',
-          backdropFilter: 'blur(40px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-          border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.4)'}`,
-          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.04)',
           color: theme.palette.text.primary,
           position: 'relative',
           overflow: 'hidden',
@@ -168,8 +162,8 @@ export const BulkImport = () => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Box sx={{ 
                 p: 1.5, 
-                borderRadius: 2, 
-                bgcolor: 'rgba(255,255,255,0.2)',
+                borderRadius: R.lg, 
+                bgcolor: S.dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,122,255,0.08)',
                 backdropFilter: 'blur(10px)',
               }}>
                 <UploadIcon sx={{ fontSize: 32 }} />
@@ -190,13 +184,7 @@ export const BulkImport = () => {
               startIcon={<BackIcon />}
               onClick={() => navigate('/students')}
               sx={{ 
-                borderRadius: 2,
-                borderColor: 'rgba(255,255,255,0.3)',
-                color: 'white',
-                '&:hover': { 
-                  borderColor: 'rgba(255,255,255,0.5)', 
-                  bgcolor: 'rgba(255,255,255,0.1)' 
-                }
+                ...S.BTN_OUTLINE,
               }}
             >
               {t('bulkImport.backToList')}
@@ -212,20 +200,13 @@ export const BulkImport = () => {
         transition={{ duration: 0.4, delay: 0.1 }}
         elevation={0}
         sx={{ 
+          ...S.GLASS,
           mb: 3,
-          borderRadius: 4,
-          border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.4)'}`,
-          background: theme.palette.mode === 'dark' 
-            ? 'rgba(28,28,30,0.6)' 
-            : 'rgba(255,255,255,0.65)',
-          backdropFilter: 'blur(40px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.04)',
         }}
       >
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-            <TemplateIcon sx={{ color: theme.palette.primary.main }} />
+            <TemplateIcon sx={{ color: C.primary }} />
             <Typography variant="h6" fontWeight={700}>
               {t('bulkImport.instructions')}
             </Typography>
@@ -243,8 +224,8 @@ export const BulkImport = () => {
                   sx={{ 
                     minWidth: 28,
                     height: 28,
-                    bgcolor: alpha(theme.palette.primary.main, 0.1),
-                    color: theme.palette.primary.main,
+                    bgcolor: C.primaryBg,
+                    color: C.primary,
                     fontWeight: 700,
                   }} 
                 />
@@ -259,12 +240,7 @@ export const BulkImport = () => {
             startIcon={<DownloadIcon />}
             onClick={downloadTemplate}
             sx={{ 
-              borderRadius: 2,
-              borderColor: alpha(theme.palette.primary.main, 0.5),
-              '&:hover': { 
-                borderColor: theme.palette.primary.main,
-                bgcolor: alpha(theme.palette.primary.main, 0.05),
-              }
+              ...S.BTN_OUTLINE,
             }}
           >
             {t('bulkImport.downloadTemplate')}
@@ -279,27 +255,20 @@ export const BulkImport = () => {
         transition={{ duration: 0.4, delay: 0.2 }}
         elevation={0}
         sx={{ 
+          ...S.GLASS,
           mb: 3,
-          borderRadius: 4,
-          border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.4)'}`,
-          background: theme.palette.mode === 'dark' 
-            ? 'rgba(28,28,30,0.6)' 
-            : 'rgba(255,255,255,0.65)',
-          backdropFilter: 'blur(40px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.04)',
         }}
       >
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-            <FileIcon sx={{ color: theme.palette.primary.main }} />
+            <FileIcon sx={{ color: C.primary }} />
             <Typography variant="h6" fontWeight={700}>
               {t('bulkImport.uploadFile')}
             </Typography>
           </Box>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
+            <Alert severity="error" sx={{ mb: 2, borderRadius: R.lg }}>
               {error}
             </Alert>
           )}
@@ -310,9 +279,9 @@ export const BulkImport = () => {
             gap: 2, 
             mb: 2,
             p: 3,
-            borderRadius: 2,
-            border: `2px dashed ${alpha(theme.palette.primary.main, 0.3)}`,
-            bgcolor: alpha(theme.palette.primary.main, 0.02),
+            borderRadius: R.lg,
+            border: `2px dashed ${C.primaryBdr}`,
+            bgcolor: C.primaryBg,
           }}>
             <input
               accept=".xlsx,.xls"
@@ -326,14 +295,14 @@ export const BulkImport = () => {
                 variant="contained" 
                 component="span"
                 startIcon={<FileIcon />}
-                sx={{ borderRadius: 2 }}
+                sx={{ ...S.BTN_PRIMARY }}
               >
                 {t('bulkImport.chooseFile')}
               </Button>
             </label>
             {file && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, ml: 2 }}>
-                <FileIcon sx={{ color: theme.palette.primary.main }} />
+                <FileIcon sx={{ color: C.primary }} />
                 <Box>
                   <Typography variant="body2" fontWeight={600}>
                     {file.name}
@@ -352,12 +321,8 @@ export const BulkImport = () => {
             onClick={handleUpload}
             disabled={!file || uploading}
             sx={{ 
-              borderRadius: 2,
+              ...S.BTN_PRIMARY,
               px: 4,
-              boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
-              '&:hover': { 
-                boxShadow: '0 6px 20px rgba(0,0,0,0.2)',
-              }
             }}
           >
             {uploading ? t('bulkImport.uploading') : t('bulkImport.upload')}
@@ -365,7 +330,7 @@ export const BulkImport = () => {
 
           {uploading && (
             <Box sx={{ mt: 3 }}>
-              <LinearProgress sx={{ borderRadius: 1 }} />
+              <LinearProgress sx={{ borderRadius: R.sm }} />
               <Typography variant="caption" sx={{ mt: 1, display: 'block' }} color="text.secondary">
                 {t('bulkImport.processing')}
               </Typography>
@@ -382,14 +347,7 @@ export const BulkImport = () => {
           transition={{ duration: 0.4 }}
           elevation={0}
           sx={{ 
-            borderRadius: 4,
-            border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.4)'}`,
-            background: theme.palette.mode === 'dark' 
-              ? 'rgba(28,28,30,0.6)' 
-              : 'rgba(255,255,255,0.65)',
-            backdropFilter: 'blur(40px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.04)',
+            ...S.GLASS,
           }}
         >
           <CardContent>
@@ -433,34 +391,32 @@ export const BulkImport = () => {
                   {t('bulkImport.errors')}
                 </Typography>
                 <TableContainer sx={{ 
-                  borderRadius: 2, 
-                  border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
-                  bgcolor: alpha(theme.palette.error.main, 0.02),
+                  borderRadius: R.lg, 
+                  border: `1px solid ${C.dangerBdr}`,
+                  bgcolor: C.dangerBg,
                 }}>
                   <Table size="small">
                     <TableHead>
                       <TableRow sx={{ 
-                        bgcolor: alpha(theme.palette.error.main, 0.05),
+                        bgcolor: S.TH_BG,
                       }}>
-                        <TableCell sx={{ fontWeight: 700 }}>{t('bulkImport.row')}</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>{t('bulkImport.errorDetails')}</TableCell>
+                        <TableCell sx={{ ...S.TD, fontWeight: 700 }}>{t('bulkImport.row')}</TableCell>
+                        <TableCell sx={{ ...S.TD, fontWeight: 700 }}>{t('bulkImport.errorDetails')}</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {result.errors.map((err, index) => (
-                        <TableRow key={index} hover>
-                          <TableCell>
+                        <TableRow key={index} sx={{ ...S.TR_HOVER }}>
+                          <TableCell sx={{ ...S.TD }}>
                             <Chip 
                               label={formatNumber(err.row)} 
                               size="small" 
                               sx={{ 
-                                bgcolor: alpha(theme.palette.warning.main, 0.1),
-                                color: theme.palette.warning.main,
-                                fontWeight: 600,
+                                ...S.CHIP(C.warning),
                               }}
                             />
                           </TableCell>
-                          <TableCell>
+                          <TableCell sx={{ ...S.TD }}>
                             {err.errors.map((e, i) => (
                               <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5, mb: 0.5 }}>
                                 <ErrorIcon sx={{ fontSize: 16, color: 'error.main', mt: 0.25 }} />
@@ -482,7 +438,7 @@ export const BulkImport = () => {
               <Button
                 variant="contained"
                 onClick={() => navigate('/students')}
-                sx={{ mt: 3, borderRadius: 2 }}
+                sx={{ ...S.BTN_PRIMARY, mt: 3 }}
               >
                 {t('bulkImport.viewStudents')}
               </Button>

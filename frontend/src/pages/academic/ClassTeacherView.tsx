@@ -6,7 +6,8 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
   Paper,
@@ -33,6 +34,7 @@ import {
   Edit as EditIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { motion } from 'framer-motion';
 
 const MotionCard = motion.create(Card);
@@ -72,8 +74,9 @@ interface ClassRow {
 export const ClassTeacherView = () => {
   const { t, i18n } = useTranslation();
   const { classId } = useParams();
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   const isNepali = i18n.language === 'ne';
 
   const [teacher, setTeacher] = useState<ClassTeacher | null>(null);
@@ -166,7 +169,7 @@ export const ClassTeacherView = () => {
           {t('staff.form.classTeacher')} - {className}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          View class teacher information and contact details
+          {t('staff.classTeacherView.subtitle')}
         </Typography>
       </Box>
 
@@ -183,7 +186,7 @@ export const ClassTeacherView = () => {
             <MotionCard
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              sx={{ borderRadius: 2 }}
+              sx={{ ...S.GLASS }}
             >
               <CardContent sx={{ textAlign: 'center', py: 4 }}>
                 <Avatar
@@ -210,7 +213,7 @@ export const ClassTeacherView = () => {
                 </Typography>
                 
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {teacher.position || 'Teacher'}
+                  {teacher.position || t('staff.positions.teacher')}
                 </Typography>
 
                 <Chip 
@@ -226,9 +229,9 @@ export const ClassTeacherView = () => {
                   startIcon={<EditIcon />}
                   onClick={handleManageAssignments}
                   fullWidth
-                  sx={{ mb: 1 }}
+                  sx={{ ...S.BTN_PRIMARY, mb: 1 }}
                 >
-                  Manage Assignments
+                  {t('staff.manageAssignments')}
                 </Button>
 
                 <Button
@@ -236,8 +239,9 @@ export const ClassTeacherView = () => {
                   startIcon={<PersonIcon />}
                   onClick={() => navigate(`/staff/${teacher.staffId}`)}
                   fullWidth
+                  sx={{ ...S.BTN_OUTLINE }}
                 >
-                  View Full Profile
+                  {t('staff.viewFullProfile')}
                 </Button>
               </CardContent>
             </MotionCard>
@@ -252,12 +256,12 @@ export const ClassTeacherView = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
-                  sx={{ borderRadius: 2 }}
+                  sx={{ ...S.GLASS }}
                 >
                   <CardContent>
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Box sx={{ width: 4, height: 20, bgcolor: 'primary.main', borderRadius: 1 }} />
-                      Contact Information
+                      <Box sx={{ width: 4, height: 20, bgcolor: 'primary.main', borderRadius: R.sm }} />
+                      {t('staff.classTeacherView.contactInformation')}
                     </Typography>
 
                     <Grid container spacing={2}>
@@ -268,7 +272,7 @@ export const ClassTeacherView = () => {
                               sx={{
                                 width: 40,
                                 height: 40,
-                                borderRadius: 1.5,
+                                borderRadius: R.md,
                                 bgcolor: alpha(theme.palette.info.main, 0.1),
                                 display: 'flex',
                                 alignItems: 'center',
@@ -279,7 +283,7 @@ export const ClassTeacherView = () => {
                             </Box>
                             <Box>
                               <Typography variant="caption" color="text.secondary">
-                                Email
+                                {t('common.email')}
                               </Typography>
                               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                 {teacher.email}
@@ -296,7 +300,7 @@ export const ClassTeacherView = () => {
                               sx={{
                                 width: 40,
                                 height: 40,
-                                borderRadius: 1.5,
+                                borderRadius: R.md,
                                 bgcolor: alpha(theme.palette.success.main, 0.1),
                                 display: 'flex',
                                 alignItems: 'center',
@@ -307,7 +311,7 @@ export const ClassTeacherView = () => {
                             </Box>
                             <Box>
                               <Typography variant="caption" color="text.secondary">
-                                Phone
+                                {t('common.phone')}
                               </Typography>
                               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                 {teacher.phone}
@@ -327,12 +331,12 @@ export const ClassTeacherView = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  sx={{ borderRadius: 2 }}
+                  sx={{ ...S.GLASS }}
                 >
                   <CardContent>
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Box sx={{ width: 4, height: 20, bgcolor: 'primary.main', borderRadius: 1 }} />
-                      Qualifications
+                      <Box sx={{ width: 4, height: 20, bgcolor: 'primary.main', borderRadius: R.sm }} />
+                      {t('staff.classTeacherView.qualifications')}
                     </Typography>
 
                     <Grid container spacing={2}>
@@ -343,7 +347,7 @@ export const ClassTeacherView = () => {
                               sx={{
                                 width: 40,
                                 height: 40,
-                                borderRadius: 1.5,
+                                borderRadius: R.md,
                                 bgcolor: alpha(theme.palette.warning.main, 0.1),
                                 display: 'flex',
                                 alignItems: 'center',
@@ -354,7 +358,7 @@ export const ClassTeacherView = () => {
                             </Box>
                             <Box>
                               <Typography variant="caption" color="text.secondary">
-                                Highest Qualification
+                                {t('staff.classTeacherView.highestQualification')}
                               </Typography>
                               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                 {teacher.highestQualification}
@@ -371,7 +375,7 @@ export const ClassTeacherView = () => {
                               sx={{
                                 width: 40,
                                 height: 40,
-                                borderRadius: 1.5,
+                                borderRadius: R.md,
                                 bgcolor: alpha(theme.palette.secondary.main, 0.1),
                                 display: 'flex',
                                 alignItems: 'center',
@@ -382,7 +386,7 @@ export const ClassTeacherView = () => {
                             </Box>
                             <Box>
                               <Typography variant="caption" color="text.secondary">
-                                Specialization
+                                {t('staff.form.specialization')}
                               </Typography>
                               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                 {teacher.specialization}
@@ -399,7 +403,7 @@ export const ClassTeacherView = () => {
                               sx={{
                                 width: 40,
                                 height: 40,
-                                borderRadius: 1.5,
+                                borderRadius: R.md,
                                 bgcolor: alpha(theme.palette.primary.main, 0.1),
                                 display: 'flex',
                                 alignItems: 'center',
@@ -410,7 +414,7 @@ export const ClassTeacherView = () => {
                             </Box>
                             <Box>
                               <Typography variant="caption" color="text.secondary">
-                                Department
+                                {t('staff.department')}
                               </Typography>
                               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                 {teacher.department}
@@ -427,19 +431,20 @@ export const ClassTeacherView = () => {
           </Grid>
         </Grid>
       ) : (
-        <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}>
+        <Paper sx={{ ...S.GLASS, p: 4, textAlign: 'center' }}>
           <SchoolIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
           <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
-            No Class Teacher Assigned
+            {t('staff.classTeacherView.noClassTeacherAssigned')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            This class does not have a class teacher assigned yet.
+            {t('staff.classTeacherView.noClassTeacherDescription')}
           </Typography>
           <Button
             variant="contained"
             onClick={() => navigate('/staff')}
+            sx={{ ...S.BTN_PRIMARY }}
           >
-            Go to Staff Management
+            {t('staff.classTeacherView.goToStaffManagement')}
           </Button>
         </Paper>
       )}

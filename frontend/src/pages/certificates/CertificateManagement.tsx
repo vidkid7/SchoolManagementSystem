@@ -41,6 +41,7 @@ import {
   Autocomplete,
   Checkbox,
   Snackbar,
+  useTheme,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -56,6 +57,8 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useTranslation } from 'react-i18next';
 
 // Certificate types
 const CERTIFICATE_TYPES = [
@@ -106,6 +109,9 @@ const TabPanel = (props: TabPanelProps) => {
 };
 
 export const CertificateManagement = () => {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [tabValue, setTabValue] = useState(0);
   
@@ -357,7 +363,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
         </Box>
       </Box>
 
-      <Paper sx={{ mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, mb: 3 }}>
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
           <Tab label="Templates / टेम्पलेट" />
           <Tab label="Certificates / प्रमाणपत्र" />
@@ -367,7 +373,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
 
       {/* Templates Tab */}
       <TabPanel value={tabValue} index={0}>
-        <Paper sx={{ p: 2, mb: 3 }}>
+        <Paper sx={{ ...S.GLASS, p: 2, mb: 3 }}>
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             <TextField
               label="Search Templates / खोज्नुहोस्"
@@ -474,7 +480,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
 
       {/* Certificates Tab */}
       <TabPanel value={tabValue} index={1}>
-        <Paper sx={{ p: 2, mb: 3 }}>
+        <Paper sx={{ ...S.GLASS, p: 2, mb: 3 }}>
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             <TextField
               label="Search Certificates / खोज्नुहोस्"
@@ -625,7 +631,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
       <TabPanel value={tabValue} index={2}>
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
-            <Card>
+            <Card sx={{ ...S.GLASS }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   Generate Single Certificate
@@ -644,7 +650,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
             </Card>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Card>
+            <Card sx={{ ...S.GLASS }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   Bulk Generation

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import * as XLSX from 'xlsx';
 import StudentRepository from './student.repository';
 import studentIdService from './studentId.service';
 import promotionService from './promotion.service';
@@ -227,6 +228,139 @@ class StudentController {
     });
 
     sendSuccess(res, null, 'Student deleted successfully');
+  });
+
+  /**
+   * Parse Excel file and return preview data
+   * POST /api/v1/students/parse-excel
+   */
+  parseExcel = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    if (!req.file) {
+      throw new ValidationError('Excel file is required', [
+        { field: 'file', message: 'Please upload an Excel file (.xlsx or .xls)' }
+      ]);
+    }
+
+    try {
+      // Parse Excel file
+      const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: true });
+      
+      if (workbook.SheetNames.length === 0) {
+        throw new ValidationError('Excel file has no sheets', [
+          { field: 'file', message: 'Excel file must contain at least one sheet' }
+        ]);
+      }
+
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      
+      // Convert to JSON
+      const rawData = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet, {
+        defval: '',
+        raw: false
+      });
+
+      if (rawData.length === 0) {
+        throw new ValidationError('Excel file has no data', [
+          { field: 'file', message: 'Excel file must contain at least one data row' }
+        ]);
+      }
+
+      // Map the data to expected format
+      const students = rawData.map((row: any) => ({
+        firstNameEn: row['First Name (English)'] || row['First Name'] || '',
+        lastNameEn: row['Last Name (English)'] || row['Last Name'] || '',
+        dateOfBirth: row['Date of Birth (AD)'] || row['Date of Birth'] || '',
+        gender: (row['Gender'] || '').toLowerCase(),
+        classId: row['Current Class ID'] || row['Class'] || '',
+        section: row['Section'] || '',
+        rollNumber: row['Roll Number'] || '',
+        phone: row['Phone'] || '',
+        email: row['Email'] || '',
+        status: 'active'
+      }));
+
+      logger.info('Excel file parsed successfully', {
+        totalRows: students.length,
+        sheetName
+      });
+
+      sendSuccess(res, students, 'Excel file parsed successfully', HTTP_STATUS.OK);
+    } catch (error: any) {
+      logger.error('Failed to parse Excel file', { error: error.message });
+      throw new ValidationError('Failed to parse Excel file', [
+        { field: 'file', message: error.message || 'Invalid Excel file format' }
+      ]);
+    }
+  });
+
+  /**
+   * Create multiple students at once
+   * POST /api/v1/students/bulk-create
+   */
+  bulkCreate = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user?.userId;
+    const { students } = req.body;
+
+    if (!students || !Array.isArray(students) || students.length === 0) {
+      throw new ValidationError('Students array is required', [
+        { field: 'students', message: 'Please provide an array of students to create' }
+      ]);
+    }
+
+    const results = {
+      successCount: 0,
+      errorCount: 0,
+      errors: [] as any[],
+      createdStudents: [] as any[]
+    };
+
+    // Process each student
+    for (let i = 0; i < students.length; i++) {
+      try {
+        const studentData = students[i];
+        
+        // Generate student ID
+        const admissionDate = studentData.admissionDate 
+          ? new Date(studentData.admissionDate) 
+          : new Date();
+        const studentCode = await studentIdService.generateStudentId(admissionDate);
+
+        // Create student
+        const createdStudent = await StudentRepository.create({
+          ...studentData,
+          studentCode,
+          status: studentData.status || StudentStatus.ACTIVE,
+          createdBy: userId
+        });
+
+        results.successCount++;
+        results.createdStudents.push(createdStudent);
+      } catch (error: any) {
+        logger.error(`Failed to create student at index ${i}`, { error: error.message });
+        results.errorCount++;
+        results.errors.push({
+          index: i,
+          student: students[i],
+          error: error.message
+        });
+      }
+    }
+
+    logger.info('Bulk student creation completed', {
+      totalStudents: students.length,
+      successCount: results.successCount,
+      errorCount: results.errorCount,
+      createdBy: userId
+    });
+
+    const statusCode = results.errorCount > 0 && results.successCount > 0
+      ? HTTP_STATUS.OK // Partial success
+      : results.successCount > 0
+        ? HTTP_STATUS.CREATED
+        : HTTP_STATUS.BAD_REQUEST;
+
+    sendSuccess(res, results, 'Bulk student creation completed', statusCode);
   });
 
   /**

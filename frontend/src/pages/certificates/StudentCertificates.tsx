@@ -27,6 +27,7 @@ import {
   CircularProgress,
   Tabs,
   Tab,
+  useTheme,
 } from '@mui/material';
 import {
   Download as DownloadIcon,
@@ -34,6 +35,8 @@ import {
   Description as DescriptionIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useTranslation } from 'react-i18next';
 
 interface StudentCertificate {
   id: number;
@@ -47,6 +50,9 @@ interface StudentCertificate {
 }
 
 export const StudentCertificates = () => {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const [certificates, setCertificates] = useState<StudentCertificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState(0);
@@ -115,7 +121,7 @@ const fetchCertificates = async () => {
         </Typography>
       </Box>
 
-      <Paper sx={{ mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, mb: 3 }}>
         <Tabs value={selectedTab} onChange={(_, newValue) => setSelectedTab(newValue)}>
           <Tab label={`Available / उपलब्ध (${activeCertificates.length})`} />
           <Tab label={`Revoked / रद्द (${revokedCertificates.length})`} />
@@ -131,7 +137,7 @@ const fetchCertificates = async () => {
           {error}
         </Alert>
       ) : displayedCertificates.length === 0 ? (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
+        <Paper sx={{ ...S.GLASS, p: 4, textAlign: 'center' }}>
           <DescriptionIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h6" gutterBottom>
             No Certificates Available / कुनै प्रमाणपत्र उपलब्ध छैन
@@ -229,7 +235,7 @@ const fetchCertificates = async () => {
           }}
           onClick={() => setSelectedCertificate(null)}
         >
-          <Paper sx={{ maxWidth: 600, width: '90%', maxHeight: '90vh', overflow: 'auto', m: 2 }} onClick={(e) => e.stopPropagation()}>
+          <Paper sx={{ ...S.GLASS, maxWidth: 600, width: '90%', maxHeight: '90vh', overflow: 'auto', m: 2 }} onClick={(e) => e.stopPropagation()}>
             <Box sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h5">
@@ -318,7 +324,7 @@ const fetchCertificates = async () => {
       {/* Summary Cards */}
       <Grid container spacing={2} sx={{ mt: 3 }}>
         <Grid item xs={12} sm={4}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h3" color="primary">
                 {activeCertificates.length}
@@ -330,7 +336,7 @@ const fetchCertificates = async () => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h3" color="error.main">
                 {revokedCertificates.length}
@@ -342,7 +348,7 @@ const fetchCertificates = async () => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h3" color="text.primary">
                 {certificates.length}

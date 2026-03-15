@@ -100,7 +100,8 @@ router.get(
     UserRole.SCHOOL_ADMIN,
     UserRole.CLASS_TEACHER,
     UserRole.SUBJECT_TEACHER,
-    UserRole.DEPARTMENT_HEAD
+    UserRole.DEPARTMENT_HEAD,
+    UserRole.ACCOUNTANT
   ),
   validate(listStudentsQuerySchema, 'query'),
   studentController.getAll
@@ -129,6 +130,31 @@ router.post(
   authorize(UserRole.SCHOOL_ADMIN),
   validate(createStudentSchema, 'body'),
   studentController.create
+);
+
+/**
+ * @route   POST /api/v1/students/parse-excel
+ * @desc    Parse Excel file and return preview data
+ * @access  Private (School_Admin)
+ */
+router.post(
+  '/parse-excel',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN),
+  excelUpload.single('file'),
+  studentController.parseExcel
+);
+
+/**
+ * @route   POST /api/v1/students/bulk-create
+ * @desc    Create multiple students at once
+ * @access  Private (School_Admin)
+ */
+router.post(
+  '/bulk-create',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN),
+  studentController.bulkCreate
 );
 
 /**

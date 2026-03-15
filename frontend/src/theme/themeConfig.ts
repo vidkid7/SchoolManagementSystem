@@ -1,8 +1,8 @@
 /**
  * Theme Configuration
  * 
- * iOS-inspired Liquid Glass Design for the School Management System
- * Features: Glassmorphism, smooth animations, elegant blur effects
+ * Modern glassmorphic design with rectangular boxes + slight round corners.
+ * Features: Frosted glass surfaces, smooth animations, elegant blur effects.
  */
 
 import { createTheme, ThemeOptions, PaletteMode } from '@mui/material';
@@ -51,7 +51,7 @@ const getBaseTheme = (): ThemeOptions => ({
     body2: { letterSpacing: '0.01em', lineHeight: 1.5 },
   },
   shape: {
-    borderRadius: 16,
+    borderRadius: 12, // Rectangular with slight rounding (was 16)
   },
   components: {
     MuiCssBaseline: {
@@ -81,14 +81,14 @@ const getBaseTheme = (): ThemeOptions => ({
         root: {
           textTransform: 'none',
           fontWeight: 600,
-          borderRadius: 14,
+          borderRadius: 8,   // Rectangular + slight rounding (was 14)
           padding: '10px 24px',
           boxShadow: 'none',
           transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
           backdropFilter: 'blur(10px)',
           '&:hover': {
             boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-            transform: 'translateY(-2px)',
+            transform: 'translateY(-1px)',
           },
           '&:active': {
             transform: 'translateY(0)',
@@ -100,7 +100,7 @@ const getBaseTheme = (): ThemeOptions => ({
       styleOverrides: {
         root: {
           boxShadow: liquidGlassShadows.light.medium,
-          borderRadius: 24,
+          borderRadius: 12,   // Rectangular + slight rounding (was 24)
           backgroundImage: 'none',
           transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
         },
@@ -112,7 +112,7 @@ const getBaseTheme = (): ThemeOptions => ({
           backgroundImage: 'none',
         },
         rounded: {
-          borderRadius: 24,
+          borderRadius: 12,   // Rectangular + slight rounding (was 24)
         },
       },
     },
@@ -124,7 +124,7 @@ const getBaseTheme = (): ThemeOptions => ({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            borderRadius: 14,
+            borderRadius: 8,   // Rectangular + slight rounding (was 14)
             transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
           },
         },
@@ -134,7 +134,7 @@ const getBaseTheme = (): ThemeOptions => ({
       styleOverrides: {
         root: {
           fontWeight: 500,
-          borderRadius: 10,
+          borderRadius: 6,   // Slight rounding (was 10)
           backdropFilter: 'blur(8px)',
         },
       },
@@ -143,6 +143,28 @@ const getBaseTheme = (): ThemeOptions => ({
       styleOverrides: {
         root: {
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        },
+      },
+    },
+    MuiTableContainer: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+        },
+      },
+    },
+    MuiAlert: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+        },
+      },
+    },
+    MuiTooltip: {
+      styleOverrides: {
+        tooltip: {
+          borderRadius: 6,
+          backdropFilter: 'blur(12px)',
         },
       },
     },
@@ -303,7 +325,7 @@ export const createAppTheme = (
   const baseTheme = getBaseTheme();
   const shadows = mode === 'dark' ? liquidGlassShadows.dark : liquidGlassShadows.light;
 
-  // Enhanced glassmorphic styles - iOS Liquid Glass Design
+  // Enhanced glassmorphic styles with rectangular + slight round corners
   const glassmorphismComponents = {
     components: {
       ...baseTheme.components,
@@ -311,7 +333,7 @@ export const createAppTheme = (
         styleOverrides: {
           root: {
             boxShadow: shadows.medium,
-            borderRadius: 24,
+            borderRadius: 12,   // Rectangular + slight rounding
             backgroundImage: 'none',
             backdropFilter: 'blur(40px) saturate(180%)',
             WebkitBackdropFilter: 'blur(40px) saturate(180%)',
@@ -335,7 +357,7 @@ export const createAppTheme = (
             backgroundImage: 'none',
           },
           rounded: {
-            borderRadius: 24,
+            borderRadius: 12,  // Rectangular + slight rounding
           },
           elevation1: {
             boxShadow: shadows.medium,
@@ -356,9 +378,16 @@ export const createAppTheme = (
         },
       },
       MuiDialog: {
+        defaultProps: {
+          disableEnforceFocus: true,
+          disableAutoFocus: true,
+          disableRestoreFocus: true,
+          hideBackdrop: false,
+          disableScrollLock: true,
+        },
         styleOverrides: {
           paper: {
-            borderRadius: 28,
+            borderRadius: 16,  // Slightly more for dialogs (was 28)
             backdropFilter: 'blur(50px) saturate(200%)',
             WebkitBackdropFilter: 'blur(50px) saturate(200%)',
             backgroundColor: mode === 'dark' 
@@ -369,6 +398,28 @@ export const createAppTheme = (
               : '1px solid rgba(255, 255, 255, 0.6)',
             boxShadow: shadows.elevated,
           },
+        },
+      },
+      MuiModal: {
+        defaultProps: {
+          disableEnforceFocus: true,
+          disableAutoFocus: true,
+          disableRestoreFocus: true,
+          disableScrollLock: true,
+        },
+      },
+      MuiPopover: {
+        defaultProps: {
+          disableEnforceFocus: true,
+          disableAutoFocus: true,
+          disableRestoreFocus: true,
+        },
+      },
+      MuiMenu: {
+        defaultProps: {
+          disableEnforceFocus: true,
+          disableAutoFocus: true,
+          disableRestoreFocus: true,
         },
       },
       MuiDrawer: {

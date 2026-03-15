@@ -21,14 +21,16 @@ router.get('/dashboard', authorize(
 router.get('/enrollment', authorize(
   UserRole.SCHOOL_ADMIN,
   UserRole.CLASS_TEACHER,
-  UserRole.DEPARTMENT_HEAD
+  UserRole.DEPARTMENT_HEAD,
+  UserRole.ACCOUNTANT
 ), reportController.getEnrollmentReport);
 
 router.get('/attendance', authorize(
   UserRole.SCHOOL_ADMIN,
   UserRole.CLASS_TEACHER,
   UserRole.SUBJECT_TEACHER,
-  UserRole.DEPARTMENT_HEAD
+  UserRole.DEPARTMENT_HEAD,
+  UserRole.ACCOUNTANT
 ), reportController.getAttendanceReport);
 
 router.get('/fee-collection', authorize(
@@ -40,29 +42,34 @@ router.get('/examination', authorize(
   UserRole.SCHOOL_ADMIN,
   UserRole.CLASS_TEACHER,
   UserRole.SUBJECT_TEACHER,
-  UserRole.DEPARTMENT_HEAD
+  UserRole.DEPARTMENT_HEAD,
+  UserRole.ACCOUNTANT
 ), reportController.getExaminationReport);
 
 router.get('/teacher-performance', authorize(
   UserRole.SCHOOL_ADMIN,
-  UserRole.DEPARTMENT_HEAD
+  UserRole.DEPARTMENT_HEAD,
+  UserRole.ACCOUNTANT
 ), reportController.getTeacherPerformanceReport);
 
 router.get('/library', authorize(
   UserRole.SCHOOL_ADMIN,
-  UserRole.LIBRARIAN
+  UserRole.LIBRARIAN,
+  UserRole.ACCOUNTANT
 ), reportController.getLibraryReport);
 
 router.get('/eca', authorize(
   UserRole.SCHOOL_ADMIN,
   UserRole.ECA_COORDINATOR,
-  UserRole.DEPARTMENT_HEAD
+  UserRole.DEPARTMENT_HEAD,
+  UserRole.ACCOUNTANT
 ), reportController.getECAReport);
 
 router.get('/sports', authorize(
   UserRole.SCHOOL_ADMIN,
   UserRole.SPORTS_COORDINATOR,
-  UserRole.DEPARTMENT_HEAD
+  UserRole.DEPARTMENT_HEAD,
+  UserRole.ACCOUNTANT
 ), reportController.getSportsReport);
 
 router.get('/export/excel/:reportType', authorize(

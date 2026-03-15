@@ -3,15 +3,22 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Box, Paper, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip, Alert, Grid } from '@mui/material';
+import { Box, Paper, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip, Alert, Grid,
+  useTheme,
+} from '@mui/material';
 import { Add as AddIcon, EmojiEvents as TrophyIcon } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
 
+import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useTranslation } from 'react-i18next';
 function TabPanel({ children, value, index }: any) {
   return <div hidden={value !== index}>{value === index && <Box sx={{ pt: 3 }}>{children}</Box>}</div>;
 }
 
 export function ECAManagement() {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const [tabValue, setTabValue] = useState(0);
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -28,7 +35,7 @@ export function ECAManagement() {
     setLoading(true);
     try {
       const endpoints = ['/eca/enrollments', '/eca/attendance', '/eca/events', '/eca/achievements'];
-      const response = await api.get(endpoints[tabValue]);
+      const response = await apiClient.get(endpoints[tabValue]);
       setData(response.data?.data || []);
     } catch (err) {
       setData([]);
@@ -40,7 +47,7 @@ export function ECAManagement() {
   const handleSubmit = async () => {
     try {
       const endpoints = ['/eca/enrollments', '/eca/attendance', '/eca/events', '/eca/achievements'];
-      await api.post(endpoints[tabValue], formData);
+      await apiClient.post(endpoints[tabValue], formData);
       setSuccess('Operation successful');
       setOpenDialog(false);
       fetchData();
@@ -76,7 +83,7 @@ export function ECAManagement() {
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
-      <Paper>
+      <Paper sx={{ ...S.GLASS }}>
         <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)}>
           <Tab label="Enrollments" />
           <Tab label="Attendance" />

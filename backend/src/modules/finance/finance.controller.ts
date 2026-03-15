@@ -4,6 +4,7 @@ import { NotFoundError, ValidationError } from '@middleware/errorHandler';
 import { sendSuccess, calculatePagination } from '@utils/responseFormatter';
 import { HTTP_STATUS, PAGINATION } from '@config/constants';
 import { logger } from '@utils/logger';
+import { Op } from 'sequelize';
 
 // Services
 import feeStructureRepository from './feeStructure.repository';
@@ -16,8 +17,14 @@ import paymentGatewayRepository from '@modules/paymentGateway/paymentGateway.rep
 import feeReminderService from './feeReminder.service';
 import { Invoice, InvoiceStatus } from '@models/Invoice.model';
 import Payment, { PaymentStatus } from '@models/Payment.model';
+import Refund from '@models/Refund.model';
 import { ReminderType } from '@models/FeeReminder.model';
 import Student from '@models/Student.model';
+import Class from '@models/Class.model';
+
+type StudentLookupRecord = Student & {
+  class?: Pick<Class, 'gradeLevel' | 'section'>;
+};
 
 /**
  * Finance Controller
@@ -25,6 +32,49 @@ import Student from '@models/Student.model';
  * Requirements: 9.1-9.16
  */
 class FinanceController {
+  private async buildStudentLookup(studentIds: number[]): Promise<Map<number, StudentLookupRecord>> {
+    const uniqueStudentIds = [...new Set(studentIds.filter((studentId) => Number.isInteger(studentId)))];
+
+    if (uniqueStudentIds.length === 0) {
+      return new Map();
+    }
+
+    const students = await Student.findAll({
+      where: {
+        studentId: {
+          [Op.in]: uniqueStudentIds,
+        },
+      },
+      attributes: ['studentId', 'firstNameEn', 'lastNameEn'],
+      include: [
+        {
+          model: Class,
+          as: 'class',
+          attributes: ['gradeLevel', 'section'],
+          required: false,
+        },
+      ],
+    });
+
+    return new Map((students as StudentLookupRecord[]).map((student) => [student.studentId, student]));
+  }
+
+  private formatStudentName(student: StudentLookupRecord | undefined, studentId: number): string {
+    if (!student) {
+      return `Student #${studentId}`;
+    }
+
+    return `${student.firstNameEn} ${student.lastNameEn}`.trim();
+  }
+
+  private formatClassName(student: StudentLookupRecord | undefined): string {
+    if (!student?.class) {
+      return 'Unknown';
+    }
+
+    return `Grade ${student.class.gradeLevel}${student.class.section ? ` ${student.class.section}` : ''}`;
+  }
+
   // ==================== Fee Structures ====================
 
   /**
@@ -548,19 +598,19 @@ class FinanceController {
 
     // Get all invoices with student information
     const { invoices } = await invoiceRepository.findAll({}, { limit: 10000, offset: 0 });
+    const studentLookup = await this.buildStudentLookup(invoices.map((invoice) => invoice.studentId));
 
     // Group by student
     const studentMap = new Map<number, any>();
 
     for (const invoice of invoices) {
       const studentId = invoice.studentId;
+      const studentRecord = studentLookup.get(studentId);
       if (!studentMap.has(studentId)) {
         studentMap.set(studentId, {
           studentId,
-          studentName: invoice.student?.firstNameEn
-            ? `${invoice.student.firstNameEn} ${invoice.student.lastNameEn}`
-            : `Student #${studentId}`,
-          className: invoice.student?.class?.name || 'Unknown',
+          studentName: this.formatStudentName(studentRecord, studentId),
+          className: this.formatClassName(studentRecord),
           totalInvoiced: 0,
           totalPaid: 0,
           balance: 0,
@@ -625,6 +675,55 @@ class FinanceController {
   });
 
   /**
+   * Get financial summary for reports
+   * GET /api/v1/finance/summary
+   */
+  getSummary = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    try {
+      const [invoices, payments, refunds] = await Promise.all([
+        Invoice.findAll({
+          attributes: ['totalAmount', 'status']
+        }),
+        Payment.findAll({
+          where: { status: PaymentStatus.COMPLETED },
+          attributes: ['amount']
+        }),
+        Refund.findAll({
+          where: { status: 'approved' },
+          attributes: ['amount']
+        }).catch(() => []) // Handle case where refunds table doesn't exist
+      ]);
+
+      const totalRevenue = invoices.reduce((sum, inv) => sum + Number(inv.totalAmount || 0), 0);
+      const totalCollected = payments.reduce((sum, pay) => sum + Number(pay.amount || 0), 0);
+      const totalRefunds = (refunds as any[]).reduce((sum: number, ref: any) => sum + Number(ref.amount || 0), 0);
+      const totalOutstanding = totalRevenue - totalCollected;
+      const collectionRate = totalRevenue > 0 ? Number(((totalCollected / totalRevenue) * 100).toFixed(2)) : 0;
+      
+      const paidInvoices = invoices.filter(inv => inv.status === InvoiceStatus.PAID).length;
+      const pendingInvoices = invoices.filter(inv => 
+        inv.status === InvoiceStatus.PENDING || inv.status === InvoiceStatus.PARTIAL
+      ).length;
+
+      const summary = {
+        totalRevenue,
+        totalCollected,
+        totalOutstanding,
+        collectionRate,
+        totalRefunds,
+        totalInvoices: invoices.length,
+        paidInvoices,
+        pendingInvoices,
+      };
+
+      sendSuccess(res, summary, 'Financial summary retrieved successfully');
+    } catch (error) {
+      logger.error('Error fetching financial summary:', error);
+      throw error;
+    }
+  });
+
+  /**
    * Get finance dashboard statistics
    * GET /api/v1/finance/statistics
    */
@@ -684,24 +783,26 @@ class FinanceController {
 
     try {
       const { payments } = await paymentRepository.findAll({}, { limit, offset: 0 });
-      transactions = payments.map((p: any) => ({
-        id: p.paymentId,
+      const studentLookup = await this.buildStudentLookup(payments.map((payment) => payment.studentId));
+
+      transactions = payments.map((payment) => {
+        const studentRecord = studentLookup.get(payment.studentId);
+
+        return {
+        id: payment.paymentId,
         type: 'payment',
-        amount: p.amount,
-        studentName: p.student?.firstNameEn ? `${p.student.firstNameEn} ${p.student.lastNameEn}` : 'Unknown',
-        studentId: p.studentId,
-        receiptNumber: p.receiptNumber,
-        paymentMethod: p.paymentMethod,
-        date: p.paymentDate,
+        amount: payment.amount,
+        studentName: this.formatStudentName(studentRecord, payment.studentId),
+        studentId: payment.studentId,
+        receiptNumber: payment.receiptNumber,
+        paymentMethod: payment.paymentMethod,
+        date: payment.paymentDate,
         status: 'completed',
-      }));
+        };
+      });
     } catch (error) {
-      logger.warn('Could not fetch recent transactions, using defaults');
-      transactions = [
-        { id: 1, type: 'payment', amount: 15000, studentName: 'Ram Sharma', studentId: 101, receiptNumber: 'RCP001', paymentMethod: 'cash', date: new Date(), status: 'completed' },
-        { id: 2, type: 'payment', amount: 12000, studentName: 'Sita Gupta', studentId: 102, receiptNumber: 'RCP002', paymentMethod: 'bank', date: new Date(), status: 'completed' },
-        { id: 3, type: 'payment', amount: 18000, studentName: 'Hari Thapa', studentId: 103, receiptNumber: 'RCP003', paymentMethod: 'cash', date: new Date(), status: 'completed' },
-      ].slice(0, limit);
+      logger.warn('Could not fetch recent transactions from database');
+      transactions = [];
     }
 
     sendSuccess(res, transactions, 'Recent transactions retrieved successfully');

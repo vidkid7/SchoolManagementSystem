@@ -6,7 +6,8 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
   Typography,
@@ -41,6 +42,7 @@ import { apiClient } from '../../services/apiClient';
 import { BSDatePicker } from '../../components/BSDatePicker/BSDatePicker';
 import { motion } from 'framer-motion';
 import { useNepaliNumbers } from '../../hooks/useNepaliNumbers';
+import { C, useAdminStyles } from '../../theme/designTokens';
 import { DuplicateWarningDialog } from '../../components/students/DuplicateWarningDialog';
 import { ValidationWarnings } from '../../components/students/ValidationWarnings';
 import { SiblingsList } from '../../components/students/SiblingsList';
@@ -58,26 +60,66 @@ const formatDate = (date: Date | null): string => {
   return date.toISOString().split('T')[0];
 };
 
+const formatDateForInput = (value: string | undefined): string => {
+  if (!value) return '';
+  // If it's already in yyyy-MM-dd format, return as is
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  // If it's an ISO timestamp, extract the date part
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return '';
+  return date.toISOString().split('T')[0];
+};
+
 interface StudentFormData {
+  // English Names
   first_name: string;
   middle_name?: string;
   last_name: string;
+  // Nepali Names
+  first_name_np?: string;
+  middle_name_np?: string;
+  last_name_np?: string;
+  // Birth Dates
   date_of_birth_bs: string;
+  date_of_birth_ad: string;
+  // Personal Info
   gender: 'male' | 'female' | 'other';
   blood_group?: string;
-  current_class: number;
-  section: string;
-  roll_number?: number;
-  admission_date_bs: string;
-  contact_number?: string;
-  email?: string;
+  // Address
   address: string;
+  address_np?: string;
   city: string;
   district: string;
-  guardian_name: string;
-  guardian_relation: string;
-  guardian_contact: string;
-  guardian_email?: string;
+  // Contact
+  contact_number?: string;
+  email?: string;
+  emergency_contact: string;
+  // Academic
+  admission_date: string;
+  admission_class: number;
+  current_class?: number;
+  section: string;
+  roll_number?: number;
+  previous_school?: string;
+  symbol_number?: string;
+  neb_registration_number?: string;
+  // Father Info
+  father_name: string;
+  father_phone: string;
+  father_citizenship_no?: string;
+  // Mother Info
+  mother_name: string;
+  mother_phone: string;
+  mother_citizenship_no?: string;
+  // Local Guardian
+  local_guardian_name?: string;
+  local_guardian_phone?: string;
+  local_guardian_relation?: string;
+  // Medical
+  allergies?: string;
+  medical_conditions?: string;
+  // Other
+  photo_url?: string;
   status: 'active' | 'inactive';
 }
 
@@ -89,7 +131,7 @@ const GENDER_OPTIONS = [
 
 const BLOOD_GROUP_OPTIONS = ['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
-const SECTION_OPTIONS = ['A', 'B', 'C'];
+const SECTION_OPTIONS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 const RELATION_OPTIONS = [
   { value: 'father', labelKey: 'students.father' },
@@ -104,9 +146,10 @@ const STATUS_OPTIONS = [
 
 export const StudentForm = () => {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
-  const { id } = useParams();
+  const navigate = useSlugNavigate();
+  const { id, municipalitySlug } = useParams<{ id: string; municipalitySlug: string }>();
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   const { formatNumber } = useNepaliNumbers();
   const isEdit = Boolean(id);
   
@@ -128,22 +171,40 @@ export const StudentForm = () => {
       first_name: '',
       middle_name: '',
       last_name: '',
+      first_name_np: '',
+      middle_name_np: '',
+      last_name_np: '',
       date_of_birth_bs: '',
+      date_of_birth_ad: '',
       gender: 'male',
       blood_group: '',
+      address: '',
+      address_np: '',
+      city: '',
+      district: '',
+      contact_number: '',
+      email: '',
+      emergency_contact: '',
+      admission_date: '',
+      admission_class: 1,
       current_class: 1,
       section: 'A',
       roll_number: 0,
-      admission_date_bs: '',
-      contact_number: '',
-      email: '',
-      address: '',
-      city: '',
-      district: '',
-      guardian_name: '',
-      guardian_relation: 'father',
-      guardian_contact: '',
-      guardian_email: '',
+      previous_school: '',
+      symbol_number: '',
+      neb_registration_number: '',
+      father_name: '',
+      father_phone: '',
+      father_citizenship_no: '',
+      mother_name: '',
+      mother_phone: '',
+      mother_citizenship_no: '',
+      local_guardian_name: '',
+      local_guardian_phone: '',
+      local_guardian_relation: '',
+      allergies: '',
+      medical_conditions: '',
+      photo_url: '',
       status: 'active',
     },
   });
@@ -164,25 +225,69 @@ export const StudentForm = () => {
       
       // Map backend camelCase to form snake_case
       const formData = {
+        // English Names
         first_name: student.firstNameEn || '',
         middle_name: student.middleNameEn || '',
         last_name: student.lastNameEn || '',
-        date_of_birth_bs: student.dateOfBirthBS || '',
+        // Nepali Names
+        first_name_np: student.firstNameNp || '',
+        middle_name_np: student.middleNameNp || '',
+        last_name_np: student.lastNameNp || '',
+        // Birth Dates - format for date inputs
+        date_of_birth_bs: formatDateForInput(student.dateOfBirthBS),
+        date_of_birth_ad: formatDateForInput(student.dateOfBirthAD),
+        // Personal Info
         gender: student.gender || 'male',
         blood_group: student.bloodGroup || '',
-        current_class: student.class?.classLevel || 1,
-        section: student.class?.section || 'A',
-        roll_number: student.rollNumber || 0,
-        admission_date_bs: student.admissionDate || '',
-        contact_number: student.phone || '',
-        email: student.email || '',
+        // Address
         address: student.addressEn || '',
+        address_np: student.addressNp || '',
         city: student.city || '',
         district: student.district || '',
-        guardian_name: student.fatherName || '',
-        guardian_relation: 'father',
-        guardian_contact: student.fatherPhone || '',
-        guardian_email: '',
+        // Contact
+        contact_number: student.phone || '',
+        email: student.email || '',
+        emergency_contact: student.emergencyContact || '',
+        // Academic - format dates and validate class values
+        admission_date: formatDateForInput(student.admissionDate),
+        admission_class: (() => {
+          const admissionClass = student.admissionClass;
+          // Only set if it's a valid class (1-12), otherwise default to 1
+          if (admissionClass && admissionClass >= 1 && admissionClass <= 12) {
+            return admissionClass;
+          }
+          return 1;
+        })(),
+        current_class: (() => {
+          const classValue = student.class?.classLevel || student.currentClassId;
+          // Only set if it's a valid class (1-12), otherwise set to empty string
+          if (classValue && classValue >= 1 && classValue <= 12) {
+            return classValue;
+          }
+          return '';
+        })(),
+        section: student.class?.section || student.section || 'A',
+        roll_number: student.rollNumber || 0,
+        previous_school: student.previousSchool || '',
+        symbol_number: student.symbolNumber || '',
+        neb_registration_number: student.nebRegistrationNumber || '',
+        // Father Info
+        father_name: student.fatherName || '',
+        father_phone: student.fatherPhone || '',
+        father_citizenship_no: student.fatherCitizenshipNo || '',
+        // Mother Info
+        mother_name: student.motherName || '',
+        mother_phone: student.motherPhone || '',
+        mother_citizenship_no: student.motherCitizenshipNo || '',
+        // Local Guardian
+        local_guardian_name: student.localGuardianName || '',
+        local_guardian_phone: student.localGuardianPhone || '',
+        local_guardian_relation: student.localGuardianRelation || '',
+        // Medical
+        allergies: student.allergies || '',
+        medical_conditions: student.medicalConditions || '',
+        // Other
+        photo_url: student.photoUrl || '',
         status: student.status || 'active',
       };
       
@@ -231,25 +336,54 @@ export const StudentForm = () => {
 
       // Map form snake_case to backend camelCase
       const studentData = {
+        // English Names
         firstNameEn: data.first_name,
         middleNameEn: data.middle_name || null,
         lastNameEn: data.last_name,
+        // Nepali Names
+        firstNameNp: data.first_name_np || null,
+        middleNameNp: data.middle_name_np || null,
+        lastNameNp: data.last_name_np || null,
+        // Birth Dates
         dateOfBirthBS: data.date_of_birth_bs,
+        dateOfBirthAD: data.date_of_birth_ad,
+        // Personal Info
         gender: data.gender,
         bloodGroup: data.blood_group || null,
-        currentClassId: data.current_class,
-        rollNumber: data.roll_number || null,
-        admissionDate: data.admission_date_bs,
-        phone: data.contact_number || null,
-        email: data.email || null,
+        // Address
         addressEn: data.address,
+        addressNp: data.address_np || null,
         city: data.city,
         district: data.district,
-        fatherName: data.guardian_name,
-        fatherPhone: data.guardian_contact,
-        motherName: data.guardian_name,
-        motherPhone: data.guardian_contact,
-        emergencyContact: data.guardian_contact,
+        // Contact
+        phone: data.contact_number || null,
+        email: data.email || null,
+        emergencyContact: data.emergency_contact,
+        // Academic
+        admissionDate: data.admission_date,
+        admissionClass: data.admission_class,
+        currentClassId: data.current_class || data.admission_class,
+        rollNumber: data.roll_number || null,
+        previousSchool: data.previous_school || null,
+        symbolNumber: data.symbol_number || null,
+        nebRegistrationNumber: data.neb_registration_number || null,
+        // Father Info
+        fatherName: data.father_name,
+        fatherPhone: data.father_phone,
+        fatherCitizenshipNo: data.father_citizenship_no || null,
+        // Mother Info
+        motherName: data.mother_name,
+        motherPhone: data.mother_phone,
+        motherCitizenshipNo: data.mother_citizenship_no || null,
+        // Local Guardian
+        localGuardianName: data.local_guardian_name || null,
+        localGuardianPhone: data.local_guardian_phone || null,
+        localGuardianRelation: data.local_guardian_relation || null,
+        // Medical
+        allergies: data.allergies || null,
+        medicalConditions: data.medical_conditions || null,
+        // Other
+        photoUrl: data.photo_url || null,
         status: data.status,
       };
 
@@ -328,7 +462,7 @@ export const StudentForm = () => {
         });
       }
 
-      navigate('/students');
+      navigate(`/students`);
     } catch (error: any) {
       console.error('Failed to save student:', error);
       setError(error.response?.data?.message || t('messages.error'));
@@ -342,25 +476,54 @@ export const StudentForm = () => {
     // Get form data and proceed with save
     const formData = getValues();
     const studentData = {
+      // English Names
       firstNameEn: formData.first_name,
       middleNameEn: formData.middle_name || null,
       lastNameEn: formData.last_name,
+      // Nepali Names
+      firstNameNp: formData.first_name_np || null,
+      middleNameNp: formData.middle_name_np || null,
+      lastNameNp: formData.last_name_np || null,
+      // Birth Dates
       dateOfBirthBS: formData.date_of_birth_bs,
+      dateOfBirthAD: formData.date_of_birth_ad,
+      // Personal Info
       gender: formData.gender,
       bloodGroup: formData.blood_group || null,
-      currentClassId: formData.current_class,
-      rollNumber: formData.roll_number || null,
-      admissionDate: formData.admission_date_bs,
-      phone: formData.contact_number || null,
-      email: formData.email || null,
+      // Address
       addressEn: formData.address,
+      addressNp: formData.address_np || null,
       city: formData.city,
       district: formData.district,
-      fatherName: formData.guardian_name,
-      fatherPhone: formData.guardian_contact,
-      motherName: formData.guardian_name,
-      motherPhone: formData.guardian_contact,
-      emergencyContact: formData.guardian_contact,
+      // Contact
+      phone: formData.contact_number || null,
+      email: formData.email || null,
+      emergencyContact: formData.emergency_contact,
+      // Academic
+      admissionDate: formData.admission_date,
+      admissionClass: formData.admission_class,
+      currentClassId: formData.current_class || formData.admission_class,
+      rollNumber: formData.roll_number || null,
+      previousSchool: formData.previous_school || null,
+      symbolNumber: formData.symbol_number || null,
+      nebRegistrationNumber: formData.neb_registration_number || null,
+      // Father Info
+      fatherName: formData.father_name,
+      fatherPhone: formData.father_phone,
+      fatherCitizenshipNo: formData.father_citizenship_no || null,
+      // Mother Info
+      motherName: formData.mother_name,
+      motherPhone: formData.mother_phone,
+      motherCitizenshipNo: formData.mother_citizenship_no || null,
+      // Local Guardian
+      localGuardianName: formData.local_guardian_name || null,
+      localGuardianPhone: formData.local_guardian_phone || null,
+      localGuardianRelation: formData.local_guardian_relation || null,
+      // Medical
+      allergies: formData.allergies || null,
+      medicalConditions: formData.medical_conditions || null,
+      // Other
+      photoUrl: formData.photo_url || null,
       status: formData.status,
     };
 
@@ -377,7 +540,7 @@ export const StudentForm = () => {
         elevation={0}
         sx={{ 
           mb: 3,
-          borderRadius: 4,
+          borderRadius: 2,
           background: theme.palette.mode === 'dark' 
             ? 'linear-gradient(135deg, rgba(28,28,30,0.4) 0%, rgba(28,28,30,0.6) 100%)' 
             : 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.5) 100%)',
@@ -433,7 +596,7 @@ export const StudentForm = () => {
             <Button
               variant="outlined"
               startIcon={<BackIcon />}
-              onClick={() => navigate('/students')}
+              onClick={() => navigate(`/students`)}
               sx={{ 
                 borderRadius: 2,
                 borderColor: 'rgba(255,255,255,0.3)',
@@ -474,7 +637,7 @@ export const StudentForm = () => {
         elevation={0}
         sx={{ 
           mb: 3,
-          borderRadius: 4,
+          borderRadius: 2,
           border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.4)'}`,
           background: theme.palette.mode === 'dark' 
             ? 'rgba(28,28,30,0.6)' 
@@ -541,7 +704,7 @@ export const StudentForm = () => {
         transition={{ duration: 0.4, delay: 0.2 }}
         elevation={0}
         sx={{ 
-          borderRadius: 3,
+          borderRadius: 2,
           border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
           background: theme.palette.mode === 'dark'
             ? `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)} 0%, ${alpha(theme.palette.background.paper, 0.7)} 100%)`
@@ -617,6 +780,50 @@ export const StudentForm = () => {
                 />
               </Grid>
 
+              {/* Nepali Names */}
+              <Grid item xs={12} md={4}>
+                <Controller
+                  name="first_name_np"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label={`${t('students.firstName')} (Nepali)`}
+                      fullWidth
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Controller
+                  name="middle_name_np"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label={`${t('students.middleName')} (Nepali)`}
+                      fullWidth
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Controller
+                  name="last_name_np"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label={`${t('students.lastName')} (Nepali)`}
+                      fullWidth
+                    />
+                  )}
+                />
+              </Grid>
+
+              {/* Date of Birth */}
               <Grid item xs={12} md={4}>
                 <Controller
                   name="date_of_birth_bs"
@@ -624,11 +831,30 @@ export const StudentForm = () => {
                   rules={{ required: t('validation.required') }}
                   render={({ field }) => (
                     <BSDatePicker
-                      label={t('students.dateOfBirth')}
+                      label={`${t('students.dateOfBirth')} (BS) *`}
                       value={parseDate(field.value)}
                       onChange={(date) => field.onChange(formatDate(date))}
                       error={!!errors.date_of_birth_bs}
                       helperText={errors.date_of_birth_bs?.message}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Controller
+                  name="date_of_birth_ad"
+                  control={control}
+                  rules={{ required: t('validation.required') }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      type="date"
+                      label={`${t('students.dateOfBirth')} (AD) *`}
+                      fullWidth
+                      InputLabelProps={{ shrink: true }}
+                      error={!!errors.date_of_birth_ad}
+                      helperText={errors.date_of_birth_ad?.message}
                     />
                   )}
                 />
@@ -684,13 +910,52 @@ export const StudentForm = () => {
 
               <Grid item xs={12} md={3}>
                 <Controller
-                  name="current_class"
+                  name="admission_date"
                   control={control}
                   rules={{ required: t('validation.required') }}
                   render={({ field }) => (
+                    <TextField
+                      {...field}
+                      type="date"
+                      label={`${t('students.admissionDate')} *`}
+                      fullWidth
+                      InputLabelProps={{ shrink: true }}
+                      error={!!errors.admission_date}
+                      helperText={errors.admission_date?.message}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={3}>
+                <Controller
+                  name="admission_class"
+                  control={control}
+                  rules={{ required: t('validation.required') }}
+                  render={({ field }) => (
+                    <FormControl fullWidth error={!!errors.admission_class}>
+                      <InputLabel>{t('students.admissionClass')} *</InputLabel>
+                      <Select {...field} label={`${t('students.admissionClass')} *`}>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((cls) => (
+                          <MenuItem key={cls} value={cls}>
+                            Class {formatNumber(cls)}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={3}>
+                <Controller
+                  name="current_class"
+                  control={control}
+                  render={({ field }) => (
                     <FormControl fullWidth error={!!errors.current_class}>
-                      <InputLabel>{t('students.class')} *</InputLabel>
-                      <Select {...field} label={`${t('students.class')} *`}>
+                      <InputLabel>{t('students.currentClass')}</InputLabel>
+                      <Select {...field} label={t('students.currentClass')} value={field.value || ''}>
+                        <MenuItem value="">{t('students.sameAsAdmission')}</MenuItem>
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((cls) => (
                           <MenuItem key={cls} value={cls}>
                             {t('students.class')} {formatNumber(cls)}
@@ -708,16 +973,14 @@ export const StudentForm = () => {
                   control={control}
                   rules={{ required: t('validation.required') }}
                   render={({ field }) => (
-                    <FormControl fullWidth error={!!errors.section}>
-                      <InputLabel>{t('students.section')} *</InputLabel>
-                      <Select {...field} label={`${t('students.section')} *`}>
-                        {SECTION_OPTIONS.map((sec) => (
-                          <MenuItem key={sec} value={sec}>
-                            {t('students.section')} {sec}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                    <TextField
+                      {...field}
+                      label={`${t('students.section')} *`}
+                      fullWidth
+                      error={!!errors.section}
+                      helperText={errors.section?.message}
+                      placeholder="A, B, C, etc."
+                    />
                   )}
                 />
               </Grid>
@@ -739,18 +1002,43 @@ export const StudentForm = () => {
                 />
               </Grid>
 
-              <Grid item xs={12} md={3}>
+              <Grid item xs={12} md={4}>
                 <Controller
-                  name="admission_date_bs"
+                  name="previous_school"
                   control={control}
-                  rules={{ required: t('validation.required') }}
                   render={({ field }) => (
-                    <BSDatePicker
-                      label={t('students.admissionDate')}
-                      value={parseDate(field.value)}
-                      onChange={(date) => field.onChange(formatDate(date))}
-                      error={!!errors.admission_date_bs}
-                      helperText={errors.admission_date_bs?.message}
+                    <TextField
+                      {...field}
+                      label={t('students.previousSchool')}
+                      fullWidth
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Controller
+                  name="symbol_number"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label={t('students.symbolNumber')}
+                      fullWidth
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Controller
+                  name="neb_registration_number"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label={t('students.nebRegistrationNumber')}
+                      fullWidth
                     />
                   )}
                 />
@@ -795,7 +1083,7 @@ export const StudentForm = () => {
                 />
               </Grid>
 
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} md={6}>
                 <Controller
                   name="address"
                   control={control}
@@ -803,10 +1091,24 @@ export const StudentForm = () => {
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label={t('students.address')}
+                      label={`${t('students.address')} (English) *`}
                       fullWidth
                       error={!!errors.address}
                       helperText={errors.address?.message}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name="address_np"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label={`${t('students.address')} (Nepali)`}
+                      fullWidth
                     />
                   )}
                 />
@@ -846,6 +1148,23 @@ export const StudentForm = () => {
                 />
               </Grid>
 
+              <Grid item xs={12} md={4}>
+                <Controller
+                  name="emergency_contact"
+                  control={control}
+                  rules={{ required: t('validation.required') }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label={`${t('students.emergencyContact')} *`}
+                      fullWidth
+                      error={!!errors.emergency_contact}
+                      helperText={errors.emergency_contact?.message}
+                    />
+                  )}
+                />
+              </Grid>
+
               {/* Guardian Information */}
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2, mt: 2 }}>
@@ -856,18 +1175,187 @@ export const StudentForm = () => {
                 </Box>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              {/* Father Information */}
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                  {t('students.fatherInformation')}
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
                 <Controller
-                  name="guardian_name"
+                  name="father_name"
                   control={control}
                   rules={{ required: t('validation.required') }}
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label={t('students.guardianName')}
+                      label={`${t('students.fatherName')} *`}
                       fullWidth
-                      error={!!errors.guardian_name}
-                      helperText={errors.guardian_name?.message}
+                      error={!!errors.father_name}
+                      helperText={errors.father_name?.message}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Controller
+                  name="father_phone"
+                  control={control}
+                  rules={{ required: t('validation.required') }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label={`${t('students.fatherPhone')} *`}
+                      fullWidth
+                      error={!!errors.father_phone}
+                      helperText={errors.father_phone?.message}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Controller
+                  name="father_citizenship_no"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label={t('students.fatherCitizenshipNo')}
+                      fullWidth
+                    />
+                  )}
+                />
+              </Grid>
+
+              {/* Mother Information */}
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, mt: 2 }}>
+                  {t('students.motherInformation')}
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Controller
+                  name="mother_name"
+                  control={control}
+                  rules={{ required: t('validation.required') }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label={`${t('students.motherName')} *`}
+                      fullWidth
+                      error={!!errors.mother_name}
+                      helperText={errors.mother_name?.message}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Controller
+                  name="mother_phone"
+                  control={control}
+                  rules={{ required: t('validation.required') }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label={`${t('students.fatherPhone')} *`}
+                      fullWidth
+                      error={!!errors.mother_phone}
+                      helperText={errors.mother_phone?.message}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Controller
+                  name="mother_citizenship_no"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label={t('students.motherCitizenshipNo')}
+                      fullWidth
+                    />
+                  )}
+                />
+              </Grid>
+
+              {/* Local Guardian Information */}
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, mt: 2 }}>
+                  {t('students.localGuardianInformation')}
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Controller
+                  name="local_guardian_name"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label={t('students.localGuardianName')}
+                      fullWidth
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Controller
+                  name="local_guardian_phone"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label={t('students.localGuardianPhone')}
+                      fullWidth
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Controller
+                  name="local_guardian_relation"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label={t('students.localGuardianRelation')}
+                      fullWidth
+                      placeholder={t('students.guardianRelationPlaceholder')}
+                    />
+                  )}
+                />
+              </Grid>
+
+              {/* Medical Information */}
+              <Grid item xs={12}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2, mt: 2 }}>
+                  <Typography variant="h6" fontWeight={700}>
+                    {t('students.medicalInformation')}
+                  </Typography>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name="allergies"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label={t('students.allergies')}
+                      fullWidth
+                      multiline
+                      rows={2}
+                      placeholder={t('students.listAllergies')}
                     />
                   )}
                 />
@@ -875,51 +1363,16 @@ export const StudentForm = () => {
 
               <Grid item xs={12} md={6}>
                 <Controller
-                  name="guardian_relation"
-                  control={control}
-                  rules={{ required: t('validation.required') }}
-                  render={({ field }) => (
-                    <FormControl fullWidth error={!!errors.guardian_relation}>
-                      <InputLabel>{t('students.relation')} *</InputLabel>
-                      <Select {...field} label={`${t('students.relation')} *`}>
-                        {RELATION_OPTIONS.map((option) => (
-                          <MenuItem key={option.value} value={option.value}>
-                            {t(option.labelKey)}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="guardian_contact"
-                  control={control}
-                  rules={{ required: t('validation.required') }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label={t('students.guardianPhone')}
-                      fullWidth
-                      error={!!errors.guardian_contact}
-                      helperText={errors.guardian_contact?.message}
-                    />
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="guardian_email"
+                  name="medical_conditions"
                   control={control}
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label={t('students.guardianEmail')}
-                      type="email"
+                      label={t('students.medicalConditions')}
                       fullWidth
+                      multiline
+                      rows={2}
+                      placeholder={t('students.listMedicalConditions')}
                     />
                   )}
                 />
@@ -951,7 +1404,7 @@ export const StudentForm = () => {
                   <Button
                     variant="outlined"
                     startIcon={<BackIcon />}
-                    onClick={() => navigate('/students')}
+                    onClick={() => navigate(`/students`)}
                     disabled={loading || checkingDuplicates}
                     sx={{ borderRadius: 2 }}
                   >
@@ -959,17 +1412,9 @@ export const StudentForm = () => {
                   </Button>
                   <Button
                     type="submit"
-                    variant="contained"
                     startIcon={loading || checkingDuplicates ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
                     disabled={loading || checkingDuplicates}
-                    sx={{ 
-                      borderRadius: 2,
-                      px: 4,
-                      boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
-                      '&:hover': { 
-                        boxShadow: '0 6px 20px rgba(0,0,0,0.2)',
-                      }
-                    }}
+                    sx={S.BTN_PRIMARY}
                   >
                     {checkingDuplicates 
                       ? t('students.checkingDuplicates') || 'Checking...'

@@ -320,19 +320,19 @@ class ParentService {
   async getSchoolCalendar(): Promise<any[]> {
     const events = await Event.findAll({
       where: {
-        eventDate: {
+        startDate: {
           [Op.gte]: new Date(),
         },
       },
-      order: [['eventDate', 'ASC']],
+      order: [['startDate', 'ASC']],
       limit: 50,
     });
 
     return events.map((event: any) => ({
       id: event.eventId,
       title: event.title || event.eventName,
-      date: event.eventDate ? new Date(event.eventDate).toISOString().split('T')[0] : '',
-      type: event.eventType || 'general',
+      date: event.startDate ? new Date(event.startDate).toISOString().split('T')[0] : '',
+      type: event.category || event.eventType || 'general',
       description: event.description || '',
     }));
   }

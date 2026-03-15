@@ -5,8 +5,8 @@
  */
 
 import React, { Suspense } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Provider, useSelector } from 'react-redux';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
+import { Provider, useSelector, useDispatch } from 'react-redux';
 import { CssBaseline, CircularProgress, Box, Typography, Button } from '@mui/material';
 import { store } from './store';
 import './i18n/config';
@@ -23,7 +23,8 @@ import { ProtectedRoute } from './routes/ProtectedRoute';
 import MunicipalityRouteGuard from './components/MunicipalityRouteGuard';
 import { useNetworkMonitor } from './hooks/useNetworkMonitor';
 import { selectShouldDisableAnimations } from './store/slices/liteModeSlice';
-import type { RootState } from './store';
+import type { RootState, AppDispatch } from './store';
+import { logout } from './store/slices/authSlice';
 
 const Dashboard = React.lazy(() => import('./pages/dashboard/Dashboard'));
 
@@ -31,6 +32,7 @@ const StudentList = React.lazy(() => import('./pages/students/StudentList').then
 const StudentForm = React.lazy(() => import('./pages/students/StudentForm').then(m => ({ default: m.StudentForm })));
 const StudentDetail = React.lazy(() => import('./pages/students/StudentDetail').then(m => ({ default: m.StudentDetail })));
 const BulkImport = React.lazy(() => import('./pages/students/BulkImport').then(m => ({ default: m.BulkImport })));
+const BulkAdd = React.lazy(() => import('./pages/students/BulkAdd').then(m => ({ default: m.BulkAdd })));
 const StudentCV = React.lazy(() => import('./pages/students/StudentCV').then(m => ({ default: m.StudentCV })));
 
 const AttendanceMarking = React.lazy(() => import('./pages/attendance/AttendanceMarking').then(m => ({ default: m.AttendanceMarking })));
@@ -67,6 +69,7 @@ const SubjectTeachersView = React.lazy(() => import('./pages/academic/SubjectTea
 
 const ExaminationDashboard = React.lazy(() => import('./pages/examinations/ExaminationDashboard').then(m => ({ default: m.ExaminationDashboard })));
 const ExamList = React.lazy(() => import('./pages/examinations/ExamList').then(m => ({ default: m.ExamList })));
+const ExamDetails = React.lazy(() => import('./pages/examinations/ExamDetails').then(m => ({ default: m.ExamDetails })));
 const CreateExam = React.lazy(() => import('./pages/examinations/CreateExam').then(m => ({ default: m.CreateExam })));
 const GradeEntry = React.lazy(() => import('./pages/examinations/GradeEntry').then(m => ({ default: m.GradeEntry })));
 const GradingScheme = React.lazy(() => import('./pages/examinations/GradingScheme').then(m => ({ default: m.GradingScheme })));
@@ -115,6 +118,7 @@ const CalendarDashboard = React.lazy(() => import('./pages/calendar/CalendarDash
 const EventManagement = React.lazy(() => import('./pages/calendar/EventManagement').then(m => ({ default: m.EventManagement })));
 const AuditLogs = React.lazy(() => import('./pages/audit/AuditLogs'));
 const NotificationCenter = React.lazy(() => import('./pages/notifications/NotificationCenter').then(m => ({ default: m.NotificationCenter })));
+const UserNotifications = React.lazy(() => import('./pages/notifications/UserNotifications').then(m => ({ default: m.UserNotifications })));
 const UserManagement = React.lazy(() => import('./pages/users/UserManagement').then(m => ({ default: m.UserManagement })));
 
 const StudentPortal = React.lazy(() => import('./pages/portals/EnhancedStudentPortal'));
@@ -156,6 +160,8 @@ const NON_TEACHING = 'Non_Teaching_Staff';
 const ALL_ROLES = [MUNICIPALITY_ADMIN, ADMIN, CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD, ECA_COORD, SPORTS_COORD, STUDENT, PARENT, LIBRARIAN, ACCOUNTANT, TRANSPORT, HOSTEL, NON_TEACHING];
 const TEACHER_ROLES = [ADMIN, CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD];
 const STAFF_ROLES = [ADMIN, CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD, ECA_COORD, SPORTS_COORD, LIBRARIAN, ACCOUNTANT, TRANSPORT, HOSTEL, NON_TEACHING];
+// Roles that should have access to the main admin dashboard
+const DASHBOARD_ROLES = [ADMIN, CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD, ECA_COORD, SPORTS_COORD, LIBRARIAN];
 
 function PageLoader() {
   return (
@@ -166,11 +172,22 @@ function PageLoader() {
 }
 
 function UnauthorizedPage() {
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await dispatch(logout());
+    navigate('/login');
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 2 }}>
       <Typography variant="h4" color="error">Access Denied</Typography>
       <Typography variant="body1" color="text.secondary">You do not have permission to view this page.</Typography>
-      <Button variant="contained" onClick={() => window.history.back()}>Go Back</Button>
+      <Box sx={{ display: 'flex', gap: 2 }}>
+        <Button variant="outlined" onClick={() => window.history.back()}>Go Back</Button>
+        <Button variant="contained" color="error" onClick={handleLogout}>Logout</Button>
+      </Box>
     </Box>
   );
 }
@@ -219,8 +236,8 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
             {/* Municipality-scoped routes */}
             <Route path="/:municipalitySlug" element={<MunicipalityRouteGuard />}>
 
-            {/* Admin and Staff Dashboard */}
-            <Route element={<ProtectedRoute allowedRoles={STAFF_ROLES} />}>
+            {/* Admin and Staff Dashboard - Only for roles that need the main dashboard */}
+            <Route element={<ProtectedRoute allowedRoles={DASHBOARD_ROLES} />}>
               <Route element={<DashboardLayout />}>
                 <Route path="dashboard" element={<Dashboard />} />
               </Route>
@@ -258,6 +275,7 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
               <Route element={<DashboardLayout />}>
                 <Route path="students/create" element={<StudentForm />} />
                 <Route path="students/bulk-import" element={<BulkImport />} />
+                <Route path="students/bulk-add" element={<BulkAdd />} />
                 <Route path="students/:id/edit" element={<StudentForm />} />
               </Route>
             </Route>
@@ -419,6 +437,7 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
               <Route element={<DashboardLayout />}>
                 <Route path="examinations" element={<ExaminationDashboard />} />
                 <Route path="examinations/list" element={<ExamList />} />
+                <Route path="examinations/:examId" element={<ExamDetails />} />
                 <Route path="examinations/grading-scheme" element={<GradingScheme />} />
               </Route>
             </Route>
@@ -541,6 +560,7 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
               <Route element={<DashboardLayout />}>
                 <Route path="audit" element={<AuditLogs />} />
                 <Route path="notifications" element={<NotificationCenter />} />
+                <Route path="my-notifications" element={<UserNotifications />} />
                 <Route path="users" element={<UserManagement />} />
               </Route>
             </Route>
@@ -556,6 +576,9 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
                 <Route path="settings/archive" element={<ArchiveManagement />} />
               </Route>
             </Route>
+
+            {/* Catch-all inside municipality scope — prevents blank pages for unmatched paths */}
+            <Route path="*" element={<RoleBasedRedirect />} />
 
             </Route>{/* End municipality-scoped routes */}
 

@@ -34,7 +34,7 @@ export const SECURITY = {
 export const PAGINATION = {
   DEFAULT_PAGE: 1,
   DEFAULT_PAGE_SIZE: 20,
-  MAX_PAGE_SIZE: 100
+  MAX_PAGE_SIZE: 1000
 } as const;
 
 export const NEB_GRADING = {
@@ -158,11 +158,11 @@ export const FILE_UPLOAD = {
 export const RATE_LIMITS = {
   LOGIN: {
     WINDOW_MS: 15 * 60 * 1000, // 15 minutes
-    MAX_REQUESTS: 20 // Increased for development (change back to 5 for production)
+    MAX_REQUESTS: process.env.NODE_ENV === 'development' ? 200 : 5
   },
   API: {
     WINDOW_MS: 60 * 1000, // 1 minute
-    MAX_REQUESTS: 100
+    MAX_REQUESTS: process.env.NODE_ENV === 'development' ? 500 : 100
   },
   FILE_UPLOAD: {
     WINDOW_MS: 60 * 1000, // 1 minute

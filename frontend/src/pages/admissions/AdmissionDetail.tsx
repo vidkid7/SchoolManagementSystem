@@ -20,6 +20,7 @@ import {
   DialogActions,
   TextField,
   Divider,
+  useTheme,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
@@ -27,7 +28,9 @@ import {
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
 } from '@mui/icons-material';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import api from '../../config/api';
+import { useTranslation } from 'react-i18next';
 
 interface AdmissionDetail {
   admissionId: number;
@@ -77,6 +80,9 @@ const statusLabels: Record<string, string> = {
 };
 
 export function AdmissionDetail() {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -228,7 +234,7 @@ export function AdmissionDetail() {
 
   if (!admission) {
     return (
-      <Paper sx={{ p: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 3 }}>
         <Alert severity="error">Admission not found</Alert>
       </Paper>
     );
@@ -236,7 +242,7 @@ export function AdmissionDetail() {
 
   return (
     <Box>
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Button

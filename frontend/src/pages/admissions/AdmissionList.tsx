@@ -30,6 +30,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  useTheme,
 } from '@mui/material';
 import {
   MoreVert as MoreIcon,
@@ -38,8 +39,10 @@ import {
   PersonAdd as InquiryIcon,
   FilterList as FilterIcon,
 } from '@mui/icons-material';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../config/api';
+import { useTranslation } from 'react-i18next';
 
 interface Admission {
   admissionId: number;
@@ -81,6 +84,9 @@ const statusLabels: Record<string, string> = {
 };
 
 export function AdmissionList() {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -217,7 +223,7 @@ export function AdmissionList() {
 
   return (
     <Box>
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <InquiryIcon sx={{ fontSize: 32, color: 'primary.main' }} />

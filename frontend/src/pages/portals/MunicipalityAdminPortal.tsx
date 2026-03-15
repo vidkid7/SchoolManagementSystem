@@ -20,7 +20,9 @@ import {
   TableRow,
   TextField,
   Typography,
+  useTheme,
 } from '@mui/material';
+import { C, useAdminStyles } from '../../theme/designTokens';
 import {
   Add as AddIcon,
   Assessment as AssessmentIcon,
@@ -30,7 +32,9 @@ import {
   School as SchoolIcon,
   WarningAmber as WarningAmberIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
+import { useTranslation } from 'react-i18next';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 
 interface DashboardData {
   municipality: {
@@ -134,6 +138,10 @@ const initialSchoolAdminForm: SchoolAdminForm = {
 };
 
 export default function MunicipalityAdminPortal() {
+  const { t } = useTranslation();
+  const navigate = useSlugNavigate();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [reports, setReports] = useState<ReportsData | null>(null);
   const [incidents, setIncidents] = useState<IncidentsData | null>(null);
@@ -154,12 +162,12 @@ export default function MunicipalityAdminPortal() {
       setError('');
 
       const [dashboardResponse, schoolsResponse, reportsResponse, incidentsResponse] = await Promise.all([
-        api.get('/municipality-admin/dashboard'),
-        api.get('/municipality-admin/schools', {
+        apiClient.get('/municipality-admin/dashboard'),
+        apiClient.get('/municipality-admin/schools', {
           params: { includeInactive: true },
         }),
-        api.get('/municipality-admin/reports'),
-        api.get('/municipality-admin/incidents', {
+        apiClient.get('/municipality-admin/reports'),
+        apiClient.get('/municipality-admin/incidents', {
           params: { limit: 10 },
         }),
       ]);
@@ -194,7 +202,7 @@ export default function MunicipalityAdminPortal() {
         email: schoolForm.email || undefined,
       };
 
-      await api.post('/municipality-admin/schools', payload);
+      await apiClient.post('/municipality-admin/schools', payload);
       setSchoolForm(initialSchoolForm);
       setMessage('School created successfully');
       await loadData();
@@ -210,7 +218,7 @@ export default function MunicipalityAdminPortal() {
       setError('');
       setMessage('');
       const endpoint = school.isActive ? 'deactivate' : 'activate';
-      await api.post(`/municipality-admin/schools/${school.id}/${endpoint}`);
+      await apiClient.post(`/municipality-admin/schools/${school.id}/${endpoint}`);
       setMessage(
         school.isActive ? 'School deactivated successfully' : 'School activated successfully'
       );
@@ -235,7 +243,7 @@ export default function MunicipalityAdminPortal() {
       setSavingAdmin(true);
       setError('');
       setMessage('');
-      await api.post(`/municipality-admin/schools/${selectedSchool.id}/admins`, {
+      await apiClient.post(`/municipality-admin/schools/${selectedSchool.id}/admins`, {
         username: adminForm.username,
         email: adminForm.email,
         password: adminForm.password,
@@ -264,7 +272,7 @@ export default function MunicipalityAdminPortal() {
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
         <LocationCityIcon color="primary" />
         <Typography variant="h5" fontWeight={700}>
-          Municipality Admin
+          {t('portal.municipalityAdminPortal')}
         </Typography>
       </Stack>
 
@@ -490,7 +498,7 @@ export default function MunicipalityAdminPortal() {
                   />
                   <Button
                     type="submit"
-                    variant="contained"
+                    sx={S.BTN_PRIMARY}
                     startIcon={<AddIcon />}
                     disabled={savingSchool || !schoolForm.schoolNameEn.trim()}
                   >
@@ -631,7 +639,7 @@ export default function MunicipalityAdminPortal() {
         <DialogActions>
           <Button onClick={() => setAdminDialogOpen(false)}>Cancel</Button>
           <Button
-            variant="contained"
+            sx={S.BTN_PRIMARY}
             onClick={() => void handleCreateSchoolAdmin()}
             disabled={
               savingAdmin ||

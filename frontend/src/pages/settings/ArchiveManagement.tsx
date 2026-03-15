@@ -44,6 +44,7 @@ import {
   ListItem,
   ListItemText,
   TextField,
+  useTheme,
 } from '@mui/material';
 import {
   Archive as ArchiveIcon,
@@ -59,6 +60,8 @@ import {
   Undo as UndoIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useTranslation } from 'react-i18next';
 
 interface Archive {
   archiveId: number;
@@ -83,6 +86,9 @@ interface AcademicYear {
 }
 
 export const ArchiveManagement = () => {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const [archives, setArchives] = useState<Archive[]>([]);
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [loading, setLoading] = useState(true);
@@ -305,7 +311,7 @@ export const ArchiveManagement = () => {
       {/* Statistics */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} md={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h6" color="primary">
                 {archives.length}
@@ -317,7 +323,7 @@ export const ArchiveManagement = () => {
           </Card>
         </Grid>
         <Grid item xs={12} md={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h6" color="success.main">
                 {archives.filter(a => a.status === 'completed').length}
@@ -329,7 +335,7 @@ export const ArchiveManagement = () => {
           </Card>
         </Grid>
         <Grid item xs={12} md={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h6" color="warning.main">
                 {archives.filter(a => a.status === 'in_progress').length}
@@ -341,7 +347,7 @@ export const ArchiveManagement = () => {
           </Card>
         </Grid>
         <Grid item xs={12} md={3}>
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h6" color="error.main">
                 {archives.filter(a => a.status === 'failed').length}
@@ -355,7 +361,7 @@ export const ArchiveManagement = () => {
       </Grid>
 
       {/* Archives List */}
-      <Paper>
+      <Paper sx={{ ...S.GLASS }}>
         <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6">
             Archives / अभिलेखहरू
@@ -625,7 +631,7 @@ export const ArchiveManagement = () => {
               <Typography variant="body1" gutterBottom>
                 You are about to restore archive for:
               </Typography>
-              <Paper sx={{ p: 2, bgcolor: 'grey.100', mt: 1 }}>
+              <Paper sx={{ ...S.GLASS, p: 2, bgcolor: 'grey.100', mt: 1 }}>
                 <Typography variant="body2" fontWeight="bold">
                   {selectedArchive.academicYearName}
                 </Typography>

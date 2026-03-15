@@ -14,12 +14,18 @@ import {
   MenuItem,
   Alert,
   CircularProgress,
+  useTheme,
 } from '@mui/material';
 import { PersonAdd as InquiryIcon, Save as SaveIcon } from '@mui/icons-material';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { useNavigate } from 'react-router-dom';
 import api from '../../config/api';
+import { useTranslation } from 'react-i18next';
 
 export function NewInquiry() {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
@@ -82,7 +88,7 @@ export function NewInquiry() {
 
   return (
     <Box>
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
           <InquiryIcon sx={{ fontSize: 32, color: 'primary.main' }} />
           <Typography variant="h5" fontWeight={600}>

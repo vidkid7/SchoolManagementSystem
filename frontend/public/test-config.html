@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Config Test</title>
+</head>
+<body>
+    <h1>Configuration Test</h1>
+    <script src="/config.js"></script>
+    <script>
+        document.write('<h2>window.ENV:</h2>');
+        document.write('<pre>' + JSON.stringify(window.ENV, null, 2) + '</pre>');
+        
+        document.write('<h2>import.meta.env (from Vite):</h2>');
+        document.write('<p>This will only work in the main app, not in this static HTML</p>');
+    </script>
+    
+    <h2>Instructions:</h2>
+    <ol>
+        <li>Open browser DevTools (F12)</li>
+        <li>Go to Application tab → Clear Storage → Clear site data</li>
+        <li>Or go to Network tab → Disable cache checkbox</li>
+        <li>Hard refresh (Ctrl+Shift+R)</li>
+    </ol>
+    
+    <p><strong>Expected API_BASE_URL:</strong> /api/v1</p>
+    <p><strong>This will use Vite proxy to:</strong> http://localhost:3000/api/v1</p>
+</body>
+</html>

@@ -25,6 +25,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  useTheme,
 } from '@mui/material';
 import {
   QrCodeScanner as QrCodeIcon,
@@ -35,6 +36,9 @@ import {
   Close as CloseIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
+
+import { useTranslation } from 'react-i18next';
 
 interface CertificateVerificationResult {
   valid: boolean;
@@ -55,6 +59,9 @@ interface CertificateVerificationResult {
 }
 
 export const CertificateVerification = () => {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const [certificateNumber, setCertificateNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CertificateVerificationResult | null>(null);
@@ -246,7 +253,7 @@ export const CertificateVerification = () => {
 
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', py: 4 }}>
-      <Paper sx={{ p: 4 }}>
+      <Paper sx={{ ...S.GLASS, p: 4 }}>
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Typography variant="h4" gutterBottom>
             Certificate Verification / प्रमाणपत्र प्रमाणित गर्नुहोस्
@@ -260,7 +267,7 @@ export const CertificateVerification = () => {
         </Box>
 
         {/* Search Box */}
-        <Card sx={{ mb: 4 }}>
+        <Card sx={{ ...S.GLASS, mb: 4 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
               Enter Certificate Number / प्रमाणपत्र नम्बर प्रविष्ट गर्नुहोस्
@@ -333,7 +340,7 @@ export const CertificateVerification = () => {
 
         {/* Verification Result */}
         {result && (
-          <Card>
+          <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                 {result.valid ? (

@@ -1,10 +1,12 @@
 /**
  * Teacher Dashboard
  * 
- * Main dashboard for teachers with today's schedule, pending tasks, and class performance
+ * Main dashboard for teachers with today's schedule, pending tasks, and class performance.
+ * All data is fetched from /api/v1/teachers/dashboard — no hardcoded mock data.
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import apiClient from '../../services/apiClient';
 import {
   Box,
@@ -27,6 +29,8 @@ import {
   TableRow,
   Avatar,
   Divider,
+  CircularProgress,
+  useTheme,
 } from '@mui/material';
 import {
   Schedule as ScheduleIcon,
@@ -38,6 +42,7 @@ import {
   TrendingUp as TrendingUpIcon,
   Event as EventIcon,
   Notifications as NotificationsIcon,
+  Inbox as InboxIcon,
 } from '@mui/icons-material';
 import {
   LineChart,
@@ -48,62 +53,123 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { useNavigate } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
-const todayScheduleDefault = [
-  { period: 1, time: '08:00-08:45', subject: 'Mathematics', class: 'Class 10 A', room: 'Room 201', status: 'completed' },
-  { period: 2, time: '08:45-09:30', subject: 'Mathematics', class: 'Class 10 B', room: 'Room 201', status: 'completed' },
-  { period: 3, time: '09:30-10:15', subject: 'Physics', class: 'Class 11 Science', room: 'Lab 1', status: 'ongoing' },
-  { period: 4, time: '10:30-11:15', subject: 'Mathematics', class: 'Class 9 A', room: 'Room 201', status: 'upcoming' },
-  { period: 5, time: '11:15-12:00', subject: 'Physics', class: 'Class 12 Science', room: 'Lab 1', status: 'upcoming' },
-];
+interface ScheduleItem {
+  period: number;
+  time: string;
+  subject: string;
+  class: string;
+  room: string;
+  status: string;
+}
 
-const pendingTasksDefault = [
-  { type: 'attendance', title: 'Mark attendance for Class 10 A', priority: 'high', count: 1 },
-  { type: 'grading', title: 'Grade assignments for Class 11 Science', priority: 'medium', count: 25 },
-  { type: 'lesson', title: 'Prepare lesson plan for tomorrow', priority: 'medium', count: 3 },
-  { type: 'exam', title: 'Create exam questions for Terminal', priority: 'low', count: 1 },
-];
+interface TaskItem {
+  type: string;
+  title: string;
+  priority: string;
+  count: number;
+}
 
-const classPerformanceDataDefault = [
-  { class: 'Class 10 A', attendance: 92, avgGrade: 3.5, assignments: 85 },
-  { class: 'Class 10 B', attendance: 88, avgGrade: 3.2, assignments: 78 },
-  { class: 'Class 11 Sci', attendance: 85, avgGrade: 3.8, assignments: 90 },
-  { class: 'Class 12 Sci', attendance: 90, avgGrade: 3.6, assignments: 88 },
-];
+interface PerformanceItem {
+  class: string;
+  attendance: number;
+  avgGrade: number;
+  assignments: number;
+}
 
-const attendanceTrendDefault = [
-  { week: 'Week 1', rate: 88 },
-  { week: 'Week 2', rate: 90 },
-  { week: 'Week 3', rate: 87 },
-  { week: 'Week 4', rate: 92 },
-];
+interface TrendItem {
+  week: string;
+  rate: number;
+}
 
-// Default sample notifications (used when API returns empty)
-const defaultNotifications = [
-  { icon: <EventIcon color="primary" />, text: 'Parent-Teacher meeting scheduled for 2081-11-10', time: '2 hours ago' },
-  { icon: <WarningIcon color="warning" />, text: '3 students with low attendance in Class 10 A', time: '5 hours ago' },
-  { icon: <CheckCircleIcon color="success" />, text: 'Lesson plan approved by principal', time: '1 day ago' },
-];
+interface NotificationItem {
+  icon: React.ReactNode;
+  text: string;
+  time: string;
+}
+
+interface DashboardStats {
+  classesToday: number;
+  pendingTasksCount: number;
+  totalStudents: number;
+  avgAttendance: number;
+  currentPeriod: number;
+}
+
+const NOTIFICATION_ICONS: Record<string, React.ReactNode> = {
+  event: <EventIcon color="primary" />,
+  warning: <WarningIcon color="warning" />,
+  success: <CheckCircleIcon color="success" />,
+};
+
+/** Renders centered empty-state message */
+const EmptyState = ({ message }: { message: string }) => (
+  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4, color: 'text.secondary' }}>
+    <InboxIcon sx={{ fontSize: 40, mb: 1, opacity: 0.5 }} />
+    <Typography variant="body2">{message}</Typography>
+  </Box>
+);
 
 export const TeacherDashboard = () => {
-  const navigate = useNavigate();
-  const [currentPeriod] = useState(3);
-  const [todaySchedule, setTodaySchedule] = useState(todayScheduleDefault);
-  const [pendingTasks, setPendingTasks] = useState(pendingTasksDefault);
-  const [classPerformanceData, setClassPerformanceData] = useState(classPerformanceDataDefault);
-  const [attendanceTrend, setAttendanceTrend] = useState(attendanceTrendDefault);
-  const [notifications, setNotifications] = useState(defaultNotifications);
+  const navigate = useSlugNavigate();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
+
+  const [loading, setLoading] = useState(true);
+  const [todaySchedule, setTodaySchedule] = useState<ScheduleItem[]>([]);
+  const [pendingTasks, setPendingTasks] = useState<TaskItem[]>([]);
+  const [classPerformanceData, setClassPerformanceData] = useState<PerformanceItem[]>([]);
+  const [attendanceTrend, setAttendanceTrend] = useState<TrendItem[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [stats, setStats] = useState<DashboardStats>({
+    classesToday: 0,
+    pendingTasksCount: 0,
+    totalStudents: 0,
+    avgAttendance: 0,
+    currentPeriod: 0,
+  });
 
   useEffect(() => {
-    apiClient.get('/api/v1/teachers/dashboard').then((res) => {
-      const d = res.data?.data || {};
-      if (d.schedule?.length) setTodaySchedule(d.schedule);
-      if (d.tasks?.length) setPendingTasks(d.tasks);
-      if (d.performances?.length) setClassPerformanceData(d.performances);
-      if (d.trend?.length) setAttendanceTrend(d.trend);
-      if (d.notifications?.length) setNotifications(d.notifications.map((n: any) => ({ icon: <EventIcon color="primary" />, text: n.title || n.text, time: n.time || n.date || '' })));
-    }).catch(() => {});
+    let cancelled = false;
+    const fetchDashboard = async () => {
+      setLoading(true);
+      try {
+        const res = await apiClient.get('/api/v1/teachers/dashboard');
+        if (cancelled) return;
+        const d = res.data?.data || {};
+
+        if (d.schedule?.length) setTodaySchedule(d.schedule);
+        if (d.tasks?.length) setPendingTasks(d.tasks);
+        if (d.performances?.length) setClassPerformanceData(d.performances);
+        if (d.trend?.length) setAttendanceTrend(d.trend);
+        if (d.notifications?.length) {
+          setNotifications(
+            d.notifications.map((n: any) => ({
+              icon: NOTIFICATION_ICONS[n.type] ?? NOTIFICATION_ICONS.event,
+              text: n.title || n.text,
+              time: n.time || n.date || '',
+            })),
+          );
+        }
+
+        setStats({
+          classesToday: d.classesToday ?? d.schedule?.length ?? 0,
+          pendingTasksCount: d.pendingTasksCount ?? d.tasks?.length ?? 0,
+          totalStudents: d.totalStudents ?? 0,
+          avgAttendance: d.avgAttendance ?? 0,
+          currentPeriod: d.currentPeriod ?? 0,
+        });
+      } catch {
+        // Data stays empty — empty states will be shown
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchDashboard();
+    return () => { cancelled = true; };
   }, []);
 
   const getStatusColor = (status: string) => {
@@ -132,35 +198,47 @@ export const TeacherDashboard = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ ...S.PAGE_HEADER, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
           <Typography variant="h4" gutterBottom>
-            Teacher Dashboard / शिक्षक ड्यासबोर्ड
+            {t('portal.dashboard')}
           </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Today: 2081-10-25 BS (2026-02-11 AD) | Current Period: {currentPeriod}
-          </Typography>
+          {stats.currentPeriod > 0 && (
+            <Typography variant="body1" color="text.secondary">
+              {t('attendance.period')}: {stats.currentPeriod}
+            </Typography>
+          )}
         </Box>
-        <Button variant="contained" startIcon={<ScheduleIcon />}>
-          View Full Schedule
+        <Button sx={{ ...S.BTN_PRIMARY, borderRadius: R.sm }} startIcon={<ScheduleIcon />}>
+          {t('portal.todaysSchedule')}
         </Button>
       </Box>
 
       {/* Quick Stats */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={S.STAT_CARD(C.primary)}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Avatar sx={{ bgcolor: '#1976d2', mr: 2 }}>
+                <Box sx={S.ICON_BOX(C.primary, 44)}>
                   <SchoolIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="h4">5</Typography>
-                  <Typography variant="caption">Classes Today / आजका कक्षा</Typography>
+                </Box>
+                <Box sx={{ ml: 2 }}>
+                  <Typography variant="h4">{stats.classesToday}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {t('portal.todaysClasses')}
+                  </Typography>
                 </Box>
               </Box>
             </CardContent>
@@ -168,15 +246,17 @@ export const TeacherDashboard = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={S.STAT_CARD(C.warning)}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Avatar sx={{ bgcolor: '#ed6c02', mr: 2 }}>
+                <Box sx={S.ICON_BOX(C.warning, 44)}>
                   <AssignmentIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="h4">4</Typography>
-                  <Typography variant="caption">Pending Tasks / बाँकी कार्य</Typography>
+                </Box>
+                <Box sx={{ ml: 2 }}>
+                  <Typography variant="h4">{stats.pendingTasksCount}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {t('portal.pendingTasks')}
+                  </Typography>
                 </Box>
               </Box>
             </CardContent>
@@ -184,15 +264,17 @@ export const TeacherDashboard = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={S.STAT_CARD(C.success)}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Avatar sx={{ bgcolor: '#2e7d32', mr: 2 }}>
+                <Box sx={S.ICON_BOX(C.success, 44)}>
                   <PeopleIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="h4">156</Typography>
-                  <Typography variant="caption">Total Students / कुल विद्यार्थी</Typography>
+                </Box>
+                <Box sx={{ ml: 2 }}>
+                  <Typography variant="h4">{stats.totalStudents}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {t('portal.totalStudentsCount')}
+                  </Typography>
                 </Box>
               </Box>
             </CardContent>
@@ -200,15 +282,19 @@ export const TeacherDashboard = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card sx={S.STAT_CARD(C.info)}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Avatar sx={{ bgcolor: '#9c27b0', mr: 2 }}>
+                <Box sx={S.ICON_BOX(C.info, 44)}>
                   <TrendingUpIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="h4">89%</Typography>
-                  <Typography variant="caption">Avg Attendance / औसत उपस्थिति</Typography>
+                </Box>
+                <Box sx={{ ml: 2 }}>
+                  <Typography variant="h4">
+                    {stats.avgAttendance > 0 ? `${stats.avgAttendance}%` : '—'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {t('dashboard.attendanceRate')}
+                  </Typography>
                 </Box>
               </Box>
             </CardContent>
@@ -219,179 +305,209 @@ export const TeacherDashboard = () => {
       <Grid container spacing={3}>
         {/* Today's Schedule */}
         <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3, mb: 3 }}>
+          <Paper sx={{ ...S.GLASS, borderRadius: R.md, p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Today's Schedule / आजको तालिका
+              {t('portal.todaysSchedule')}
             </Typography>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Period / अवधि</TableCell>
-                    <TableCell>Time / समय</TableCell>
-                    <TableCell>Subject / विषय</TableCell>
-                    <TableCell>Class / कक्षा</TableCell>
-                    <TableCell>Room / कोठा</TableCell>
-                    <TableCell>Status / स्थिति</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {todaySchedule.map((period) => (
-                    <TableRow
-                      key={period.period}
-                      sx={{
-                        bgcolor: period.status === 'ongoing' ? 'action.selected' : 'inherit',
-                      }}
-                    >
-                      <TableCell>{period.period}</TableCell>
-                      <TableCell>{period.time}</TableCell>
-                      <TableCell>{period.subject}</TableCell>
-                      <TableCell>{period.class}</TableCell>
-                      <TableCell>{period.room}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={period.status}
-                          size="small"
-                          color={getStatusColor(period.status)}
-                        />
-                      </TableCell>
+            {todaySchedule.length === 0 ? (
+              <EmptyState message={t('portal.noClassesScheduled')} />
+            ) : (
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ background: S.TH_BG }}>
+                      <TableCell sx={S.TD}>{t('attendance.period')}</TableCell>
+                      <TableCell sx={S.TD}>{t('portal.time')}</TableCell>
+                      <TableCell sx={S.TD}>{t('portal.subject')}</TableCell>
+                      <TableCell sx={S.TD}>{t('portal.class')}</TableCell>
+                      <TableCell sx={S.TD}>{t('portal.room')}</TableCell>
+                      <TableCell sx={S.TD}>{t('common.status')}</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {todaySchedule.map((period) => (
+                      <TableRow
+                        key={period.period}
+                        sx={{
+                          ...S.TR_HOVER,
+                          bgcolor: period.status === 'ongoing'
+                            ? (theme.palette.mode === 'dark' ? 'rgba(0,122,255,0.08)' : 'rgba(0,122,255,0.05)')
+                            : 'inherit',
+                        }}
+                      >
+                        <TableCell sx={S.TD}>{period.period}</TableCell>
+                        <TableCell sx={S.TD}>{period.time}</TableCell>
+                        <TableCell sx={S.TD}>{period.subject}</TableCell>
+                        <TableCell sx={S.TD}>{period.class}</TableCell>
+                        <TableCell sx={S.TD}>{period.room}</TableCell>
+                        <TableCell sx={S.TD}>
+                          <Chip
+                            label={period.status}
+                            size="small"
+                            color={getStatusColor(period.status)}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
           </Paper>
 
           {/* Class Performance */}
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ ...S.GLASS, borderRadius: R.md, p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Class Performance Overview / कक्षा प्रदर्शन
+              {t('portal.classPerformance')}
             </Typography>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Class / कक्षा</TableCell>
-                    <TableCell align="center">Attendance / उपस्थिति</TableCell>
-                    <TableCell align="center">Avg Grade / औसत ग्रेड</TableCell>
-                    <TableCell align="center">Assignments / असाइनमेन्ट</TableCell>
-                    <TableCell align="center">Action / कार्य</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {classPerformanceData.map((cls) => (
-                    <TableRow key={cls.class}>
-                      <TableCell>{cls.class}</TableCell>
-                      <TableCell align="center">
-                        <Chip
-                          label={`${cls.attendance}%`}
-                          size="small"
-                          color={cls.attendance >= 90 ? 'success' : cls.attendance >= 80 ? 'warning' : 'error'}
-                        />
-                      </TableCell>
-                      <TableCell align="center">{cls.avgGrade.toFixed(1)}</TableCell>
-                      <TableCell align="center">{cls.assignments}%</TableCell>
-                      <TableCell align="center">
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => navigate(`/teacher/class/${cls.class}`)}
-                        >
-                          View Details
-                        </Button>
-                      </TableCell>
+            {classPerformanceData.length === 0 ? (
+              <EmptyState message={t('portal.noData')} />
+            ) : (
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ background: S.TH_BG }}>
+                      <TableCell sx={S.TD}>{t('portal.class')}</TableCell>
+                      <TableCell sx={S.TD} align="center">{t('portal.attendance')}</TableCell>
+                      <TableCell sx={S.TD} align="center">{t('portal.avgScore')}</TableCell>
+                      <TableCell sx={S.TD} align="center">{t('portal.assignments')}</TableCell>
+                      <TableCell sx={S.TD} align="center">{t('common.actions')}</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {classPerformanceData.map((cls) => (
+                      <TableRow key={cls.class} sx={S.TR_HOVER}>
+                        <TableCell sx={S.TD}>{cls.class}</TableCell>
+                        <TableCell sx={S.TD} align="center">
+                          <Chip
+                            label={`${cls.attendance}%`}
+                            size="small"
+                            color={cls.attendance >= 90 ? 'success' : cls.attendance >= 80 ? 'warning' : 'error'}
+                          />
+                        </TableCell>
+                        <TableCell sx={S.TD} align="center">{cls.avgGrade.toFixed(1)}</TableCell>
+                        <TableCell sx={S.TD} align="center">{cls.assignments}%</TableCell>
+                        <TableCell sx={S.TD} align="center">
+                          <Button
+                            size="small"
+                            sx={{ ...S.BTN_OUTLINE, borderRadius: R.sm }}
+                            onClick={() => navigate(`/teacher/class/${cls.class}`)}
+                          >
+                            {t('dashboard.viewDetails')}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
           </Paper>
         </Grid>
 
         {/* Right Sidebar */}
         <Grid item xs={12} md={4}>
           {/* Pending Tasks */}
-          <Paper sx={{ p: 3, mb: 3 }}>
+          <Paper sx={{ ...S.GLASS, borderRadius: R.md, p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Pending Tasks / बाँकी कार्य
+              {t('portal.pendingTasks')}
             </Typography>
-            <List>
-              {pendingTasks.map((task, index) => (
-                <ListItem
-                  key={index}
-                  sx={{
-                    px: 0,
-                    borderBottom: index < pendingTasks.length - 1 ? '1px solid' : 'none',
-                    borderColor: 'divider',
-                  }}
-                >
-                  <ListItemIcon>
-                    <Avatar sx={{ width: 32, height: 32, bgcolor: `${getPriorityColor(task.priority)}.main` }}>
-                      {task.count}
-                    </Avatar>
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={task.title}
-                    secondary={
-                      <Box component="span" sx={{ display: 'inline-block', mt: 0.5 }}>
-                        <Chip
-                          label={task.priority}
-                          size="small"
-                          color={getPriorityColor(task.priority)}
-                        />
-                      </Box>
-                    }
-                  />
-                </ListItem>
-              ))}
-            </List>
-            <Button fullWidth variant="contained" sx={{ mt: 2 }}>
-              View All Tasks
+            {pendingTasks.length === 0 ? (
+              <EmptyState message={t('portal.noTasksPending')} />
+            ) : (
+              <List>
+                {pendingTasks.map((task, index) => (
+                  <ListItem
+                    key={index}
+                    sx={{
+                      px: 0,
+                      borderBottom: index < pendingTasks.length - 1 ? '1px solid' : 'none',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    <ListItemIcon>
+                      <Avatar sx={{ width: 32, height: 32, bgcolor: `${getPriorityColor(task.priority)}.main` }}>
+                        {task.count}
+                      </Avatar>
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={task.title}
+                      secondary={
+                        <Box component="span" sx={{ display: 'inline-block', mt: 0.5 }}>
+                          <Chip
+                            label={task.priority}
+                            size="small"
+                            color={getPriorityColor(task.priority)}
+                          />
+                        </Box>
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            )}
+            <Button fullWidth sx={{ ...S.BTN_PRIMARY, borderRadius: R.sm, mt: 2 }}>
+              {t('portal.myTasks')}
             </Button>
           </Paper>
 
           {/* Attendance Trend */}
-          <Paper sx={{ p: 3, mb: 3 }}>
+          <Paper sx={{ ...S.GLASS, borderRadius: R.md, p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Attendance Trend / उपस्थिति प्रवृत्ति
+              {t('dashboard.attendanceTrendTitle')}
             </Typography>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={attendanceTrend}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="week" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="rate" stroke="#1976d2" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
+            {attendanceTrend.length === 0 ? (
+              <EmptyState message={t('portal.noData')} />
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={attendanceTrend}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                  <XAxis dataKey="week" tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} />
+                  <YAxis tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} />
+                  <Tooltip
+                    contentStyle={{
+                      background: theme.palette.background.paper,
+                      border: `1px solid ${theme.palette.divider}`,
+                      borderRadius: 8,
+                      color: theme.palette.text.primary,
+                    }}
+                  />
+                  <Line type="monotone" dataKey="rate" stroke={C.primary} strokeWidth={2} dot={{ fill: C.primary }} />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </Paper>
 
           {/* Notifications */}
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ ...S.GLASS, borderRadius: R.md, p: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <NotificationsIcon sx={{ mr: 1 }} />
+              <NotificationsIcon sx={{ mr: 1, color: theme.palette.text.secondary }} />
               <Typography variant="h6">
-                Notifications / सूचना
+                {t('notifications.title')}
               </Typography>
             </Box>
-            <List>
-              {notifications.map((notification, index) => (
-                <Box key={index}>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemIcon>{notification.icon}</ListItemIcon>
-                    <ListItemText
-                      primary={notification.text}
-                      secondary={notification.time}
-                      primaryTypographyProps={{ variant: 'body2' }}
-                      secondaryTypographyProps={{ variant: 'caption' }}
-                    />
-                  </ListItem>
-                  {index < notifications.length - 1 && <Divider />}
-                </Box>
-              ))}
-            </List>
-            <Button fullWidth variant="outlined" sx={{ mt: 2 }}>
-              View All Notifications
+            {notifications.length === 0 ? (
+              <EmptyState message={t('notifications.noNotifications')} />
+            ) : (
+              <List>
+                {notifications.map((notification, index) => (
+                  <Box key={index}>
+                    <ListItem sx={{ px: 0 }}>
+                      <ListItemIcon>{notification.icon}</ListItemIcon>
+                      <ListItemText
+                        primary={notification.text}
+                        secondary={notification.time}
+                        primaryTypographyProps={{ variant: 'body2' }}
+                        secondaryTypographyProps={{ variant: 'caption' }}
+                      />
+                    </ListItem>
+                    {index < notifications.length - 1 && <Divider />}
+                  </Box>
+                ))}
+              </List>
+            )}
+            <Button fullWidth sx={{ ...S.BTN_OUTLINE, borderRadius: R.sm, mt: 2 }}>
+              {t('notifications.viewAll')}
             </Button>
           </Paper>
         </Grid>

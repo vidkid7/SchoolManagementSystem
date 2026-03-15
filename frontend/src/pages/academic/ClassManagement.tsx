@@ -6,7 +6,8 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
   Paper,
@@ -36,6 +37,7 @@ import {
   Tab,
   Alert,
   Fade,
+  useTheme,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -46,7 +48,8 @@ import {
   People as PeopleIcon,
   ArrowBack as BackIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -95,7 +98,10 @@ interface Subject {
 
 export const ClassManagement = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const navigate = useSlugNavigate();
+  const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
   const [tabValue, setTabValue] = useState(0);
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -132,9 +138,9 @@ export const ClassManagement = () => {
     try {
       setLoading(true);
       const [classesResponse, subjectsResponse, studentsResponse] = await Promise.all([
-        api.get('/academic/classes'),
-        api.get('/academic/subjects'),
-        api.get('/students?limit=1'), // Just get count, not all students
+        apiClient.get('/academic/classes'),
+        apiClient.get('/academic/subjects'),
+        apiClient.get('/students?limit=1'), // Just get count, not all students
       ]);
       // API returns { success: true, data: [...] }, so we need response.data.data
       const classesData = classesResponse.data?.data || classesResponse.data;
@@ -196,7 +202,7 @@ export const ClassManagement = () => {
 
   const handleSaveClass = async () => {
     try {
-      const yearsResponse = await api.get('/academic/years');
+      const yearsResponse = await apiClient.get('/academic/years');
       const years = yearsResponse.data?.data || [];
       const currentYear = years.find((year: any) => year.isCurrent || year.is_current);
       const fallbackYear = years[0];
@@ -214,9 +220,9 @@ export const ClassManagement = () => {
       };
 
       if (editMode && editId) {
-        await api.put('/academic/classes', { classId: editId, ...payload });
+        await apiClient.put('/academic/classes', { classId: editId, ...payload });
       } else {
-        await api.post('/academic/classes', payload);
+        await apiClient.post('/academic/classes', payload);
       }
       
       handleCloseDialog();
@@ -239,9 +245,9 @@ export const ClassManagement = () => {
       };
 
       if (editMode && editId) {
-        await api.put('/academic/subjects', { subjectId: editId, ...payload });
+        await apiClient.put('/academic/subjects', { subjectId: editId, ...payload });
       } else {
-        await api.post('/academic/subjects', payload);
+        await apiClient.post('/academic/subjects', payload);
       }
       
       handleCloseDialog();
@@ -258,11 +264,13 @@ export const ClassManagement = () => {
     }
 
     try {
-      await api.delete(`/academic/classes/${id}`);
+      await apiClient.delete(`/academic/classes/${id}`);
+      setError('');
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to delete class:', error);
-      setError(t('academic.failedToLoad'));
+      const errorMessage = error.response?.data?.message || error.message || t('academic.failedToLoad');
+      setError(`Failed to delete class: ${errorMessage}`);
     }
   };
 
@@ -272,7 +280,7 @@ export const ClassManagement = () => {
     }
 
     try {
-      await api.delete(`/academic/subjects/${id}`);
+      await apiClient.delete(`/academic/subjects/${id}`);
       fetchData();
     } catch (error) {
       console.error('Failed to delete subject:', error);
@@ -285,7 +293,7 @@ export const ClassManagement = () => {
       <Box sx={{ mb: 3 }}>
         <Button
           startIcon={<BackIcon />}
-          onClick={() => navigate('/academic')}
+          onClick={() => navigate(`/academic`)}
           sx={{ mb: 2 }}
           variant="text"
         >
@@ -308,7 +316,7 @@ export const ClassManagement = () => {
         <Grid item xs={12} md={4}>
           <Fade in timeout={300}>
             <Card sx={{ 
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: `linear-gradient(135deg, ${C.primary} 0%, ${C.purple} 100%)`,
               color: 'white',
               transition: 'transform 0.2s',
               '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 }
@@ -316,7 +324,7 @@ export const ClassManagement = () => {
               <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Box sx={{ 
                   p: 1.5, 
-                  borderRadius: 2, 
+                  borderRadius: R.lg, 
                   bgcolor: 'rgba(255,255,255,0.2)',
                   display: 'flex'
                 }}>
@@ -345,7 +353,7 @@ export const ClassManagement = () => {
               <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Box sx={{ 
                   p: 1.5, 
-                  borderRadius: 2, 
+                  borderRadius: R.lg, 
                   bgcolor: 'rgba(255,255,255,0.2)',
                   display: 'flex'
                 }}>
@@ -374,7 +382,7 @@ export const ClassManagement = () => {
               <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Box sx={{ 
                   p: 1.5, 
-                  borderRadius: 2, 
+                  borderRadius: R.lg, 
                   bgcolor: 'rgba(255,255,255,0.2)',
                   display: 'flex'
                 }}>
@@ -395,7 +403,7 @@ export const ClassManagement = () => {
       </Grid>
 
       {/* Tabs */}
-      <Paper sx={{ borderRadius: 2 }}>
+      <Paper sx={{ ...S.GLASS }}>
         <Tabs value={tabValue} onChange={(_e, newValue) => setTabValue(newValue)} sx={{ 
           borderBottom: 1, 
           borderColor: 'divider',
@@ -409,7 +417,7 @@ export const ClassManagement = () => {
         <TabPanel value={tabValue} index={0}>
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
             <Button
-              variant="contained"
+              sx={S.BTN_PRIMARY}
               startIcon={<AddIcon />}
               onClick={() => handleOpenDialog('class')}
             >
@@ -470,7 +478,7 @@ export const ClassManagement = () => {
                             variant="text"
                             onClick={() => {
                               const classId = cls.class_id || cls.classId || cls.id;
-                              window.location.href = `/academic/classes/${classId}/teacher`;
+                              navigate(`/academic/classes/${classId}/teacher`);
                             }}
                             sx={{ textTransform: 'none' }}
                           >
@@ -513,7 +521,7 @@ export const ClassManagement = () => {
         <TabPanel value={tabValue} index={1}>
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
             <Button
-              variant="contained"
+              sx={S.BTN_PRIMARY}
               startIcon={<AddIcon />}
               onClick={() => handleOpenDialog('subject')}
             >
@@ -575,7 +583,7 @@ export const ClassManagement = () => {
                               alert('Error: Subject ID is undefined. Please refresh the page and try again.');
                               return;
                             }
-                            window.location.href = `/academic/classes/1/subjects/${subjectId}/teachers`;
+                            navigate(`/academic/classes/1/subjects/${subjectId}/teachers`);
                           }}
                           sx={{ mr: 1, textTransform: 'none' }}
                         >
@@ -636,18 +644,14 @@ export const ClassManagement = () => {
                 </FormControl>
               </Grid>
               <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>{t('academic.section')}</InputLabel>
-                  <Select
-                    value={classForm.section}
-                    label={t('academic.section')}
-                    onChange={(e) => setClassForm({ ...classForm, section: e.target.value })}
-                  >
-                    <MenuItem value="A">{t('academic.sectionA')}</MenuItem>
-                    <MenuItem value="B">{t('academic.sectionB')}</MenuItem>
-                    <MenuItem value="C">{t('academic.sectionC')}</MenuItem>
-                  </Select>
-                </FormControl>
+                <TextField
+                  label={t('academic.section')}
+                  fullWidth
+                  value={classForm.section}
+                  onChange={(e) => setClassForm({ ...classForm, section: e.target.value })}
+                  placeholder="A, B, C, A1, B1, etc."
+                  helperText="Enter section name (e.g., A, B, C, A1, B1)"
+                />
               </Grid>
               <Grid item xs={12}>
                 <TextField
@@ -724,7 +728,7 @@ export const ClassManagement = () => {
             {t('common.cancel')}
           </Button>
           <Button
-            variant="contained"
+            sx={S.BTN_PRIMARY}
             onClick={dialogType === 'class' ? handleSaveClass : handleSaveSubject}
           >
             {t('common.save')}

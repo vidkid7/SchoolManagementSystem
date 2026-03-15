@@ -6,6 +6,7 @@ import { connectRedis, closeRedis } from '@config/redis';
 import { logger } from '@utils/logger';
 import { socketService } from '@services/socket.service';
 import { backupJob } from './jobs/backupJob';
+import { academicYearJob } from './jobs/academicYearJob';
 import { enableSlowQueryLogging } from '@middleware/queryLogger';
 import { initializeAssociations } from '@models/associations';
 import { initCirculation } from '@models/Circulation.model';
@@ -167,6 +168,18 @@ const startServer = async (): Promise<void> => {
     } catch (error) {
       logger.warn('⚠️  Backup job initialization failed. Continuing without automated backups...', error);
     }
+
+    // Auto-detect and activate the correct academic year based on today's BS date
+    try {
+      const { default: academicService } = await import('./modules/academic/academic.service');
+      await academicService.autoDetectCurrentAcademicYear();
+      logger.info('✅ Academic year auto-detection completed');
+    } catch (error) {
+      logger.warn('⚠️  Academic year auto-detection failed. Continuing...', error);
+    }
+
+    // Start daily academic year rollover cron job
+    academicYearJob.start();
     
     const server = httpServer.listen(env.PORT, () => {
       logger.info(`
@@ -190,8 +203,9 @@ const startServer = async (): Promise<void> => {
     const gracefulShutdown = (signal: string): void => {
       logger.info(`\n${signal} received. Starting graceful shutdown...`);
 
-      // Stop backup job
+      // Stop backup job and academic year job
       backupJob.stop();
+      academicYearJob.stop();
 
       server.close(() => {
         logger.info('HTTP server closed');

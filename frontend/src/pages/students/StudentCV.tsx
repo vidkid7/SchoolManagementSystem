@@ -6,7 +6,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
   Paper,
@@ -61,6 +62,7 @@ import { useSelector } from 'react-redux';
 import { apiClient } from '../../services/apiClient';
 import type { RootState } from '../../store';
 import { motion } from 'framer-motion';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 const MotionCard = motion.create(Card);
 const MotionBox = motion.create(Box);
@@ -278,7 +280,7 @@ const InfoSection = ({ icon, title, children, color = 'primary' }: { icon: React
       whileHover={{ y: -2, boxShadow: '0 8px 30px rgba(0,0,0,0.12)' }}
       sx={{ 
         mb: 3, 
-        borderRadius: 3, 
+        borderRadius: R.lg, 
         overflow: 'hidden',
         border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
         transition: 'all 0.3s ease',
@@ -292,7 +294,7 @@ const InfoSection = ({ icon, title, children, color = 'primary' }: { icon: React
             justifyContent: 'center',
             width: 40, 
             height: 40, 
-            borderRadius: 2.5,
+            borderRadius: R.xl,
             bgcolor: alpha((theme.palette as any)[color]?.main || theme.palette.primary.main, 0.1),
           }}>
             {icon}
@@ -319,10 +321,11 @@ const StatBox = ({ value, label, color }: { value: string | number; label: strin
 };
 
 export const StudentCV = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
+  const { id, municipalitySlug } = useParams<{ id: string; municipalitySlug: string }>();
+  const navigate = useSlugNavigate();
   const { t } = useTranslation();
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   const { accessToken } = useSelector((state: RootState) => state.auth);
   const authHdr = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
   
@@ -352,8 +355,8 @@ export const StudentCV = () => {
       const response = await apiClient.get(`/api/v1/cv/${id}/data`);
       setCvData(response.data.data);
     } catch (err: any) {
-      if (err.response?.status === 404) {
-        console.warn('CV endpoints not yet implemented');
+      if (err.response?.status === 404 || err.response?.status === 500) {
+        // Silently handle - CV feature not implemented yet
         setError('CV feature is not yet available');
       } else {
         setError(err.response?.data?.error?.message || 'Failed to load CV data');
@@ -366,10 +369,21 @@ export const StudentCV = () => {
   const fetchCustomization = async () => {
     try {
       const response = await apiClient.get(`/api/v1/cv/${id}`);
-      setCustomization(response.data.data);
+      const data = response.data.data;
+      
+      // Validate and sanitize templateId
+      const validTemplates = ['standard', 'professional', 'modern'];
+      if (data) {
+        // Convert 'default' to 'standard' or use 'standard' if invalid
+        if (!data.templateId || data.templateId === 'default' || !validTemplates.includes(data.templateId)) {
+          data.templateId = 'standard';
+        }
+      }
+      
+      setCustomization(data);
     } catch (err: any) {
-      if (err.response?.status === 404) {
-        console.warn('CV customization endpoint not yet implemented');
+      if (err.response?.status === 404 || err.response?.status === 500) {
+        // Silently handle - CV feature not implemented yet
       } else {
         console.error('Failed to load customization:', err);
       }
@@ -381,8 +395,8 @@ export const StudentCV = () => {
       const response = await apiClient.get(`/api/v1/cv/${id}/needs-regeneration`);
       setNeedsRegeneration(response.data.data.needsRegeneration);
     } catch (err: any) {
-      if (err.response?.status === 404) {
-        console.warn('CV regeneration check endpoint not yet implemented');
+      if (err.response?.status === 404 || err.response?.status === 500) {
+        // Silently handle - CV feature not implemented yet
       } else {
         console.error('Failed to check regeneration need:', err);
       }
@@ -399,7 +413,11 @@ export const StudentCV = () => {
       setSaving(true);
       await apiClient.put(`/api/v1/cv/${id}`, updated);
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to save customization');
+      if (err.response?.status === 500) {
+        setError('CV customization feature is not yet available');
+      } else {
+        setError(err.response?.data?.error?.message || 'Failed to save customization');
+      }
     } finally {
       setSaving(false);
     }
@@ -485,7 +503,14 @@ export const StudentCV = () => {
     try {
       setPdfLoading(true);
       const params = new URLSearchParams();
-      if (customization?.templateId) params.append('template', customization.templateId);
+      
+      // Ensure valid template ID
+      const validTemplates = ['standard', 'professional', 'modern'];
+      const templateId = customization?.templateId && validTemplates.includes(customization.templateId) 
+        ? customization.templateId 
+        : 'standard';
+      
+      params.append('template', templateId);
       if (customization?.schoolBrandingEnabled !== undefined) params.append('branding', customization.schoolBrandingEnabled.toString());
       
       const token = localStorage.getItem('accessToken');
@@ -531,7 +556,11 @@ export const StudentCV = () => {
       await fetchCVData();
       await fetchCustomization();
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to create CV. Please try again.');
+      if (err.response?.status === 500) {
+        setError('CV creation feature is not yet available');
+      } else {
+        setError(err.response?.data?.error?.message || 'Failed to create CV. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -549,7 +578,7 @@ export const StudentCV = () => {
   if (!cvData && !loading) {
     return (
       <Box sx={{ p: 4, maxWidth: 800, mx: 'auto', textAlign: 'center' }}>
-        {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 3 }}>{error}</Alert>}
+        {error && <Alert severity="error" sx={{ mb: 3, borderRadius: R.lg }}>{error}</Alert>}
         <PersonIcon sx={{ fontSize: 80, color: alpha(theme.palette.primary.main, 0.3), mb: 2 }} />
         <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>
           {t('No CV data available')}
@@ -559,24 +588,17 @@ export const StudentCV = () => {
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
           <Button
-            variant="contained"
             startIcon={<AddIcon />}
             onClick={handleCreateCV}
-            sx={{
-              borderRadius: 3,
-              fontWeight: 600,
-              px: 4,
-              py: 1.5,
-              boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.35)}`,
-            }}
+            sx={S.BTN_PRIMARY}
           >
             {t('Create CV')}
           </Button>
           <Button
             startIcon={<BackIcon />}
-            onClick={() => navigate('/students')}
+            onClick={() => navigate(`/students`)}
             variant="outlined"
-            sx={{ borderRadius: 3 }}
+            sx={{ borderRadius: R.lg }}
           >
             {t('common.back') || 'Back to List'}
           </Button>
@@ -597,7 +619,7 @@ export const StudentCV = () => {
           alignItems: 'center', 
           mb: 4,
           p: 3,
-          borderRadius: 4,
+          borderRadius: R.lg,
           background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.secondary.main, 0.08)} 100%)`,
           border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
         }}
@@ -627,25 +649,15 @@ export const StudentCV = () => {
             variant={previewMode ? 'contained' : 'outlined'}
             startIcon={previewMode ? <EditIcon /> : <PreviewIcon />}
             onClick={() => setPreviewMode(!previewMode)}
-            sx={{ borderRadius: 3, fontWeight: 600 }}
+            sx={{ borderRadius: R.lg, fontWeight: 600 }}
           >
             {previewMode ? t('Edit Mode') : t('Preview Mode')}
           </Button>
           <Button
-            variant="contained"
             startIcon={pdfLoading ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
             onClick={needsRegeneration ? handleRegenerate : handleDownloadPDF}
             disabled={pdfLoading}
-            sx={{ 
-              borderRadius: 3, 
-              fontWeight: 600,
-              boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.35)}`,
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-2px)',
-                boxShadow: `0 10px 28px ${alpha(theme.palette.primary.main, 0.45)}`,
-              }
-            }}
+            sx={S.BTN_PRIMARY}
           >
             {t('Download PDF')}
           </Button>
@@ -655,7 +667,7 @@ export const StudentCV = () => {
       {needsRegeneration && (
         <Alert 
           severity="info" 
-          sx={{ mb: 3, borderRadius: 3 }} 
+          sx={{ mb: 3, borderRadius: R.lg }} 
           icon={<RefreshIcon />}
           action={
             <Button color="inherit" size="small" onClick={handleRegenerate} startIcon={<RefreshIcon />}>
@@ -667,10 +679,10 @@ export const StudentCV = () => {
         </Alert>
       )}
 
-      {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 3 }}>{error}</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 3, borderRadius: R.lg }}>{error}</Alert>}
 
       {/* Tabs */}
-      <Paper sx={{ borderRadius: 3, overflow: 'hidden', border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
+      <Paper sx={{ ...S.GLASS, borderRadius: R.lg, overflow: 'hidden' }}>
         <Tabs
           value={tabValue}
           onChange={(_e, newValue) => setTabValue(newValue)}
@@ -780,17 +792,17 @@ export const StudentCV = () => {
                 <InfoSection icon={<SchoolIcon sx={{ color: theme.palette.primary.main }} />} title={t('Academic Performance')}>
                   <Grid container spacing={2} sx={{ mb: 3 }}>
                     <Grid item xs={4}>
-                      <StatBox value={cvData.academicPerformance.overallGPA.toFixed(2)} label="Overall GPA" color={theme.palette.primary.main} />
+                      <StatBox value={cvData.academicPerformance.overallGPA.toFixed(2)} label="Overall GPA" color={C.primary} />
                     </Grid>
                     <Grid item xs={4}>
-                      <StatBox value={cvData.academicPerformance.averageGrade} label="Average Grade" color="#10b981" />
+                      <StatBox value={cvData.academicPerformance.averageGrade} label="Average Grade" color={C.success} />
                     </Grid>
                     <Grid item xs={4}>
                       <StatBox value={cvData.academicPerformance.totalSubjects} label="Total Subjects" color={theme.palette.secondary.main} />
                     </Grid>
                   </Grid>
                   {cvData.academicPerformance.academicYears.map((year) => (
-                    <Box key={year.yearId} sx={{ mb: 2, p: 2, borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.03) }}>
+                    <Box key={year.yearId} sx={{ mb: 2, p: 2, borderRadius: R.lg, bgcolor: alpha(theme.palette.primary.main, 0.03) }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                           {year.yearName} - {year.className}
@@ -812,23 +824,23 @@ export const StudentCV = () => {
 
               {/* Attendance */}
               {cvData.attendance && (
-                <InfoSection icon={<AttendanceIcon sx={{ color: '#10b981' }} />} title={t('Attendance Record')}>
+                <InfoSection icon={<AttendanceIcon sx={{ color: C.success }} />} title={t('Attendance Record')}>
                   <Grid container spacing={2} sx={{ mb: 3 }}>
                     <Grid item xs={4}>
-                      <StatBox value={`${cvData.attendance.overallPercentage}%`} label="Overall" color="#10b981" />
+                      <StatBox value={`${cvData.attendance.overallPercentage}%`} label="Overall" color={C.success} />
                     </Grid>
                     <Grid item xs={4}>
-                      <StatBox value={cvData.attendance.presentDays} label="Present" color={theme.palette.primary.main} />
+                      <StatBox value={cvData.attendance.presentDays} label="Present" color={C.primary} />
                     </Grid>
                     <Grid item xs={4}>
                       <StatBox value={cvData.attendance.totalDays} label="Total Days" color={theme.palette.secondary.main} />
                     </Grid>
                   </Grid>
                   <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Box sx={{ flex: cvData.attendance.presentDays, bgcolor: '#10b981', height: 12, borderRadius: '6px 0 0 6px' }} />
-                    <Box sx={{ flex: cvData.attendance.absentDays, bgcolor: '#ef4444', height: 12 }} />
-                    <Box sx={{ flex: cvData.attendance.lateDays, bgcolor: '#f59e0b', height: 12 }} />
-                    <Box sx={{ flex: cvData.attendance.excusedDays, bgcolor: '#6b7280', height: 12, borderRadius: '0 6px 6px 0' }} />
+                    <Box sx={{ flex: cvData.attendance.presentDays, bgcolor: C.success, height: 12, borderRadius: `${R.sm}px 0 0 ${R.sm}px` }} />
+                    <Box sx={{ flex: cvData.attendance.absentDays, bgcolor: C.danger, height: 12 }} />
+                    <Box sx={{ flex: cvData.attendance.lateDays, bgcolor: C.warning, height: 12 }} />
+                    <Box sx={{ flex: cvData.attendance.excusedDays, bgcolor: C.neutral, height: 12, borderRadius: `0 ${R.sm}px ${R.sm}px 0` }} />
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
                     <Typography variant="caption" color="text.secondary">Present</Typography>
@@ -841,16 +853,16 @@ export const StudentCV = () => {
 
               {/* ECA */}
               {cvData.eca && cvData.eca.participations.length > 0 && (
-                <InfoSection icon={<ECAIcon sx={{ color: '#f59e0b' }} />} title={t('Extra-Curricular Activities')}>
+                <InfoSection icon={<ECAIcon sx={{ color: C.warning }} />} title={t('Extra-Curricular Activities')}>
                   <Grid container spacing={2} sx={{ mb: 3 }}>
                     <Grid item xs={4}>
-                      <StatBox value={cvData.eca.summary.totalECAs} label="Activities" color="#f59e0b" />
+                      <StatBox value={cvData.eca.summary.totalECAs} label="Activities" color={C.warning} />
                     </Grid>
                     <Grid item xs={4}>
-                      <StatBox value={cvData.eca.summary.totalAchievements} label="Achievements" color="#10b981" />
+                      <StatBox value={cvData.eca.summary.totalAchievements} label="Achievements" color={C.success} />
                     </Grid>
                     <Grid item xs={4}>
-                      <StatBox value={cvData.eca.summary.averageAttendance.toFixed(0) + '%'} label="Avg Attendance" color={theme.palette.primary.main} />
+                      <StatBox value={cvData.eca.summary.averageAttendance.toFixed(0) + '%'} label="Avg Attendance" color={C.primary} />
                     </Grid>
                   </Grid>
                   <List>
@@ -860,13 +872,13 @@ export const StudentCV = () => {
                           <Box sx={{ 
                             width: 36, 
                             height: 36, 
-                            borderRadius: 2, 
-                            bgcolor: alpha('#f59e0b', 0.1),
+                            borderRadius: R.lg, 
+                            bgcolor: alpha(C.warning, 0.1),
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center'
                           }}>
-                            <CheckIcon sx={{ color: '#10b981', fontSize: 20 }} />
+                            <CheckIcon sx={{ color: C.success, fontSize: 20 }} />
                           </Box>
                         </ListItemIcon>
                         <ListItemText 
@@ -887,10 +899,10 @@ export const StudentCV = () => {
 
               {/* Sports */}
               {cvData.sports && cvData.sports.participations.length > 0 && (
-                <InfoSection icon={<SportsIcon sx={{ color: '#3b82f6' }} />} title={t('Sports Activities')}>
+                <InfoSection icon={<SportsIcon sx={{ color: C.primary }} />} title={t('Sports Activities')}>
                   <Grid container spacing={2} sx={{ mb: 3 }}>
                     <Grid item xs={4}>
-                      <StatBox value={cvData.sports.summary.totalSports} label="Sports" color="#3b82f6" />
+                      <StatBox value={cvData.sports.summary.totalSports} label="Sports" color={C.primary} />
                     </Grid>
                     <Grid item xs={4}>
                       <StatBox 
@@ -900,11 +912,11 @@ export const StudentCV = () => {
                           cvData.sports.summary.medalCount.bronze
                         } 
                         label="Medals" 
-                        color="#f59e0b" 
+                        color={C.warning} 
                       />
                     </Grid>
                     <Grid item xs={4}>
-                      <StatBox value={cvData.sports.summary.recordsSet} label="Records" color="#10b981" />
+                      <StatBox value={cvData.sports.summary.recordsSet} label="Records" color={C.success} />
                     </Grid>
                   </Grid>
                   <List>
@@ -914,13 +926,13 @@ export const StudentCV = () => {
                           <Box sx={{ 
                             width: 36, 
                             height: 36, 
-                            borderRadius: 2, 
-                            bgcolor: alpha('#3b82f6', 0.1),
+                            borderRadius: R.lg, 
+                            bgcolor: alpha(C.primary, 0.1),
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center'
                           }}>
-                            <SportsIcon sx={{ color: '#3b82f6', fontSize: 20 }} />
+                            <SportsIcon sx={{ color: C.primary, fontSize: 20 }} />
                           </Box>
                         </ListItemIcon>
                         <ListItemText 
@@ -941,7 +953,7 @@ export const StudentCV = () => {
 
               {/* Certificates */}
               {cvData.certificates && cvData.certificates.totalCount > 0 && (
-                <InfoSection icon={<CertificateIcon sx={{ color: '#8b5cf6' }} />} title={t('Certificates')}>
+                <InfoSection icon={<CertificateIcon sx={{ color: C.purple }} />} title={t('Certificates')}>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
                     {cvData.certificates.certificates.map((cert, index) => (
                       <Chip
@@ -949,11 +961,11 @@ export const StudentCV = () => {
                         icon={<CertificateIcon />}
                         label={cert.name}
                         sx={{ 
-                          borderRadius: 2.5,
+                          borderRadius: R.xl,
                           fontWeight: 600,
-                          bgcolor: alpha('#8b5cf6', 0.1),
-                          color: '#8b5cf6',
-                          '& .MuiChip-icon': { color: '#8b5cf6' }
+                          bgcolor: alpha(C.purple, 0.1),
+                          color: C.purple,
+                          '& .MuiChip-icon': { color: C.purple }
                         }}
                       />
                     ))}
@@ -975,7 +987,7 @@ export const StudentCV = () => {
                             key={index} 
                             label={skill} 
                             sx={{ 
-                              borderRadius: 2,
+                              borderRadius: R.lg,
                               bgcolor: alpha(theme.palette.primary.main, 0.1),
                               color: theme.palette.primary.main,
                               fontWeight: 600
@@ -997,7 +1009,7 @@ export const StudentCV = () => {
                             key={index} 
                             label={hobby} 
                             sx={{ 
-                              borderRadius: 2,
+                              borderRadius: R.lg,
                               bgcolor: alpha(theme.palette.secondary.main, 0.1),
                               color: theme.palette.secondary.main,
                               fontWeight: 600
@@ -1029,7 +1041,7 @@ export const StudentCV = () => {
               )}
 
               {/* Verification Footer */}
-              <Paper sx={{ p: 3, borderRadius: 3, bgcolor: alpha(theme.palette.primary.main, 0.03), textAlign: 'center' }}>
+              <Paper sx={{ ...S.GLASS, p: 3, borderRadius: R.lg, textAlign: 'center' }}>
                 <Typography variant="caption" color="text.secondary" display="block">
                   {t('Generated on')}: {cvData.generatedAt ? new Date(cvData.generatedAt).toLocaleDateString() : '-'}
                 </Typography>
@@ -1058,7 +1070,7 @@ export const StudentCV = () => {
                   { key: 'showTeacherRemarks', label: 'Teacher Remarks', default: false },
                 ].map((item) => (
                   <Grid item xs={6} sm={3} key={item.key}>
-                    <Paper sx={{ p: 2, borderRadius: 2, textAlign: 'center' }}>
+                    <Paper sx={{ ...S.GLASS, p: 2, borderRadius: R.lg, textAlign: 'center' }}>
                       <FormControlLabel
                         control={
                           <Switch
@@ -1083,10 +1095,10 @@ export const StudentCV = () => {
                   <FormControl fullWidth>
                     <InputLabel>{t('Template')}</InputLabel>
                     <Select
-                      value={customization.templateId}
+                      value={['standard', 'professional', 'modern'].includes(customization.templateId) ? customization.templateId : 'standard'}
                       label={t('Template')}
                       onChange={(e) => handleCustomizationChange('templateId', e.target.value)}
-                      sx={{ borderRadius: 2.5 }}
+                      sx={{ borderRadius: R.xl }}
                     >
                       <MenuItem value="standard">{t('Standard')}</MenuItem>
                       <MenuItem value="professional">{t('Professional')}</MenuItem>
@@ -1095,7 +1107,7 @@ export const StudentCV = () => {
                   </FormControl>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Paper sx={{ p: 2, borderRadius: 2 }}>
+                  <Paper sx={{ ...S.GLASS, p: 2, borderRadius: R.lg }}>
                     <FormControlLabel
                       control={
                         <Switch
@@ -1125,13 +1137,12 @@ export const StudentCV = () => {
                     onChange={(e) => setSkillInput(e.target.value)}
                     placeholder={t('Add a skill')}
                     onKeyPress={(e) => e.key === 'Enter' && handleAddSkill()}
-                    sx={{ flex: 1, '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}
+                    sx={{ flex: 1, '& .MuiOutlinedInput-root': { borderRadius: R.xl } }}
                   />
                   <Button 
-                    variant="contained" 
                     startIcon={<AddIcon />} 
                     onClick={handleAddSkill}
-                    sx={{ borderRadius: 2.5 }}
+                    sx={S.BTN_PRIMARY}
                   >
                     {t('Add')}
                   </Button>
@@ -1142,7 +1153,7 @@ export const StudentCV = () => {
                       key={index}
                       label={skill}
                       onDelete={() => handleRemoveSkill(skill)}
-                      sx={{ borderRadius: 2, fontWeight: 600 }}
+                      sx={{ borderRadius: R.lg, fontWeight: 600 }}
                     />
                   ))}
                 </Box>
@@ -1158,13 +1169,12 @@ export const StudentCV = () => {
                     onChange={(e) => setHobbyInput(e.target.value)}
                     placeholder={t('Add a hobby')}
                     onKeyPress={(e) => e.key === 'Enter' && handleAddHobby()}
-                    sx={{ flex: 1, '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}
+                    sx={{ flex: 1, '& .MuiOutlinedInput-root': { borderRadius: R.xl } }}
                   />
                   <Button 
-                    variant="contained" 
                     startIcon={<AddIcon />} 
                     onClick={handleAddHobby}
-                    sx={{ borderRadius: 2.5 }}
+                    sx={S.BTN_PRIMARY}
                   >
                     {t('Add')}
                   </Button>
@@ -1175,7 +1185,7 @@ export const StudentCV = () => {
                       key={index}
                       label={hobby}
                       onDelete={() => handleRemoveHobby(hobby)}
-                      sx={{ borderRadius: 2, fontWeight: 600 }}
+                      sx={{ borderRadius: R.lg, fontWeight: 600 }}
                     />
                   ))}
                 </Box>
@@ -1191,7 +1201,7 @@ export const StudentCV = () => {
                   value={customization.careerGoals}
                   onChange={(e) => handleCustomizationChange('careerGoals', e.target.value)}
                   placeholder={t('Describe your career goals')}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: R.xl } }}
                 />
               </Box>
 
@@ -1205,7 +1215,7 @@ export const StudentCV = () => {
                   value={customization.personalStatement}
                   onChange={(e) => handleCustomizationChange('personalStatement', e.target.value)}
                   placeholder={t('Write your personal statement')}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: R.xl } }}
                 />
               </Box>
 

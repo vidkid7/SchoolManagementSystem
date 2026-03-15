@@ -224,6 +224,10 @@ export default defineConfig({
         target: 'http://localhost:3000',
         changeOrigin: true
       }
+    },
+    // Force cache busting in development
+    headers: {
+      'Cache-Control': 'no-store'
     }
   },
   build: {

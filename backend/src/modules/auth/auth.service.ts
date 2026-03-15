@@ -1,4 +1,5 @@
 import User, { UserRole, UserStatus } from '@models/User.model';
+import Municipality from '@models/Municipality.model';
 import { 
   AuthenticationError, 
   ValidationError, 
@@ -286,6 +287,16 @@ class AuthService {
     delete userJson.password;
     delete userJson.refreshToken;
 
+    // Enrich user with municipalityCode so the frontend can build slug-scoped URLs
+    if (user.municipalityId) {
+      const municipality = await Municipality.findByPk(user.municipalityId, {
+        attributes: ['code'],
+      });
+      if (municipality) {
+        userJson.municipalityCode = municipality.code;
+      }
+    }
+
     return {
       accessToken,
       refreshToken,
@@ -519,6 +530,16 @@ class AuthService {
 
     const userJson = user.toJSON() as unknown as Record<string, unknown>;
     delete userJson.password;
+
+    if (user.municipalityId) {
+      const municipality = await Municipality.findByPk(user.municipalityId, {
+        attributes: ['code'],
+      });
+      if (municipality) {
+        userJson.municipalityCode = municipality.code;
+      }
+    }
+
     return userJson;
   }
 

@@ -3,15 +3,22 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Box, Paper, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Chip, Alert, Grid, IconButton } from '@mui/material';
+import { Box, Paper, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Chip, Alert, Grid, IconButton,
+  useTheme,
+} from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, EmojiEvents as TrophyIcon, Groups as TeamIcon, PersonAdd as EnrollIcon, HowToReg as AttendanceIcon, History as HistoryIcon } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
 
+import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useTranslation } from 'react-i18next';
 function TabPanel({ children, value, index }: any) {
   return <div hidden={value !== index}>{value === index && <Box sx={{ pt: 3 }}>{children}</Box>}</div>;
 }
 
 export function SportsManagement() {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const [tabValue, setTabValue] = useState(0);
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -44,7 +51,7 @@ export function SportsManagement() {
   useEffect(() => {
     if (tabValue < 4) fetchData();
     if (tabValue === 4 && !sportsList.length) {
-      api.get('/sports/list', { params: { limit: 500 } }).then((r) => setSportsList(r.data?.data || [])).catch(() => {});
+      apiClient.get('/sports/list', { params: { limit: 500 } }).then((r) => setSportsList(r.data?.data || [])).catch(() => {});
     }
   }, [tabValue, page, rowsPerPage]);
 
@@ -52,7 +59,7 @@ export function SportsManagement() {
     setLoading(true);
     try {
       const endpoints = ['/sports/list', '/sports/teams', '/sports/tournaments', '/sports/achievements'];
-      const response = await api.get(endpoints[tabValue], { params: { page: page + 1, limit: rowsPerPage } });
+      const response = await apiClient.get(endpoints[tabValue], { params: { page: page + 1, limit: rowsPerPage } });
       setData(response.data?.data || []);
       setTotal(response.data?.meta?.total || 0);
     } catch (err) {
@@ -66,7 +73,7 @@ export function SportsManagement() {
     if (!selectedSportId) return;
     setEnrollmentsLoading(true);
     try {
-      const res = await api.get(`/sports/${selectedSportId}/enrollments`, { params: { status: 'active' } });
+      const res = await apiClient.get(`/sports/${selectedSportId}/enrollments`, { params: { status: 'active' } });
       const list = res.data?.data || [];
       setEnrollments(list);
       const next: Record<number, boolean> = {};
@@ -86,7 +93,7 @@ export function SportsManagement() {
       present: attendancePresence[e.enrollmentId ?? e.id] ?? false,
     }));
     try {
-      await api.post(`/sports/${selectedSportId}/mark-attendance`, { attendanceData });
+      await apiClient.post(`/sports/${selectedSportId}/mark-attendance`, { attendanceData });
       setSuccess('Attendance marked');
       fetchEnrollments();
       setTimeout(() => setSuccess(''), 3000);
@@ -99,7 +106,7 @@ export function SportsManagement() {
     if (!historyStudentId) return;
     setHistoryLoading(true);
     try {
-      const res = await api.get(`/sports/student/${historyStudentId}`);
+      const res = await apiClient.get(`/sports/student/${historyStudentId}`);
       setStudentHistory(res.data?.data ?? null);
     } catch {
       setStudentHistory(null);
@@ -111,7 +118,7 @@ export function SportsManagement() {
   const handleEnroll = async () => {
     if (enrollSportId == null || !enrollForm.studentId) return;
     try {
-      await api.post(`/sports/${enrollSportId}/enroll`, {
+      await apiClient.post(`/sports/${enrollSportId}/enroll`, {
         studentId: parseInt(enrollForm.studentId, 10),
         teamId: enrollForm.teamId ? parseInt(enrollForm.teamId, 10) : undefined,
       });
@@ -145,10 +152,10 @@ export function SportsManagement() {
       const endpoints = ['/sports', '/sports/teams', '/sports/tournaments', '/sports/achievements'];
       const id = editingItem?.sportId ?? editingItem?.id;
       if (editingItem) {
-        await api.put(`${endpoints[tabValue]}/${id}`, formData);
+        await apiClient.put(`${endpoints[tabValue]}/${id}`, formData);
         setSuccess('Updated successfully');
       } else {
-        await api.post(endpoints[tabValue], formData);
+        await apiClient.post(endpoints[tabValue], formData);
         setSuccess('Created successfully');
       }
       setOpenDialog(false);
@@ -164,7 +171,7 @@ export function SportsManagement() {
     if (!id || !confirm('Are you sure?')) return;
     try {
       const endpoints = ['/sports', '/sports/teams', '/sports/tournaments', '/sports/achievements'];
-      await api.delete(`${endpoints[tabValue]}/${id}`);
+      await apiClient.delete(`${endpoints[tabValue]}/${id}`);
       setSuccess('Deleted successfully');
       fetchData();
       setTimeout(() => setSuccess(''), 3000);
@@ -179,7 +186,7 @@ export function SportsManagement() {
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
-      <Paper>
+      <Paper sx={{ ...S.GLASS }}>
         <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)}>
           <Tab label="Sports" />
           <Tab label="Teams" />

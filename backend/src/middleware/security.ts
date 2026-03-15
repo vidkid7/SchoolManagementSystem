@@ -54,7 +54,7 @@ export const corsMiddleware = cors({
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-School-Code', 'Cache-Control', 'Pragma'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-School-Code', 'X-Municipality-Id', 'Cache-Control', 'Pragma'],
   credentials: true,
   maxAge: 86400 // 24 hours
 });

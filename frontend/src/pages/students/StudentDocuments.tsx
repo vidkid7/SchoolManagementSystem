@@ -48,6 +48,7 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { motion } from 'framer-motion';
+import { C, useAdminStyles } from '../../theme/designTokens';
 
 const MotionCard = motion.create(Card);
 
@@ -81,6 +82,7 @@ interface StudentDocumentsProps {
 export const StudentDocuments = ({ studentId }: StudentDocumentsProps) => {
   const { t } = useTranslation();
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   
   const [documents, setDocuments] = useState<StudentDocument[]>([]);
   const [stats, setStats] = useState<DocumentStats>({ total: 0, active: 0, expired: 0, expiringSoon: 0 });
@@ -329,13 +331,13 @@ const getCategoryLabel = (category: string) => {
             sx={{ 
               borderRadius: 2,
               cursor: 'pointer',
-              border: filter === 'active' ? `2px solid #10b981` : 'none',
+              border: filter === 'active' ? `2px solid ${C.success}` : 'none',
             }}
             onClick={() => setFilter('active')}
           >
             <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
               <Typography variant="body2" color="text.secondary">{t('common.active')}</Typography>
-              <Typography variant="h5" sx={{ fontWeight: 600, color: '#10b981' }}>
+              <Typography variant="h5" sx={{ fontWeight: 600, color: C.success }}>
                 {stats.active}
               </Typography>
             </CardContent>
@@ -369,13 +371,13 @@ const getCategoryLabel = (category: string) => {
             sx={{ 
               borderRadius: 2,
               cursor: 'pointer',
-              border: filter === 'expiring-soon' ? `2px solid #f59e0b` : 'none',
+              border: filter === 'expiring-soon' ? `2px solid ${C.warning}` : 'none',
             }}
             onClick={() => setFilter('expiring-soon')}
           >
             <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
               <Typography variant="body2" color="text.secondary">{t('documents.expiringSoon')}</Typography>
-              <Typography variant="h5" sx={{ fontWeight: 600, color: '#f59e0b' }}>
+              <Typography variant="h5" sx={{ fontWeight: 600, color: C.warning }}>
                 {stats.expiringSoon}
               </Typography>
             </CardContent>
@@ -393,19 +395,19 @@ const getCategoryLabel = (category: string) => {
           {t('documents.bulkUploadButton')}
         </Button>
 <Button
-          variant="contained"
           startIcon={<CloudUploadIcon />}
           onClick={() => setUploadDialog({ open: true })}
+          sx={S.BTN_PRIMARY}
         >
           {t('documents.uploadDocument')}
         </Button>
       </Box>
 
       {/* Documents Table */}
-      <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+      <TableContainer component={Paper} sx={{ ...S.GLASS, borderRadius: 2 }}>
         <Table>
           <TableHead>
-            <TableRow sx={{ backgroundColor: alpha(theme.palette.primary.main, 0.04) }}>
+            <TableRow sx={{ bgcolor: S.TH_BG }}>
 <TableCell sx={{ fontWeight: 600 }}>{t('documents.name')}</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>{t('documents.category')}</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>{t('documents.size')}</TableCell>
@@ -543,9 +545,9 @@ const getCategoryLabel = (category: string) => {
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setUploadDialog({ open: false })}>{t('common.cancel')}</Button>
           <Button
-            variant="contained"
             onClick={handleUpload}
             disabled={uploading || !uploadForm.name || !uploadForm.file}
+            sx={S.BTN_PRIMARY}
           >
             {uploading ? t('common.uploading') : t('common.upload')}
           </Button>
@@ -598,9 +600,9 @@ const getCategoryLabel = (category: string) => {
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setBulkUploadDialog({ open: false })}>Cancel</Button>
           <Button
-            variant="contained"
             onClick={handleBulkUpload}
             disabled={uploading || bulkFiles.length === 0}
+            sx={S.BTN_PRIMARY}
           >
             {uploading ? 'Uploading...' : `Upload ${bulkFiles.length} Files`}
           </Button>
@@ -609,45 +611,45 @@ const getCategoryLabel = (category: string) => {
 
       {/* Document Detail Dialog */}
       <Dialog open={detailDialog.open} onClose={() => setDetailDialog({ open: false, document: null })} maxWidth="sm" fullWidth>
-        <DialogTitle>Document Details</DialogTitle>
+        <DialogTitle>{t('students.documentDetails')}</DialogTitle>
         <DialogContent>
           {detailDialog.document && (
             <Box sx={{ mt: 2 }}>
               <Grid container spacing={2}>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Name:</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('common.name')}:</Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>{detailDialog.document.name}</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Category:</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('common.category')}:</Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>{getCategoryLabel(detailDialog.document.category)}</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Type:</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('common.type')}:</Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>{detailDialog.document.type}</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">File Size:</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('students.fileSize')}:</Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>{formatFileSize(detailDialog.document.fileSize)}</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Status:</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('students.status')}:</Typography>
                   {detailDialog.document.isExpired ? (
-                    <Chip icon={<WarningIcon />} label="Expired" size="small" color="error" />
+                    <Chip icon={<WarningIcon />} label={t('students.expired')} size="small" color="error" />
                   ) : detailDialog.document.isExpiringSoon ? (
-                    <Chip icon={<WarningIcon />} label="Expiring Soon" size="small" color="warning" />
+                    <Chip icon={<WarningIcon />} label={t('students.expiringSoon')} size="small" color="warning" />
                   ) : (
-                    <Chip icon={<CheckCircleIcon />} label="Active" size="small" color="success" />
+                    <Chip icon={<CheckCircleIcon />} label={t('students.documentActive')} size="small" color="success" />
                   )}
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Expiry Date:</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('students.expiryDate')}:</Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
                     {detailDialog.document.expiryDate ? new Date(detailDialog.document.expiryDate).toLocaleDateString() : t('common.none')}
                   </Typography>
                 </Grid>
                 <Grid item xs={12}>
-                  <Typography variant="body2" color="text.secondary">Created At:</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('students.createdAt')}:</Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
                     {new Date(detailDialog.document.createdAt).toLocaleDateString()}
                   </Typography>
@@ -657,10 +659,10 @@ const getCategoryLabel = (category: string) => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDetailDialog({ open: false, document: null })}>Close</Button>
+          <Button onClick={() => setDetailDialog({ open: false, document: null })}>{t('common.close')}</Button>
           <Button
-            variant="contained"
             onClick={() => detailDialog.document && window.open(detailDialog.document.fileUrl, '_blank')}
+            sx={S.BTN_PRIMARY}
           >
             Open File
           </Button>

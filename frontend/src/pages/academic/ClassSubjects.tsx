@@ -5,6 +5,9 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
   Paper,
@@ -28,14 +31,18 @@ import {
   IconButton,
   Alert,
   Chip,
+  useTheme,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
   Assignment as AssignmentIcon,
   Person as PersonIcon,
+  ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
+
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface Class {
   classId: number;
@@ -67,6 +74,11 @@ interface ClassSubject {
 }
 
 export const ClassSubjects = () => {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
+  const navigate = useSlugNavigate();
+  const { municipalitySlug } = useParams();
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -95,7 +107,7 @@ export const ClassSubjects = () => {
 
   const fetchClasses = async () => {
     try {
-      const response = await api.get('/academic/classes');
+      const response = await apiClient.get('/academic/classes');
       const classesData = response.data?.data || response.data;
       setClasses(Array.isArray(classesData) ? classesData : []);
     } catch (error) {
@@ -105,7 +117,7 @@ export const ClassSubjects = () => {
 
   const fetchSubjects = async () => {
     try {
-      const response = await api.get('/academic/subjects');
+      const response = await apiClient.get('/academic/subjects');
       const subjectsData = response.data?.data || response.data;
       setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
     } catch (error) {
@@ -115,7 +127,7 @@ export const ClassSubjects = () => {
 
   const fetchTeachers = async () => {
     try {
-      const response = await api.get('/staff?role=subject_teacher');
+      const response = await apiClient.get('/staff?role=subject_teacher');
       const teachersData = response.data?.data || response.data;
       setTeachers(Array.isArray(teachersData) ? teachersData : []);
     } catch (error) {
@@ -128,12 +140,12 @@ export const ClassSubjects = () => {
 
     try {
       setLoading(true);
-      const response = await api.get(`/academic/classes/${selectedClass}/subjects`);
+      const response = await apiClient.get(`/academic/classes/${selectedClass}/subjects`);
       const classSubjectsData = response.data?.data || response.data;
       setClassSubjects(Array.isArray(classSubjectsData) ? classSubjectsData : []);
     } catch (error) {
       console.error('Failed to fetch class subjects:', error);
-      setError('Failed to load class subjects');
+      setError(t('classSubjects.loadError'));
     } finally {
       setLoading(false);
     }
@@ -155,7 +167,7 @@ export const ClassSubjects = () => {
     if (!selectedClass || !assignmentForm.subjectId) return;
 
     try {
-      await api.post(`/academic/classes/${selectedClass}/subjects`, {
+      await apiClient.post(`/academic/classes/${selectedClass}/subjects`, {
         subjectId: parseInt(assignmentForm.subjectId),
         teacherId: assignmentForm.teacherId ? parseInt(assignmentForm.teacherId) : undefined,
       });
@@ -163,20 +175,20 @@ export const ClassSubjects = () => {
       fetchClassSubjects();
     } catch (error: any) {
       console.error('Failed to assign subject:', error);
-      setError(error.response?.data?.message || 'Failed to assign subject');
+      setError(error.response?.data?.message || t('classSubjects.assignError'));
     }
   };
 
   const handleRemoveSubject = async (subjectId: number) => {
     if (!selectedClass) return;
-    if (!confirm('Are you sure you want to remove this subject from the class?')) return;
+    if (!confirm(t('classSubjects.confirmRemove'))) return;
 
     try {
-      await api.delete(`/academic/classes/${selectedClass}/subjects/${subjectId}`);
+      await apiClient.delete(`/academic/classes/${selectedClass}/subjects/${subjectId}`);
       fetchClassSubjects();
     } catch (error) {
       console.error('Failed to remove subject:', error);
-      setError('Failed to remove subject');
+      setError(t('classSubjects.removeError'));
     }
   };
 
@@ -190,9 +202,21 @@ export const ClassSubjects = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" fontWeight={600}>
-          Class-Subject Assignment
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <IconButton
+            onClick={() => navigate(`/academic`)}
+            sx={{
+              bgcolor: 'background.paper',
+              boxShadow: 1,
+              '&:hover': { bgcolor: 'grey.100' },
+            }}
+          >
+            <ArrowBackIcon />
+          </IconButton>
+          <Typography variant="h4" fontWeight={600}>
+            {t('classSubjects.title')}
+          </Typography>
+        </Box>
       </Box>
 
       {error && (
@@ -202,19 +226,19 @@ export const ClassSubjects = () => {
       )}
 
       {/* Class Selector */}
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
-              <InputLabel>Select Class</InputLabel>
+              <InputLabel>{t('classSubjects.selectClass')}</InputLabel>
               <Select
                 value={selectedClass || ''}
-                label="Select Class"
+                label={t('classSubjects.selectClass')}
                 onChange={(e) => setSelectedClass(Number(e.target.value))}
               >
                 {classes.map((cls) => (
                   <MenuItem key={cls.classId} value={cls.classId}>
-                    Class {cls.gradeLevel} - Section {cls.section}
+                    {t('classSubjects.classLabel')} {cls.gradeLevel} - {t('classSubjects.sectionLabel')} {cls.section}
                   </MenuItem>
                 ))}
               </Select>
@@ -226,10 +250,10 @@ export const ClassSubjects = () => {
                 <AssignmentIcon color="primary" sx={{ fontSize: 40 }} />
                 <Box>
                   <Typography variant="h6">
-                    Class {selectedClassInfo.gradeLevel} - {selectedClassInfo.section}
+                    {t('classSubjects.classLabel')} {selectedClassInfo.gradeLevel} - {selectedClassInfo.section}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {classSubjects.length} subjects assigned
+                    {classSubjects.length} {t('classSubjects.subjectsAssigned')}
                   </Typography>
                 </Box>
               </Box>
@@ -240,10 +264,10 @@ export const ClassSubjects = () => {
 
       {/* Assigned Subjects Table */}
       {selectedClass && (
-        <Paper sx={{ borderRadius: 2 }}>
+        <Paper sx={{ ...S.GLASS, borderRadius: R.lg }}>
           <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="h6" fontWeight={600}>
-              Assigned Subjects
+              {t('classSubjects.assignedSubjects')}
             </Typography>
             <Button
               variant="contained"
@@ -251,7 +275,7 @@ export const ClassSubjects = () => {
               onClick={handleOpenDialog}
               disabled={getAvailableSubjects().length === 0}
             >
-              Assign Subject
+              {t('classSubjects.assignSubject')}
             </Button>
           </Box>
 
@@ -259,25 +283,25 @@ export const ClassSubjects = () => {
             <Table>
               <TableHead>
                 <TableRow sx={{ bgcolor: 'grey.50' }}>
-                  <TableCell sx={{ fontWeight: 600 }}>Subject Code</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Subject Name (English)</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Subject Name (Nepali)</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Type</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Assigned Teacher</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600 }}>Actions</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('classSubjects.subjectCode')}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('classSubjects.subjectNameEn')}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('classSubjects.subjectNameNp')}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('classSubjects.type')}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('classSubjects.assignedTeacher')}</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>{t('common.actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loading ? (
                   <TableRow>
                     <TableCell colSpan={6} align="center">
-                      Loading...
+                      {t('common.loading')}
                     </TableCell>
                   </TableRow>
                 ) : classSubjects.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} align="center">
-                      No subjects assigned to this class
+                      {t('classSubjects.noSubjectsAssigned')}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -290,7 +314,7 @@ export const ClassSubjects = () => {
                       <TableCell>{cs.subject.nameNp}</TableCell>
                       <TableCell>
                         <Chip
-                          label={cs.subject.type === 'compulsory' ? 'Compulsory' : 'Optional'}
+                          label={cs.subject.type === 'compulsory' ? t('classSubjects.compulsory') : t('classSubjects.optional')}
                           size="small"
                           color={cs.subject.type === 'compulsory' ? 'primary' : 'default'}
                         />
@@ -305,7 +329,7 @@ export const ClassSubjects = () => {
                           </Box>
                         ) : (
                           <Typography variant="body2" color="text.secondary">
-                            Not assigned
+                            {t('classSubjects.notAssigned')}
                           </Typography>
                         )}
                       </TableCell>
@@ -314,7 +338,7 @@ export const ClassSubjects = () => {
                           size="small"
                           color="error"
                           onClick={() => handleRemoveSubject(cs.subjectId)}
-                          title="Remove subject"
+                          title={t('classSubjects.removeSubject')}
                         >
                           <DeleteIcon />
                         </IconButton>
@@ -329,10 +353,10 @@ export const ClassSubjects = () => {
       )}
 
       {!selectedClass && (
-        <Paper sx={{ p: 5, textAlign: 'center' }}>
+        <Paper sx={{ ...S.GLASS, p: 5, textAlign: 'center' }}>
           <AssignmentIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h6" color="text.secondary">
-            Select a class to manage subject assignments
+            {t('classSubjects.selectClassPrompt')}
           </Typography>
         </Paper>
       )}
@@ -340,16 +364,16 @@ export const ClassSubjects = () => {
       {/* Assign Subject Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 600 }}>
-          Assign Subject to Class {selectedClassInfo?.gradeLevel}-{selectedClassInfo?.section}
+          {t('classSubjects.assignSubjectTo')} {selectedClassInfo?.gradeLevel}-{selectedClassInfo?.section}
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>Subject</InputLabel>
+                <InputLabel>{t('classSubjects.subject')}</InputLabel>
                 <Select
                   value={assignmentForm.subjectId}
-                  label="Subject"
+                  label={t('classSubjects.subject')}
                   onChange={(e) => setAssignmentForm({ ...assignmentForm, subjectId: e.target.value })}
                 >
                   {getAvailableSubjects().map((subject) => (
@@ -362,13 +386,13 @@ export const ClassSubjects = () => {
             </Grid>
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>Teacher (Optional)</InputLabel>
+                <InputLabel>{t('classSubjects.teacherOptional')}</InputLabel>
                 <Select
                   value={assignmentForm.teacherId}
-                  label="Teacher (Optional)"
+                  label={t('classSubjects.teacherOptional')}
                   onChange={(e) => setAssignmentForm({ ...assignmentForm, teacherId: e.target.value })}
                 >
-                  <MenuItem value="">None</MenuItem>
+                  <MenuItem value="">{t('classSubjects.none')}</MenuItem>
                   {teachers.map((teacher) => (
                     <MenuItem key={teacher.staffId} value={teacher.staffId}>
                       {teacher.firstName} {teacher.lastName}
@@ -380,13 +404,13 @@ export const ClassSubjects = () => {
           </Grid>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handleCloseDialog}>{t('common.cancel')}</Button>
           <Button
             variant="contained"
             onClick={handleAssignSubject}
             disabled={!assignmentForm.subjectId}
           >
-            Assign Subject
+            {t('classSubjects.assignSubject')}
           </Button>
         </DialogActions>
       </Dialog>

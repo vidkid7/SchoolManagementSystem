@@ -12,6 +12,7 @@ import {
   Card,
   CardContent,
   CardActionArea,
+  useTheme,
 } from '@mui/material';
 import {
   School as SchoolIcon,
@@ -21,6 +22,8 @@ import {
   Assignment as AssignmentIcon,
   Event as EventIcon,
 } from '@mui/icons-material';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useTranslation } from 'react-i18next';
 
 interface FeatureCard {
   title: string;
@@ -31,6 +34,9 @@ interface FeatureCard {
 }
 
 export const AcademicDashboard = () => {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const features: FeatureCard[] = [
@@ -94,6 +100,7 @@ export const AcademicDashboard = () => {
           <Grid item xs={12} sm={6} md={4} key={index}>
             <Card
               sx={{
+                ...S.GLASS,
                 height: '100%',
                 transition: 'transform 0.2s, box-shadow 0.2s',
                 '&:hover': {

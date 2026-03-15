@@ -3,23 +3,19 @@ import { Op } from 'sequelize';
 import User, { UserRole } from '@models/User.model';
 import Student from '@models/Student.model';
 import { logger } from '@utils/logger';
+import HostelRoom from '@models/HostelRoom.model';
+import HostelResident from '@models/HostelResident.model';
+import HostelIncident from '@models/HostelIncident.model';
+import HostelVisitor from '@models/HostelVisitor.model';
 
-// In-memory stores for hostel data (persists during server runtime)
-// In production these would be DB tables
-const hostelRooms: Map<number, any> = new Map();
-const roomAssignments: Map<string, any> = new Map(); // studentId -> assignment
+// In-memory stores for hostel features not yet migrated to DB
 const disciplineRecords: Map<number, any> = new Map();
-const visitorLogs: Map<number, any> = new Map();
 const leaveRecords: Map<number, any> = new Map();
-const incidentRecords: Map<number, any> = new Map();
 const messMenus: Map<number, any> = new Map();
 const mealAttendance: Map<string, any> = new Map(); // `${date}_${studentId}` -> record
 const inventoryItems: Map<number, any> = new Map();
-let nextRoomId = 1;
 let nextDisciplineId = 1;
-let nextVisitorId = 1;
 let nextLeaveId = 1;
-let nextIncidentId = 1;
 let nextMenuId = 1;
 let nextInventoryId = 1;
 
@@ -125,7 +121,7 @@ class HostelController {
 
   async getRooms(req: Request, res: Response): Promise<void> {
     try {
-      const rooms = Array.from(hostelRooms.values());
+      const rooms = await HostelRoom.findAll({ order: [['roomNumber', 'ASC']] });
       res.status(200).json({ success: true, data: { rooms, total: rooms.length } });
     } catch (error: any) {
       logger.error('Get rooms error:', error);
@@ -140,8 +136,14 @@ class HostelController {
         res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'roomNumber and type are required' } });
         return;
       }
-      const room = { id: nextRoomId++, roomNumber, floor: floor ?? 1, type, capacity: capacity ?? 2, description: description ?? '', occupied: 0, status: 'available', createdAt: new Date().toISOString() };
-      hostelRooms.set(room.id, room);
+      const room = await HostelRoom.create({
+        roomNumber,
+        floor: floor ?? 1,
+        type,
+        capacity: capacity ?? 2,
+        description: description ?? '',
+        status: 'available',
+      });
       res.status(201).json({ success: true, data: room });
     } catch (error: any) {
       logger.error('Create room error:', error);
@@ -152,11 +154,11 @@ class HostelController {
   async updateRoom(req: Request, res: Response): Promise<void> {
     try {
       const id = Number(req.params.roomId);
-      const room = hostelRooms.get(id);
+      const room = await HostelRoom.findByPk(id);
       if (!room) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Room not found' } }); return; }
-      const updated = { ...room, ...req.body, id };
-      hostelRooms.set(id, updated);
-      res.status(200).json({ success: true, data: updated });
+      const { id: _id, ...updateData } = req.body;
+      await room.update(updateData);
+      res.status(200).json({ success: true, data: room });
     } catch (error: any) {
       logger.error('Update room error:', error);
       res.status(500).json({ success: false, error: { code: 'ROOM_UPDATE_ERROR', message: error.message } });
@@ -166,8 +168,9 @@ class HostelController {
   async deleteRoom(req: Request, res: Response): Promise<void> {
     try {
       const id = Number(req.params.roomId);
-      if (!hostelRooms.has(id)) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Room not found' } }); return; }
-      hostelRooms.delete(id);
+      const room = await HostelRoom.findByPk(id);
+      if (!room) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Room not found' } }); return; }
+      await room.destroy();
       res.status(200).json({ success: true, message: 'Room deleted' });
     } catch (error: any) {
       logger.error('Delete room error:', error);
@@ -178,16 +181,31 @@ class HostelController {
   async assignRoom(req: Request, res: Response): Promise<void> {
     try {
       const roomId = Number(req.params.roomId);
-      const { studentId, checkInDate, notes } = req.body;
-      const room = hostelRooms.get(roomId);
+      const { studentId, checkInDate, bedNumber, notes } = req.body;
+      const room = await HostelRoom.findByPk(roomId);
       if (!room) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Room not found' } }); return; }
-      if (room.occupied >= room.capacity) { res.status(409).json({ success: false, error: { code: 'ROOM_FULL', message: 'Room is at full capacity' } }); return; }
-      const assignment = { roomId, studentId, checkInDate: checkInDate ?? new Date().toISOString(), notes: notes ?? '', status: 'active' };
-      roomAssignments.set(String(studentId), assignment);
-      room.occupied = (room.occupied || 0) + 1;
-      if (room.occupied >= room.capacity) room.status = 'occupied';
-      hostelRooms.set(roomId, room);
-      res.status(200).json({ success: true, data: assignment });
+
+      const occupiedCount = await HostelResident.count({ where: { roomId, status: 'active' } });
+      if (occupiedCount >= room.capacity) {
+        res.status(409).json({ success: false, error: { code: 'ROOM_FULL', message: 'Room is at full capacity' } });
+        return;
+      }
+
+      const resident = await HostelResident.create({
+        roomId,
+        studentId,
+        bedNumber: bedNumber ?? null,
+        checkInDate: checkInDate ? new Date(checkInDate) : new Date(),
+        notes: notes ?? '',
+        status: 'active',
+      });
+
+      const newOccupied = occupiedCount + 1;
+      if (newOccupied >= room.capacity) {
+        await room.update({ status: 'occupied' });
+      }
+
+      res.status(200).json({ success: true, data: resident });
     } catch (error: any) {
       logger.error('Assign room error:', error);
       res.status(500).json({ success: false, error: { code: 'ROOM_ASSIGN_ERROR', message: error.message } });
@@ -198,17 +216,23 @@ class HostelController {
     try {
       const roomId = Number(req.params.roomId);
       const { studentId, checkOutDate } = req.body;
-      const room = hostelRooms.get(roomId);
+      const room = await HostelRoom.findByPk(roomId);
       if (!room) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Room not found' } }); return; }
-      const key = String(studentId);
-      if (!roomAssignments.has(key)) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Assignment not found' } }); return; }
-      const assignment = roomAssignments.get(key);
-      assignment.status = 'checked-out';
-      assignment.checkOutDate = checkOutDate ?? new Date().toISOString();
-      room.occupied = Math.max(0, (room.occupied || 1) - 1);
-      if (room.occupied < room.capacity) room.status = 'available';
-      hostelRooms.set(roomId, room);
-      res.status(200).json({ success: true, data: assignment });
+
+      const resident = await HostelResident.findOne({ where: { roomId, studentId, status: 'active' } });
+      if (!resident) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Assignment not found' } }); return; }
+
+      await resident.update({
+        status: 'inactive',
+        checkOutDate: checkOutDate ? new Date(checkOutDate) : new Date(),
+      });
+
+      const remaining = await HostelResident.count({ where: { roomId, status: 'active' } });
+      if (remaining < room.capacity) {
+        await room.update({ status: 'available' });
+      }
+
+      res.status(200).json({ success: true, data: resident });
     } catch (error: any) {
       logger.error('Unassign room error:', error);
       res.status(500).json({ success: false, error: { code: 'ROOM_UNASSIGN_ERROR', message: error.message } });
@@ -258,8 +282,14 @@ class HostelController {
   async getVisitors(req: Request, res: Response): Promise<void> {
     try {
       const { date } = req.query;
-      let visitors = Array.from(visitorLogs.values());
-      if (date) visitors = visitors.filter(v => v.visitDate?.startsWith(String(date)));
+      const where: any = {};
+      if (date) {
+        const d = new Date(String(date));
+        const next = new Date(d);
+        next.setDate(next.getDate() + 1);
+        where.visitDate = { [Op.gte]: d, [Op.lt]: next };
+      }
+      const visitors = await HostelVisitor.findAll({ where, order: [['checkIn', 'DESC']] });
       res.status(200).json({ success: true, data: { visitors, total: visitors.length } });
     } catch (error: any) {
       res.status(500).json({ success: false, error: { code: 'VISITOR_LIST_ERROR', message: error.message } });
@@ -270,8 +300,17 @@ class HostelController {
     try {
       const { visitorName, studentId, relation, phone, purpose, visitDate } = req.body;
       if (!visitorName || !studentId) { res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'visitorName and studentId are required' } }); return; }
-      const visitor = { id: nextVisitorId++, visitorName, studentId, relation: relation ?? 'Guest', phone: phone ?? '', purpose: purpose ?? '', visitDate: visitDate ?? new Date().toISOString(), checkInTime: new Date().toISOString(), checkOutTime: null, status: 'checked-in', registeredBy: req.user?.userId };
-      visitorLogs.set(visitor.id, visitor);
+      const visitor = await HostelVisitor.create({
+        visitorName,
+        residentStudentId: studentId,
+        relationship: relation ?? 'Guest',
+        phone: phone ?? '',
+        purpose: purpose ?? '',
+        visitDate: visitDate ? new Date(visitDate) : new Date(),
+        checkIn: new Date(),
+        status: 'checked-in',
+        registeredBy: req.user?.userId,
+      });
       res.status(201).json({ success: true, data: visitor });
     } catch (error: any) {
       res.status(500).json({ success: false, error: { code: 'VISITOR_CREATE_ERROR', message: error.message } });
@@ -281,11 +320,9 @@ class HostelController {
   async checkoutVisitor(req: Request, res: Response): Promise<void> {
     try {
       const id = Number(req.params.visitorId);
-      const visitor = visitorLogs.get(id);
+      const visitor = await HostelVisitor.findByPk(id);
       if (!visitor) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Visitor not found' } }); return; }
-      visitor.checkOutTime = new Date().toISOString();
-      visitor.status = 'checked-out';
-      visitorLogs.set(id, visitor);
+      await visitor.update({ checkOut: new Date(), status: 'checked-out' });
       res.status(200).json({ success: true, data: visitor });
     } catch (error: any) {
       res.status(500).json({ success: false, error: { code: 'VISITOR_CHECKOUT_ERROR', message: error.message } });
@@ -328,7 +365,7 @@ class HostelController {
 
   async getIncidents(req: Request, res: Response): Promise<void> {
     try {
-      const incidents = Array.from(incidentRecords.values());
+      const incidents = await HostelIncident.findAll({ order: [['date', 'DESC']] });
       res.status(200).json({ success: true, data: { incidents, total: incidents.length } });
     } catch (error: any) {
       res.status(500).json({ success: false, error: { code: 'INCIDENT_LIST_ERROR', message: error.message } });
@@ -339,8 +376,16 @@ class HostelController {
     try {
       const { title, description, studentsInvolved, severity, date, actionTaken } = req.body;
       if (!title || !description) { res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'title and description are required' } }); return; }
-      const incident = { id: nextIncidentId++, title, description, studentsInvolved: studentsInvolved ?? [], severity: severity ?? 'low', date: date ?? new Date().toISOString(), actionTaken: actionTaken ?? '', status: 'open', reportedBy: req.user?.userId, createdAt: new Date().toISOString() };
-      incidentRecords.set(incident.id, incident);
+      const incident = await HostelIncident.create({
+        title,
+        description,
+        studentsInvolved: studentsInvolved ?? [],
+        severity: severity ?? 'low',
+        date: date ? new Date(date) : new Date(),
+        actionTaken: actionTaken ?? '',
+        status: 'open',
+        reportedBy: req.user?.userId,
+      });
       res.status(201).json({ success: true, data: incident });
     } catch (error: any) {
       res.status(500).json({ success: false, error: { code: 'INCIDENT_CREATE_ERROR', message: error.message } });
@@ -350,11 +395,11 @@ class HostelController {
   async updateIncident(req: Request, res: Response): Promise<void> {
     try {
       const id = Number(req.params.incidentId);
-      const incident = incidentRecords.get(id);
+      const incident = await HostelIncident.findByPk(id);
       if (!incident) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Incident not found' } }); return; }
-      const updated = { ...incident, ...req.body, id };
-      incidentRecords.set(id, updated);
-      res.status(200).json({ success: true, data: updated });
+      const { id: _id, ...updateData } = req.body;
+      await incident.update(updateData);
+      res.status(200).json({ success: true, data: incident });
     } catch (error: any) {
       res.status(500).json({ success: false, error: { code: 'INCIDENT_UPDATE_ERROR', message: error.message } });
     }

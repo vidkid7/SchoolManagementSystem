@@ -263,10 +263,17 @@ async function seedDatabase(): Promise<void> {
         password: 'Accountant@123',
         role: UserRole.ACCOUNTANT,
         status: UserStatus.ACTIVE,
+        municipalityId: defaultMunicipalityId,
+        schoolConfigId: defaultSchoolConfigId,
         phoneNumber: '+977-9841234576',
         failedLoginAttempts: 0
       });
       logger.info('Sample accountant created - Username: accountant1 / Password: Accountant@123');
+    } else if (!accountantExists.municipalityId) {
+      accountantExists.municipalityId = defaultMunicipalityId;
+      accountantExists.schoolConfigId = defaultSchoolConfigId;
+      await accountantExists.save();
+      logger.info('Linked existing accountant1 to default municipality');
     }
 
     // Create sample transport manager

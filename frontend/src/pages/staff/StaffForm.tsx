@@ -4,9 +4,10 @@
  * Reusable form for creating and editing staff
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
   Paper,
@@ -43,6 +44,7 @@ import {
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { motion } from 'framer-motion';
 
 const MotionCard = motion.create(Card);
@@ -72,16 +74,14 @@ interface StaffFormData {
 
 const FormSection = ({ icon, title, children, color = 'primary' }: { icon: React.ReactNode; title: string; children: React.ReactNode; color?: string }) => {
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   const paletteColor = (theme.palette as any)[color]?.main || theme.palette.primary.main;
   return (
     <Paper 
       elevation={0}
       sx={{ 
+        ...S.GLASS,
         p: 4, 
-        borderRadius: 4, 
-        bgcolor: 'background.paper',
-        border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
-        transition: 'all 0.3s ease',
         '&:hover': {
           boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
           borderColor: alpha(paletteColor, 0.15),
@@ -89,15 +89,7 @@ const FormSection = ({ icon, title, children, color = 'primary' }: { icon: React
       }}
     >
       <Typography variant="h6" sx={{ fontWeight: 700, mb: 3.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          width: 40, 
-          height: 40, 
-          borderRadius: 2.5,
-          bgcolor: alpha(paletteColor, 0.1),
-        }}>
+        <Box sx={S.ICON_BOX(paletteColor)}>
           {icon}
         </Box>
         {title}
@@ -107,56 +99,46 @@ const FormSection = ({ icon, title, children, color = 'primary' }: { icon: React
   );
 };
 
-const StyledTextField = ({ ...props }) => {
+const StyledTextField = forwardRef<HTMLDivElement, any>((props, ref) => {
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   return (
     <TextField
       {...props}
+      ref={ref}
       sx={{
-        '& .MuiOutlinedInput-root': {
-          borderRadius: 2.5,
-          transition: 'all 0.2s ease',
-          '&:hover': {
-            '& .MuiOutlinedInput-notchedOutline': {
-              borderColor: alpha(theme.palette.primary.main, 0.5),
-            }
-          },
-          '&.Mui-focused': {
-            '& .MuiOutlinedInput-notchedOutline': {
-              borderWidth: 2,
-            }
-          }
-        },
+        ...S.TF,
         ...props.sx
       }}
     />
   );
-};
+});
 
-const StyledSelect = ({ ...props }) => {
+StyledTextField.displayName = 'StyledTextField';
+
+const StyledSelect = forwardRef<HTMLDivElement, any>((props, ref) => {
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   return (
     <Select
       {...props}
+      ref={ref}
       sx={{
-        borderRadius: 2.5,
-        transition: 'all 0.2s ease',
-        '&:hover': {
-          '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: alpha(theme.palette.primary.main, 0.5),
-          }
-        },
+        ...S.SELECT,
         ...props.sx
       }}
     />
   );
-};
+});
+
+StyledSelect.displayName = 'StyledSelect';
 
 export const StaffForm = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { id } = useParams();
+  const navigate = useSlugNavigate();
+  const { id, municipalitySlug } = useParams<{ id?: string; municipalitySlug: string }>();
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   const isEdit = Boolean(id);
   
   const [loading, setLoading] = useState(false);
@@ -167,9 +149,25 @@ export const StaffForm = () => {
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm<StaffFormData>({
     defaultValues: {
-      status: 'active',
+      first_name: '',
+      middle_name: '',
+      last_name: '',
+      date_of_birth_bs: '',
       gender: 'male',
+      position: '',
       department: 'academic',
+      qualification: '',
+      specialization: '',
+      joining_date_bs: '',
+      contact_number: '',
+      email: '',
+      address: '',
+      city: '',
+      district: '',
+      emergency_contact_name: '',
+      emergency_contact_number: '',
+      status: 'active',
+      role: '',
     },
   });
 
@@ -193,14 +191,20 @@ export const StaffForm = () => {
       const emergencyContactName = emergencyContactParts.length > 1 ? emergencyContactParts[0] : '';
       const emergencyContactNumber = emergencyContactParts.length > 1 ? emergencyContactParts[1] : data.emergencyContact || '';
       
+      // Normalize position and department values to snake_case
+      const normalizeValue = (value: string): string => {
+        if (!value) return '';
+        return value.toLowerCase().replace(/\s+/g, '_');
+      };
+      
       reset({
         first_name: data.firstNameEn || '',
         middle_name: data.middleNameEn || '',
         last_name: data.lastNameEn || '',
         date_of_birth_bs: data.dateOfBirthBS || '',
         gender: data.gender || 'male',
-        position: data.position || '',
-        department: data.department || 'academic',
+        position: normalizeValue(data.position) || '',
+        department: normalizeValue(data.department) || 'academic',
         qualification: data.highestQualification || '',
         specialization: data.specialization || '',
         joining_date_bs: data.dateOfBirthBS || '',
@@ -228,7 +232,7 @@ export const StaffForm = () => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.size > 200 * 1024) {
-        setError('File size exceeds 200KB');
+        setError(t('staff.form.fileSizeExceeded'));
         return;
       }
       setPhotoFile(file);
@@ -289,7 +293,7 @@ export const StaffForm = () => {
 
       setSuccess(t('staff.form.successMessage'));
       setTimeout(() => {
-        navigate('/staff');
+        navigate(`/staff`);
       }, 1500);
     } catch (error: any) {
       console.error('Failed to save staff:', error);
@@ -309,7 +313,7 @@ export const StaffForm = () => {
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <IconButton 
-            onClick={() => navigate('/staff')} 
+            onClick={() => navigate(`/staff`)} 
             sx={{ 
               bgcolor: alpha(theme.palette.primary.main, 0.1),
               transition: 'all 0.2s ease',
@@ -332,7 +336,7 @@ export const StaffForm = () => {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }} onClose={() => setError('')}>
+          <Alert severity="error" sx={{ mb: 3, borderRadius: R.lg }} onClose={() => setError('')}>
             {error}
           </Alert>
         </MotionBox>
@@ -343,7 +347,7 @@ export const StaffForm = () => {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }} onClose={() => setSuccess('')}>
+          <Alert severity="success" sx={{ mb: 3, borderRadius: R.lg }} onClose={() => setSuccess('')}>
             {success}
           </Alert>
         </MotionBox>
@@ -358,9 +362,8 @@ export const StaffForm = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
               sx={{ 
-                borderRadius: 4, 
+                ...S.GLASS,
                 overflow: 'hidden',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
                 position: 'relative',
                 '&::before': {
                   content: '""',
@@ -389,10 +392,10 @@ export const StaffForm = () => {
                   <PhotoCamera sx={{ fontSize: 48, color: theme.palette.primary.main }} />
                 </Avatar>
                 <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                  {isEdit ? 'Update Photo' : 'Upload Photo'}
+                  {isEdit ? t('staff.form.updatePhoto') : t('staff.form.uploadPhotoLabel')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  Max 200KB, JPG/PNG
+                  {t('staff.form.photoRequirements')}
                 </Typography>
                 <input
                   accept="image/*"
@@ -407,7 +410,7 @@ export const StaffForm = () => {
                     component="span" 
                     startIcon={<PhotoCamera />}
                     sx={{ 
-                      borderRadius: 2.5,
+                      ...S.BTN_OUTLINE,
                       px: 3,
                       py: 1,
                       transition: 'all 0.2s ease',
@@ -485,7 +488,7 @@ export const StaffForm = () => {
                         required: t('staff.form.required'),
                         pattern: {
                           value: /^\d{4}-\d{2}-\d{2}$/,
-                          message: 'Invalid date format. Use YYYY-MM-DD'
+                          message: t('staff.form.dateFormatError')
                         }
                       }}
                       render={({ field }) => (
@@ -495,7 +498,7 @@ export const StaffForm = () => {
                           fullWidth
                           placeholder="2055-01-15"
                           error={!!errors.date_of_birth_bs}
-                          helperText={errors.date_of_birth_bs?.message || 'Format: YYYY-MM-DD (BS)'}
+                          helperText={errors.date_of_birth_bs?.message || t('staff.form.dateFormatHint')}
                           InputProps={{
                             startAdornment: (
                               <InputAdornment position="start">
@@ -543,13 +546,22 @@ export const StaffForm = () => {
                       render={({ field }) => (
                         <FormControl fullWidth error={!!errors.position}>
                           <InputLabel>{t('staff.position')} *</InputLabel>
-                          <StyledSelect {...field} label={`${t('staff.position')} *`}>
+                          <StyledSelect {...field} label={`${t('staff.position')} *`} value={field.value || ''}>
                             <MenuItem value="principal">{t('staff.positions.principal')}</MenuItem>
                             <MenuItem value="vice_principal">{t('staff.positions.vicePrincipal')}</MenuItem>
                             <MenuItem value="teacher">{t('staff.positions.teacher')}</MenuItem>
                             <MenuItem value="accountant">{t('staff.positions.accountant')}</MenuItem>
                             <MenuItem value="librarian">{t('staff.positions.librarian')}</MenuItem>
                             <MenuItem value="support_staff">{t('staff.positions.supportStaff')}</MenuItem>
+                            <MenuItem value="office_staff">{t('staff.positions.officeStaff')}</MenuItem>
+                            <MenuItem value="sports_coordinator">{t('staff.positions.sportsCoordinator')}</MenuItem>
+                            <MenuItem value="class_teacher">{t('staff.positions.classTeacher')}</MenuItem>
+                            <MenuItem value="subject_teacher">{t('staff.positions.subjectTeacher')}</MenuItem>
+                            <MenuItem value="department_head">{t('staff.positions.departmentHead')}</MenuItem>
+                            <MenuItem value="eca_coordinator">{t('staff.positions.ecaCoordinator')}</MenuItem>
+                            <MenuItem value="transport_manager">{t('staff.positions.transportManager')}</MenuItem>
+                            <MenuItem value="hostel_warden">{t('staff.positions.hostelWarden')}</MenuItem>
+                            <MenuItem value="school_administrator">{t('staff.positions.schoolAdministrator')}</MenuItem>
                           </StyledSelect>
                         </FormControl>
                       )}
@@ -564,10 +576,16 @@ export const StaffForm = () => {
                       render={({ field }) => (
                         <FormControl fullWidth error={!!errors.department}>
                           <InputLabel>{t('staff.department')} *</InputLabel>
-                          <StyledSelect {...field} label={`${t('staff.department')} *`}>
+                          <StyledSelect {...field} label={`${t('staff.department')} *`} value={field.value || ''}>
                             <MenuItem value="academic">{t('staff.departments.academic')}</MenuItem>
                             <MenuItem value="administration">{t('staff.departments.administration')}</MenuItem>
                             <MenuItem value="support">{t('staff.departments.support')}</MenuItem>
+                            <MenuItem value="sports">{t('staff.departments.sports')}</MenuItem>
+                            <MenuItem value="science">{t('staff.departments.science')}</MenuItem>
+                            <MenuItem value="extra_curricular">{t('staff.departments.extraCurricular')}</MenuItem>
+                            <MenuItem value="transport">{t('staff.departments.transport')}</MenuItem>
+                            <MenuItem value="hostel">{t('staff.departments.hostel')}</MenuItem>
+                            <MenuItem value="finance">{t('staff.departments.finance')}</MenuItem>
                           </StyledSelect>
                         </FormControl>
                       )}
@@ -582,7 +600,7 @@ export const StaffForm = () => {
                         required: t('staff.form.required'),
                         pattern: {
                           value: /^\d{4}-\d{2}-\d{2}$/,
-                          message: 'Invalid date format. Use YYYY-MM-DD'
+                          message: t('staff.form.dateFormatError')
                         }
                       }}
                       render={({ field }) => (
@@ -592,7 +610,7 @@ export const StaffForm = () => {
                           fullWidth
                           placeholder="2078-04-01"
                           error={!!errors.joining_date_bs}
-                          helperText={errors.joining_date_bs?.message || 'Format: YYYY-MM-DD (BS)'}
+                          helperText={errors.joining_date_bs?.message || t('staff.form.dateFormatHint')}
                           InputProps={{
                             startAdornment: (
                               <InputAdornment position="start">
@@ -673,14 +691,14 @@ export const StaffForm = () => {
                       control={control}
                       render={({ field }) => (
                         <FormControl fullWidth>
-                          <InputLabel>Role / भूमिका</InputLabel>
-                          <StyledSelect {...field} label="Role / भूमिका" value={field.value || ''}>
-                            <MenuItem value="">None / कुनै पनि होइन</MenuItem>
-                            <MenuItem value="School_Admin">School Admin</MenuItem>
-                            <MenuItem value="Class_Teacher">Class Teacher</MenuItem>
-                            <MenuItem value="Subject_Teacher">Subject Teacher</MenuItem>
-                            <MenuItem value="Accountant">Accountant</MenuItem>
-                            <MenuItem value="Librarian">Librarian</MenuItem>
+                          <InputLabel>{t('staff.role')}</InputLabel>
+                          <StyledSelect {...field} label={t('staff.role')} value={field.value || ''}>
+                            <MenuItem value="">{t('staff.roles.none')}</MenuItem>
+                            <MenuItem value="School_Admin">{t('staff.roles.schoolAdmin')}</MenuItem>
+                            <MenuItem value="Class_Teacher">{t('staff.roles.classTeacher')}</MenuItem>
+                            <MenuItem value="Subject_Teacher">{t('staff.roles.subjectTeacher')}</MenuItem>
+                            <MenuItem value="Accountant">{t('staff.roles.accountant')}</MenuItem>
+                            <MenuItem value="Librarian">{t('staff.roles.librarian')}</MenuItem>
                           </StyledSelect>
                         </FormControl>
                       )}
@@ -704,7 +722,7 @@ export const StaffForm = () => {
                         required: t('staff.form.required'),
                         pattern: {
                           value: /^[0-9]{10}$/,
-                          message: 'Phone number must be 10 digits'
+                          message: t('staff.form.phoneValidation')
                         }
                       }}
                       render={({ field }) => (
@@ -714,7 +732,7 @@ export const StaffForm = () => {
                           fullWidth
                           placeholder="9841234567"
                           error={!!errors.contact_number}
-                          helperText={errors.contact_number?.message || '10 digit phone number'}
+                          helperText={errors.contact_number?.message || t('staff.form.phoneHelperText')}
                           InputProps={{
                             startAdornment: (
                               <InputAdornment position="start">
@@ -735,7 +753,7 @@ export const StaffForm = () => {
                         required: t('staff.form.required'),
                         pattern: {
                           value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                          message: 'Invalid email address'
+                          message: t('staff.form.emailValidation')
                         }
                       }}
                       render={({ field }) => (
@@ -872,7 +890,7 @@ export const StaffForm = () => {
                         required: t('staff.form.required'),
                         pattern: {
                           value: /^[0-9]{10}$/,
-                          message: 'Phone number must be 10 digits'
+                          message: t('staff.form.phoneValidation')
                         }
                       }}
                       render={({ field }) => (
@@ -882,7 +900,7 @@ export const StaffForm = () => {
                           fullWidth
                           placeholder="9841234567"
                           error={!!errors.emergency_contact_number}
-                          helperText={errors.emergency_contact_number?.message || '10 digit phone number'}
+                          helperText={errors.emergency_contact_number?.message || t('staff.form.phoneHelperText')}
                           InputProps={{
                             startAdornment: (
                               <InputAdornment position="start">
@@ -910,21 +928,12 @@ export const StaffForm = () => {
               <Button
                 variant="outlined"
                 startIcon={<CancelIcon />}
-                onClick={() => navigate('/staff')}
+                onClick={() => navigate(`/staff`)}
                 disabled={loading}
                 sx={{ 
-                  borderRadius: 3, 
+                  ...S.BTN_OUTLINE,
                   px: 4, 
                   py: 1.25,
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  borderColor: alpha(theme.palette.grey[500], 0.5),
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    borderColor: theme.palette.grey[700],
-                    bgcolor: alpha(theme.palette.grey[500], 0.05),
-                    transform: 'translateY(-2px)',
-                  }
                 }}
               >
                 {t('staff.form.cancel')}
@@ -935,21 +944,9 @@ export const StaffForm = () => {
                 startIcon={<SaveIcon />}
                 disabled={loading}
                 sx={{ 
-                  borderRadius: 3, 
+                  ...S.BTN_PRIMARY,
                   px: 5, 
                   py: 1.25,
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.35)}`,
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    boxShadow: `0 10px 28px ${alpha(theme.palette.primary.main, 0.45)}`,
-                    transform: 'translateY(-2px)',
-                  },
-                  '&:disabled': {
-                    bgcolor: theme.palette.primary.main,
-                    opacity: 0.7,
-                  }
                 }}
               >
                 {loading ? t('staff.form.saving') : t('staff.form.save')}

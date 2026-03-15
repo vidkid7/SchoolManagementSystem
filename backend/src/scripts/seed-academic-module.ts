@@ -2,7 +2,7 @@
  * Seed Academic Module Data
  * 
  * Seeds:
- * - Academic Years (2080-2081, 2081-2082)
+ * - Academic Year (auto-detected from today's Nepali BS calendar)
  * - Terms (First Term, Second Term, Third Term)
  * - Classes (1-12 with sections A, B, C)
  * - Subjects (Nepali, English, Math, Science, Social Studies, etc.)
@@ -20,11 +20,8 @@ import sequelize from '../config/database';
 import { AcademicYear, Term } from '../models/AcademicYear.model';
 import Class from '../models/Class.model';
 import { Subject, ClassSubject } from '../models/Subject.model';
-// import { initEvent } from '../models/Event.model'; // Commented out - events table not created yet
 import { logger } from '../utils/logger';
-
-// Initialize Event model - Commented out until events table is created
-// const Event = initEvent(sequelize);
+import academicRepository from '../modules/academic/academic.repository';
 
 async function seedAcademicModule(): Promise<void> {
   try {
@@ -33,61 +30,49 @@ async function seedAcademicModule(): Promise<void> {
     await sequelize.authenticate();
     logger.info('Database connection established');
 
-    // 1. Seed Academic Years
-    logger.info('Seeding academic years...');
-    const academicYears = await AcademicYear.bulkCreate([
-      {
-        name: '2080-2081',
-        startDateBS: '2080-04-01',
-        endDateBS: '2081-03-32',
-        startDateAD: new Date('2023-07-17'),
-        endDateAD: new Date('2024-07-15'),
-        isCurrent: false,
-      },
-      {
-        name: '2081-2082',
-        startDateBS: '2081-04-01',
-        endDateBS: '2082-03-32',
-        startDateAD: new Date('2024-07-16'),
-        endDateAD: new Date('2025-07-15'),
-        isCurrent: true,
-      },
-    ], { ignoreDuplicates: true });
+    // 1. Auto-detect and seed the correct academic year from BS calendar
+    logger.info('Auto-detecting current academic year from Nepali BS calendar...');
+    const currentYear = await academicRepository.autoDetectCurrentAcademicYear();
+    logger.info(`Using academic year: ${currentYear.name} (${currentYear.startDateBS} – ${currentYear.endDateBS})`);
 
-    logger.info(`Created ${academicYears.length} academic years`);
-
-    // Get current academic year
-    const currentYear = await AcademicYear.findOne({ where: { isCurrent: true } });
-    if (!currentYear) {
-      throw new Error('No current academic year found');
-    }
-
-    // 2. Seed Terms
+    // 2. Seed Terms (relative to the auto-detected year's AD dates)
     logger.info('Seeding terms...');
+    const startAD = new Date(currentYear.startDateAD);
+    const endAD = new Date(currentYear.endDateAD);
+    const yearDuration = endAD.getTime() - startAD.getTime();
+    const third = Math.floor(yearDuration / 3);
+
+    const t1Start = new Date(startAD);
+    const t1End = new Date(startAD.getTime() + third);
+    const t2Start = new Date(t1End.getTime() + 86_400_000);
+    const t2End = new Date(startAD.getTime() + 2 * third);
+    const t3Start = new Date(t2End.getTime() + 86_400_000);
+    const t3End = new Date(endAD);
+
     const terms = await Term.bulkCreate([
       {
         academicYearId: currentYear.academicYearId,
         name: 'First Term',
-        startDate: new Date('2024-07-16'),
-        endDate: new Date('2024-11-15'),
-        examStartDate: new Date('2024-11-01'),
-        examEndDate: new Date('2024-11-15'),
+        startDate: t1Start,
+        endDate: t1End,
+        examStartDate: new Date(t1End.getTime() - 14 * 86_400_000),
+        examEndDate: t1End,
       },
       {
         academicYearId: currentYear.academicYearId,
         name: 'Second Term',
-        startDate: new Date('2024-11-16'),
-        endDate: new Date('2025-03-15'),
-        examStartDate: new Date('2025-03-01'),
-        examEndDate: new Date('2025-03-15'),
+        startDate: t2Start,
+        endDate: t2End,
+        examStartDate: new Date(t2End.getTime() - 14 * 86_400_000),
+        examEndDate: t2End,
       },
       {
         academicYearId: currentYear.academicYearId,
         name: 'Third Term',
-        startDate: new Date('2025-03-16'),
-        endDate: new Date('2025-07-15'),
-        examStartDate: new Date('2025-07-01'),
-        examEndDate: new Date('2025-07-15'),
+        startDate: t3Start,
+        endDate: t3End,
+        examStartDate: new Date(t3End.getTime() - 14 * 86_400_000),
+        examEndDate: t3End,
       },
     ], { ignoreDuplicates: true });
 
@@ -669,7 +654,7 @@ async function seedAcademicModule(): Promise<void> {
 
     // Summary
     logger.info('\n=== Academic Module Seeding Complete ===');
-    logger.info(`Academic Years: ${academicYears.length}`);
+    logger.info(`Academic Year: ${currentYear.name}`);
     logger.info(`Terms: ${terms.length}`);
     logger.info(`Classes: ${classes.length}`);
     logger.info(`Subjects: ${subjects.length}`);

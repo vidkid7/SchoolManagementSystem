@@ -5,6 +5,17 @@ import { asyncHandler, NotFoundError, ValidationError } from '@middleware/errorH
 import { HTTP_STATUS } from '@config/constants';
 
 class AcademicController {
+  getCurrentAcademicYear = asyncHandler(async (_req: Request, res: Response): Promise<void> => {
+    const year = await academicService.getCurrentAcademicYear();
+    if (!year) {
+      // Trigger auto-detect if nothing is marked current
+      const detected = await academicService.autoDetectCurrentAcademicYear();
+      sendSuccess(res, detected, 'Current academic year retrieved successfully');
+      return;
+    }
+    sendSuccess(res, year, 'Current academic year retrieved successfully');
+  });
+
   getAcademicYears = asyncHandler(async (_req: Request, res: Response): Promise<void> => {
     const years = await academicService.getAcademicYears();
     sendSuccess(res, years, 'Academic years retrieved successfully');

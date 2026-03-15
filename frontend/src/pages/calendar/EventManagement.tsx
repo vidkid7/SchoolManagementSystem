@@ -36,7 +36,9 @@ import {
   FormControlLabel,
   Checkbox,
   Switch,
+  useTheme,
 } from '@mui/material';
+import { C, useAdminStyles } from '../../theme/designTokens';
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -96,6 +98,8 @@ interface Event {
 
 export const EventManagement = () => {
   const { i18n } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const isNepali = i18n.language === 'ne';
 
   const [events, setEvents] = useState<Event[]>([]);
@@ -134,7 +138,7 @@ export const EventManagement = () => {
     isNepalGovernmentHoliday: false,
     governmentHolidayName: '',
     governmentHolidayNameNp: '',
-    color: '#1976d2',
+    color: C.neutral,
   });
 
   useEffect(() => {
@@ -188,7 +192,7 @@ export const EventManagement = () => {
         isNepalGovernmentHoliday: event.isNepalGovernmentHoliday,
         governmentHolidayName: '',
         governmentHolidayNameNp: '',
-        color: '#1976d2',
+        color: C.primary,
       });
     } else {
       setSelectedEvent(null);
@@ -215,7 +219,7 @@ export const EventManagement = () => {
         isNepalGovernmentHoliday: false,
         governmentHolidayName: '',
         governmentHolidayNameNp: '',
-        color: '#1976d2',
+        color: C.primary,
       });
     }
     setDialogOpen(true);
@@ -290,7 +294,7 @@ export const EventManagement = () => {
           {isNepali ? 'कार्यक्रम व्यवस्थापन' : 'Event Management'}
         </Typography>
         <Button
-          variant="contained"
+          sx={S.BTN_PRIMARY}
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
         >
@@ -310,7 +314,7 @@ export const EventManagement = () => {
         </Alert>
       )}
 
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 2, mb: 3 }}>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           <TextField
             label={isNepali ? 'खोज्नुहोस्' : 'Search'}
@@ -362,7 +366,7 @@ export const EventManagement = () => {
         </Box>
       </Paper>
 
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} sx={S.GLASS}>
         <Table>
           <TableHead>
             <TableRow>
@@ -646,7 +650,7 @@ export const EventManagement = () => {
           <Button onClick={handleCloseDialog}>
             {isNepali ? 'रद्द गर्नुहोस्' : 'Cancel'}
           </Button>
-          <Button variant="contained" onClick={handleSubmit}>
+          <Button sx={S.BTN_PRIMARY} onClick={handleSubmit}>
             {selectedEvent
               ? isNepali ? 'अद्यावधिक गर्नुहोस्' : 'Update'
               : isNepali ? 'सिर्जना गर्नुहोस्' : 'Create'}

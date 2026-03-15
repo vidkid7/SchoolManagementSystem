@@ -1,38 +1,25 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
-import User, { UserRole } from '@models/User.model';
-import Student from '@models/Student.model';
 import { logger } from '@utils/logger';
-
-// In-memory stores for assignment data (persists during server runtime)
-// In production these would be DB tables
-const assignments: Map<number, any> = new Map();
-const submissions: Map<string, any> = new Map(); // `${assignmentId}_${studentId}` -> submission
-let nextAssignmentId = 1;
-let nextSubmissionId = 1;
+import Assignment from '@models/Assignment.model';
+import AssignmentSubmission from '@models/AssignmentSubmission.model';
 
 class AssignmentController {
   async getDashboard(req: Request, res: Response): Promise<void> {
     try {
       const now = new Date();
-      const allAssignments = Array.from(assignments.values());
 
-      const total = allAssignments.length;
-      const active = allAssignments.filter(a => a.status === 'active').length;
-      const overdue = allAssignments.filter(a => a.status === 'active' && new Date(a.dueDate) < now).length;
-
-      const allSubmissions = Array.from(submissions.values());
-      const pendingGrading = allSubmissions.filter(s => s.status === 'submitted').length;
+      const [total, active, overdue, pendingGrading] = await Promise.all([
+        Assignment.count(),
+        Assignment.count({ where: { status: 'active' } }),
+        Assignment.count({ where: { status: 'active', dueDate: { [Op.lt]: now } } }),
+        AssignmentSubmission.count({ where: { status: 'submitted' } }),
+      ]);
 
       res.status(200).json({
         success: true,
         data: {
-          summary: {
-            total,
-            active,
-            overdue,
-            pendingGrading
-          }
+          summary: { total, active, overdue, pendingGrading }
         },
         message: 'Assignment dashboard loaded successfully'
       });
@@ -48,29 +35,25 @@ class AssignmentController {
   async getAssignments(req: Request, res: Response): Promise<void> {
     try {
       const { subject, class: className, status, teacherId, page = 1, limit = 20 } = req.query;
-      let result = Array.from(assignments.values());
 
-      if (subject) {
-        result = result.filter(a => a.subject === subject);
-      }
-      if (className) {
-        result = result.filter(a => a.className === className);
-      }
-      if (status) {
-        result = result.filter(a => a.status === status);
-      }
-      if (teacherId) {
-        result = result.filter(a => a.createdBy === Number(teacherId));
-      }
+      const where: any = {};
+      if (subject) where.subject = subject;
+      if (className) where.className = className;
+      if (status) where.status = status;
+      if (teacherId) where.createdBy = Number(teacherId);
 
-      const total = result.length;
       const offset = (Number(page) - 1) * Number(limit);
-      const paginated = result.slice(offset, offset + Number(limit));
+      const { count: total, rows: result } = await Assignment.findAndCountAll({
+        where,
+        limit: Number(limit),
+        offset,
+        order: [['createdAt', 'DESC']],
+      });
 
       res.status(200).json({
         success: true,
         data: {
-          assignments: paginated,
+          assignments: result,
           pagination: {
             total,
             page: Number(page),
@@ -92,7 +75,7 @@ class AssignmentController {
   async getAssignmentById(req: Request, res: Response): Promise<void> {
     try {
       const id = Number(req.params.id);
-      const assignment = assignments.get(id);
+      const assignment = await Assignment.findByPk(id);
       if (!assignment) {
         res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Assignment not found' } });
         return;
@@ -120,9 +103,7 @@ class AssignmentController {
         return;
       }
 
-      const now = new Date().toISOString();
-      const assignment = {
-        id: nextAssignmentId++,
+      const assignment = await Assignment.create({
         title,
         subject,
         className,
@@ -133,11 +114,8 @@ class AssignmentController {
         attachments: attachments ?? [],
         createdBy: req.user?.userId,
         status: 'active',
-        createdAt: now,
-        updatedAt: now
-      };
+      });
 
-      assignments.set(assignment.id, assignment);
       res.status(201).json({
         success: true,
         data: assignment,
@@ -155,30 +133,27 @@ class AssignmentController {
   async updateAssignment(req: Request, res: Response): Promise<void> {
     try {
       const id = Number(req.params.id);
-      const assignment = assignments.get(id);
+      const assignment = await Assignment.findByPk(id);
       if (!assignment) {
         res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Assignment not found' } });
         return;
       }
 
       const { title, subject, className, section, description, dueDate, totalMarks, status } = req.body;
-      const updated = {
-        ...assignment,
-        title: title ?? assignment.title,
-        subject: subject ?? assignment.subject,
-        className: className ?? assignment.className,
-        section: section ?? assignment.section,
-        description: description ?? assignment.description,
-        dueDate: dueDate ?? assignment.dueDate,
-        totalMarks: totalMarks != null ? Number(totalMarks) : assignment.totalMarks,
-        status: status ?? assignment.status,
-        updatedAt: new Date().toISOString()
-      };
+      await assignment.update({
+        ...(title != null && { title }),
+        ...(subject != null && { subject }),
+        ...(className != null && { className }),
+        ...(section != null && { section }),
+        ...(description != null && { description }),
+        ...(dueDate != null && { dueDate }),
+        ...(totalMarks != null && { totalMarks: Number(totalMarks) }),
+        ...(status != null && { status }),
+      });
 
-      assignments.set(id, updated);
       res.status(200).json({
         success: true,
-        data: updated,
+        data: assignment,
         message: 'Assignment updated successfully'
       });
     } catch (error: any) {
@@ -193,12 +168,13 @@ class AssignmentController {
   async deleteAssignment(req: Request, res: Response): Promise<void> {
     try {
       const id = Number(req.params.id);
-      if (!assignments.has(id)) {
+      const assignment = await Assignment.findByPk(id);
+      if (!assignment) {
         res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Assignment not found' } });
         return;
       }
 
-      assignments.delete(id);
+      await assignment.destroy();
       res.status(200).json({
         success: true,
         data: null,
@@ -216,12 +192,13 @@ class AssignmentController {
   async getSubmissions(req: Request, res: Response): Promise<void> {
     try {
       const assignmentId = Number(req.params.id);
-      if (!assignments.has(assignmentId)) {
+      const assignment = await Assignment.findByPk(assignmentId);
+      if (!assignment) {
         res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Assignment not found' } });
         return;
       }
 
-      const result = Array.from(submissions.values()).filter(s => s.assignmentId === assignmentId);
+      const result = await AssignmentSubmission.findAll({ where: { assignmentId } });
 
       res.status(200).json({
         success: true,
@@ -242,7 +219,8 @@ class AssignmentController {
       const assignmentId = Number(req.params.id);
       const studentId = req.user?.userId;
 
-      if (!assignments.has(assignmentId)) {
+      const assignment = await Assignment.findByPk(assignmentId);
+      if (!assignment) {
         res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Assignment not found' } });
         return;
       }
@@ -253,20 +231,15 @@ class AssignmentController {
         return;
       }
 
-      const key = `${assignmentId}_${studentId}`;
-      const submission = {
-        id: nextSubmissionId++,
+      const submission = await AssignmentSubmission.create({
         assignmentId,
-        studentId,
+        studentId: studentId!,
         content,
         attachments: attachments ?? [],
         status: 'submitted',
-        submittedDate: new Date().toISOString(),
-        marks: null,
-        feedback: null
-      };
+        submittedDate: new Date(),
+      });
 
-      submissions.set(key, submission);
       res.status(201).json({
         success: true,
         data: submission,
@@ -291,25 +264,22 @@ class AssignmentController {
         return;
       }
 
-      const entry = Array.from(submissions.entries()).find(([, s]) => s.id === submissionId);
-      if (!entry) {
+      const submission = await AssignmentSubmission.findByPk(submissionId);
+      if (!submission) {
         res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Submission not found' } });
         return;
       }
 
-      const [key, submission] = entry;
-      const updated = {
-        ...submission,
+      await submission.update({
         marks: Number(marks),
         feedback: feedback ?? '',
         status: 'graded',
-        gradedAt: new Date().toISOString()
-      };
+        gradedAt: new Date(),
+      });
 
-      submissions.set(key, updated);
       res.status(200).json({
         success: true,
-        data: updated,
+        data: submission,
         message: 'Submission graded successfully'
       });
     } catch (error: any) {
@@ -324,15 +294,17 @@ class AssignmentController {
   async getMyAssignments(req: Request, res: Response): Promise<void> {
     try {
       const studentId = req.user?.userId;
-      const allAssignments = Array.from(assignments.values());
+      const allAssignments = await Assignment.findAll({ order: [['createdAt', 'DESC']] });
+
+      const mySubmissions = await AssignmentSubmission.findAll({ where: { studentId } });
+      const submissionMap = new Map(mySubmissions.map(s => [s.assignmentId, s]));
 
       const result = allAssignments.map(a => {
-        const key = `${a.id}_${studentId}`;
-        const submission = submissions.get(key);
+        const submission = submissionMap.get(a.id) ?? null;
         return {
-          ...a,
+          ...a.toJSON(),
           submissionStatus: submission ? submission.status : 'not_submitted',
-          submission: submission ?? null
+          submission,
         };
       });
 
@@ -349,13 +321,12 @@ class AssignmentController {
       });
     }
   }
+
   // Helper for cross-module access (used by student controller)
-  getAllAssignmentsForStudent(className?: string): any[] {
-    const allAssignments = Array.from(assignments.values());
-    if (className) {
-      return allAssignments.filter(a => a.className === className && a.status === 'active');
-    }
-    return allAssignments.filter(a => a.status === 'active');
+  async getAllAssignmentsForStudent(className?: string): Promise<any[]> {
+    const where: any = { status: 'active' };
+    if (className) where.className = className;
+    return Assignment.findAll({ where });
   }
 }
 

@@ -134,6 +134,7 @@ import teacherRoutes from '@modules/teacher/teacher.routes';
 import assignmentRoutes from '@modules/assignment/assignment.routes';
 import departmentRoutes from '@modules/department/department.routes';
 import lessonPlanRoutes from '@modules/lessonPlan/lessonPlan.routes';
+import notificationRoutes from '@modules/notifications/notification.routes';
 import setupRoutes from './routes/setup.routes';
 
 // Setup route (for initial Railway deployment)
@@ -177,6 +178,7 @@ app.use('/api/v1/teachers', teacherRoutes);
 app.use('/api/v1/assignments', assignmentRoutes);
 app.use('/api/v1/lesson-plans', lessonPlanRoutes);
 app.use('/api/v1/department', departmentRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 
 // Serve uploaded files statically
 app.use('/uploads', express.static('uploads'));

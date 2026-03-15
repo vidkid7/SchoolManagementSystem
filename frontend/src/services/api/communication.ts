@@ -22,7 +22,10 @@ export interface Message {
 
 export interface Conversation {
   id: number;
-  participants: Participant[];
+  conversationId?: number; // Backend uses conversationId
+  participant1Id?: number; // Backend format
+  participant2Id?: number; // Backend format
+  participants?: Participant[]; // Frontend format
   lastMessage?: Message;
   unreadCount: number;
   createdAt: string;
@@ -123,15 +126,29 @@ class CommunicationApiService {
   /**
    * Get user conversations
    */
-async getConversations(page = 1, limit = 20): Promise<{
+  async getConversations(page = 1, limit = 20): Promise<{
     conversations: Conversation[];
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
     const response = await apiClient.get(`${this.baseUrl}/conversations`, {
       params: { page, limit },
     });
+    
+    // Transform backend response to frontend format
+    const conversations = (response.data.data || []).map((conv: any) => ({
+      id: conv.conversationId || conv.id,
+      conversationId: conv.conversationId,
+      participant1Id: conv.participant1Id,
+      participant2Id: conv.participant2Id,
+      participants: [], // Will be populated by frontend
+      lastMessage: conv.lastMessage,
+      unreadCount: conv.unreadCount || 0,
+      createdAt: conv.createdAt,
+      updatedAt: conv.updatedAt,
+    }));
+    
     return {
-      conversations: response.data.data || [],
+      conversations,
       meta: response.data.meta || { page, limit, total: 0, totalPages: 0 },
     };
   }

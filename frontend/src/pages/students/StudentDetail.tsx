@@ -60,6 +60,7 @@ import {
 } from '@mui/icons-material';
 import { apiClient } from '../../services/apiClient';
 import { motion } from 'framer-motion';
+import { C, useAdminStyles, R, RADIUS } from '../../theme/designTokens';
 import { useNepaliNumbers } from '../../hooks/useNepaliNumbers';
 import StudentDocuments from './StudentDocuments';
 import StudentLibrary from './StudentLibrary';
@@ -143,7 +144,7 @@ const InfoCard = ({ icon, title, children, color = 'primary' }: { icon: React.Re
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -2, boxShadow: '0 8px 30px rgba(0,0,0,0.12)' }}
       sx={{ 
-        borderRadius: 3, 
+        borderRadius: R.md, 
         overflow: 'hidden',
         border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
         transition: 'all 0.3s ease',
@@ -157,7 +158,7 @@ const InfoCard = ({ icon, title, children, color = 'primary' }: { icon: React.Re
             justifyContent: 'center',
             width: 40, 
             height: 40, 
-            borderRadius: 2.5,
+            borderRadius: R.xl,
             bgcolor: alpha((theme.palette as any)[color]?.main || theme.palette.primary.main, 0.1),
           }}>
             {icon}
@@ -178,7 +179,7 @@ const StatCard = ({ value, label, color }: { value: string | number; label: stri
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4, boxShadow: '0 8px 30px rgba(0,0,0,0.12)' }}
       sx={{ 
-        borderRadius: 3, 
+        borderRadius: R.md, 
         border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
         transition: 'all 0.3s ease',
         overflow: 'hidden',
@@ -227,6 +228,7 @@ export const StudentDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   const { formatNumber } = useNepaliNumbers();
   const [tabValue, setTabValue] = useState(0);
   const [student, setStudent] = useState<any>(null);
@@ -369,7 +371,7 @@ export const StudentDetail = () => {
   if (loading) {
     return (
       <Box sx={{ mt: 2, mb: 4, p: 3 }}>
-        <LinearProgress sx={{ borderRadius: 1 }} />
+        <LinearProgress sx={{ borderRadius: R.sm }} />
         <Typography sx={{ mt: 2, textAlign: 'center' }} color="text.secondary">
           {t('common.loading')}
         </Typography>
@@ -380,7 +382,7 @@ export const StudentDetail = () => {
   if (error || !student) {
     return (
       <Box sx={{ mt: 2, mb: 4, p: 3 }}>
-        <Card sx={{ p: 4, textAlign: 'center', borderRadius: 3 }}>
+        <Card sx={{ p: 4, textAlign: 'center', borderRadius: R.md }}>
           <Typography color="error" gutterBottom>
             {error || t('messages.noData')}
           </Typography>
@@ -395,7 +397,7 @@ export const StudentDetail = () => {
   return (
     <Box sx={{ pb: 4 }} key={i18n.language}>
       {successMessage && (
-        <Alert severity="success" sx={{ mb: 3, borderRadius: 3 }} onClose={() => setSuccessMessage('')}>
+        <Alert severity="success" sx={{ mb: 3, borderRadius: R.md }} onClose={() => setSuccessMessage('')}>
           {successMessage}
         </Alert>
       )}
@@ -407,7 +409,7 @@ export const StudentDetail = () => {
         elevation={0}
         sx={{ 
           mb: 4,
-          borderRadius: 4,
+          borderRadius: R.lg,
           background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
           color: 'white',
           position: 'relative',
@@ -461,7 +463,7 @@ export const StudentDetail = () => {
                       bgcolor: 'rgba(255,255,255,0.2)', 
                       color: 'white',
                       fontWeight: 600,
-                      borderRadius: 2,
+                      borderRadius: R.lg,
                     }} 
                   />
                   <Chip 
@@ -470,13 +472,13 @@ export const StudentDetail = () => {
                       bgcolor: 'rgba(255,255,255,0.2)', 
                       color: 'white',
                       fontWeight: 600,
-                      borderRadius: 2,
+                      borderRadius: R.lg,
                     }} 
                   />
                   <Chip 
                     label={student.status ? t(`students.${student.status}`) : '-'}
                     color={student.status === 'active' ? 'success' : 'default'}
-                    sx={{ fontWeight: 600, borderRadius: 2 }}
+                    sx={{ fontWeight: 600, borderRadius: R.lg }}
                   />
                 </Box>
               </Box>
@@ -487,7 +489,7 @@ export const StudentDetail = () => {
                 startIcon={<BackIcon />}
                 onClick={() => navigate('/students')}
                 sx={{ 
-                  borderRadius: 2.5,
+                  borderRadius: R.xl,
                   borderColor: 'rgba(255,255,255,0.3)',
                   color: 'white',
                   '&:hover': { 
@@ -505,7 +507,7 @@ export const StudentDetail = () => {
                     startIcon={<TransferIcon />}
                     onClick={() => setTransferDialogOpen(true)}
                     sx={{ 
-                      borderRadius: 2.5,
+                      borderRadius: R.xl,
                       borderColor: 'rgba(255,255,255,0.3)',
                       color: 'white',
                       '&:hover': { 
@@ -521,7 +523,7 @@ export const StudentDetail = () => {
                     startIcon={<GradeIcon />}
                     onClick={() => setPromoteDialogOpen(true)}
                     sx={{ 
-                      borderRadius: 2.5,
+                      borderRadius: R.xl,
                       borderColor: 'rgba(255,255,255,0.3)',
                       color: 'white',
                       '&:hover': { 
@@ -539,7 +541,7 @@ export const StudentDetail = () => {
                 startIcon={<DocumentIcon />}
                 onClick={() => navigate(`/students/${id}/cv`)}
                 sx={{ 
-                  borderRadius: 2.5,
+                  borderRadius: R.xl,
                   borderColor: 'rgba(255,255,255,0.3)',
                   color: 'white',
                   '&:hover': { 
@@ -555,7 +557,7 @@ export const StudentDetail = () => {
                 startIcon={<EditIcon />}
                 onClick={() => navigate(`/students/${id}/edit`)}
                 sx={{ 
-                  borderRadius: 2.5,
+                  borderRadius: R.xl,
                   bgcolor: 'white',
                   color: theme.palette.primary.main,
                   fontWeight: 700,
@@ -576,7 +578,7 @@ export const StudentDetail = () => {
       <MotionCard
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        sx={{ borderRadius: 4, overflow: 'hidden', border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}
+        sx={{ borderRadius: R.lg, overflow: 'hidden', border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}
       >
         <Tabs 
           value={tabValue} 
@@ -593,7 +595,7 @@ export const StudentDetail = () => {
               textTransform: 'none',
               minHeight: 56,
               fontSize: '0.85rem',
-              borderRadius: '12px 12px 0 0',
+              borderRadius: `${RADIUS.md} ${RADIUS.md} 0 0`,
               mx: 0.5,
               transition: 'all 0.2s ease',
               '&:hover': {
@@ -681,7 +683,7 @@ export const StudentDetail = () => {
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
                   {t('attendance.title')}
                 </Typography>
-                <TableContainer component={Paper} sx={{ borderRadius: 3, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
+                <TableContainer component={Paper} sx={{ borderRadius: R.md, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
                   <Table>
                     <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.04) }}>
                       <TableRow>
@@ -698,7 +700,7 @@ export const StudentDetail = () => {
                               label={t(`attendance.${record.status}`)}
                               color={getStatusColor(record.status)}
                               size="small"
-                              sx={{ fontWeight: 600, borderRadius: 2 }}
+                              sx={{ fontWeight: 600, borderRadius: R.lg }}
                             />
                           </TableCell>
                         </TableRow>
@@ -730,7 +732,7 @@ export const StudentDetail = () => {
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
                   {t('examinations.gradeEntry')}
                 </Typography>
-                <TableContainer component={Paper} sx={{ borderRadius: 3, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
+                <TableContainer component={Paper} sx={{ borderRadius: R.md, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
                   <Table>
                     <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.04) }}>
                       <TableRow>
@@ -749,7 +751,7 @@ export const StudentDetail = () => {
                           <TableCell>{grade.fullMarks}</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>{grade.obtainedMarks}</TableCell>
                           <TableCell>
-                            <Chip label={grade.grade || '-'} size="small" sx={{ fontWeight: 600, borderRadius: 2 }} />
+                            <Chip label={grade.grade || '-'} size="small" sx={{ fontWeight: 600, borderRadius: R.lg }} />
                           </TableCell>
                         </TableRow>
                       ))}
@@ -780,7 +782,7 @@ export const StudentDetail = () => {
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
                   {t('finance.invoices')}
                 </Typography>
-                <TableContainer component={Paper} sx={{ borderRadius: 3, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
+                <TableContainer component={Paper} sx={{ borderRadius: R.md, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
                   <Table>
                     <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.04) }}>
                       <TableRow>
@@ -801,7 +803,7 @@ export const StudentDetail = () => {
                               label={t(`finance.${invoice.status}`)}
                               color={getFeeStatusColor(invoice.status)}
                               size="small"
-                              sx={{ fontWeight: 600, borderRadius: 2 }}
+                              sx={{ fontWeight: 600, borderRadius: R.lg }}
                             />
                           </TableCell>
                         </TableRow>
@@ -823,7 +825,7 @@ export const StudentDetail = () => {
               {(eca.eca?.some(a => a.achievement) || eca.sports?.some(s => s.achievement)) && (
                 <Grid item xs={12}>
                   <Card sx={{ 
-                    borderRadius: 3, 
+                    borderRadius: R.md, 
                     background: `linear-gradient(135deg, ${alpha(theme.palette.success.main, 0.1)} 0%, ${alpha(theme.palette.success.main, 0.05)} 100%)`,
                     border: `2px solid ${alpha(theme.palette.success.main, 0.2)}`
                   }}>
@@ -838,7 +840,7 @@ export const StudentDetail = () => {
                       <Grid container spacing={2}>
                         {eca.eca?.filter(a => a.achievement).map((activity) => (
                           <Grid item xs={12} md={6} key={activity.id}>
-                            <Paper elevation={0} sx={{ p: 2.5, bgcolor: 'white', borderRadius: 2, border: `1px solid ${alpha(theme.palette.success.main, 0.2)}` }}>
+                            <Paper elevation={0} sx={{ p: 2.5, bgcolor: 'white', borderRadius: R.lg, border: `1px solid ${alpha(theme.palette.success.main, 0.2)}` }}>
                               <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
                                 <EmojiEvents sx={{ color: theme.palette.success.main, mt: 0.5 }} />
                                 <Box sx={{ flex: 1 }}>
@@ -861,7 +863,7 @@ export const StudentDetail = () => {
                         ))}
                         {eca.sports?.filter(s => s.achievement).map((sport) => (
                           <Grid item xs={12} md={6} key={sport.id}>
-                            <Paper elevation={0} sx={{ p: 2.5, bgcolor: 'white', borderRadius: 2, border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}` }}>
+                            <Paper elevation={0} sx={{ p: 2.5, bgcolor: 'white', borderRadius: R.lg, border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}` }}>
                               <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
                                 <EmojiEvents sx={{ color: theme.palette.warning.main, mt: 0.5 }} />
                                 <Box sx={{ flex: 1 }}>
@@ -935,7 +937,7 @@ export const StudentDetail = () => {
                   {t('certificates.title')}
                 </Typography>
                 {certificates.certificates?.length > 0 ? (
-                  <TableContainer component={Paper} sx={{ borderRadius: 3, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
+                  <TableContainer component={Paper} sx={{ borderRadius: R.md, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
                     <Table>
                       <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.04) }}>
                         <TableRow>
@@ -956,7 +958,7 @@ export const StudentDetail = () => {
                                 label={t(`certificates.${cert.status}`)}
                                 color={cert.status === 'active' ? 'success' : 'error'}
                                 size="small"
-                                sx={{ fontWeight: 600, borderRadius: 2 }}
+                                sx={{ fontWeight: 600, borderRadius: R.lg }}
                               />
                             </TableCell>
                           </TableRow>
@@ -990,7 +992,7 @@ export const StudentDetail = () => {
                 </Typography>
                 <Box>
                   {remarks.remarks?.map((remark) => (
-                    <Paper key={remark.id} variant="outlined" sx={{ mb: 2, p: 2.5, borderRadius: 3, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
+                    <Paper key={remark.id} variant="outlined" sx={{ mb: 2, p: 2.5, borderRadius: R.md, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
                       <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
                         {remark.type === 'good' ? (
                           <GoodIcon sx={{ color: '#10b981', mt: 0.5 }} />
@@ -1009,7 +1011,7 @@ export const StudentDetail = () => {
                           label={remark.type === 'good' ? t('students.goodRemarks') : t('students.needsImprovement')}
                           color={remark.type === 'good' ? 'success' : 'error'}
                           size="small"
-                          sx={{ fontWeight: 600, borderRadius: 2 }}
+                          sx={{ fontWeight: 600, borderRadius: R.lg }}
                         />
                       </Box>
                     </Paper>

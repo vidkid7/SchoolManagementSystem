@@ -6,7 +6,8 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
   Typography,
@@ -48,6 +49,7 @@ import {
 import apiClient from '../../services/apiClient';
 import { motion } from 'framer-motion';
 import StaffDocuments from './StaffDocuments';
+import { C, useAdminStyles } from '../../theme/designTokens';
 
 const MotionCard = motion.create(Card);
 const MotionBox = motion.create(Box);
@@ -77,9 +79,9 @@ interface Staff {
 }
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; labelKey: string }> = {
-  active: { color: '#10b981', bg: '#10b981', labelKey: 'staff.active' },
-  inactive: { color: '#6b7280', bg: '#6b7280', labelKey: 'staff.inactive' },
-  on_leave: { color: '#f59e0b', bg: '#f59e0b', labelKey: 'staff.onLeave' },
+  active: { color: C.success, bg: C.success, labelKey: 'staff.active' },
+  inactive: { color: C.neutral, bg: C.neutral, labelKey: 'staff.inactive' },
+  on_leave: { color: C.warning, bg: C.warning, labelKey: 'staff.onLeave' },
 };
 
 const InfoCard = ({ icon, title, children, color = 'primary' }: { icon: React.ReactNode; title: string; children: React.ReactNode; color?: string }) => {
@@ -90,7 +92,7 @@ const InfoCard = ({ icon, title, children, color = 'primary' }: { icon: React.Re
       elevation={0}
       sx={{ 
         p: 3, 
-        borderRadius: 3, 
+        borderRadius: 2, 
         bgcolor: 'background.paper',
         border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
         transition: 'all 0.3s ease',
@@ -149,11 +151,25 @@ const InfoRow = ({ icon, label, value }: { icon: React.ReactNode; label: string;
   );
 };
 
+// Helper function to convert position/department values to translation keys
+const toTranslationKey = (value: string | undefined): string => {
+  if (!value) return '';
+  // Convert "Office Staff" -> "officeStaff", "Vice Principal" -> "vicePrincipal"
+  return value
+    .split(/[\s_-]+/) // Split by space, underscore, or hyphen
+    .map((word, index) => {
+      const lower = word.toLowerCase();
+      return index === 0 ? lower : lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join('');
+};
+
 export const StaffDetail = () => {
   const { t, i18n } = useTranslation();
-  const { id } = useParams();
-  const navigate = useNavigate();
+  const { id, municipalitySlug } = useParams<{ id: string; municipalitySlug: string }>();
+  const navigate = useSlugNavigate();
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   
   const [staff, setStaff] = useState<Staff | null>(null);
   const [loading, setLoading] = useState(true);
@@ -183,7 +199,7 @@ export const StaffDetail = () => {
     }
     try {
       await apiClient.delete(`/api/v1/staff/${id}`);
-      navigate('/staff');
+      navigate(`/staff`);
     } catch (err) {
       console.error('Failed to delete staff:', err);
       setError('Failed to delete staff');
@@ -191,7 +207,7 @@ export const StaffDetail = () => {
   };
 
   const getStatusColor = (status: string) => {
-    return STATUS_CONFIG[status]?.color || '#6b7280';
+    return STATUS_CONFIG[status]?.color || C.neutral;
   };
 
   if (loading) {
@@ -206,7 +222,7 @@ export const StaffDetail = () => {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="error">{error || 'Staff not found'}</Alert>
-        <Button startIcon={<BackIcon />} onClick={() => navigate('/staff')} sx={{ mt: 2 }}>
+        <Button startIcon={<BackIcon />} onClick={() => navigate(`/staff`)} sx={{ mt: 2 }}>
           {t('common.back')}
         </Button>
       </Box>
@@ -223,7 +239,7 @@ export const StaffDetail = () => {
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <IconButton 
-            onClick={() => navigate('/staff')} 
+            onClick={() => navigate(`/staff`)} 
             sx={{ 
               bgcolor: alpha(theme.palette.primary.main, 0.1),
               transition: 'all 0.2s ease',
@@ -265,7 +281,7 @@ export const StaffDetail = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
             sx={{ 
-              borderRadius: 4, 
+              borderRadius: 2, 
               overflow: 'hidden',
               boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
               position: 'relative',
@@ -303,7 +319,7 @@ export const StaffDetail = () => {
               </Typography>
               <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, flexWrap: 'wrap', mb: 2 }}>
                 <Chip
-                  label={t(`staff.positions.${staff.position}`) || staff.position}
+                  label={t(`staff.positions.${toTranslationKey(staff.position)}`)}
                   sx={{
                     bgcolor: alpha(theme.palette.primary.main, 0.1),
                     color: theme.palette.primary.main,
@@ -313,7 +329,7 @@ export const StaffDetail = () => {
                   }}
                 />
                 <Chip
-                  label={t(`staff.departments.${staff.department}`) || staff.department}
+                  label={t(`staff.departments.${toTranslationKey(staff.department)}`)}
                   sx={{
                     bgcolor: alpha(theme.palette.secondary.main, 0.1),
                     color: theme.palette.secondary.main,
@@ -374,10 +390,10 @@ export const StaffDetail = () => {
                 <InfoCard icon={<WorkIcon sx={{ color: theme.palette.primary.main }} />} title={t('staff.form.employmentInfo')}>
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={4}>
-                      <InfoRow icon={<WorkIcon fontSize="small" />} label={t('staff.position')} value={t(`staff.positions.${staff.position}`) || staff.position} />
+                      <InfoRow icon={<WorkIcon fontSize="small" />} label={t('staff.position')} value={t(`staff.positions.${toTranslationKey(staff.position)}`)} />
                     </Grid>
                     <Grid item xs={12} sm={4}>
-                      <InfoRow icon={<WorkIcon fontSize="small" />} label={t('staff.department')} value={t(`staff.departments.${staff.department}`) || staff.department} />
+                      <InfoRow icon={<WorkIcon fontSize="small" />} label={t('staff.department')} value={t(`staff.departments.${toTranslationKey(staff.department)}`)} />
                     </Grid>
                     <Grid item xs={12} sm={4}>
                       <InfoRow icon={<CalendarIcon fontSize="small" />} label={t('staff.form.joiningDate')} value={staff.joiningDateBs} />
@@ -448,7 +464,8 @@ export const StaffDetail = () => {
       >
         <Paper 
           sx={{ 
-            borderRadius: 4, 
+            ...S.GLASS,
+            borderRadius: 2, 
             overflow: 'hidden',
             boxShadow: '0 8px 40px rgba(0,0,0,0.1)',
             border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
@@ -518,7 +535,7 @@ export const StaffDetail = () => {
                 py: 8,
                 px: 4,
                 background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.03)} 0%, ${alpha(theme.palette.secondary.main, 0.03)} 100%)`,
-                borderRadius: 4,
+                borderRadius: 2,
                 border: `1px dashed ${alpha(theme.palette.primary.main, 0.2)}`
               }}>
                 <Box sx={{ 
@@ -548,7 +565,7 @@ export const StaffDetail = () => {
                   sx={{ 
                     px: 5, 
                     py: 1.5,
-                    borderRadius: 3,
+                    borderRadius: 2,
                     fontWeight: 600,
                     boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.35)}`,
                     '&:hover': {

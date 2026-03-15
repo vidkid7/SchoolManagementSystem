@@ -6,7 +6,8 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
   Paper,
@@ -39,6 +40,8 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { motion } from 'framer-motion';
+
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 const MotionCard = motion.create(Card);
 
@@ -87,8 +90,9 @@ interface SubjectRow {
 export const SubjectTeachersView = () => {
   const { t, i18n } = useTranslation();
   const { classId, subjectId } = useParams();
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   const isNepali = i18n.language === 'ne';
 
   const [teachers, setTeachers] = useState<SubjectTeacher[]>([]);
@@ -183,7 +187,7 @@ export const SubjectTeachersView = () => {
       <Box sx={{ p: 3 }}>
         <Button
           startIcon={<BackIcon />}
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/academic/classes')}
           sx={{ mb: 2 }}
           variant="text"
         >
@@ -203,7 +207,7 @@ export const SubjectTeachersView = () => {
           </Typography>
           <Button
             variant="contained"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/academic/classes')}
           >
             Go Back
           </Button>
@@ -218,7 +222,7 @@ export const SubjectTeachersView = () => {
       <Box sx={{ mb: 4 }}>
         <Button
           startIcon={<BackIcon />}
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/academic/classes')}
           sx={{ mb: 2 }}
           variant="text"
         >
@@ -245,7 +249,7 @@ export const SubjectTeachersView = () => {
           <MotionCard
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            sx={{ borderRadius: 2 }}
+            sx={{ ...S.GLASS, borderRadius: R.lg }}
           >
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -253,7 +257,7 @@ export const SubjectTeachersView = () => {
                   sx={{
                     width: 40,
                     height: 40,
-                    borderRadius: 1.5,
+                    borderRadius: R.md,
                     backgroundColor: alpha(theme.palette.primary.main, 0.1),
                     display: 'flex',
                     alignItems: 'center',
@@ -277,7 +281,7 @@ export const SubjectTeachersView = () => {
       </Grid>
 
       {teachers.length > 0 ? (
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <TableContainer component={Paper} sx={{ borderRadius: R.lg }}>
           <Table>
             <TableHead>
               <TableRow sx={{ bgcolor: alpha(theme.palette.primary.main, 0.04) }}>
@@ -374,7 +378,7 @@ export const SubjectTeachersView = () => {
           </Table>
         </TableContainer>
       ) : (
-        <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}>
+        <Paper sx={{ ...S.GLASS, p: 4, textAlign: 'center', borderRadius: R.lg }}>
           <SchoolIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
           <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
             No Teachers Assigned

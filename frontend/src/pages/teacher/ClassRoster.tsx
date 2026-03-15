@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
   Paper,
@@ -33,7 +33,7 @@ import {
   Email as EmailIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 interface Student {
   studentId: number;
@@ -62,7 +62,7 @@ interface ClassInfo {
 }
 
 export function ClassRoster() {
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
   const [students, setStudents] = useState<Student[]>([]);
   const [classInfo, setClassInfo] = useState<ClassInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,7 +77,7 @@ export function ClassRoster() {
     try {
       setLoading(true);
       // Get teacher's assigned class
-      const response = await api.get('/teacher/my-class');
+      const response = await apiClient.get('/teacher/my-class');
       setClassInfo(response.data?.data?.classInfo || null);
       setStudents(response.data?.data?.students || []);
     } catch (err: any) {

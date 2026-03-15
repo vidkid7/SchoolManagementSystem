@@ -6,7 +6,8 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
   Paper,
@@ -53,6 +54,7 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { motion } from 'framer-motion';
+import { C, useAdminStyles } from '../../theme/designTokens';
 
 const MotionCard = motion.create(Card);
 
@@ -125,8 +127,9 @@ const SECTIONS = ['A', 'B', 'C', 'D'];
 export const StaffAssignments = () => {
   const { t, i18n } = useTranslation();
   const { id } = useParams();
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   const isNepali = i18n.language === 'ne';
 
   const [staff, setStaff] = useState<StaffInfo | null>(null);
@@ -344,7 +347,7 @@ export const StaffAssignments = () => {
           </Grid>
           <Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
             <Button
-              variant="contained"
+              sx={S.BTN_PRIMARY}
               startIcon={<AddIcon />}
               onClick={openAddDialog}
               size="large"
@@ -401,15 +404,15 @@ export const StaffAssignments = () => {
               <Box sx={{ 
                 p: 1.5, 
                 borderRadius: 2, 
-                bgcolor: alpha('#10b981', 0.1),
+                bgcolor: alpha(C.neutral, 0.1),
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <ActiveIcon sx={{ fontSize: 32, color: '#10b981' }} />
+                <ActiveIcon sx={{ fontSize: 32, color: C.neutral }} />
               </Box>
               <Box>
-                <Typography variant="h3" sx={{ fontWeight: 700, lineHeight: 1, color: '#10b981' }}>
+                <Typography variant="h3" sx={{ fontWeight: 700, lineHeight: 1, color: C.neutral }}>
                   {activeCount}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -429,15 +432,15 @@ export const StaffAssignments = () => {
               <Box sx={{ 
                 p: 1.5, 
                 borderRadius: 2, 
-                bgcolor: alpha('#6b7280', 0.1),
+                bgcolor: alpha(C.neutral, 0.1),
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <InactiveIcon sx={{ fontSize: 32, color: '#6b7280' }} />
+                <InactiveIcon sx={{ fontSize: 32, color: C.neutral }} />
               </Box>
               <Box>
-                <Typography variant="h3" sx={{ fontWeight: 700, lineHeight: 1, color: '#6b7280' }}>
+                <Typography variant="h3" sx={{ fontWeight: 700, lineHeight: 1, color: C.neutral }}>
                   {assignments.length - activeCount}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -450,10 +453,10 @@ export const StaffAssignments = () => {
       </Grid>
 
       {/* Assignments Table */}
-      <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+      <TableContainer component={Paper} sx={{ ...S.GLASS, borderRadius: 2 }}>
         <Table>
           <TableHead>
-            <TableRow sx={{ bgcolor: alpha(theme.palette.primary.main, 0.04) }}>
+            <TableRow sx={{ bgcolor: S.TH_BG }}>
               <TableCell sx={{ fontWeight: 600 }}>{t('staff.form.assignmentType')}</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>{t('menu.students')}</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>{t('students.section')}</TableCell>
@@ -665,7 +668,7 @@ export const StaffAssignments = () => {
             {t('common.cancel')}
           </Button>
           <Button
-            variant="contained"
+            sx={S.BTN_PRIMARY}
             onClick={handleSubmit}
             disabled={!selectedClass || !selectedSection}
           >

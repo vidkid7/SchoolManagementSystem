@@ -5,6 +5,9 @@
  */
 
 import { useState } from 'react';
+import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import {
   Box,
   Paper,
@@ -24,7 +27,7 @@ import {
   Settings as SettingsIcon,
   EventNote as LeaveIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -42,7 +45,10 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export function AttendanceDashboard() {
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
+  const theme = useTheme();
+  const { t } = useTranslation();
+  const S = useAdminStyles(theme);
   const [activeTab, setActiveTab] = useState(0);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -51,53 +57,53 @@ export function AttendanceDashboard() {
 
   const features = [
     {
-      title: 'Mark Student Attendance',
-      description: 'Mark daily attendance for students by class',
+      title: t('attendance.markStudentAttendance'),
+      description: t('attendance.markStudentAttendanceDesc'),
       icon: <StudentsIcon sx={{ fontSize: 40 }} />,
-      color: '#1976d2',
+      color: C.primary,
       path: '/attendance/student/mark',
     },
     {
-      title: 'Mark Staff Attendance',
-      description: 'Record staff attendance and working hours',
+      title: t('attendance.markStaffAttendance'),
+      description: t('attendance.markStaffAttendanceDesc'),
       icon: <StaffIcon sx={{ fontSize: 40 }} />,
-      color: '#2e7d32',
+      color: C.primary,
       path: '/attendance/staff/mark',
     },
     {
-      title: 'Attendance Reports',
-      description: 'View detailed attendance reports and statistics',
+      title: t('attendance.attendanceReport'),
+      description: t('attendance.attendanceReportsDesc'),
       icon: <ReportsIcon sx={{ fontSize: 40 }} />,
-      color: '#ed6c02',
+      color: C.neutral,
       path: '/attendance/reports',
     },
     {
-      title: 'Leave Applications',
-      description: 'Manage student and staff leave requests',
+      title: t('attendance.leaveApplications'),
+      description: t('attendance.leaveApplicationsDesc'),
       icon: <LeaveIcon sx={{ fontSize: 40 }} />,
-      color: '#9c27b0',
+      color: C.neutral,
       path: '/attendance/leave',
     },
     {
-      title: 'Attendance Rules',
-      description: 'Configure attendance policies and rules',
+      title: t('attendance.attendanceRulesLabel'),
+      description: t('attendance.attendanceRulesDesc'),
       icon: <SettingsIcon sx={{ fontSize: 40 }} />,
-      color: '#d32f2f',
+      color: C.danger,
       path: '/attendance/settings',
     },
   ];
 
   return (
     <Box>
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={S.PAGE_HEADER}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
           <AttendanceIcon sx={{ fontSize: 32, color: 'primary.main' }} />
           <Typography variant="h4" fontWeight={600}>
-            Attendance Management
+            {t('attendance.attendanceManagement')}
           </Typography>
         </Box>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-          Comprehensive attendance tracking and management system for students and staff
+          {t('attendance.comprehensiveTracking')}
         </Typography>
         
         {/* Quick Action Buttons */}
@@ -107,31 +113,34 @@ export function AttendanceDashboard() {
             size="large"
             startIcon={<StudentsIcon />}
             onClick={() => navigate('/attendance/student/mark')}
+            sx={S.BTN_PRIMARY}
           >
-            Mark Student Attendance
+            {t('attendance.markStudentAttendance')}
           </Button>
           <Button
             variant="contained"
             size="large"
             startIcon={<StaffIcon />}
             onClick={() => navigate('/attendance/staff/mark')}
+            sx={S.BTN_PRIMARY}
           >
-            Mark Staff Attendance
+            {t('attendance.markStaffAttendance')}
           </Button>
           <Button
             variant="outlined"
             size="large"
             startIcon={<ReportsIcon />}
             onClick={() => navigate('/attendance/reports')}
+            sx={S.BTN_OUTLINE}
           >
-            View Reports
+            {t('attendance.viewReports')}
           </Button>
         </Box>
       </Paper>
 
       <Tabs value={activeTab} onChange={handleTabChange} sx={{ mb: 3 }}>
-        <Tab label="Overview" />
-        <Tab label="Quick Actions" />
+        <Tab label={t('common.overview')} sx={S.TAB_ACTIVE} />
+        <Tab label={t('common.actions')} sx={S.TAB_ACTIVE} />
       </Tabs>
 
       <TabPanel value={activeTab} index={0}>
@@ -140,9 +149,9 @@ export function AttendanceDashboard() {
             <Grid item xs={12} md={6} lg={4} key={index}>
               <Card
                 sx={{
+                  ...S.GLASS,
                   height: '100%',
                   cursor: 'pointer',
-                  transition: 'all 0.3s',
                   '&:hover': {
                     transform: 'translateY(-4px)',
                     boxShadow: 4,
@@ -152,21 +161,11 @@ export function AttendanceDashboard() {
               >
                 <CardContent>
                   <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 80,
-                      height: 80,
-                      borderRadius: 2,
-                      bgcolor: `${feature.color}15`,
-                      color: feature.color,
-                      mb: 2,
-                    }}
+                    sx={S.ICON_BOX(feature.color, 80)}
                   >
                     {feature.icon}
                   </Box>
-                  <Typography variant="h6" fontWeight={600} gutterBottom>
+                  <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mt: 2 }}>
                     {feature.title}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -188,9 +187,9 @@ export function AttendanceDashboard() {
               size="large"
               startIcon={<StudentsIcon />}
               onClick={() => navigate('/attendance/student/mark')}
-              sx={{ py: 2 }}
+              sx={{ ...S.BTN_PRIMARY, py: 2 }}
             >
-              Mark Student Attendance
+              {t('attendance.markStudentAttendance')}
             </Button>
           </Grid>
           <Grid item xs={12} md={6}>
@@ -200,9 +199,9 @@ export function AttendanceDashboard() {
               size="large"
               startIcon={<StaffIcon />}
               onClick={() => navigate('/attendance/staff/mark')}
-              sx={{ py: 2 }}
+              sx={{ ...S.BTN_PRIMARY, py: 2 }}
             >
-              Mark Staff Attendance
+              {t('attendance.markStaffAttendance')}
             </Button>
           </Grid>
           <Grid item xs={12} md={6}>
@@ -212,9 +211,9 @@ export function AttendanceDashboard() {
               size="large"
               startIcon={<ReportsIcon />}
               onClick={() => navigate('/attendance/reports')}
-              sx={{ py: 2 }}
+              sx={{ ...S.BTN_OUTLINE, py: 2 }}
             >
-              View Reports
+              {t('attendance.viewReports')}
             </Button>
           </Grid>
           <Grid item xs={12} md={6}>
@@ -224,9 +223,9 @@ export function AttendanceDashboard() {
               size="large"
               startIcon={<LeaveIcon />}
               onClick={() => navigate('/attendance/leave')}
-              sx={{ py: 2 }}
+              sx={{ ...S.BTN_OUTLINE, py: 2 }}
             >
-              Manage Leave Applications
+              {t('attendance.manageLeaveApplications')}
             </Button>
           </Grid>
         </Grid>

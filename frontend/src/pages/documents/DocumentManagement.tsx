@@ -47,6 +47,7 @@ import {
   Divider,
   Tooltip,
   Menu,
+  useTheme,
 } from '@mui/material';
 import {
   CloudUpload as UploadIcon,
@@ -66,6 +67,7 @@ import {
   Add as AddIcon,
   History as HistoryIcon,
 } from '@mui/icons-material';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from '../../services/apiClient';
 
@@ -196,6 +198,8 @@ const getCategoryColor = (category: string): 'default' | 'primary' | 'secondary'
 };
 
 export const DocumentManagement = () => {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -518,7 +522,7 @@ export const DocumentManagement = () => {
       )}
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 2, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={3}>
             <TextField
@@ -612,7 +616,7 @@ export const DocumentManagement = () => {
       </Paper>
 
       {/* Document Table */}
-      <Paper>
+      <Paper sx={{ ...S.GLASS }}>
         {loading && <LinearProgress />}
         <TableContainer>
           <Table>
@@ -942,7 +946,7 @@ export const DocumentManagement = () => {
               </Tabs>
 
               <TabPanel value={tabValue} index={0}>
-                <Card>
+                <Card sx={{ ...S.GLASS }}>
                   <CardContent sx={{ textAlign: 'center', py: 4 }}>
                     {selectedDocument.mimeType.startsWith('image/') ? (
                       <img

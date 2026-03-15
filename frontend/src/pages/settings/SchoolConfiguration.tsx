@@ -41,6 +41,7 @@ import {
   Switch,
   FormControlLabel,
   Chip,
+  useTheme,
 } from '@mui/material';
 import {
   School as SchoolIcon,
@@ -54,6 +55,9 @@ import {
   Cancel as CancelIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { C, useAdminStyles } from '../../theme/designTokens';
+
+import { useTranslation } from 'react-i18next';
 
 interface SchoolConfig {
   id: string;
@@ -123,6 +127,9 @@ const PROVINCES = [
 ];
 
 export const SchoolConfiguration = () => {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const [config, setConfig] = useState<SchoolConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -279,7 +286,7 @@ export const SchoolConfiguration = () => {
           No school configuration found. Please create one to get started.
         </Alert>
         <Button
-          variant="contained"
+          sx={S.BTN_PRIMARY}
           startIcon={<SchoolIcon />}
           onClick={() => setCreateDialogOpen(true)}
         >
@@ -397,7 +404,7 @@ export const SchoolConfiguration = () => {
               Cancel / रद्द गर्नुहोस्
             </Button>
             <Button
-              variant="contained"
+              sx={S.BTN_PRIMARY}
               onClick={handleCreate}
               disabled={saving}
               startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
@@ -434,7 +441,7 @@ export const SchoolConfiguration = () => {
                 Refresh / ताजा गर्नुहोस्
               </Button>
               <Button
-                variant="contained"
+                sx={S.BTN_PRIMARY}
                 startIcon={<EditIcon />}
                 onClick={() => setEditMode(true)}
               >
@@ -451,7 +458,7 @@ export const SchoolConfiguration = () => {
                 Cancel / रद्द गर्नुहोस्
               </Button>
               <Button
-                variant="contained"
+                sx={S.BTN_PRIMARY}
                 startIcon={<SaveIcon />}
                 onClick={handleSave}
                 disabled={saving}
@@ -475,7 +482,7 @@ export const SchoolConfiguration = () => {
         </Alert>
       )}
 
-      <Paper sx={{ mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, mb: 3 }}>
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
           <Tab icon={<SchoolIcon />} label="Basic Information" />
           <Tab icon={<PaletteIcon />} label="Branding" />
@@ -488,7 +495,7 @@ export const SchoolConfiguration = () => {
         <Grid container spacing={3}>
           {/* Logo Section */}
           <Grid item xs={12}>
-            <Card>
+            <Card sx={S.GLASS}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   School Logo / विद्यालय लोगो
@@ -531,7 +538,7 @@ export const SchoolConfiguration = () => {
 
           {/* School Details */}
           <Grid item xs={12}>
-            <Card>
+            <Card sx={S.GLASS}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   School Details / विद्यालय विवरण
@@ -691,7 +698,7 @@ export const SchoolConfiguration = () => {
 
       {/* Branding Tab */}
       <TabPanel value={tabValue} index={1}>
-        <Card>
+        <Card sx={S.GLASS}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
               Brand Colors / ब्रान्ड रंगहरू
@@ -702,7 +709,7 @@ export const SchoolConfiguration = () => {
                   label="Primary Color"
                   type="color"
                   fullWidth
-                  value={formData.primaryColor || '#1976d2'}
+                  value={formData.primaryColor || '#4a5568'}
                   onChange={(e) => setFormData({ ...formData, primaryColor: e.target.value })}
                   disabled={!editMode}
                   InputLabelProps={{ shrink: true }}
@@ -737,7 +744,7 @@ export const SchoolConfiguration = () => {
 
       {/* Localization Tab */}
       <TabPanel value={tabValue} index={2}>
-        <Card>
+        <Card sx={S.GLASS}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
               Localization Settings / स्थानीयकरण सेटिङ्हरू

@@ -40,6 +40,7 @@ import {
   Switch,
   FormControlLabel,
   TextareaAutosize,
+  useTheme,
 } from '@mui/material';
 import {
   Send as SendIcon,
@@ -55,6 +56,8 @@ import {
   Error as ErrorIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useTranslation } from 'react-i18next';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -98,6 +101,9 @@ interface EmailTemplate {
 }
 
 export const NotificationCenter = () => {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const [tabValue, setTabValue] = useState(0);
   const [history, setHistory] = useState<NotificationHistory[]>([]);
   const [templates, setTemplates] = useState<(SMSTemplate | EmailTemplate)[]>([]);
@@ -308,7 +314,7 @@ export const NotificationCenter = () => {
         </Button>
       </Box>
 
-      <Paper sx={{ mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, mb: 3 }}>
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
           <Tab icon={<SmsIcon />} label="SMS" />
           <Tab icon={<EmailIcon />} label="Email" />
@@ -322,7 +328,7 @@ export const NotificationCenter = () => {
       <TabPanel value={tabValue} index={0}>
         <Grid container spacing={3}>
           <Grid item xs={12} md={4}>
-            <Card>
+            <Card sx={{ ...S.GLASS }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   SMS Balance / SMS ब्यालेन्स
@@ -340,7 +346,7 @@ export const NotificationCenter = () => {
             </Card>
           </Grid>
           <Grid item xs={12} md={8}>
-            <Card>
+            <Card sx={{ ...S.GLASS }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   Send SMS / SMS पठाउनुहोस्
@@ -419,7 +425,7 @@ export const NotificationCenter = () => {
 
       {/* Email Tab */}
       <TabPanel value={tabValue} index={1}>
-        <Card>
+        <Card sx={{ ...S.GLASS }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
               Send Email / इमेल पठाउनुहोस्
@@ -495,7 +501,7 @@ export const NotificationCenter = () => {
 
       {/* Push Notifications Tab */}
       <TabPanel value={tabValue} index={2}>
-        <Card>
+        <Card sx={{ ...S.GLASS }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
               Send Push Notification / पुश सूचना पठाउनुहोस्
@@ -636,7 +642,7 @@ export const NotificationCenter = () => {
       <TabPanel value={tabValue} index={4}>
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
-            <Card>
+            <Card sx={{ ...S.GLASS }}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6">
@@ -671,7 +677,7 @@ export const NotificationCenter = () => {
             </Card>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Card>
+            <Card sx={{ ...S.GLASS }}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6">

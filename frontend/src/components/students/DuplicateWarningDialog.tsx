@@ -87,7 +87,7 @@ export const DuplicateWarningDialog = ({
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 3,
+          borderRadius: 2,
           boxShadow: `0 20px 60px ${alpha('#000', 0.3)}`,
         }
       }}

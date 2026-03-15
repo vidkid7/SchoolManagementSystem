@@ -137,7 +137,7 @@ class CVService {
   /**
    * Get CV data for a student
    */
-  async getCVData(studentId: number): Promise<CVData> {
+  async getCVData(studentId: number): Promise<any> {
     try {
       const student = await StudentRepository.findById(studentId);
       if (!student) {
@@ -153,7 +153,7 @@ class CVService {
         sportsAchievements,
         certificates
       ] = await Promise.all([
-        AttendanceRecord.findAll({ where: { studentId } }),
+        AttendanceRecord.findAll({ where: { studentId } }).catch(() => []),
         Grade.findAll({
           where: { studentId },
           include: [
@@ -166,31 +166,34 @@ class CVService {
           ],
           order: [['enteredAt', 'DESC']],
           limit: 30
-        }),
+        }).catch(() => []),
         ECAEnrollment.findAll({
           where: { studentId },
           include: [{ model: ECA, as: 'eca', required: false }],
           order: [['createdAt', 'DESC']]
-        }),
+        }).catch(() => []),
         ECAAchievement.findAll({
           where: { studentId },
           include: [{ model: ECA, as: 'eca', required: false }],
           order: [['achievementDate', 'DESC']]
+        }).catch(err => {
+          console.error('Error fetching ECA achievements:', err);
+          return [];
         }),
         SportsEnrollment.findAll({
           where: { studentId },
           include: [{ model: Sport, as: 'sport', required: false }],
           order: [['createdAt', 'DESC']]
-        }),
+        }).catch(() => []),
         SportsAchievement.findAll({
           where: { studentId },
           order: [['achievementDate', 'DESC']]
-        }),
+        }).catch(() => []),
         Certificate.findAll({
           where: { studentId },
           order: [['issuedDate', 'DESC']],
           limit: 20
-        })
+        }).catch(() => [])
       ]);
 
       const sportIds = Array.from(new Set(sportsAchievements.map(a => a.sportId).filter(Boolean)));
@@ -250,32 +253,61 @@ class CVService {
         date: new Date(achievement.achievementDate)
       }));
 
-      const sportMedals = sportsAchievements.reduce(
-        (acc, achievement) => {
-          if (achievement.medal === 'gold') acc.gold += 1;
-          if (achievement.medal === 'silver') acc.silver += 1;
-          if (achievement.medal === 'bronze') acc.bronze += 1;
-          return acc;
-        },
-        { gold: 0, silver: 0, bronze: 0 }
-      );
+      const sportMedals = {
+        gold: sportsAchievements.filter(a => a.medal === 'gold').length,
+        silver: sportsAchievements.filter(a => a.medal === 'silver').length,
+        bronze: sportsAchievements.filter(a => a.medal === 'bronze').length
+      };
 
-      const cvData: CVData = {
-        student,
+      // Calculate GPA and academic performance
+      const gradePoints: { [key: string]: number } = {
+        'A+': 4.0, 'A': 4.0, 'A-': 3.7,
+        'B+': 3.3, 'B': 3.0, 'B-': 2.7,
+        'C+': 2.3, 'C': 2.0, 'C-': 1.7,
+        'D+': 1.3, 'D': 1.0, 'F': 0.0
+      };
+
+      const validGrades = grades.filter((g: any) => g.grade && gradePoints[g.grade] !== undefined);
+      const overallGPA = validGrades.length > 0
+        ? validGrades.reduce((sum: number, g: any) => sum + gradePoints[g.grade], 0) / validGrades.length
+        : 0;
+
+      // Transform data to match frontend interface
+      const cvData = {
+        studentId: student.studentId,
+        generatedAt: new Date(),
+        verificationUrl: `${process.env.FRONTEND_URL || 'http://localhost:5174'}/verify-cv/${student.studentId}`,
+        personalInfo: {
+          studentId: student.studentId,
+          studentCode: student.studentCode,
+          fullNameEn: `${student.firstNameEn} ${student.lastNameEn}`,
+          fullNameNp: student.firstNameNp && student.lastNameNp ? `${student.firstNameNp} ${student.lastNameNp}` : undefined,
+          dateOfBirthBS: student.dateOfBirthBS || '',
+          dateOfBirthAD: student.dateOfBirthAD || new Date(),
+          gender: student.gender || 'Not specified',
+          bloodGroup: student.bloodGroup,
+          addressEn: student.addressEn || 'Not provided',
+          addressNp: student.addressNp || '',
+          phone: student.phone,
+          email: student.email,
+          photoUrl: student.photoUrl
+        },
+        academicPerformance: validGrades.length > 0 ? {
+          academicYears: [],
+          overallGPA: Number(overallGPA.toFixed(2)),
+          totalSubjects: validGrades.length,
+          averageGrade: validGrades.length > 0 ? validGrades[0].grade : 'N/A'
+        } : undefined,
         attendance: {
           overallPercentage: totalDays > 0 ? Number(((presentDays / totalDays) * 100).toFixed(2)) : 0,
           totalDays,
           presentDays,
           absentDays,
           lateDays,
-          excusedDays
+          excusedDays,
+          yearWise: []
         },
-        grades: grades.map((grade: any) => ({
-          subject: grade.exam?.subject?.nameEn || grade.exam?.name || `Exam ${grade.examId}`,
-          marks: Number(grade.totalMarks),
-          grade: grade.grade
-        })),
-        eca: {
+        eca: ecaParticipationRows.length > 0 || ecaAchievementRows.length > 0 ? {
           participations: ecaParticipationRows,
           achievements: ecaAchievementRows,
           summary: {
@@ -286,8 +318,8 @@ class CVService {
               ? Number((ecaParticipationRows.reduce((sum, p) => sum + p.attendancePercentage, 0) / ecaParticipationRows.length).toFixed(2))
               : 0
           }
-        },
-        sports: {
+        } : undefined,
+        sports: sportsParticipationRows.length > 0 || sportsAchievementRows.length > 0 ? {
           participations: sportsParticipationRows,
           achievements: sportsAchievementRows,
           summary: {
@@ -300,11 +332,23 @@ class CVService {
             medalCount: sportMedals,
             recordsSet: sportsAchievements.filter(achievement => achievement.type === 'record').length
           }
-        },
-        certificates: certificates.map(certificate => ({
-          title: String(certificate.data?.title || `${certificate.type.replace(/_/g, ' ')} certificate`),
-          issuedDate: certificate.issuedDateBS || new Date(certificate.issuedDate).toISOString().split('T')[0]
-        }))
+        } : undefined,
+        certificates: certificates.length > 0 ? {
+          certificates: certificates.map(certificate => ({
+            certificateNumber: certificate.certificateNumber || '',
+            type: certificate.type,
+            name: String(certificate.data?.title || `${certificate.type.replace(/_/g, ' ')} certificate`),
+            issuedDate: certificate.issuedDate,
+            issuedDateBS: certificate.issuedDateBS || ''
+          })),
+          totalCount: certificates.length
+        } : undefined,
+        customFields: {
+          skills: [],
+          hobbies: [],
+          careerGoals: '',
+          personalStatement: ''
+        }
       };
 
       return cvData;
@@ -325,7 +369,7 @@ class CVService {
       const cvData = await this.getCVData(studentId);
       
       const defaultCustomization: CVCustomization = {
-        templateId: 'default',
+        templateId: 'standard',
         schoolBrandingEnabled: true,
         includePhoto: true,
         includeAttendance: true,
@@ -335,6 +379,12 @@ class CVService {
         includeCertificates: true,
         ...customization
       };
+
+      // Ensure valid templateId
+      const validTemplates = ['standard', 'professional', 'modern'];
+      if (!defaultCustomization.templateId || !validTemplates.includes(defaultCustomization.templateId)) {
+        defaultCustomization.templateId = 'standard';
+      }
 
       return this.createPDF(cvData, defaultCustomization);
     } catch (error) {
@@ -348,7 +398,7 @@ class CVService {
    */
   // eslint-disable-next-line max-lines-per-function
   private createPDF(
-    cvData: CVData,
+    cvData: any,
     customization: CVCustomization
   ): Promise<Buffer> {
     // eslint-disable-next-line max-lines-per-function, complexity
@@ -369,19 +419,24 @@ class CVService {
         }
 
         // Student Info
-        doc.fontSize(14).text('Personal Information', { underline: true });
-        doc.moveDown(0.5);
-        doc.fontSize(12);
-        doc.text(`Name: ${cvData.student.firstNameEn} ${cvData.student.lastNameEn}`);
-        doc.text(`Student ID: ${cvData.student.studentCode}`);
-        doc.text(`Class: ${'N/A'}`);
-        doc.text(`Date of Birth: ${cvData.student.dateOfBirthBS || 'N/A'}`);
-        doc.text(`Gender: ${cvData.student.gender || 'N/A'}`);
-        doc.text(`Contact: ${cvData.student.phone || 'N/A'}`);
-        doc.moveDown();
+        if (cvData.personalInfo) {
+          doc.fontSize(14).text('Personal Information', { underline: true });
+          doc.moveDown(0.5);
+          doc.fontSize(12);
+          doc.text(`Name: ${cvData.personalInfo.fullNameEn}`);
+          doc.text(`Student ID: ${cvData.personalInfo.studentCode}`);
+          doc.text(`Date of Birth: ${cvData.personalInfo.dateOfBirthBS || 'N/A'}`);
+          doc.text(`Gender: ${cvData.personalInfo.gender || 'N/A'}`);
+          doc.text(`Address: ${cvData.personalInfo.addressEn || 'N/A'}`);
+          doc.text(`Contact: ${cvData.personalInfo.phone || 'N/A'}`);
+          if (cvData.personalInfo.email) {
+            doc.text(`Email: ${cvData.personalInfo.email}`);
+          }
+          doc.moveDown();
+        }
 
         // Attendance
-        if (customization.includeAttendance) {
+        if (customization.includeAttendance && cvData.attendance) {
           doc.fontSize(14).text('Attendance Record', { underline: true });
           doc.moveDown(0.5);
           doc.fontSize(12);
@@ -392,30 +447,30 @@ class CVService {
           doc.moveDown();
         }
 
-        // Grades
-        if (customization.includeGrades && cvData.grades.length > 0) {
+        // Academic Performance
+        if (customization.includeGrades && cvData.academicPerformance) {
           doc.fontSize(14).text('Academic Performance', { underline: true });
           doc.moveDown(0.5);
           doc.fontSize(12);
-          cvData.grades.forEach(grade => {
-            doc.text(`${grade.subject}: ${grade.marks}/100 (Grade: ${grade.grade})`);
-          });
+          doc.text(`Overall GPA: ${cvData.academicPerformance.overallGPA}`);
+          doc.text(`Total Subjects: ${cvData.academicPerformance.totalSubjects}`);
+          doc.text(`Average Grade: ${cvData.academicPerformance.averageGrade}`);
           doc.moveDown();
         }
 
         // ECA
-        if (customization.includeECA && cvData.eca.participations.length > 0) {
+        if (customization.includeECA && cvData.eca && cvData.eca.participations.length > 0) {
           doc.fontSize(14).text('Extra-Curricular Activities', { underline: true });
           doc.moveDown(0.5);
           doc.fontSize(12);
-          cvData.eca.participations.forEach(participation => {
+          cvData.eca.participations.forEach((participation: any) => {
             doc.text(`• ${participation.ecaName} (${participation.category})`);
             doc.text(`  Duration: ${participation.duration}, Attendance: ${participation.attendancePercentage}%`, { indent: 20 });
           });
           if (cvData.eca.achievements.length > 0) {
             doc.moveDown(0.5);
             doc.text('Achievements:');
-            cvData.eca.achievements.forEach(achievement => {
+            cvData.eca.achievements.forEach((achievement: any) => {
               doc.text(`• ${achievement.title} - ${achievement.level} Level`, { indent: 20 });
             });
           }
@@ -423,18 +478,18 @@ class CVService {
         }
 
         // Sports
-        if (customization.includeSports && cvData.sports.participations.length > 0) {
+        if (customization.includeSports && cvData.sports && cvData.sports.participations.length > 0) {
           doc.fontSize(14).text('Sports Activities', { underline: true });
           doc.moveDown(0.5);
           doc.fontSize(12);
-          cvData.sports.participations.forEach(participation => {
+          cvData.sports.participations.forEach((participation: any) => {
             doc.text(`• ${participation.sportName} (${participation.category})`);
             doc.text(`  Duration: ${participation.duration}, Attendance: ${participation.attendancePercentage}%`, { indent: 20 });
           });
           if (cvData.sports.achievements.length > 0) {
             doc.moveDown(0.5);
             doc.text('Achievements:');
-            cvData.sports.achievements.forEach(achievement => {
+            cvData.sports.achievements.forEach((achievement: any) => {
               doc.text(`• ${achievement.title} - ${achievement.level} Level${achievement.medal ? ` (${achievement.medal})` : ''}`, { indent: 20 });
             });
           }
@@ -442,12 +497,12 @@ class CVService {
         }
 
         // Certificates
-        if (customization.includeCertificates && cvData.certificates.length > 0) {
+        if (customization.includeCertificates && cvData.certificates && cvData.certificates.totalCount > 0) {
           doc.fontSize(14).text('Certificates', { underline: true });
           doc.moveDown(0.5);
           doc.fontSize(12);
-          cvData.certificates.forEach(cert => {
-            doc.text(`• ${cert.title} (Issued: ${cert.issuedDate})`);
+          cvData.certificates.certificates.forEach((cert: any) => {
+            doc.text(`• ${cert.name} (Issued: ${cert.issuedDateBS || new Date(cert.issuedDate).toLocaleDateString()})`);
           });
           doc.moveDown();
         }

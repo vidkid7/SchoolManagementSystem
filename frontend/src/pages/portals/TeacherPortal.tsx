@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box, Grid, Card, CardContent, Typography, Button, Divider, Avatar, List, ListItem,
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
-  TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
+  TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, useTheme,
 } from '@mui/material';
+import { C, useAdminStyles } from '../../theme/designTokens';
 import {
   MenuBook as TeacherIcon,
   Message as MessageIcon,
@@ -20,9 +21,10 @@ import {
   Task as TaskIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import apiClient from '../../services/apiClient';
 import { RootState } from '../../store';
+import { useTranslation } from 'react-i18next';
 
 interface ScheduleEntry {
   period?: number;
@@ -83,13 +85,16 @@ function TabPanel({ children, value, index }: { children: React.ReactNode; value
 }
 
 export const TeacherPortal: React.FC = () => {
+  const { t } = useTranslation();
   const [tab, setTab] = useState(0);
   const [data, setData] = useState<DashboardData | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user, accessToken } = useSelector((state: RootState) => state.auth);
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
 
   const loadData = useCallback(async () => {
     if (!accessToken) return;
@@ -128,9 +133,9 @@ export const TeacherPortal: React.FC = () => {
           <TeacherIcon fontSize="large" />
         </Avatar>
         <Box>
-          <Typography variant="h4" fontWeight={700}>Teacher Portal</Typography>
+          <Typography variant="h4" fontWeight={700}>{t('menu.teacherPortal')}</Typography>
           <Typography variant="body2" color="text.secondary">
-            Welcome, {user?.firstName || user?.username} — Teacher
+            Welcome, {user?.firstName || user?.username} — {t('roles.teacher') || 'Teacher'}
           </Typography>
         </Box>
       </Box>
@@ -140,56 +145,56 @@ export const TeacherPortal: React.FC = () => {
       {/* Stats Cards */}
       <Grid container spacing={2} mb={3}>
         {[
-          { label: "Today's Classes", value: stats.todayClasses ?? 0, icon: <ScheduleIcon />, color: 'primary.main' },
-          { label: 'Pending Tasks', value: stats.pendingTasks ?? 0, icon: <TaskIcon />, color: 'warning.main' },
-          { label: 'Total Students', value: stats.totalStudents ?? 0, icon: <StudentsIcon />, color: 'info.main' },
-          { label: 'Completed Lessons', value: stats.completedLessons ?? 0, icon: <DoneIcon />, color: 'success.main' },
+          { label: t('portal.todaysClasses'), value: stats.todayClasses ?? 0, icon: <ScheduleIcon />, color: C.primary },
+          { label: t('portal.pendingTasksCount'), value: stats.pendingTasks ?? 0, icon: <TaskIcon />, color: C.warning },
+          { label: t('dashboard.totalStudents'), value: stats.totalStudents ?? 0, icon: <StudentsIcon />, color: C.info },
+          { label: t('portal.completedLessons'), value: stats.completedLessons ?? 0, icon: <DoneIcon />, color: C.success },
         ].map(stat => (
           <Grid item xs={6} sm={3} key={stat.label}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
+            <Box sx={S.STAT_CARD(stat.color)}>
               <CardContent sx={{ textAlign: 'center', py: 2 }}>
-                <Box sx={{ color: stat.color, fontSize: 32 }}>{stat.icon}</Box>
-                <Typography variant="h4" fontWeight={700}>{stat.value}</Typography>
+                <Box sx={S.ICON_BOX(stat.color, 36)}>{stat.icon}</Box>
+                <Typography variant="h4" fontWeight={700} sx={{ mt: 1 }}>{stat.value}</Typography>
                 <Typography variant="body2" color="text.secondary">{stat.label}</Typography>
               </CardContent>
-            </Card>
+            </Box>
           </Grid>
         ))}
       </Grid>
 
       {/* Tabs */}
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
-        <Tab icon={<TeacherIcon />} iconPosition="start" label="Dashboard" />
-        <Tab icon={<ScheduleIcon />} iconPosition="start" label="Today's Schedule" />
-        <Tab icon={<ClassIcon />} iconPosition="start" label="My Classes" />
-        <Tab icon={<LessonIcon />} iconPosition="start" label="Lesson Plans" />
-        <Tab icon={<AssignmentIcon />} iconPosition="start" label="Assignments" />
-        <Tab icon={<PersonIcon />} iconPosition="start" label="Profile & Links" />
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }} TabIndicatorProps={{ sx: S.TAB_INDICATOR }}>
+        <Tab icon={<TeacherIcon />} iconPosition="start" label={t('portal.dashboard')} sx={S.TAB_ACTIVE} />
+        <Tab icon={<ScheduleIcon />} iconPosition="start" label={t('portal.todaysSchedule')} sx={S.TAB_ACTIVE} />
+        <Tab icon={<ClassIcon />} iconPosition="start" label={t('portal.myClasses')} sx={S.TAB_ACTIVE} />
+        <Tab icon={<LessonIcon />} iconPosition="start" label={t('portal.lessonPlans')} sx={S.TAB_ACTIVE} />
+        <Tab icon={<AssignmentIcon />} iconPosition="start" label={t('portal.assignments')} sx={S.TAB_ACTIVE} />
+        <Tab icon={<PersonIcon />} iconPosition="start" label={t('portal.profileAndLinks')} sx={S.TAB_ACTIVE} />
       </Tabs>
 
       {/* DASHBOARD */}
       <TabPanel value={tab} index={0}>
         <Grid container spacing={3}>
           <Grid item xs={12} md={7}>
-            <Typography variant="h6" fontWeight={600} mb={2}>Today's Schedule</Typography>
-            <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+            <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.todaysSchedule')}</Typography>
+            <TableContainer component={Paper} sx={S.GLASS}>
               <Table size="small">
-                <TableHead><TableRow sx={{ bgcolor: 'grey.100' }}>
-                  <TableCell>Period</TableCell><TableCell>Time</TableCell><TableCell>Subject</TableCell>
-                  <TableCell>Class</TableCell><TableCell>Room</TableCell>
+                <TableHead><TableRow sx={{ bgcolor: S.TH_BG }}>
+                  <TableCell>{t('portal.period')}</TableCell><TableCell>{t('portal.time')}</TableCell><TableCell>{t('portal.subject')}</TableCell>
+                  <TableCell>{t('portal.class')}</TableCell><TableCell>{t('portal.room')}</TableCell>
                 </TableRow></TableHead>
                 <TableBody>
                   {schedule.length === 0 ? (
                     <TableRow><TableCell colSpan={5} align="center">
-                      <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No classes scheduled for today.</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('portal.noClassesScheduled')}</Typography>
                     </TableCell></TableRow>
                   ) : schedule.map((s, i) => (
-                    <TableRow key={i} hover>
-                      <TableCell>{s.period ?? i + 1}</TableCell>
-                      <TableCell>{s.time ?? '—'}</TableCell>
-                      <TableCell><strong>{s.subject ?? '—'}</strong></TableCell>
-                      <TableCell>{s.class ?? '—'}</TableCell>
-                      <TableCell>{s.room ?? '—'}</TableCell>
+                    <TableRow key={i} hover sx={S.TR_HOVER}>
+                      <TableCell sx={S.TD}>{s.period ?? i + 1}</TableCell>
+                      <TableCell sx={S.TD}>{s.time ?? '—'}</TableCell>
+                      <TableCell sx={S.TD}><strong>{s.subject ?? '—'}</strong></TableCell>
+                      <TableCell sx={S.TD}>{s.class ?? '—'}</TableCell>
+                      <TableCell sx={S.TD}>{s.room ?? '—'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -197,19 +202,19 @@ export const TeacherPortal: React.FC = () => {
             </TableContainer>
           </Grid>
           <Grid item xs={12} md={5}>
-            <Typography variant="h6" fontWeight={600} mb={2}>Pending Tasks</Typography>
-            <Paper sx={{ borderRadius: 2 }}>
+            <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.pendingTasks')}</Typography>
+            <Paper sx={S.GLASS}>
               <List>
-                {tasks.filter(t => t.status !== 'completed').length === 0 ? (
-                  <ListItem><ListItemText primary="No pending tasks." /></ListItem>
-                ) : tasks.filter(t => t.status !== 'completed').map(t => (
-                  <ListItem key={t.id} divider>
+                {tasks.filter(tk => tk.status !== 'completed').length === 0 ? (
+                  <ListItem><ListItemText primary={t('portal.noTasksPending')} /></ListItem>
+                ) : tasks.filter(tk => tk.status !== 'completed').map(tk => (
+                  <ListItem key={tk.id} divider sx={S.TR_HOVER}>
                     <ListItemIcon><TaskIcon color="warning" /></ListItemIcon>
                     <ListItemText
-                      primary={t.title}
-                      secondary={t.dueDate ? `Due: ${new Date(t.dueDate).toLocaleDateString()}` : t.description || '—'}
+                      primary={tk.title}
+                      secondary={tk.dueDate ? `${t('portal.due')}: ${new Date(tk.dueDate).toLocaleDateString()}` : tk.description || '—'}
                     />
-                    <Chip label={t.status} size="small" color={t.status === 'in_progress' ? 'warning' : 'default'} />
+                    <Chip label={tk.status} size="small" color={tk.status === 'in_progress' ? 'warning' : 'default'} />
                   </ListItem>
                 ))}
               </List>
@@ -220,25 +225,25 @@ export const TeacherPortal: React.FC = () => {
 
       {/* TODAY'S SCHEDULE */}
       <TabPanel value={tab} index={1}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Today's Schedule</Typography>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.todaysSchedule')}</Typography>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
-            <TableHead><TableRow sx={{ bgcolor: 'grey.100' }}>
-              <TableCell>Period</TableCell><TableCell>Time</TableCell><TableCell>Subject</TableCell>
-              <TableCell>Class</TableCell><TableCell>Room</TableCell>
+            <TableHead><TableRow sx={{ bgcolor: S.TH_BG }}>
+              <TableCell>{t('portal.period')}</TableCell><TableCell>{t('portal.time')}</TableCell><TableCell>{t('portal.subject')}</TableCell>
+              <TableCell>{t('portal.class')}</TableCell><TableCell>{t('portal.room')}</TableCell>
             </TableRow></TableHead>
             <TableBody>
               {schedule.length === 0 ? (
                 <TableRow><TableCell colSpan={5} align="center">
-                  <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No classes scheduled for today.</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('portal.noClassesScheduled')}</Typography>
                 </TableCell></TableRow>
               ) : schedule.map((s, i) => (
-                <TableRow key={i} hover>
-                  <TableCell>{s.period ?? i + 1}</TableCell>
-                  <TableCell>{s.time ?? '—'}</TableCell>
-                  <TableCell><strong>{s.subject ?? '—'}</strong></TableCell>
-                  <TableCell>{s.class ?? '—'}</TableCell>
-                  <TableCell>{s.room ?? '—'}</TableCell>
+                <TableRow key={i} hover sx={S.TR_HOVER}>
+                  <TableCell sx={S.TD}>{s.period ?? i + 1}</TableCell>
+                  <TableCell sx={S.TD}>{s.time ?? '—'}</TableCell>
+                  <TableCell sx={S.TD}><strong>{s.subject ?? '—'}</strong></TableCell>
+                  <TableCell sx={S.TD}>{s.class ?? '—'}</TableCell>
+                  <TableCell sx={S.TD}>{s.room ?? '—'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -248,24 +253,24 @@ export const TeacherPortal: React.FC = () => {
 
       {/* MY CLASSES */}
       <TabPanel value={tab} index={2}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Class Performance</Typography>
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+        <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.classPerformance')}</Typography>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
-            <TableHead><TableRow sx={{ bgcolor: 'grey.100' }}>
-              <TableCell>Class</TableCell><TableCell>Subject</TableCell><TableCell>Students</TableCell>
-              <TableCell>Avg Score</TableCell>
+            <TableHead><TableRow sx={{ bgcolor: S.TH_BG }}>
+              <TableCell>{t('portal.class')}</TableCell><TableCell>{t('portal.subject')}</TableCell><TableCell>{t('portal.students')}</TableCell>
+              <TableCell>{t('portal.avgScore')}</TableCell>
             </TableRow></TableHead>
             <TableBody>
               {performances.length === 0 ? (
                 <TableRow><TableCell colSpan={4} align="center">
-                  <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>No class data available.</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('portal.noClassData')}</Typography>
                 </TableCell></TableRow>
               ) : performances.map((p, i) => (
-                <TableRow key={i} hover>
-                  <TableCell><strong>{p.class ?? '—'}</strong></TableCell>
-                  <TableCell>{p.subject ?? '—'}</TableCell>
-                  <TableCell>{p.students ?? '—'}</TableCell>
-                  <TableCell>
+                <TableRow key={i} hover sx={S.TR_HOVER}>
+                  <TableCell sx={S.TD}><strong>{p.class ?? '—'}</strong></TableCell>
+                  <TableCell sx={S.TD}>{p.subject ?? '—'}</TableCell>
+                  <TableCell sx={S.TD}>{p.students ?? '—'}</TableCell>
+                  <TableCell sx={S.TD}>
                     {p.avgScore != null ? (
                       <Chip label={`${p.avgScore}%`} size="small" color={p.avgScore >= 60 ? 'success' : 'warning'} />
                     ) : '—'}
@@ -279,77 +284,65 @@ export const TeacherPortal: React.FC = () => {
 
       {/* LESSON PLANS */}
       <TabPanel value={tab} index={3}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Lesson Plans</Typography>
-        <Card sx={{ borderRadius: 3, boxShadow: 2, mb: 3 }}>
-          <CardContent>
-            <Typography variant="body1" gutterBottom>
-              Create and manage your lesson plans with syllabus tracking.
-            </Typography>
-            <Button variant="contained" startIcon={<LessonIcon />} onClick={() => navigate('/teacher/lesson-planning')} sx={{ mt: 1 }}>
-              Open Lesson Planning
-            </Button>
-          </CardContent>
-        </Card>
+        <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.lessonPlans')}</Typography>
+        <Box sx={{ ...S.GLASS, p: 3, mb: 3 }}>
+          <Typography variant="body1" gutterBottom>{t('portal.lessonPlanningDesc')}</Typography>
+          <Button sx={{ ...S.BTN_PRIMARY, mt: 1 }} startIcon={<LessonIcon />} onClick={() => navigate('/teacher/lesson-planning')}>
+            {t('portal.openLessonPlanning')}
+          </Button>
+        </Box>
       </TabPanel>
 
       {/* ASSIGNMENTS */}
       <TabPanel value={tab} index={4}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Assignments</Typography>
-        <Card sx={{ borderRadius: 3, boxShadow: 2, mb: 3 }}>
-          <CardContent>
-            <Typography variant="body1" gutterBottom>
-              Create assignments, view submissions, and grade student work.
-            </Typography>
-            <Button variant="contained" startIcon={<AssignmentIcon />} onClick={() => navigate('/teacher/assignments')} sx={{ mt: 1 }}>
-              Open Assignment Management
-            </Button>
-          </CardContent>
-        </Card>
+        <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.assignments')}</Typography>
+        <Box sx={{ ...S.GLASS, p: 3, mb: 3 }}>
+          <Typography variant="body1" gutterBottom>{t('portal.assignmentDesc')}</Typography>
+          <Button sx={{ ...S.BTN_PRIMARY, mt: 1 }} startIcon={<AssignmentIcon />} onClick={() => navigate('/teacher/assignments')}>
+            {t('portal.openAssignmentMgmt')}
+          </Button>
+        </Box>
       </TabPanel>
 
       {/* PROFILE & LINKS */}
       <TabPanel value={tab} index={5}>
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-              <CardContent>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                  <Typography variant="h6" fontWeight={600}>My Profile</Typography>
-                  <Chip label={profile?.role || 'Teacher'} color="primary" size="small" />
-                </Box>
-                <Divider sx={{ mb: 2 }} />
-                <Typography variant="body2"><strong>Name:</strong> {profile?.firstName || user?.firstName} {profile?.lastName || user?.lastName}</Typography>
-                <Typography variant="body2" mt={1}><strong>Username:</strong> {profile?.username ?? user?.username}</Typography>
-                <Typography variant="body2" mt={1}><strong>Email:</strong> {profile?.email ?? user?.email ?? '—'}</Typography>
-                <Typography variant="body2" mt={1}><strong>Phone:</strong> {profile?.phoneNumber || '—'}</Typography>
-                <Box mt={2}>
-                  <Button variant="outlined" color="primary" size="small" onClick={() => navigate('/communication/messages')}>Contact Admin</Button>
-                </Box>
-              </CardContent>
-            </Card>
+            <Box sx={{ ...S.GLASS, p: 3 }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                <Typography variant="h6" fontWeight={600}>{t('portal.myProfile')}</Typography>
+                <Chip label={profile?.role || t('roles.teacher')} color="primary" size="small" />
+              </Box>
+              <Divider sx={{ mb: 2 }} />
+              <Typography variant="body2"><strong>{t('portal.name')}:</strong> {profile?.firstName || user?.firstName} {profile?.lastName || user?.lastName}</Typography>
+              <Typography variant="body2" mt={1}><strong>{t('portal.username')}:</strong> {profile?.username ?? user?.username}</Typography>
+              <Typography variant="body2" mt={1}><strong>{t('portal.email')}:</strong> {profile?.email ?? user?.email ?? '—'}</Typography>
+              <Typography variant="body2" mt={1}><strong>{t('portal.phoneLabel')}:</strong> {profile?.phoneNumber || '—'}</Typography>
+              <Box mt={2}>
+                <Button sx={S.BTN_OUTLINE} size="small" onClick={() => navigate('/communication/messages')}>{t('portal.contactAdmin')}</Button>
+              </Box>
+            </Box>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-              <CardContent>
-                <Typography variant="h6" fontWeight={600} gutterBottom>Quick Links</Typography>
-                <Divider sx={{ mb: 1 }} />
-                <List dense>
-                  {[
-                    { label: 'Lesson Planning', path: '/teacher/lesson-planning', icon: <LessonIcon color="primary" /> },
-                    { label: 'Assignments', path: '/teacher/assignments', icon: <AssignmentIcon color="primary" /> },
-                    { label: 'Grade Entry', path: '/examinations/grades', icon: <GradeIcon color="primary" /> },
-                    { label: 'Messages', path: '/communication/messages', icon: <MessageIcon color="primary" /> },
-                    { label: 'Calendar', path: '/calendar', icon: <CalendarIcon color="primary" /> },
-                    { label: 'Documents', path: '/documents', icon: <DocIcon color="primary" /> },
-                  ].map(l => (
-                    <ListItem key={l.path} button onClick={() => navigate(l.path)}>
-                      <ListItemIcon>{l.icon}</ListItemIcon>
-                      <ListItemText primary={l.label} />
-                    </ListItem>
-                  ))}
-                </List>
-              </CardContent>
-            </Card>
+            <Box sx={{ ...S.GLASS, p: 3 }}>
+              <Typography variant="h6" fontWeight={600} gutterBottom>{t('portal.quickLinks')}</Typography>
+              <Divider sx={{ mb: 1 }} />
+              <List dense>
+                {[
+                  { label: t('portal.openLessonPlanning'), path: '/teacher/lesson-planning', icon: <LessonIcon color="primary" /> },
+                  { label: t('portal.assignments'), path: '/teacher/assignments', icon: <AssignmentIcon color="primary" /> },
+                  { label: t('portal.gradeEntry'), path: '/examinations/grades', icon: <GradeIcon color="primary" /> },
+                  { label: t('communication.messages'), path: '/communication/messages', icon: <MessageIcon color="primary" /> },
+                  { label: t('menu.calendar'), path: '/calendar', icon: <CalendarIcon color="primary" /> },
+                  { label: t('menu.documents'), path: '/documents', icon: <DocIcon color="primary" /> },
+                ].map(l => (
+                  <ListItem key={l.path} button onClick={() => navigate(l.path)} sx={S.TR_HOVER}>
+                    <ListItemIcon>{l.icon}</ListItemIcon>
+                    <ListItemText primary={l.label} />
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
           </Grid>
         </Grid>
       </TabPanel>

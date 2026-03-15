@@ -1,0 +1,29 @@
+{
+  "success": true,
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQyNDgsInVzZXJuYW1lIjoiYWRtaW4iLCJlbWFpbCI6ImFkbWluQHNjaG9vbC5lZHUubnAiLCJyb2xlIjoiU2Nob29sX0FkbWluIiwibXVuaWNpcGFsaXR5SWQiOiIzZTQ4NmIwNi0yYzVlLTQwZDQtODM3MS1hOWIzMzQ5MjY4NzciLCJzY2hvb2xDb25maWdJZCI6IjYyNGNkOGRiLWNiZGQtNGEyOS05Mjk3LTZiZDg4MjIxOWZiNyIsImlhdCI6MTc3MzU3OTI2NywiZXhwIjoxNzc0MTg0MDY3fQ._GBxtflegahWmeG5eJYBVBhl6gXf9O5qaaDSbIWSRoY",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQyNDgsInVzZXJuYW1lIjoiYWRtaW4iLCJlbWFpbCI6ImFkbWluQHNjaG9vbC5lZHUubnAiLCJyb2xlIjoiU2Nob29sX0FkbWluIiwibXVuaWNpcGFsaXR5SWQiOiIzZTQ4NmIwNi0yYzVlLTQwZDQtODM3MS1hOWIzMzQ5MjY4NzciLCJzY2hvb2xDb25maWdJZCI6IjYyNGNkOGRiLWNiZGQtNGEyOS05Mjk3LTZiZDg4MjIxOWZiNyIsImlhdCI6MTc3MzU3OTI2NywiZXhwIjoxNzc2MTcxMjY3fQ.tOfYxDD1nevdJs1908fo6sPO8W5EJ6YvdOze6UJtGso",
+    "user": {
+      "userId": 4248,
+      "username": "admin",
+      "email": "admin@school.edu.np",
+      "role": "School_Admin",
+      "status": "active",
+      "municipalityId": "3e486b06-2c5e-40d4-8371-a9b334926877",
+      "schoolConfigId": "624cd8db-cbdd-4a29-9297-6bd882219fb7",
+      "phoneNumber": "+977-9841234567",
+      "profilePhoto": null,
+      "lastLogin": "2026-03-15T12:54:27.806Z",
+      "failedLoginAttempts": 0,
+      "passwordChangedAt": null,
+      "passwordResetToken": null,
+      "passwordResetExpires": null,
+      "refreshTokenExpiresAt": null,
+      "createdAt": "2026-03-11T18:28:46Z",
+      "updatedAt": "2026-03-15T12:54:27.807Z",
+      "deletedAt": null,
+      "municipalityCode": "KMC"
+    }
+  },
+  "message": "Login successful"
+}

@@ -107,6 +107,7 @@ export interface LibraryReport {
   mostBorrowedBooks: Array<{ bookTitle: string; author: string; borrowCount: number }>;
   activeMembers: Array<{ studentId: string; studentName: string; borrowCount: number }>;
   fineCollected: number;
+  circulationRate?: number;
 }
 
 export interface ECAReport {
@@ -115,6 +116,7 @@ export interface ECAReport {
   byActivity: Array<{ activityName: string; participantCount: number }>;
   byCategory: Array<{ category: string; count: number }>;
   achievements: Array<{ studentName: string; activityName: string; achievement: string }>;
+  participationRate?: number;
 }
 
 export interface SportsReport {

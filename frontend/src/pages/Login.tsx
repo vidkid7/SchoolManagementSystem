@@ -30,6 +30,7 @@ import {
 import { AppDispatch, RootState } from '../store';
 import { login, clearError } from '../store/slices/authSlice';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { C } from '../theme/designTokens';
 
 const float = keyframes`
   0%, 100% { transform: translateY(0) rotate(0deg); }
@@ -63,20 +64,18 @@ export const Login = () => {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const { isLoading, error, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { isLoading, error, isAuthenticated, user: authUser } = useSelector((state: RootState) => state.auth);
 
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
 
-  // Redirect to appropriate page if already authenticated
+  // Redirect to appropriate page if already authenticated with a known municipality
   useEffect(() => {
-    if (isAuthenticated) {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const basePath = getRedirectPath(user.role);
-      const slug = user.municipalityCode;
-      navigate(slug ? `/${slug}${basePath}` : basePath);
+    if (isAuthenticated && authUser?.municipalityCode) {
+      const basePath = getRedirectPath(authUser.role);
+      navigate(`/${authUser.municipalityCode}${basePath}`);
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, authUser, navigate]);
 
   const getRedirectPath = (role: string): string => {
     switch (role) {
@@ -85,20 +84,27 @@ export const Login = () => {
       case 'Parent':
         return '/portal/parent';
       case 'Subject_Teacher':
-      case 'Class_Teacher':
         return '/portal/teacher';
+      case 'Class_Teacher':
+        return '/portal/class-teacher';
+      case 'Department_Head':
+        return '/portal/department-head';
       case 'Accountant':
-        return '/finance';
+        return '/portal/accountant';
       case 'Librarian':
-        return '/library';
+        return '/portal/librarian';
       case 'Municipality_Admin':
-        return '/admin/municipality/dashboard';
+        return '/municipality';
       case 'Transport_Manager':
         return '/portal/transport';
       case 'Hostel_Warden':
         return '/portal/hostel';
       case 'Non_Teaching_Staff':
         return '/portal/non-teaching-staff';
+      case 'ECA_Coordinator':
+        return '/portal/eca-coordinator';
+      case 'Sports_Coordinator':
+        return '/portal/sports-coordinator';
       default:
         return '/dashboard';
     }
@@ -187,10 +193,10 @@ export const Login = () => {
 
           {/* Floating Icons */}
           <Box sx={{ position: 'absolute', top: '15%', left: '10%', animation: `${float} 6s ease-in-out infinite` }}>
-            <School sx={{ fontSize: 40, opacity: 0.3, color: '#667eea' }} />
+            <School sx={{ fontSize: 40, opacity: 0.3, color: C.primary }} />
           </Box>
           <Box sx={{ position: 'absolute', bottom: '20%', right: '15%', animation: `${floatReverse} 5s ease-in-out infinite` }}>
-            <School sx={{ fontSize: 30, opacity: 0.2, color: '#764ba2' }} />
+            <School sx={{ fontSize: 30, opacity: 0.2, color: C.purple }} />
           </Box>
           
           <Box
@@ -277,7 +283,7 @@ export const Login = () => {
                   sx={{
                     px: 2.5,
                     py: 1,
-                    borderRadius: 3,
+                    borderRadius: 2,
                     background: 'rgba(255,255,255,0.1)',
                     backdropFilter: 'blur(10px)',
                     border: '1px solid rgba(255,255,255,0.15)',
@@ -306,7 +312,7 @@ export const Login = () => {
           py: 6,
           background: theme.palette.mode === 'dark'
             ? '#000000'
-            : '#f3f4f6',
+            : theme.palette.background.paper,
           position: 'relative',
         }}
       >
@@ -368,7 +374,7 @@ export const Login = () => {
                   mb: 2,
                   p: 2,
                   borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: `linear-gradient(135deg, ${C.primary} 0%, ${C.purple} 100%)`,
                   display: 'inline-block',
                   boxShadow: '0 8px 32px rgba(102,126,234,0.3)',
                 }}
@@ -394,7 +400,7 @@ export const Login = () => {
                 : 'rgba(255, 255, 255, 0.65)',
               backdropFilter: 'blur(40px) saturate(180%)',
               WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-              borderRadius: { xs: 3, sm: 4 },
+              borderRadius: { xs: 1.5, sm: 2 },
               boxShadow: theme.palette.mode === 'dark'
                 ? '0 25px 80px rgba(0,0,0,0.5)'
                 : '0 25px 80px rgba(0,0,0,0.05)',
@@ -412,7 +418,7 @@ export const Login = () => {
                 left: 0,
                 right: 0,
                 height: 3,
-                background: 'linear-gradient(90deg, #667eea, #764ba2, #667eea)',
+                background: `linear-gradient(90deg, ${C.primary}, ${C.purple}, ${C.primary})`,
                 backgroundSize: '200% 100%',
               },
             }}
@@ -469,7 +475,7 @@ export const Login = () => {
                   }}
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      borderRadius: 2.5,
+                      borderRadius: 1.5,
                       backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
                       transition: 'all 0.3s ease',
                       '&:hover': {
@@ -520,7 +526,7 @@ export const Login = () => {
                   }}
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      borderRadius: 2.5,
+                      borderRadius: 1.5,
                       backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
                       transition: 'all 0.3s ease',
                       '&:hover': {
@@ -551,7 +557,7 @@ export const Login = () => {
                   mt: 4,
                   mb: 2,
                   py: 1.8,
-                  borderRadius: 2.5,
+                  borderRadius: 1.5,
                   fontSize: '1rem',
                   fontWeight: 600,
                   textTransform: 'none',

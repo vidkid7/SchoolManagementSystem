@@ -37,6 +37,7 @@ import {
   Badge,
   CircularProgress,
   Alert,
+  useTheme,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -53,6 +54,7 @@ import {
 import { useSelector } from 'react-redux';
 import apiClient from '../../services/apiClient';
 import { RootState } from '../../store';
+import { C, useAdminStyles } from '../../theme/designTokens';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -73,6 +75,8 @@ const authHdr = (token: string) => ({ headers: { Authorization: `Bearer ${token}
 
 export const AssignmentManagement = () => {
   const { accessToken } = useSelector((state: RootState) => state.auth);
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const [tabValue, setTabValue] = useState(0);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openGradeDialog, setOpenGradeDialog] = useState(false);
@@ -218,7 +222,7 @@ export const AssignmentManagement = () => {
           Assignment Management / असाइनमेन्ट व्यवस्थापन
         </Typography>
         <Button
-          variant="contained"
+          sx={S.BTN_PRIMARY}
           startIcon={<AddIcon />}
           onClick={handleCreateAssignment}
         >
@@ -234,7 +238,7 @@ export const AssignmentManagement = () => {
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Avatar sx={{ bgcolor: '#1976d2', mr: 2 }}>
+                <Avatar sx={{ bgcolor: C.neutral, mr: 2 }}>
                   <AttachFileIcon />
                 </Avatar>
                 <Box>
@@ -250,7 +254,7 @@ export const AssignmentManagement = () => {
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Avatar sx={{ bgcolor: '#ed6c02', mr: 2 }}>
+                <Avatar sx={{ bgcolor: C.neutral, mr: 2 }}>
                   <ScheduleIcon />
                 </Avatar>
                 <Box>
@@ -266,7 +270,7 @@ export const AssignmentManagement = () => {
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Avatar sx={{ bgcolor: '#2e7d32', mr: 2 }}>
+                <Avatar sx={{ bgcolor: C.neutral, mr: 2 }}>
                   <CheckCircleIcon />
                 </Avatar>
                 <Box>
@@ -282,7 +286,7 @@ export const AssignmentManagement = () => {
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Avatar sx={{ bgcolor: '#d32f2f', mr: 2 }}>
+                <Avatar sx={{ bgcolor: C.danger, mr: 2 }}>
                   <WarningIcon />
                 </Avatar>
                 <Box>
@@ -296,7 +300,7 @@ export const AssignmentManagement = () => {
       </Grid>
 
       {/* Tabs */}
-      <Paper>
+      <Paper sx={S.GLASS}>
         <Tabs value={tabValue} onChange={(_e, newValue) => setTabValue(newValue)}>
           <Tab label="All Assignments / सबै असाइनमेन्ट" />
           <Tab
@@ -395,7 +399,7 @@ export const AssignmentManagement = () => {
                         </IconButton>
                         <Button
                           size="small"
-                          variant="contained"
+                          sx={S.BTN_PRIMARY}
                           startIcon={<GradeIcon />}
                           onClick={() => handleViewSubmissions(assignment)}
                         >
@@ -555,7 +559,7 @@ export const AssignmentManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenCreateDialog(false)}>Cancel / रद्द गर्नुहोस्</Button>
-          <Button variant="contained" onClick={handleSaveAssignment}>
+          <Button sx={S.BTN_PRIMARY} onClick={handleSaveAssignment}>
             Create Assignment / असाइनमेन्ट सिर्जना गर्नुहोस्
           </Button>
         </DialogActions>
@@ -603,7 +607,7 @@ export const AssignmentManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenGradeDialog(false)}>Cancel / रद्द गर्नुहोस्</Button>
-          <Button variant="contained" onClick={handleSaveGrade}>
+          <Button sx={S.BTN_PRIMARY} onClick={handleSaveGrade}>
             Save Grade / ग्रेड सुरक्षित गर्नुहोस्
           </Button>
         </DialogActions>

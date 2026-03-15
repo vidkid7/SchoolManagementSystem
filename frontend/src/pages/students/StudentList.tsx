@@ -55,10 +55,12 @@ import {
   Psychology as FuzzyIcon,
   Bolt as ExactIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import { apiClient } from '../../services/apiClient';
 import { motion } from 'framer-motion';
 import { useNepaliNumbers } from '../../hooks/useNepaliNumbers';
+import { C, useAdminStyles } from '../../theme/designTokens';
 
 const MotionCard = motion.create(Card);
 
@@ -89,16 +91,18 @@ interface FuzzySearchResult {
 }
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; labelKey: string }> = {
-  active: { color: '#10b981', bg: '#10b981', labelKey: 'students.active' },
-  inactive: { color: '#6b7280', bg: '#6b7280', labelKey: 'students.inactive' },
-  graduated: { color: '#3b82f6', bg: '#3b82f6', labelKey: 'students.graduated' },
-  transferred: { color: '#f59e0b', bg: '#f59e0b', labelKey: 'students.transferred' },
+  active: { color: C.success, bg: C.success, labelKey: 'students.active' },
+  inactive: { color: C.neutral, bg: C.neutral, labelKey: 'students.inactive' },
+  graduated: { color: C.primary, bg: C.primary, labelKey: 'students.graduated' },
+  transferred: { color: C.warning, bg: C.warning, labelKey: 'students.transferred' },
 };
 
 export const StudentList = () => {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
+  const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   const { formatNumber, formatWithSeparators } = useNepaliNumbers();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
@@ -194,9 +198,9 @@ export const StudentList = () => {
     if (!result) return null;
 
     const colors = {
-      exact: { bg: '#10b981', text: '#fff' },
-      fuzzy: { bg: '#f59e0b', text: '#fff' },
-      phonetic: { bg: '#6366f1', text: '#fff' },
+      exact: { bg: C.success, text: '#fff' },
+      fuzzy: { bg: C.warning, text: '#fff' },
+      phonetic: { bg: C.purple, text: '#fff' },
     };
 
     const color = colors[result.matchType];
@@ -230,7 +234,7 @@ export const StudentList = () => {
         elevation={0}
         sx={{ 
           mb: 3,
-          borderRadius: 4,
+          borderRadius: 2,
           background: theme.palette.mode === 'dark' 
             ? 'linear-gradient(135deg, rgba(28,28,30,0.4) 0%, rgba(28,28,30,0.6) 100%)' 
             : 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.5) 100%)',
@@ -304,7 +308,7 @@ export const StudentList = () => {
               <Button
                 variant="outlined"
                 startIcon={<UploadIcon />}
-                onClick={() => navigate('/students/bulk-import')}
+                onClick={() => navigate(`/students/bulk-import`)}
                 sx={{ 
                   borderRadius: 2,
                   borderColor: 'rgba(255,255,255,0.3)',
@@ -318,22 +322,25 @@ export const StudentList = () => {
                 {t('common.import')}
               </Button>
               <Button
-                variant="contained"
+                variant="outlined"
                 startIcon={<AddIcon />}
-                onClick={() => navigate('/students/create')}
+                onClick={() => navigate(`/students/bulk-add`)}
                 sx={{ 
                   borderRadius: 2,
-                  bgcolor: 'white',
-                  color: theme.palette.primary.main,
-                  fontWeight: 700,
-                  px: 3,
-                  boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
+                  borderColor: 'rgba(255,255,255,0.3)',
+                  color: 'white',
                   '&:hover': { 
-                    bgcolor: 'rgba(255,255,255,0.9)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
+                    borderColor: 'rgba(255,255,255,0.5)', 
+                    bgcolor: 'rgba(255,255,255,0.1)' 
                   }
                 }}
+              >
+                {t('students.bulkAdd')}
+              </Button>
+              <Button
+                startIcon={<AddIcon />}
+                onClick={() => navigate(`/students/create`)}
+                sx={S.BTN_PRIMARY}
               >
                 {t('students.addStudent')}
               </Button>
@@ -345,10 +352,10 @@ export const StudentList = () => {
       {/* Quick Stats */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {[
-          { icon: <PeopleIcon />, labelKey: 'dashboard.totalStudents', value: total, gradient: 'linear-gradient(135deg, #475569 0%, #334155 100%)', color: '#475569' },
-          { icon: <ActiveIcon />, labelKey: 'students.active', value: students.filter(s => s.status === 'active').length || 0, gradient: 'linear-gradient(135deg, #059669 0%, #047857 100%)', color: '#059669' },
-          { icon: <SchoolIcon />, labelKey: 'students.class', value: new Set(students.map(s => s.class?.gradeLevel).filter(Boolean)).size || 0, gradient: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', color: '#2563eb' },
-          { icon: <GroupIcon />, labelKey: 'students.section', value: new Set(students.map(s => s.class?.section).filter(Boolean)).size || 0, gradient: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)', color: '#d97706' },
+          { icon: <PeopleIcon />, labelKey: 'dashboard.totalStudents', value: total, gradient: 'linear-gradient(135deg, #475569 0%, #334155 100%)', color: C.neutral },
+          { icon: <ActiveIcon />, labelKey: 'students.active', value: students.filter(s => s.status === 'active').length || 0, gradient: 'linear-gradient(135deg, #059669 0%, #047857 100%)', color: C.success },
+          { icon: <SchoolIcon />, labelKey: 'students.class', value: new Set(students.map(s => s.class?.gradeLevel).filter(Boolean)).size || 0, gradient: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', color: C.primary },
+          { icon: <GroupIcon />, labelKey: 'students.section', value: new Set(students.map(s => s.class?.section).filter(Boolean)).size || 0, gradient: `linear-gradient(135deg, ${C.warning} 0%, #b45309 100%)`, color: C.warning },
         ].map((stat, index) => {
           return (
           <Grid item xs={6} md={3} key={stat.labelKey}>
@@ -359,7 +366,7 @@ export const StudentList = () => {
               elevation={0}
               whileHover={{ scale: 1.02, y: -4 }}
               sx={{
-                borderRadius: 4,
+                borderRadius: 2,
                 border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.4)'}`,
                 background: theme.palette.mode === 'dark' ? 'rgba(28,28,30,0.6)' : 'rgba(255,255,255,0.65)',
                 backdropFilter: 'blur(40px) saturate(180%)',
@@ -381,7 +388,7 @@ export const StudentList = () => {
               <CardContent sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2, position: 'relative' }}>
                 <Box sx={{ 
                   p: 1.5, 
-                  borderRadius: 3, 
+                  borderRadius: 2, 
                   background: stat.gradient,
                   color: '#fff',
                   boxShadow: `0 4px 12px ${alpha(stat.color, 0.3)}`,
@@ -403,16 +410,10 @@ export const StudentList = () => {
       <Paper 
         elevation={0}
         sx={{ 
+          ...S.GLASS,
           p: 2.5, 
           mb: 3,
-          borderRadius: 4,
-          border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.4)'}`,
-          background: theme.palette.mode === 'dark' 
-            ? 'rgba(28,28,30,0.6)' 
-            : 'rgba(255,255,255,0.65)',
-          backdropFilter: 'blur(40px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.04)',
+          borderRadius: 2,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
@@ -554,15 +555,9 @@ export const StudentList = () => {
       <Paper 
         elevation={0}
         sx={{ 
-          borderRadius: 4,
+          ...S.GLASS,
+          borderRadius: 2,
           overflow: 'hidden',
-          border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.4)'}`,
-          background: theme.palette.mode === 'dark' 
-            ? 'rgba(28,28,30,0.6)' 
-            : 'rgba(255,255,255,0.65)',
-          backdropFilter: 'blur(40px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.04)',
         }}
       >
         {/* Table Header Bar */}
@@ -587,11 +582,7 @@ export const StudentList = () => {
         <TableContainer>
           <Table>
             <TableHead>
-              <TableRow sx={{ 
-                bgcolor: theme.palette.mode === 'dark' 
-                  ? alpha(theme.palette.background.default, 0.8)
-                  : alpha(theme.palette.primary.main, 0.04)
-              }}>
+              <TableRow sx={{ bgcolor: S.TH_BG }}>
                 <TableCell sx={{ fontWeight: 700 }}>{t('students.photo') || 'Photo'}</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>{t('students.studentId')}</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>{t('students.firstName')}</TableCell>
@@ -693,8 +684,8 @@ export const StudentList = () => {
                       label={t(STATUS_CONFIG[student.status]?.labelKey || student.status)}
                       size="small"
                       sx={{
-                        bgcolor: alpha(STATUS_CONFIG[student.status]?.bg || '#6b7280', 0.12),
-                        color: STATUS_CONFIG[student.status]?.color || '#6b7280',
+                        bgcolor: alpha(STATUS_CONFIG[student.status]?.bg || C.neutral, 0.12),
+                        color: STATUS_CONFIG[student.status]?.color || C.neutral,
                         fontWeight: 600,
                         fontSize: '0.75rem',
                       }}

@@ -43,6 +43,7 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
+  useTheme,
 } from '@mui/material';
 import {
   Backup as BackupIcon,
@@ -59,6 +60,8 @@ import {
   Warning as WarningIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useTranslation } from 'react-i18next';
 
 interface Backup {
   filename: string;
@@ -83,6 +86,9 @@ interface BackupConfig {
 }
 
 export const BackupManagement = () => {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const [backups, setBackups] = useState<Backup[]>([]);
   const [config, setConfig] = useState<BackupConfig | null>(null);
   const [loading, setLoading] = useState(true);
@@ -270,7 +276,7 @@ export const BackupManagement = () => {
       {config && (
         <Grid container spacing={3} sx={{ mb: 3 }}>
           <Grid item xs={12} md={3}>
-            <Card>
+            <Card sx={{ ...S.GLASS }}>
               <CardContent>
                 <Box display="flex" alignItems="center" gap={1} mb={1}>
                   <ScheduleIcon color="primary" />
@@ -289,7 +295,7 @@ export const BackupManagement = () => {
             </Card>
           </Grid>
           <Grid item xs={12} md={3}>
-            <Card>
+            <Card sx={{ ...S.GLASS }}>
               <CardContent>
                 <Box display="flex" alignItems="center" gap={1} mb={1}>
                   <StorageIcon color="primary" />
@@ -302,7 +308,7 @@ export const BackupManagement = () => {
             </Card>
           </Grid>
           <Grid item xs={12} md={3}>
-            <Card>
+            <Card sx={{ ...S.GLASS }}>
               <CardContent>
                 <Box display="flex" alignItems="center" gap={1} mb={1}>
                   <CheckCircleIcon color="primary" />
@@ -317,7 +323,7 @@ export const BackupManagement = () => {
             </Card>
           </Grid>
           <Grid item xs={12} md={3}>
-            <Card>
+            <Card sx={{ ...S.GLASS }}>
               <CardContent>
                 <Box display="flex" alignItems="center" gap={1} mb={1}>
                   <ScheduleIcon color="primary" />
@@ -335,7 +341,7 @@ export const BackupManagement = () => {
       )}
 
       {/* Backups List */}
-      <Paper>
+      <Paper sx={{ ...S.GLASS }}>
         <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6">
             Available Backups / उपलब्ध ब्याकअपहरू ({backups.length})
@@ -471,7 +477,7 @@ export const BackupManagement = () => {
               <Typography variant="body1" gutterBottom>
                 You are about to restore from:
               </Typography>
-              <Paper sx={{ p: 2, bgcolor: 'grey.100', mt: 1 }}>
+              <Paper sx={{ ...S.GLASS, p: 2, bgcolor: 'grey.100', mt: 1 }}>
                 <Typography variant="body2" fontFamily="monospace">
                   {selectedBackup.filename}
                 </Typography>

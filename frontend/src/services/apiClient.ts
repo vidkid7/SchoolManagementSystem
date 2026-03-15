@@ -10,7 +10,7 @@ import { store } from '../store';
 import { logout, setCredentials } from '../store/slices/authSlice';
 import { requestQueue } from '../utils/requestQueue';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 export const apiClient = axios.create({
   baseURL: API_URL,
@@ -36,6 +36,12 @@ apiClient.interceptors.request.use(
 
     if (finalToken) {
       config.headers.Authorization = `Bearer ${finalToken}`;
+    }
+
+    // Attach municipality header for tenant isolation
+    const municipalityId = state.auth?.user?.municipalityId;
+    if (municipalityId) {
+      config.headers['X-Municipality-Id'] = municipalityId;
     }
 
     // Update request queue based on lite mode

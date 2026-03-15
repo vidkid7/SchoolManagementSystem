@@ -31,12 +31,14 @@ const readRoles = [
   UserRole.SCHOOL_ADMIN,
   UserRole.CLASS_TEACHER,
   UserRole.SUBJECT_TEACHER,
-  UserRole.DEPARTMENT_HEAD
+  UserRole.DEPARTMENT_HEAD,
+  UserRole.ACCOUNTANT
 ];
 
 const manageRoles = [UserRole.SCHOOL_ADMIN];
 
 // Academic Years
+router.get('/years/current', authenticate, academicController.getCurrentAcademicYear);
 router.get('/years', authenticate, authorize(...readRoles), academicController.getAcademicYears);
 router.post('/years', authenticate, authorize(...manageRoles), validateRequest(createAcademicYearValidation), academicController.createAcademicYear);
 router.put('/years', authenticate, authorize(...manageRoles), validateRequest(updateAcademicYearValidation), academicController.updateAcademicYear);

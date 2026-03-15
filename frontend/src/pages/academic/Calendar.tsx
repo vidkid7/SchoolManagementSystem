@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -28,6 +29,7 @@ import {
   ListItemText,
   IconButton,
   Alert,
+  useTheme,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -35,7 +37,8 @@ import {
   Delete as DeleteIcon,
   Event as EventIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
+import { C, useAdminStyles } from '../../theme/designTokens';
 
 interface Event {
   eventId: number;
@@ -51,6 +54,9 @@ interface Event {
 }
 
 export const Calendar = () => {
+  const { t, i18n } = useTranslation();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -81,7 +87,7 @@ export const Calendar = () => {
       const startDate = new Date(selectedYear, selectedMonth, 1).toISOString();
       const endDate = new Date(selectedYear, selectedMonth + 1, 0).toISOString();
       
-      const response = await api.get(`/calendar/events/range?startDate=${startDate}&endDate=${endDate}`);
+      const response = await apiClient.get(`/calendar/events/range?startDate=${startDate}&endDate=${endDate}`);
       const eventsData = response.data?.data || response.data;
       setEvents(Array.isArray(eventsData) ? eventsData : []);
     } catch (error) {
@@ -129,9 +135,9 @@ export const Calendar = () => {
   const handleSaveEvent = async () => {
     try {
       if (editMode && editId) {
-        await api.put(`/calendar/events/${editId}`, eventForm);
+        await apiClient.put(`/calendar/events/${editId}`, eventForm);
       } else {
-        await api.post('/calendar/events', eventForm);
+        await apiClient.post('/calendar/events', eventForm);
       }
       handleCloseDialog();
       fetchEvents();
@@ -142,12 +148,12 @@ export const Calendar = () => {
   };
 
   const handleDeleteEvent = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this event?')) {
+    if (!window.confirm(t('calendar.confirmDelete', 'Are you sure you want to delete this event?'))) {
       return;
     }
 
     try {
-      await api.delete(`/calendar/events/${id}`);
+      await apiClient.delete(`/calendar/events/${id}`);
       fetchEvents();
     } catch (error) {
       console.error('Failed to delete event:', error);
@@ -155,10 +161,9 @@ export const Calendar = () => {
     }
   };
 
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
+  const months = Array.from({ length: 12 }, (_, i) =>
+    new Date(2000, i, 1).toLocaleString(i18n.language === 'ne' ? 'ne-NP' : 'en-US', { month: 'long' })
+  );
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, any> = {
@@ -178,7 +183,7 @@ export const Calendar = () => {
           Academic Calendar
         </Typography>
         <Button
-          variant="contained"
+          sx={S.BTN_PRIMARY}
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
         >
@@ -193,7 +198,7 @@ export const Calendar = () => {
       )}
 
       {/* Month/Year Selector */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 2, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
@@ -238,7 +243,7 @@ export const Calendar = () => {
       {/* Events Summary */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} md={4}>
-          <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+          <Card sx={{ background: `linear-gradient(135deg, ${C.primary} 0%, ${C.purple} 100%)`, color: 'white' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <EventIcon sx={{ fontSize: 40 }} />
@@ -285,10 +290,10 @@ export const Calendar = () => {
       </Grid>
 
       {/* Events List */}
-      <Paper sx={{ borderRadius: 2 }}>
+      <Paper sx={{ ...S.GLASS }}>
         <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
           <Typography variant="h6" fontWeight={600}>
-            Events in {months[selectedMonth]} {selectedYear}
+            {t('calendar.eventsIn', 'Events in')} {months[selectedMonth]} {selectedYear}
           </Typography>
         </Box>
         <List>
@@ -458,7 +463,7 @@ export const Calendar = () => {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button variant="contained" onClick={handleSaveEvent}>
+          <Button sx={S.BTN_PRIMARY} onClick={handleSaveEvent}>
             Save
           </Button>
         </DialogActions>

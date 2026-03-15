@@ -25,6 +25,8 @@ class Class extends Model {
   declare classTeacherId?: number;
   declare capacity: number;
   declare currentStrength: number;
+  declare municipalityId?: string;
+  declare schoolConfigId?: string;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
   declare readonly deletedAt?: Date;
@@ -86,6 +88,16 @@ Class.init(
       allowNull: false,
       defaultValue: 0,
       field: 'current_strength'
+    },
+    municipalityId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'municipality_id'
+    },
+    schoolConfigId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'school_config_id'
     }
   },
   {

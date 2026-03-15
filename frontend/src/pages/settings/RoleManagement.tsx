@@ -30,7 +30,6 @@ import {
   FormControlLabel,
   Checkbox,
   Switch,
-  alpha,
   useTheme,
   CircularProgress,
   Alert,
@@ -53,6 +52,7 @@ import {
 } from '@mui/icons-material';
 import { apiClient } from '../../services/apiClient';
 import { motion, AnimatePresence } from 'framer-motion';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 const MotionCard = motion.create(Card);
 
@@ -99,6 +99,7 @@ const PERMISSION_ACTIONS = ['create', 'read', 'update', 'delete', 'manage'];
 export const RoleManagement = () => {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
@@ -248,8 +249,8 @@ export const RoleManagement = () => {
             sx={{
               width: 48,
               height: 48,
-              borderRadius: 2,
-              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+              borderRadius: R.lg,
+              background: `linear-gradient(135deg, ${C.primary} 0%, ${C.purple} 100%)`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -268,10 +269,9 @@ export const RoleManagement = () => {
           </Box>
         </Box>
         <Button
-          variant="contained"
           startIcon={<AddIcon />}
           onClick={() => setRoleDialog({ open: true, mode: 'create' })}
-          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+          sx={{ ...S.BTN_PRIMARY, borderRadius: R.lg }}
         >
           {t('roles.addRole')}
         </Button>
@@ -290,10 +290,10 @@ export const RoleManagement = () => {
       )}
 
       {/* Roles Table */}
-      <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+      <TableContainer component={Paper} sx={{ ...S.GLASS }}>
         <Table>
           <TableHead>
-            <TableRow sx={{ backgroundColor: alpha(theme.palette.primary.main, 0.04) }}>
+            <TableRow sx={{ backgroundColor: S.TH_BG }}>
               <TableCell sx={{ fontWeight: 600 }} width={50}></TableCell>
               <TableCell sx={{ fontWeight: 600 }}>{t('roles.roleName')}</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>{t('roles.roleCode')}</TableCell>
@@ -457,7 +457,7 @@ export const RoleManagement = () => {
             {t('common.cancel')}
           </Button>
           <Button
-            variant="contained"
+            sx={S.BTN_PRIMARY}
             onClick={roleDialog.mode === 'create' ? handleCreateRole : handleUpdateRole}
             disabled={!roleForm.name || !roleForm.code}
           >
@@ -505,6 +505,7 @@ interface PermissionMatrixProps {
 const PermissionMatrix = ({ permissions, rolePermissions, onSave }: PermissionMatrixProps) => {
   const { t } = useTranslation();
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(
     new Set(rolePermissions.map(p => p.id))
   );
@@ -543,7 +544,7 @@ const PermissionMatrix = ({ permissions, rolePermissions, onSave }: PermissionMa
   return (
     <Box>
       <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
-        <Button variant="contained" onClick={handleSave}>
+        <Button sx={S.BTN_PRIMARY} onClick={handleSave}>
           {t('common.save')}
         </Button>
       </Box>

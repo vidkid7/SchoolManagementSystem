@@ -5,6 +5,9 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 import {
   Box,
   Paper,
@@ -34,7 +37,7 @@ import {
   Cancel as RejectIcon,
   Visibility as ViewIcon,
 } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 interface LeaveApplication {
   id?: number;
@@ -53,6 +56,9 @@ interface LeaveApplication {
 }
 
 export function LeaveManagement() {
+  const theme = useTheme();
+  const { t } = useTranslation();
+  const S = useAdminStyles(theme);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [leaves, setLeaves] = useState<LeaveApplication[]>([]);
@@ -72,18 +78,15 @@ export function LeaveManagement() {
       setLoading(true);
       setError('');
       const status = activeTab === 0 ? 'pending' : activeTab === 1 ? 'approved' : 'rejected';
-      const response = await api.get('/attendance/leave/pending', {
+      const response = await apiClient.get('/attendance/leave/pending', {
         params: { status },
       });
       
-      console.log('API Response:', response.data);
       const leavesData = response.data?.data || [];
-      console.log('Leaves data:', leavesData);
-      
       setLeaves(leavesData);
     } catch (error: any) {
       console.error('Failed to fetch leaves:', error);
-      setError(error.response?.data?.message || 'Failed to load leave applications');
+      setError(error.response?.data?.message || t('attendance.failedToProcessLeave'));
     } finally {
       setLoading(false);
     }
@@ -114,19 +117,18 @@ export function LeaveManagement() {
 
     try {
       setError('');
-      console.log('Submitting action for leave ID:', leaveId);
-      await api.put(`/attendance/leave/${leaveId}/approve`, {
+      await apiClient.put(`/attendance/leave/${leaveId}/approve`, {
         status: actionType === 'approve' ? 'approved' : 'rejected',
         remarks,
       });
 
-      setSuccess(`Leave application ${actionType}d successfully!`);
+      setSuccess(t('attendance.leaveActionSuccess', { action: actionType }));
       setTimeout(() => setSuccess(''), 3000);
       handleCloseDialog();
       fetchLeaves();
     } catch (error: any) {
       console.error('Failed to process leave:', error);
-      const errorMsg = error.response?.data?.message || 'Failed to process leave application';
+      const errorMsg = error.response?.data?.message || t('attendance.failedToProcessLeave');
       setError(errorMsg);
       setTimeout(() => setError(''), 5000);
     }
@@ -150,21 +152,21 @@ export function LeaveManagement() {
 
   return (
     <Box>
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
           <LeaveIcon sx={{ fontSize: 32, color: 'primary.main' }} />
           <Typography variant="h5" fontWeight={600}>
-            Leave Applications Management
+            {t('attendance.leaveManagement')}
           </Typography>
         </Box>
 
-        {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {success && <Alert severity="success" sx={{ mb: 2, borderRadius: R.md }}>{success}</Alert>}
+        {error && <Alert severity="error" sx={{ mb: 2, borderRadius: R.md }}>{error}</Alert>}
 
         <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
-          <Tab label="Pending" />
-          <Tab label="Approved" />
-          <Tab label="Rejected" />
+          <Tab label={t('common.pending')} sx={S.TAB_ACTIVE} />
+          <Tab label={t('attendance.approveLeave')} sx={S.TAB_ACTIVE} />
+          <Tab label={t('attendance.rejectLeave')} sx={S.TAB_ACTIVE} />
         </Tabs>
       </Paper>
 
@@ -173,19 +175,19 @@ export function LeaveManagement() {
           <CircularProgress />
         </Box>
       ) : (
-        <TableContainer component={Paper}>
+        <TableContainer component={Paper} sx={S.GLASS}>
           <Table>
             <TableHead>
-              <TableRow>
-                <TableCell>Applicant</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Leave Type</TableCell>
-                <TableCell>Start Date</TableCell>
-                <TableCell>End Date</TableCell>
-                <TableCell>Days</TableCell>
-                <TableCell>Applied Date</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="center">Actions</TableCell>
+              <TableRow sx={{ bgcolor: S.TH_BG }}>
+                <TableCell sx={{ fontWeight: 600 }}>{t('attendance.applicant')}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{t('common.type')}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{t('attendance.leaveType')}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{t('attendance.startDate')}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{t('attendance.endDate')}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{t('attendance.days')}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{t('attendance.appliedDate')}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{t('common.status')}</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 600 }}>{t('common.actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -193,38 +195,38 @@ export function LeaveManagement() {
                 <TableRow>
                   <TableCell colSpan={9} align="center">
                     <Typography color="text.secondary">
-                      No leave applications found
+                      {t('attendance.noLeaveApplications')}
                     </Typography>
                   </TableCell>
                 </TableRow>
               ) : (
               leaves.map((leave) => (
-                <TableRow key={leave.id || leave.leaveId || `leave-${leave.studentId}-${leave.startDate}`}>
-                  <TableCell>
+                <TableRow key={leave.id || leave.leaveId || `leave-${leave.studentId}-${leave.startDate}`} sx={S.TR_HOVER}>
+                  <TableCell sx={S.TD}>
                     {leave.studentName || leave.staffName}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>
                     <Chip 
-                      label={leave.studentId ? 'Student' : 'Staff'} 
+                      label={leave.studentId ? t('attendance.student') : t('attendance.staff')} 
                       size="small"
                       color={leave.studentId ? 'primary' : 'secondary'}
                     />
                   </TableCell>
-                  <TableCell>{leave.leaveType}</TableCell>
-                  <TableCell>{new Date(leave.startDate).toLocaleDateString()}</TableCell>
-                  <TableCell>{new Date(leave.endDate).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    {getDaysDifference(leave.startDate, leave.endDate)} days
+                  <TableCell sx={S.TD}>{leave.leaveType}</TableCell>
+                  <TableCell sx={S.TD}>{new Date(leave.startDate).toLocaleDateString()}</TableCell>
+                  <TableCell sx={S.TD}>{new Date(leave.endDate).toLocaleDateString()}</TableCell>
+                  <TableCell sx={S.TD}>
+                    {getDaysDifference(leave.startDate, leave.endDate)} {t('attendance.days')}
                   </TableCell>
-                  <TableCell>{new Date(leave.appliedDate).toLocaleDateString()}</TableCell>
-                  <TableCell>
+                  <TableCell sx={S.TD}>{new Date(leave.appliedDate).toLocaleDateString()}</TableCell>
+                  <TableCell sx={S.TD}>
                     <Chip 
                       label={leave.status} 
                       size="small"
                       color={getStatusColor(leave.status)}
                     />
                   </TableCell>
-                  <TableCell align="center">
+                  <TableCell align="center" sx={S.TD}>
                     <IconButton
                       size="small"
                       color="info"
@@ -232,6 +234,7 @@ export function LeaveManagement() {
                         setSelectedLeave(leave);
                         setDialogOpen(true);
                       }}
+                      sx={S.BTN_ICON}
                     >
                       <ViewIcon />
                     </IconButton>
@@ -241,6 +244,7 @@ export function LeaveManagement() {
                           size="small"
                           color="success"
                           onClick={() => handleOpenDialog(leave, 'approve')}
+                          sx={S.BTN_ICON}
                         >
                           <ApproveIcon />
                         </IconButton>
@@ -248,6 +252,7 @@ export function LeaveManagement() {
                           size="small"
                           color="error"
                           onClick={() => handleOpenDialog(leave, 'reject')}
+                          sx={S.BTN_ICON}
                         >
                           <RejectIcon />
                         </IconButton>
@@ -262,30 +267,36 @@ export function LeaveManagement() {
       </TableContainer>
       )}
 
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog 
+        open={dialogOpen} 
+        onClose={handleCloseDialog} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{ sx: { borderRadius: `${R.lg * 8}px` } }}
+      >
         <DialogTitle>
-          {actionType === 'approve' ? 'Approve' : 'Reject'} Leave Application
+          {t('attendance.leaveApproveReject', { action: actionType === 'approve' ? t('attendance.approveLeave') : t('attendance.rejectLeave') })}
         </DialogTitle>
         <DialogContent>
           {selectedLeave && (
             <Box sx={{ mb: 2 }}>
               <Typography variant="subtitle2" color="text.secondary">
-                Applicant
+                {t('attendance.applicant')}
               </Typography>
               <Typography variant="body1" gutterBottom>
                 {selectedLeave.studentName || selectedLeave.staffName}
               </Typography>
 
               <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 2 }}>
-                Leave Period
+                {t('attendance.leavePeriod')}
               </Typography>
               <Typography variant="body1" gutterBottom>
                 {new Date(selectedLeave.startDate).toLocaleDateString()} - {new Date(selectedLeave.endDate).toLocaleDateString()}
-                ({getDaysDifference(selectedLeave.startDate, selectedLeave.endDate)} days)
+                ({getDaysDifference(selectedLeave.startDate, selectedLeave.endDate)} {t('attendance.days')})
               </Typography>
 
               <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 2 }}>
-                Reason
+                {t('attendance.reason')}
               </Typography>
               <Typography variant="body1" gutterBottom>
                 {selectedLeave.reason}
@@ -297,20 +308,20 @@ export function LeaveManagement() {
             fullWidth
             multiline
             rows={3}
-            label="Remarks (Optional)"
+            label={t('attendance.remarksOptional')}
             value={remarks}
             onChange={(e) => setRemarks(e.target.value)}
-            sx={{ mt: 2 }}
+            sx={{ ...S.TF, mt: 2 }}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handleCloseDialog} sx={S.BTN_GHOST}>{t('common.cancel')}</Button>
           <Button
             variant="contained"
-            color={actionType === 'approve' ? 'success' : 'error'}
             onClick={handleSubmitAction}
+            sx={actionType === 'approve' ? S.BTN_SUCCESS : S.BTN_DANGER}
           >
-            {actionType === 'approve' ? 'Approve' : 'Reject'}
+            {actionType === 'approve' ? t('attendance.approveLeave') : t('attendance.rejectLeave')}
           </Button>
         </DialogActions>
       </Dialog>

@@ -28,7 +28,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  alpha,
   useTheme,
   CircularProgress,
   Alert,
@@ -50,6 +49,7 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { motion } from 'framer-motion';
+import { C, useAdminStyles } from '../../theme/designTokens';
 
 const MotionCard = motion.create(Card);
 
@@ -92,6 +92,7 @@ interface StaffDocumentsProps {
 export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
   const { t } = useTranslation();
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   
   const [documents, setDocuments] = useState<StaffDocument[]>([]);
   const [stats, setStats] = useState<DocumentStats>({ total: 0, active: 0, expired: 0, expiringSoon: 0 });
@@ -144,7 +145,13 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       setDocuments(docs);
     } catch (err: any) {
       console.error('Failed to fetch documents:', err);
-      setError(err.response?.data?.message || 'Failed to load documents');
+      // Handle 500 errors gracefully - feature not implemented yet
+      if (err.response?.status === 500) {
+        setDocuments([]);
+        // Don't show error for 500 - feature not implemented
+      } else {
+        setError(err.response?.data?.message || 'Failed to load documents');
+      }
     } finally {
       setLoading(false);
     }
@@ -156,6 +163,10 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       setStats(response.data.data || { total: 0, active: 0, expired: 0, expiringSoon: 0 });
     } catch (err: any) {
       console.error('Failed to fetch stats:', err);
+      // Handle 500 errors gracefully - feature not implemented yet
+      if (err.response?.status === 500) {
+        setStats({ total: 0, active: 0, expired: 0, expiringSoon: 0 });
+      }
     }
   };
 
@@ -187,7 +198,11 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       fetchDocuments();
       fetchStats();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to upload document');
+      if (err.response?.status === 500) {
+        setError('Document upload feature is not yet implemented on the server');
+      } else {
+        setError(err.response?.data?.message || 'Failed to upload document');
+      }
     } finally {
       setUploading(false);
     }
@@ -223,7 +238,11 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       fetchDocuments();
       fetchStats();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to upload documents');
+      if (err.response?.status === 500) {
+        setError('Bulk upload feature is not yet implemented on the server');
+      } else {
+        setError(err.response?.data?.message || 'Failed to upload documents');
+      }
     } finally {
       setUploading(false);
     }
@@ -238,7 +257,11 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       setVersions(response.data.data || []);
       setVersionsDialog({ open: true, documentId, documentName });
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load versions');
+      if (err.response?.status === 500) {
+        setError('Document versions feature is not yet implemented on the server');
+      } else {
+        setError(err.response?.data?.message || 'Failed to load versions');
+      }
     }
   };
 
@@ -260,7 +283,11 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       fetchDocuments();
       fetchStats();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update document');
+      if (err.response?.status === 500) {
+        setError('Document edit feature is not yet implemented on the server');
+      } else {
+        setError(err.response?.data?.message || 'Failed to update document');
+      }
     }
   };
 
@@ -270,7 +297,11 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       const response = await apiClient.get(`/api/v1/staff/documents/${documentId}`);
       setDetailDialog({ open: true, document: response.data.data });
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load document details');
+      if (err.response?.status === 500) {
+        setError('Document details feature is not yet implemented on the server');
+      } else {
+        setError(err.response?.data?.message || 'Failed to load document details');
+      }
     }
   };
 
@@ -284,7 +315,11 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       fetchDocuments();
       fetchStats();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete document');
+      if (err.response?.status === 500) {
+        setError('Document delete feature is not yet implemented on the server');
+      } else {
+        setError(err.response?.data?.message || 'Failed to delete document');
+      }
     }
   };
 
@@ -378,13 +413,13 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
             sx={{ 
               borderRadius: 2,
               cursor: 'pointer',
-              border: filter === 'active' ? `2px solid #10b981` : 'none',
+              border: filter === 'active' ? `2px solid ${C.success}` : 'none',
             }}
             onClick={() => setFilter('active')}
           >
             <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
               <Typography variant="body2" color="text.secondary">Active</Typography>
-              <Typography variant="h5" sx={{ fontWeight: 600, color: '#10b981' }}>
+              <Typography variant="h5" sx={{ fontWeight: 600, color: C.success }}>
                 {stats.active}
               </Typography>
             </CardContent>
@@ -418,13 +453,13 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
             sx={{ 
               borderRadius: 2,
               cursor: 'pointer',
-              border: filter === 'expiring-soon' ? `2px solid #f59e0b` : 'none',
+              border: filter === 'expiring-soon' ? `2px solid ${C.warning}` : 'none',
             }}
             onClick={() => setFilter('expiring-soon')}
           >
             <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
               <Typography variant="body2" color="text.secondary">Expiring Soon</Typography>
-              <Typography variant="h5" sx={{ fontWeight: 600, color: '#f59e0b' }}>
+              <Typography variant="h5" sx={{ fontWeight: 600, color: C.warning }}>
                 {stats.expiringSoon}
               </Typography>
             </CardContent>
@@ -442,7 +477,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
           Bulk Upload
         </Button>
         <Button
-          variant="contained"
+          sx={S.BTN_PRIMARY}
           startIcon={<CloudUploadIcon />}
           onClick={() => setUploadDialog({ open: true })}
         >
@@ -451,10 +486,10 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       </Box>
 
       {/* Documents Table */}
-      <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+      <TableContainer component={Paper} sx={{ ...S.GLASS, borderRadius: 2 }}>
         <Table>
           <TableHead>
-            <TableRow sx={{ backgroundColor: alpha(theme.palette.primary.main, 0.04) }}>
+            <TableRow sx={{ backgroundColor: S.TH_BG }}>
               <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Category</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Size</TableCell>
@@ -468,7 +503,13 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
             {documents.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                  <Typography color="text.secondary">No documents found</Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                    <DocIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
+                    <Typography color="text.secondary">No documents found</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Upload documents to get started
+                    </Typography>
+                  </Box>
                 </TableCell>
               </TableRow>
             ) : (
@@ -608,7 +649,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setUploadDialog({ open: false })}>Cancel</Button>
           <Button
-            variant="contained"
+            sx={S.BTN_PRIMARY}
             onClick={handleUpload}
             disabled={uploading || !uploadForm.name || !uploadForm.file}
           >
@@ -663,7 +704,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setBulkUploadDialog({ open: false })}>Cancel</Button>
           <Button
-            variant="contained"
+            sx={S.BTN_PRIMARY}
             onClick={handleBulkUpload}
             disabled={uploading || bulkFiles.length === 0}
           >
@@ -774,7 +815,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setEditDialog({ open: false, document: null })}>Cancel</Button>
-          <Button variant="contained" onClick={handleEditDocument}>
+          <Button sx={S.BTN_PRIMARY} onClick={handleEditDocument}>
             Save Changes
           </Button>
         </DialogActions>

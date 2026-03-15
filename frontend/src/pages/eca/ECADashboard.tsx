@@ -3,20 +3,27 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useTheme } from '@mui/material/styles';
+import { C, useAdminStyles } from '../../theme/designTokens';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import { Box, Grid, Paper, Typography, Card, CardContent, Button, List, ListItem, ListItemText, Chip } from '@mui/material';
 import { Add as AddIcon, Event as EventIcon, EmojiEvents as AchievementIcon, Groups as GroupsIcon } from '@mui/icons-material';
-import api from '../../config/api';
+import apiClient from '../../services/apiClient';
+
+import { useTranslation } from 'react-i18next';
 
 export function ECADashboard() {
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const [stats, setStats] = useState({ totalECAs: 0, activeECAs: 0, totalStudents: 0, upcomingEvents: 0 });
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
   useEffect(() => {
     Promise.all([
-      api.get('/eca/statistics').catch(() => ({ data: { data: null } })),
-      api.get('/eca/recent-activities?limit=5').catch(() => ({ data: { data: [] } })),
+      apiClient.get('/eca/statistics').catch(() => ({ data: { data: null } })),
+      apiClient.get('/eca/recent-activities?limit=5').catch(() => ({ data: { data: [] } })),
     ]).then(([statsRes, activitiesRes]) => {
       if (statsRes.data?.data) setStats(statsRes.data.data);
       setRecentActivities(activitiesRes.data?.data || []);
@@ -35,7 +42,7 @@ export function ECADashboard() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h4" fontWeight={600}>ECA Dashboard</Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/eca/new')}>New ECA</Button>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/eca/new')} sx={S.BTN_PRIMARY}>New ECA</Button>
           <Button variant="outlined" startIcon={<EventIcon />} onClick={() => navigate('/eca/events/new')}>Create Event</Button>
         </Box>
       </Box>
@@ -57,7 +64,7 @@ export function ECADashboard() {
 
       <Grid container spacing={3} sx={{ mt: 2 }}>
         <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ ...S.GLASS, p: 3 }}>
             <Typography variant="h6" fontWeight={600} gutterBottom>Recent Activities</Typography>
             {recentActivities.length === 0 ? (
               <Typography color="text.secondary" align="center" py={4}>No recent activities</Typography>
@@ -74,7 +81,7 @@ export function ECADashboard() {
           </Paper>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ ...S.GLASS, p: 3 }}>
             <Typography variant="h6" fontWeight={600} gutterBottom>Quick Actions</Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <Button variant="outlined" fullWidth onClick={() => navigate('/eca/list')}>Manage ECAs</Button>

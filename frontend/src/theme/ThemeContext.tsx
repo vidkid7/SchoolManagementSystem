@@ -52,13 +52,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   // Load saved preferences from localStorage (Requirement 34.3)
   const [mode, setMode] = useState<PaletteMode>(() => {
     const saved = localStorage.getItem('sms_theme_mode');
+    // Always default to light mode
     if (saved === 'dark' || saved === 'light') return saved;
-
-    // Check system preference
-    if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
-    return defaultMode;
+    return 'light'; // Force light mode as default
   });
 
   const [primaryColor, setPrimaryColor] = useState(
@@ -93,18 +89,17 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     localStorage.setItem('sms_high_contrast', String(highContrast));
   }, [highContrast]);
 
-  // Listen for system theme changes
+  // Listen for system theme changes - disabled to keep light mode default
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      // Only auto-switch if user hasn't explicitly set a preference
-      if (!localStorage.getItem('sms_theme_mode')) {
-        setMode(e.matches ? 'dark' : 'light');
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    // Commented out to always default to light mode
+    // const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    // const handleChange = (e: MediaQueryListEvent) => {
+    //   if (!localStorage.getItem('sms_theme_mode')) {
+    //     setMode(e.matches ? 'dark' : 'light');
+    //   }
+    // };
+    // mediaQuery.addEventListener('change', handleChange);
+    // return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
   // Toggle between light and dark mode (Requirement 34.2)

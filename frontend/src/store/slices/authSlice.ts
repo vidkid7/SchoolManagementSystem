@@ -157,6 +157,17 @@ const authSlice = createSlice({
       state.refreshToken = action.payload.refreshToken;
       state.isAuthenticated = true;
     },
+    // Synchronous auth clear — does NOT make any API call, safe to use on page load
+    clearAuth: (state) => {
+      state.user = null;
+      state.accessToken = null;
+      state.refreshToken = null;
+      state.isAuthenticated = false;
+      state.error = null;
+      localStorage.removeItem('user');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+    },
   },
   extraReducers: (builder) => {
     // Login
@@ -224,5 +235,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, setUser, setCredentials } = authSlice.actions;
+export const { clearError, setUser, setCredentials, clearAuth } = authSlice.actions;
 export default authSlice.reducer;
