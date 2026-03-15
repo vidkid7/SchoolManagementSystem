@@ -319,7 +319,7 @@ export function LeaveManagement() {
           <Button
             variant="contained"
             onClick={handleSubmitAction}
-            sx={actionType === 'approve' ? S.BTN_SUCCESS : S.BTN_DANGER}
+            sx={{ ...S.BTN_PRIMARY, ...actionType === 'approve' ? S.BTN_SUCCESS : S.BTN_DANGER }}
           >
             {actionType === 'approve' ? t('attendance.approveLeave') : t('attendance.rejectLeave')}
           </Button>

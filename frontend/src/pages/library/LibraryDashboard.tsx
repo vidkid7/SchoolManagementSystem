@@ -138,7 +138,7 @@ export function LibraryDashboard() {
             {t('library.addBook')}
           </Button>
           <Button
-            variant="outlined"
+            variant="outlined" sx={S.BTN_OUTLINE}
             startIcon={<IssueIcon />}
             onClick={() => navigate(`/library/issue`)}
           >
@@ -220,7 +220,7 @@ export function LibraryDashboard() {
             <Divider sx={{ mb: 2 }} />
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 fullWidth
                 startIcon={<BookIcon />}
                 onClick={() => navigate(`/library/books`)}
@@ -228,7 +228,7 @@ export function LibraryDashboard() {
                 {t('library.manageBooks')}
               </Button>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 fullWidth
                 startIcon={<IssueIcon />}
                 onClick={() => navigate(`/library/circulation`)}
@@ -236,7 +236,7 @@ export function LibraryDashboard() {
                 {t('library.bookCirculation')}
               </Button>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 fullWidth
                 startIcon={<ReturnIcon />}
                 onClick={() => navigate(`/library/return`)}
@@ -244,7 +244,7 @@ export function LibraryDashboard() {
                 {t('library.returnBooks')}
               </Button>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 fullWidth
                 startIcon={<CategoryIcon />}
                 onClick={() => navigate(`/library/categories`)}
@@ -252,7 +252,7 @@ export function LibraryDashboard() {
                 {t('library.manageCategories')}
               </Button>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 fullWidth
                 onClick={() => navigate(`/library/reports`)}
               >

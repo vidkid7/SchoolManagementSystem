@@ -388,7 +388,7 @@ const getCategoryLabel = (category: string) => {
       {/* Upload Buttons */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mb: 2 }}>
 <Button
-          variant="outlined"
+          variant="outlined" sx={S.BTN_OUTLINE}
           startIcon={<CloudUploadIcon />}
           onClick={() => setBulkUploadDialog({ open: true })}
         >
@@ -524,7 +524,7 @@ const getCategoryLabel = (category: string) => {
                 variant="outlined"
                 startIcon={<UploadIcon />}
                 fullWidth
-                sx={{ py: 2 }}
+                sx={{ ...S.BTN_OUTLINE,  py: 2 }}
 >
                 {t('documents.selectFile')}
                 <input
@@ -564,7 +564,7 @@ const getCategoryLabel = (category: string) => {
               variant="outlined"
               startIcon={<CloudUploadIcon />}
               fullWidth
-              sx={{ py: 2 }}
+              sx={{ ...S.BTN_OUTLINE,  py: 2 }}
             >
               Select Files ({t('documents.maxFiles')})
               <input

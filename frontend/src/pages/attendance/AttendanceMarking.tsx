@@ -315,7 +315,7 @@ export const AttendanceMarking = () => {
               fullWidth
               onClick={handleMarkAllPresent}
               disabled={students.length === 0}
-              sx={{ ...S.BTN_SUCCESS, height: '56px' }}
+              sx={{ ...S.BTN_PRIMARY,  ...S.BTN_SUCCESS, height: '56px' }}
             >
               {t('attendance.markAllPresent')}
             </Button>

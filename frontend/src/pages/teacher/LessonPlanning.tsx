@@ -46,6 +46,8 @@ import {
 import { useSelector } from 'react-redux';
 import apiClient from '../../services/apiClient';
 import { RootState } from '../../store';
+import { useTheme } from '@mui/material/styles';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -54,6 +56,8 @@ interface TabPanelProps {
 }
 
 function TabPanel(props: TabPanelProps) {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const { children, value, index, ...other } = props;
   return (
     <div role="tabpanel" hidden={value !== index} {...other}>
@@ -65,6 +69,8 @@ function TabPanel(props: TabPanelProps) {
 const authHdr = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
 
 export const LessonPlanning = () => {
+  const theme = useTheme();
+  const S = useAdminStyles(theme);
   const { accessToken } = useSelector((state: RootState) => state.auth);
   const [tabValue, setTabValue] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
@@ -182,7 +188,7 @@ export const LessonPlanning = () => {
           Lesson Planning / पाठ योजना
         </Typography>
         <Button
-          variant="contained"
+          variant="contained" sx={S.BTN_PRIMARY}
           startIcon={<AddIcon />}
           onClick={handleCreatePlan}
         >
@@ -230,7 +236,7 @@ export const LessonPlanning = () => {
             <Button
               variant="outlined"
               fullWidth
-              sx={{ height: '56px' }}
+              sx={{ ...S.BTN_OUTLINE,  height: '56px' }}
               startIcon={<ViewIcon />}
             >
               View Calendar / पात्रो हेर्नुहोस्
@@ -467,7 +473,7 @@ export const LessonPlanning = () => {
 
             <Grid item xs={12}>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 startIcon={<AttachFileIcon />}
                 component="label"
               >
@@ -479,10 +485,10 @@ export const LessonPlanning = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel / रद्द गर्नुहोस्</Button>
-          <Button onClick={() => handleSavePlan('draft')} variant="contained">
+          <Button onClick={() => handleSavePlan('draft')} variant="contained" sx={S.BTN_PRIMARY}>
             Save as Draft / ड्राफ्ट सुरक्षित गर्नुहोस्
           </Button>
-          <Button onClick={() => handleSavePlan('scheduled')} variant="contained" color="success">
+          <Button onClick={() => handleSavePlan('scheduled')} variant="contained" sx={S.BTN_PRIMARY} color="success">
             Save & Schedule / सुरक्षित र तालिका
           </Button>
         </DialogActions>

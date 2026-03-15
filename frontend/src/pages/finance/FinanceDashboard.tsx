@@ -142,14 +142,14 @@ if (statsRes.data?.data) {
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
-            variant="contained"
+            variant="contained" sx={S.BTN_PRIMARY}
             startIcon={<AddIcon />}
             onClick={() => navigate(`/finance/fee-structures/new`)}
           >
             {t('finance.newFeeStructure')}
           </Button>
           <Button
-            variant="outlined"
+            variant="outlined" sx={S.BTN_OUTLINE}
             startIcon={<ReceiptIcon />}
             onClick={() => navigate(`/finance/invoices/generate`)}
           >
@@ -245,7 +245,7 @@ if (statsRes.data?.data) {
             <Divider sx={{ mb: 2 }} />
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 fullWidth
                 startIcon={<ReceiptIcon />}
                 onClick={() => navigate(`/finance/invoices`)}
@@ -253,7 +253,7 @@ if (statsRes.data?.data) {
                 {t('finance.manageInvoices')}
               </Button>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 fullWidth
                 startIcon={<PaymentIcon />}
                 onClick={() => navigate(`/finance/payments`)}
@@ -261,21 +261,21 @@ if (statsRes.data?.data) {
                 {t('finance.recordPayment')}
               </Button>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 fullWidth
                 onClick={() => navigate(`/finance/fee-structures`)}
               >
                 {t('finance.feeStructuresLink')}
               </Button>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 fullWidth
                 onClick={() => navigate(`/finance/reports`)}
               >
                 {t('finance.financialReportsLink')}
               </Button>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 fullWidth
                 onClick={() => navigate(`/finance/payment-gateways`)}
               >

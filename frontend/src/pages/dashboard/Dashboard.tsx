@@ -138,13 +138,13 @@ import { C, R } from '../../theme/designTokens';
 
 // Blue & Black Aesthetic Color Palette
 const COLORS = [
-  '#3b82f6', // Bright Blue
-  '#1e40af', // Deep Blue
-  '#60a5fa', // Light Blue
+  C.primary, // Bright Blue
+  C.primary, // Deep Blue
+  C.primary, // Light Blue
   '#1e293b', // Dark Slate
-  '#0ea5e9', // Sky Blue
+  C.info, // Sky Blue
   '#334155', // Slate Gray
-  '#06b6d4', // Cyan
+  C.info, // Cyan
   '#0f172a', // Almost Black
   '#38bdf8', // Light Cyan
   '#475569', // Medium Slate
@@ -440,10 +440,10 @@ export default function Dashboard() {
   const recentActivities = data?.recentActivities || [];
 
   const quickStats = [
-    { title: t('dashboard.students'), value: data?.summary.totalStudents ?? 0, icon: <SchoolIcon />, color: '#3b82f6', bg: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)' },
-    { title: t('dashboard.staff'), value: data?.summary.totalStaff ?? 0, icon: <PeopleIcon />, color: '#0ea5e9', bg: 'linear-gradient(135deg, #0c4a6e 0%, #0ea5e9 100%)' },
-    { title: t('dashboard.classes'), value: data?.summary.totalClasses ?? 0, icon: <ClassIcon />, color: '#60a5fa', bg: 'linear-gradient(135deg, #1e3a8a 0%, #60a5fa 100%)' },
-    { title: t('dashboard.totalBooks'), value: data?.summary.totalBooks ?? 0, icon: <BookIcon />, color: '#06b6d4', bg: 'linear-gradient(135deg, #164e63 0%, #06b6d4 100%)' },
+    { title: t('dashboard.students'), value: data?.summary.totalStudents ?? 0, icon: <SchoolIcon />, color: C.primary, bg: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)' },
+    { title: t('dashboard.staff'), value: data?.summary.totalStaff ?? 0, icon: <PeopleIcon />, color: C.info, bg: 'linear-gradient(135deg, #0c4a6e 0%, #0ea5e9 100%)' },
+    { title: t('dashboard.classes'), value: data?.summary.totalClasses ?? 0, icon: <ClassIcon />, color: C.primary, bg: 'linear-gradient(135deg, #1e3a8a 0%, #60a5fa 100%)' },
+    { title: t('dashboard.totalBooks'), value: data?.summary.totalBooks ?? 0, icon: <BookIcon />, color: C.info, bg: 'linear-gradient(135deg, #164e63 0%, #06b6d4 100%)' },
   ];
 
   const analyticsCards = [
@@ -452,7 +452,7 @@ export default function Dashboard() {
       value: data?.summary.attendanceRate ?? 0,
       suffix: '%',
       icon: <FactCheckIcon />,
-      color: '#3b82f6',
+      color: C.primary,
       bg: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
       path: `/${municipalitySlug}/attendance/reports`
     },
@@ -461,7 +461,7 @@ export default function Dashboard() {
       value: data?.summary.feeCollectionRate ?? 0,
       suffix: '%',
       icon: <MoneyIcon />,
-      color: '#0ea5e9',
+      color: C.info,
       bg: 'linear-gradient(135deg, #0c4a6e 0%, #0ea5e9 100%)',
       path: `/${municipalitySlug}/finance/reports`
     },
@@ -469,7 +469,7 @@ export default function Dashboard() {
       title: t('dashboard.exams'), 
       value: data?.summary.totalExams ?? 0,
       icon: <AssignmentIcon />,
-      color: '#60a5fa',
+      color: C.primary,
       bg: 'linear-gradient(135deg, #1e40af 0%, #60a5fa 100%)',
       path: `/${municipalitySlug}/examinations/reports`
     },
@@ -477,7 +477,7 @@ export default function Dashboard() {
       title: t('dashboard.circulations'), 
       value: data?.summary.totalCirculations ?? 0,
       icon: <LocalLibraryIcon />,
-      color: '#06b6d4',
+      color: C.info,
       bg: 'linear-gradient(135deg, #164e63 0%, #06b6d4 100%)',
       path: `/${municipalitySlug}/library/reports`
     },
@@ -499,7 +499,7 @@ export default function Dashboard() {
           animate={{ rotate: 360 }}
           transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
         >
-          <CircularProgress size={60} thickness={4} sx={{ color: '#4a5568' }} />
+          <CircularProgress size={60} thickness={4} sx={{ color: C.neutral }} />
         </motion.div>
       </Box>
     );
@@ -615,11 +615,11 @@ export default function Dashboard() {
   const greeting = getGreeting(t);
 
   const highlightItems = [
-    { icon: <SchoolIcon sx={{ fontSize: 18 }} />, label: `${data?.summary.totalStudents ?? 0} ${t('dashboard.students')}`, color: '#4a5568' },
-    { icon: <GroupsIcon sx={{ fontSize: 18 }} />, label: `${data?.summary.totalStaff ?? 0} ${t('dashboard.staff')}`, color: '#4a5568' },
-    { icon: <PersonAddIcon sx={{ fontSize: 18 }} />, label: `+${data?.summary.newAdmissionsThisMonth ?? 0} ${t('dashboard.newThisMonth')}`, color: '#6b7280' },
-    { icon: <MenuBookIcon sx={{ fontSize: 18 }} />, label: `${data?.summary.totalBooks ?? 0} ${t('dashboard.totalBooks')}`, color: '#6b7280' },
-    { icon: <EmojiEventsIcon sx={{ fontSize: 18 }} />, label: `${data?.summary.activeEcaActivities ?? 0} ${t('dashboard.ecaActivitiesLabel')}`, color: '#6b7280' },
+    { icon: <SchoolIcon sx={{ fontSize: 18 }} />, label: `${data?.summary.totalStudents ?? 0} ${t('dashboard.students')}`, color: C.neutral },
+    { icon: <GroupsIcon sx={{ fontSize: 18 }} />, label: `${data?.summary.totalStaff ?? 0} ${t('dashboard.staff')}`, color: C.neutral },
+    { icon: <PersonAddIcon sx={{ fontSize: 18 }} />, label: `+${data?.summary.newAdmissionsThisMonth ?? 0} ${t('dashboard.newThisMonth')}`, color: C.neutral },
+    { icon: <MenuBookIcon sx={{ fontSize: 18 }} />, label: `${data?.summary.totalBooks ?? 0} ${t('dashboard.totalBooks')}`, color: C.neutral },
+    { icon: <EmojiEventsIcon sx={{ fontSize: 18 }} />, label: `${data?.summary.activeEcaActivities ?? 0} ${t('dashboard.ecaActivitiesLabel')}`, color: C.neutral },
   ];
 
   return (
@@ -743,8 +743,8 @@ export default function Dashboard() {
                 }
               }}
             >
-              <AutoGraphIcon sx={{ color: isDark ? '#fff' : '#4a5568', fontSize: 18 }} />
-              <Typography sx={{ color: isDark ? '#fff' : '#4a5568', fontWeight: 600, fontSize: '0.8rem' }}>
+              <AutoGraphIcon sx={{ color: isDark ? '#fff' : C.neutral, fontSize: 18 }} />
+              <Typography sx={{ color: isDark ? '#fff' : C.neutral, fontWeight: 600, fontSize: '0.8rem' }}>
                 {t('dashboard.analytics')}
               </Typography>
             </Box>
@@ -940,7 +940,7 @@ export default function Dashboard() {
                     icon={<TrendingUpIcon sx={{ fontSize: 16 }} />}
                     label={`+12% ${t('dashboard.growthLabel')}`} 
                     size="small"
-                    sx={{ bgcolor: alpha('#3b82f6', 0.2), color: '#3b82f6', fontWeight: 600 }} 
+                    sx={{ bgcolor: alpha(C.primary, 0.2), color: C.primary, fontWeight: 600 }} 
                   />
                 }
               />
@@ -983,17 +983,17 @@ export default function Dashboard() {
             <CardContent>
               <SectionHeader title={t('dashboard.genderDistribution')} subtitle={t('dashboard.studentRatio')} />
               <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 2 }}>
-                <DonutChart data={genderData} colors={['#3b82f6', '#0ea5e9', '#1e293b']} size={180} />
+                <DonutChart data={genderData} colors={[C.primary, C.info, '#1e293b']} size={180} />
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mt: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#3b82f6' }} />
+                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: C.primary }} />
                   <Typography variant="body2" fontWeight={600}>
                     {t('students.male')}: {data?.summary.totalMaleStudents || 0}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#0ea5e9' }} />
+                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: C.info }} />
                   <Typography variant="body2" fontWeight={600}>
                     {t('students.female')}: {data?.summary.totalFemaleStudents || 0}
                   </Typography>
@@ -1171,12 +1171,12 @@ export default function Dashboard() {
                       <ListItemAvatar>
                         <Avatar
                           sx={{
-                            background: alpha(activity.color ?? '#007AFF', 0.15),
-                            color: activity.color ?? '#007AFF',
+                            background: alpha(activity.color ?? C.primary, 0.15),
+                            color: activity.color ?? C.primary,
                             width: 44,
                             height: 44,
                             borderRadius: `${R.md}px`,
-                            boxShadow: `0 4px 16px ${alpha(activity.color ?? '#007AFF', 0.25)}`,
+                            boxShadow: `0 4px 16px ${alpha(activity.color ?? C.primary, 0.25)}`,
                           }}
                         >
                           {activity.icon}
@@ -1210,7 +1210,7 @@ export default function Dashboard() {
               <SectionHeader
                 title={t('dashboard.performanceOverview')}
                 subtitle={t('dashboard.keyMetricsGlance')}
-                action={<EmojiEventsIcon sx={{ color: '#3b82f6' }} />}
+                action={<EmojiEventsIcon sx={{ color: C.primary }} />}
               />
               
               <Box sx={{ mb: 3 }}>
@@ -1224,7 +1224,7 @@ export default function Dashboard() {
                   sx={{
                     height: 10,
                     borderRadius: 5,
-                    bgcolor: alpha('#3b82f6', 0.15),
+                    bgcolor: alpha(C.primary, 0.15),
                     '& .MuiLinearProgress-bar': {
                       borderRadius: 5,
                       background: 'linear-gradient(90deg, #3b82f6 0%, #1e40af 100%)',
@@ -1244,7 +1244,7 @@ export default function Dashboard() {
                   sx={{
                     height: 10,
                     borderRadius: 5,
-                    bgcolor: alpha('#0ea5e9', 0.15),
+                    bgcolor: alpha(C.info, 0.15),
                     '& .MuiLinearProgress-bar': {
                       borderRadius: 5,
                       background: 'linear-gradient(90deg, #0ea5e9 0%, #0c4a6e 100%)',
@@ -1264,7 +1264,7 @@ export default function Dashboard() {
                   sx={{
                     height: 10,
                     borderRadius: 5,
-                    bgcolor: alpha('#60a5fa', 0.15),
+                    bgcolor: alpha(C.primary, 0.15),
                     '& .MuiLinearProgress-bar': {
                       borderRadius: 5,
                       background: 'linear-gradient(90deg, #60a5fa 0%, #1e3a8a 100%)',
@@ -1284,7 +1284,7 @@ export default function Dashboard() {
                   sx={{
                     height: 10,
                     borderRadius: 5,
-                    bgcolor: alpha('#06b6d4', 0.15),
+                    bgcolor: alpha(C.info, 0.15),
                     '& .MuiLinearProgress-bar': {
                       borderRadius: 5,
                       background: 'linear-gradient(90deg, #06b6d4 0%, #164e63 100%)',
@@ -1309,7 +1309,7 @@ export default function Dashboard() {
                   <Chip
                     label={`${data?.summary.attendanceRate ?? 0}% avg`}
                     size="small"
-                    sx={{ bgcolor: alpha('#3b82f6', 0.15), color: '#3b82f6', fontWeight: 600 }}
+                    sx={{ bgcolor: alpha(C.primary, 0.15), color: C.primary, fontWeight: 600 }}
                   />
                 }
               />
@@ -1352,7 +1352,7 @@ export default function Dashboard() {
                   <RechartsTooltip content={<CustomTooltip />} />
                   <Bar dataKey="score" radius={[0, 8, 8, 0]} animationDuration={1500} name="Avg Score">
                     {examPerformanceData.map((_: any, index: number) => (
-                      <Cell key={`exam-${index}`} fill={['#4a5568', '#6b7280', '#4a5568', '#6b7280', '#8b5a5a'][index % 5]} />
+                      <Cell key={`exam-${index}`} fill={[C.neutral, C.neutral, C.neutral, C.neutral, C.danger][index % 5]} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -1375,7 +1375,7 @@ export default function Dashboard() {
                     icon={<PersonAddIcon sx={{ fontSize: 16 }} />}
                     label={`+${data?.summary.newAdmissionsThisMonth ?? 0} this month`}
                     size="small"
-                    sx={{ bgcolor: alpha('#4a5568', 0.15), color: '#4a5568', fontWeight: 600 }}
+                    sx={{ bgcolor: alpha(C.neutral, 0.15), color: C.neutral, fontWeight: 600 }}
                   />
                 }
               />
@@ -1414,7 +1414,7 @@ export default function Dashboard() {
                   <Chip
                     label={`${data?.summary.feeCollectionRate ?? 0}% collected`}
                     size="small"
-                    sx={{ bgcolor: alpha('#0ea5e9', 0.15), color: '#0ea5e9', fontWeight: 600 }}
+                    sx={{ bgcolor: alpha(C.info, 0.15), color: C.info, fontWeight: 600 }}
                   />
                 }
               />
@@ -1432,8 +1432,8 @@ export default function Dashboard() {
                     dataKey="amount"
                     stroke="#0ea5e9"
                     strokeWidth={3}
-                    dot={{ fill: '#0ea5e9', r: 4, strokeWidth: 2, stroke: theme.palette.background.paper }}
-                    activeDot={{ r: 6, fill: '#0ea5e9' }}
+                    dot={{ fill: C.info, r: 4, strokeWidth: 2, stroke: theme.palette.background.paper }}
+                    activeDot={{ r: 6, fill: C.info }}
                     animationDuration={2000}
                     name="Amount (Rs)"
                   />
@@ -1451,7 +1451,7 @@ export default function Dashboard() {
             variant="text"
             endIcon={<ArrowForwardIcon />}
             onClick={() => navigate(`/reports`)}
-            sx={{ color: '#667eea', fontWeight: 600 }}
+            sx={{ color: C.primary, fontWeight: 600 }}
           >
             {t('dashboard.viewAllReports')}
           </Button>

@@ -891,12 +891,12 @@ export const StudentDetail = () => {
               )}
 
               <Grid item xs={12} md={6}>
-                <InfoCard icon={<SportsIcon sx={{ color: '#f59e0b' }} />} title={t('reports.ecaActivities')}>
+                <InfoCard icon={<SportsIcon sx={{ color: C.warning }} />} title={t('reports.ecaActivities')}>
                   {eca.eca?.length > 0 ? (
                     <List dense>
                       {eca.eca.map((activity) => (
                         <ListItem key={activity.id} sx={{ px: 0 }}>
-                          <ListItemIcon><SportsIcon sx={{ color: '#f59e0b' }} /></ListItemIcon>
+                          <ListItemIcon><SportsIcon sx={{ color: C.warning }} /></ListItemIcon>
                           <ListItemText primary={activity.activityName} secondary={activity.achievement || activity.position} primaryTypographyProps={{ fontWeight: 600 }} />
                         </ListItem>
                       ))}
@@ -907,12 +907,12 @@ export const StudentDetail = () => {
                 </InfoCard>
               </Grid>
               <Grid item xs={12} md={6}>
-                <InfoCard icon={<SportsIcon sx={{ color: '#3b82f6' }} />} title={t('sportsECA.sports')}>
+                <InfoCard icon={<SportsIcon sx={{ color: C.primary }} />} title={t('sportsECA.sports')}>
                   {eca.sports?.length > 0 ? (
                     <List dense>
                       {eca.sports.map((sport) => (
                         <ListItem key={sport.id} sx={{ px: 0 }}>
-                          <ListItemIcon><SportsIcon sx={{ color: '#3b82f6' }} /></ListItemIcon>
+                          <ListItemIcon><SportsIcon sx={{ color: C.primary }} /></ListItemIcon>
                           <ListItemText primary={sport.activityName} secondary={sport.achievement || sport.position} primaryTypographyProps={{ fontWeight: 600 }} />
                         </ListItem>
                       ))}
@@ -995,7 +995,7 @@ export const StudentDetail = () => {
                     <Paper key={remark.id} variant="outlined" sx={{ mb: 2, p: 2.5, borderRadius: R.md, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
                       <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
                         {remark.type === 'good' ? (
-                          <GoodIcon sx={{ color: '#10b981', mt: 0.5 }} />
+                          <GoodIcon sx={{ color: C.success, mt: 0.5 }} />
                         ) : (
                           <BadIcon sx={{ color: theme.palette.error.main, mt: 0.5 }} />
                         )}

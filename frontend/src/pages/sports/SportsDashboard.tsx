@@ -43,7 +43,7 @@ export function SportsDashboard() {
         <Typography variant="h4" fontWeight={600}>Sports Dashboard</Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/sports/new')} sx={S.BTN_PRIMARY}>New Sport</Button>
-          <Button variant="outlined" startIcon={<TeamIcon />} onClick={() => navigate('/sports/teams/new')}>Create Team</Button>
+          <Button variant="outlined" sx={S.BTN_OUTLINE} startIcon={<TeamIcon />} onClick={() => navigate('/sports/teams/new')}>Create Team</Button>
         </Box>
       </Box>
 
@@ -84,11 +84,11 @@ export function SportsDashboard() {
           <Paper sx={{ ...S.GLASS, p: 3 }}>
             <Typography variant="h6" fontWeight={600} gutterBottom>Quick Actions</Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Button variant="outlined" fullWidth onClick={() => navigate('/sports/list')}>Manage Sports</Button>
-              <Button variant="outlined" fullWidth onClick={() => navigate('/sports/teams')}>Manage Teams</Button>
-              <Button variant="outlined" fullWidth onClick={() => navigate('/sports/tournaments')}>Tournaments</Button>
-              <Button variant="outlined" fullWidth onClick={() => navigate('/sports/attendance')}>Mark Attendance</Button>
-              <Button variant="outlined" fullWidth onClick={() => navigate('/sports/achievements')}>Record Achievements</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/sports/list')}>Manage Sports</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/sports/teams')}>Manage Teams</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/sports/tournaments')}>Tournaments</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/sports/attendance')}>Mark Attendance</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/sports/achievements')}>Record Achievements</Button>
             </Box>
           </Paper>
         </Grid>

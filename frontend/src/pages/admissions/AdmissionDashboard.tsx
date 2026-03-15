@@ -75,29 +75,29 @@ export function AdmissionDashboard() {
       title: 'Total Inquiries',
       value: stats.totalInquiries,
       icon: <InquiryIcon sx={{ fontSize: 40 }} />,
-      color: '#2196f3',
-      bgColor: '#e3f2fd',
+      color: C.primary,
+      bgColor: C.primaryBg,
     },
     {
       title: 'Applications',
       value: stats.totalApplications,
       icon: <ApplicationIcon sx={{ fontSize: 40 }} />,
-      color: '#ff9800',
-      bgColor: '#fff3e0',
+      color: C.warning,
+      bgColor: C.warningBg,
     },
     {
       title: 'Admitted',
       value: stats.totalAdmitted,
       icon: <AdmittedIcon sx={{ fontSize: 40 }} />,
-      color: '#4caf50',
-      bgColor: '#e8f5e9',
+      color: C.success,
+      bgColor: C.successBg,
     },
     {
       title: 'Enrolled',
       value: stats.totalEnrolled,
       icon: <EnrolledIcon sx={{ fontSize: 40 }} />,
-      color: '#9c27b0',
-      bgColor: '#f3e5f5',
+      color: C.purple,
+      bgColor: C.purpleBg,
     },
   ];
 
@@ -120,7 +120,7 @@ export function AdmissionDashboard() {
             </Typography>
           </Box>
           <Button
-            variant="contained"
+            variant="contained" sx={S.BTN_PRIMARY}
             startIcon={<InquiryIcon />}
             onClick={() => navigate('/admissions/new')}
           >
@@ -179,7 +179,7 @@ export function AdmissionDashboard() {
                 fullWidth
                 variant="outlined"
                 onClick={() => navigate('/admissions/list')}
-                sx={{ mt: 2 }}
+                sx={{ ...S.BTN_OUTLINE,  mt: 2 }}
               >
                 View All Admissions
               </Button>
@@ -194,28 +194,28 @@ export function AdmissionDashboard() {
             </Typography>
             <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 fullWidth
                 onClick={() => navigate('/admissions/new')}
               >
                 Create New Inquiry
               </Button>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 fullWidth
                 onClick={() => navigate('/admissions/list?status=inquiry')}
               >
                 View Inquiries
               </Button>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 fullWidth
                 onClick={() => navigate('/admissions/list?status=applied')}
               >
                 View Applications
               </Button>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 fullWidth
                 onClick={() => navigate('/admissions/list?status=admitted')}
               >

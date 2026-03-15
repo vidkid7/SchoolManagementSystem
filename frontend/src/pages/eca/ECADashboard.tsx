@@ -43,7 +43,7 @@ export function ECADashboard() {
         <Typography variant="h4" fontWeight={600}>ECA Dashboard</Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/eca/new')} sx={S.BTN_PRIMARY}>New ECA</Button>
-          <Button variant="outlined" startIcon={<EventIcon />} onClick={() => navigate('/eca/events/new')}>Create Event</Button>
+          <Button variant="outlined" sx={S.BTN_OUTLINE} startIcon={<EventIcon />} onClick={() => navigate('/eca/events/new')}>Create Event</Button>
         </Box>
       </Box>
 
@@ -84,11 +84,11 @@ export function ECADashboard() {
           <Paper sx={{ ...S.GLASS, p: 3 }}>
             <Typography variant="h6" fontWeight={600} gutterBottom>Quick Actions</Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Button variant="outlined" fullWidth onClick={() => navigate('/eca/list')}>Manage ECAs</Button>
-              <Button variant="outlined" fullWidth onClick={() => navigate('/eca/enrollments')}>Student Enrollments</Button>
-              <Button variant="outlined" fullWidth onClick={() => navigate('/eca/attendance')}>Mark Attendance</Button>
-              <Button variant="outlined" fullWidth onClick={() => navigate('/eca/achievements')}>Record Achievements</Button>
-              <Button variant="outlined" fullWidth onClick={() => navigate('/eca/events')}>ECA Events</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/eca/list')}>Manage ECAs</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/eca/enrollments')}>Student Enrollments</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/eca/attendance')}>Mark Attendance</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/eca/achievements')}>Record Achievements</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/eca/events')}>ECA Events</Button>
             </Box>
           </Paper>
         </Grid>

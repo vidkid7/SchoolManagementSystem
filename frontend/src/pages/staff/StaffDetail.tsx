@@ -258,7 +258,7 @@ export const StaffDetail = () => {
             color="error"
             startIcon={<DeleteIcon />}
             onClick={handleDelete}
-            sx={{ borderRadius: 2 }}
+            sx={{ ...S.BTN_OUTLINE,  borderRadius: 2 }}
           >
             {t('common.delete')}
           </Button>
@@ -266,7 +266,7 @@ export const StaffDetail = () => {
             variant="contained"
             startIcon={<EditIcon />}
             onClick={() => navigate(`/staff/${id}/edit`)}
-            sx={{ borderRadius: 2, px: 3 }}
+            sx={{ ...S.BTN_PRIMARY,  borderRadius: 2, px: 3 }}
           >
             {t('staff.edit')}
           </Button>
@@ -562,7 +562,7 @@ export const StaffDetail = () => {
                   size="large"
                   startIcon={<AssignmentIcon />}
                   onClick={() => navigate(`/staff/${staff.staffId}/assignments`)}
-                  sx={{ 
+                  sx={{ ...S.BTN_PRIMARY,  
                     px: 5, 
                     py: 1.5,
                     borderRadius: 2,

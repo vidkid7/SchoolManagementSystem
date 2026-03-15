@@ -175,7 +175,7 @@ export function InvoiceGeneration() {
         <Typography variant="h5" fontWeight={600}>
           {t('finance.generateInvoices')}
         </Typography>
-        <Button variant="outlined" onClick={() => navigate(`/finance/invoices`)}>
+        <Button variant="outlined" sx={S.BTN_OUTLINE} onClick={() => navigate(`/finance/invoices`)}>
           {t('finance.invoices')}
         </Button>
       </Box>
@@ -299,7 +299,7 @@ export function InvoiceGeneration() {
 
             <Grid item xs={12}>
               <Button
-                variant="contained"
+                variant="contained" sx={S.BTN_PRIMARY}
                 size="large"
                 startIcon={<ReceiptIcon />}
                 onClick={handleGenerateSingle}
@@ -414,7 +414,7 @@ export function InvoiceGeneration() {
 
             <Grid item xs={12}>
               <Button
-                variant="contained"
+                variant="contained" sx={S.BTN_PRIMARY}
                 size="large"
                 startIcon={<GroupIcon />}
                 onClick={handleGenerateBulk}

@@ -598,7 +598,7 @@ export const StudentCV = () => {
             startIcon={<BackIcon />}
             onClick={() => navigate(`/students`)}
             variant="outlined"
-            sx={{ borderRadius: R.lg }}
+            sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg }}
           >
             {t('common.back') || 'Back to List'}
           </Button>

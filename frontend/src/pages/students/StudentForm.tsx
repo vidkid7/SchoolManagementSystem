@@ -597,7 +597,7 @@ export const StudentForm = () => {
               variant="outlined"
               startIcon={<BackIcon />}
               onClick={() => navigate(`/students`)}
-              sx={{ 
+              sx={{ ...S.BTN_OUTLINE,  
                 borderRadius: 2,
                 borderColor: 'rgba(255,255,255,0.3)',
                 color: 'white',
@@ -1406,7 +1406,7 @@ export const StudentForm = () => {
                     startIcon={<BackIcon />}
                     onClick={() => navigate(`/students`)}
                     disabled={loading || checkingDuplicates}
-                    sx={{ borderRadius: 2 }}
+                    sx={{ ...S.BTN_OUTLINE,  borderRadius: 2 }}
                   >
                     {t('common.cancel')}
                   </Button>

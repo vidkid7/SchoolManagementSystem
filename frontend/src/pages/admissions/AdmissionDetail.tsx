@@ -350,45 +350,45 @@ export function AdmissionDetail() {
 
         <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           {admission.status === 'inquiry' && (
-            <Button variant="contained" onClick={() => setConvertDialog(true)}>
+            <Button variant="contained" sx={S.BTN_PRIMARY} onClick={() => setConvertDialog(true)}>
               Convert to Application
             </Button>
           )}
           {admission.status === 'applied' && (
             <>
-              <Button variant="contained" onClick={() => setTestDialog(true)}>
+              <Button variant="contained" sx={S.BTN_PRIMARY} onClick={() => setTestDialog(true)}>
                 Schedule Test
               </Button>
-              <Button variant="contained" onClick={() => setInterviewDialog(true)}>
+              <Button variant="contained" sx={S.BTN_PRIMARY} onClick={() => setInterviewDialog(true)}>
                 Schedule Interview
               </Button>
-              <Button variant="contained" color="success" onClick={() => setAdmitDialog(true)}>
+              <Button variant="contained" sx={S.BTN_PRIMARY} color="success" onClick={() => setAdmitDialog(true)}>
                 Admit Directly
               </Button>
             </>
           )}
           {admission.status === 'test_scheduled' && (
-            <Button variant="contained" onClick={() => setTestDialog(true)}>
+            <Button variant="contained" sx={S.BTN_PRIMARY} onClick={() => setTestDialog(true)}>
               Record Test Score
             </Button>
           )}
           {(admission.status === 'tested' || admission.status === 'interviewed') && (
-            <Button variant="contained" color="success" onClick={() => setAdmitDialog(true)}>
+            <Button variant="contained" sx={S.BTN_PRIMARY} color="success" onClick={() => setAdmitDialog(true)}>
               Admit Student
             </Button>
           )}
           {admission.status === 'interview_scheduled' && (
-            <Button variant="contained" onClick={() => setInterviewDialog(true)}>
+            <Button variant="contained" sx={S.BTN_PRIMARY} onClick={() => setInterviewDialog(true)}>
               Record Interview
             </Button>
           )}
           {admission.status === 'admitted' && (
-            <Button variant="contained" color="success" onClick={() => setEnrollDialog(true)}>
+            <Button variant="contained" sx={S.BTN_PRIMARY} color="success" onClick={() => setEnrollDialog(true)}>
               Enroll Student
             </Button>
           )}
           {!['enrolled', 'rejected', 'withdrawn'].includes(admission.status) && (
-            <Button variant="outlined" color="error" onClick={() => setRejectDialog(true)}>
+            <Button variant="outlined" sx={S.BTN_OUTLINE} color="error" onClick={() => setRejectDialog(true)}>
               Reject
             </Button>
           )}
@@ -405,7 +405,7 @@ export function AdmissionDetail() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConvertDialog(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleConvertToApplication}>
+          <Button variant="contained" sx={S.BTN_PRIMARY} onClick={handleConvertToApplication}>
             Convert
           </Button>
         </DialogActions>
@@ -451,7 +451,7 @@ export function AdmissionDetail() {
         <DialogActions>
           <Button onClick={() => setTestDialog(false)}>Cancel</Button>
           <Button
-            variant="contained"
+            variant="contained" sx={S.BTN_PRIMARY}
             onClick={admission.status === 'applied' ? handleScheduleTest : handleRecordTestScore}
           >
             {admission.status === 'applied' ? 'Schedule' : 'Record'}
@@ -499,7 +499,7 @@ export function AdmissionDetail() {
         <DialogActions>
           <Button onClick={() => setInterviewDialog(false)}>Cancel</Button>
           <Button
-            variant="contained"
+            variant="contained" sx={S.BTN_PRIMARY}
             onClick={admission.status === 'interview_scheduled' ? handleRecordInterview : handleScheduleInterview}
           >
             {admission.status === 'interview_scheduled' ? 'Record' : 'Schedule'}
@@ -517,7 +517,7 @@ export function AdmissionDetail() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAdmitDialog(false)}>Cancel</Button>
-          <Button variant="contained" color="success" onClick={handleAdmit}>
+          <Button variant="contained" sx={S.BTN_PRIMARY} color="success" onClick={handleAdmit}>
             Admit
           </Button>
         </DialogActions>
@@ -533,7 +533,7 @@ export function AdmissionDetail() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEnrollDialog(false)}>Cancel</Button>
-          <Button variant="contained" color="success" onClick={handleEnroll}>
+          <Button variant="contained" sx={S.BTN_PRIMARY} color="success" onClick={handleEnroll}>
             Enroll
           </Button>
         </DialogActions>
@@ -555,7 +555,7 @@ export function AdmissionDetail() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setRejectDialog(false)}>Cancel</Button>
-          <Button variant="contained" color="error" onClick={handleReject}>
+          <Button variant="contained" sx={S.BTN_PRIMARY} color="error" onClick={handleReject}>
             Reject
           </Button>
         </DialogActions>

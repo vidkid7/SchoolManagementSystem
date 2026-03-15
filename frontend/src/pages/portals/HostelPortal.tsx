@@ -331,7 +331,7 @@ const HostelPortal: React.FC = () => {
       <TabPanel value={tab} index={2}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="h6" fontWeight={600}>{t('hostel.disciplineRecords')}</Typography>
-          <Button variant="contained" color="warning" startIcon={<AddIcon />} onClick={() => { setFormData({}); setDisciplineDialog(true); }}>{t('hostel.recordViolation')}</Button>
+          <Button variant="contained" sx={S.BTN_PRIMARY} color="warning" startIcon={<AddIcon />} onClick={() => { setFormData({}); setDisciplineDialog(true); }}>{t('hostel.recordViolation')}</Button>
         </Box>
         <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
@@ -361,7 +361,7 @@ const HostelPortal: React.FC = () => {
       <TabPanel value={tab} index={3}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="h6" fontWeight={600}>{t('hostel.visitorLog')}</Typography>
-          <Button variant="contained" color="info" startIcon={<AddIcon />} onClick={() => { setFormData({}); setVisitorDialog(true); }}>{t('hostel.registerVisitor')}</Button>
+          <Button variant="contained" sx={S.BTN_PRIMARY} color="info" startIcon={<AddIcon />} onClick={() => { setFormData({}); setVisitorDialog(true); }}>{t('hostel.registerVisitor')}</Button>
         </Box>
         <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
@@ -430,7 +430,7 @@ const HostelPortal: React.FC = () => {
       <TabPanel value={tab} index={5}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="h6" fontWeight={600}>{t('hostel.incidentReports')}</Typography>
-          <Button variant="contained" color="error" startIcon={<AddIcon />} onClick={() => { setFormData({}); setIncidentDialog(true); }}>{t('hostel.recordIncident')}</Button>
+          <Button variant="contained" sx={S.BTN_PRIMARY} color="error" startIcon={<AddIcon />} onClick={() => { setFormData({}); setIncidentDialog(true); }}>{t('hostel.recordIncident')}</Button>
         </Box>
         <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
@@ -598,7 +598,7 @@ const HostelPortal: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => { setDisciplineDialog(false); setFormData({}); }}>{t('common.cancel')}</Button>
-          <Button variant="contained" color="warning" onClick={handleCreateDiscipline}>{t('common.record')}</Button>
+          <Button variant="contained" sx={S.BTN_PRIMARY} color="warning" onClick={handleCreateDiscipline}>{t('common.record')}</Button>
         </DialogActions>
       </Dialog>
 
@@ -614,7 +614,7 @@ const HostelPortal: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => { setVisitorDialog(false); setFormData({}); }}>{t('common.cancel')}</Button>
-          <Button variant="contained" color="info" onClick={handleRegisterVisitor}>{t('common.register')}</Button>
+          <Button variant="contained" sx={S.BTN_PRIMARY} color="info" onClick={handleRegisterVisitor}>{t('common.register')}</Button>
         </DialogActions>
       </Dialog>
 
@@ -634,7 +634,7 @@ const HostelPortal: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => { setIncidentDialog(false); setFormData({}); }}>{t('common.cancel')}</Button>
-          <Button variant="contained" color="error" onClick={handleCreateIncident}>{t('common.record')}</Button>
+          <Button variant="contained" sx={S.BTN_PRIMARY} color="error" onClick={handleCreateIncident}>{t('common.record')}</Button>
         </DialogActions>
       </Dialog>
 

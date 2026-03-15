@@ -470,7 +470,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       {/* Upload Buttons */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mb: 2 }}>
         <Button
-          variant="outlined"
+          variant="outlined" sx={S.BTN_OUTLINE}
           startIcon={<CloudUploadIcon />}
           onClick={() => setBulkUploadDialog({ open: true })}
         >
@@ -628,7 +628,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
                 variant="outlined"
                 startIcon={<UploadIcon />}
                 fullWidth
-                sx={{ py: 2 }}
+                sx={{ ...S.BTN_OUTLINE,  py: 2 }}
               >
                 Select File
                 <input
@@ -668,7 +668,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
               variant="outlined"
               startIcon={<CloudUploadIcon />}
               fullWidth
-              sx={{ py: 2 }}
+              sx={{ ...S.BTN_OUTLINE,  py: 2 }}
             >
               Select Files (Max 10)
               <input
@@ -892,7 +892,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
         <DialogActions>
           <Button onClick={() => setDetailDialog({ open: false, document: null })}>Close</Button>
           <Button 
-            variant="contained" 
+            variant="contained" sx={S.BTN_PRIMARY} 
             onClick={() => detailDialog.document && window.open(detailDialog.document.fileUrl, '_blank')}
           >
             Open File

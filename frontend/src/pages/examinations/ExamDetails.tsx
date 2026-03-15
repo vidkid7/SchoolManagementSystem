@@ -175,7 +175,7 @@ export function ExamDetails() {
               color="error"
               startIcon={<DeleteIcon />}
               onClick={handleDelete}
-              sx={S.BTN_DANGER}
+              sx={{ ...S.BTN_OUTLINE, ...S.BTN_DANGER }}
             >
               {t('common.delete')}
             </Button>

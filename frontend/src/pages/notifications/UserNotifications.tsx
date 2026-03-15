@@ -111,7 +111,7 @@ export function UserNotifications() {
             onClick={markAllRead}
             variant="outlined"
             size="small"
-            sx={{ borderRadius: R.lg, textTransform: 'none', fontWeight: 600 }}
+            sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, textTransform: 'none', fontWeight: 600 }}
           >
             Mark all read
           </Button>

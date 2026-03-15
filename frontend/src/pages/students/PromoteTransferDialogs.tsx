@@ -31,6 +31,7 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { useNepaliNumbers } from '../../hooks/useNepaliNumbers';
+import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface PromoteDialogProps {
   open: boolean;
@@ -43,6 +44,7 @@ interface PromoteDialogProps {
 
 export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentName, onSuccess }: PromoteDialogProps) => {
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   const { t } = useTranslation();
   const { formatNumber } = useNepaliNumbers();
   const [loading, setLoading] = useState(false);
@@ -227,7 +229,7 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
           {t('common.cancel')}
         </Button>
         <Button
-          variant="contained"
+          variant="contained" sx={S.BTN_PRIMARY}
           color="success"
           onClick={handlePromote}
           disabled={loading || !canPromote}
@@ -252,6 +254,7 @@ interface TransferDialogProps {
 
 export const TransferDialog = ({ open, onClose, studentId, currentClass, currentSection, studentName, onSuccess }: TransferDialogProps) => {
   const theme = useTheme();
+  const S = useAdminStyles(theme);
   const { t } = useTranslation();
   const { formatNumber } = useNepaliNumbers();
   const [loading, setLoading] = useState(false);
@@ -438,7 +441,7 @@ export const TransferDialog = ({ open, onClose, studentId, currentClass, current
           {t('common.cancel')}
         </Button>
         <Button
-          variant="contained"
+          variant="contained" sx={S.BTN_PRIMARY}
           color="info"
           onClick={handleTransfer}
           disabled={loading || !formData.reason}

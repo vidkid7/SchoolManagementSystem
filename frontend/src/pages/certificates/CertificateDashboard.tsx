@@ -112,7 +112,7 @@ export const CertificateDashboard = () => {
             Please ensure the backend server is running and the API endpoints are accessible.
           </Typography>
         </Alert>
-        <Button variant="outlined" onClick={fetchStats} sx={{ mt: 2 }}>
+        <Button variant="outlined" onClick={fetchStats} sx={{ ...S.BTN_OUTLINE,  mt: 2 }}>
           Retry / पुन: प्रयास गर्नुहोस्
         </Button>
       </Box>
@@ -127,7 +127,7 @@ export const CertificateDashboard = () => {
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
-            variant="outlined"
+            variant="outlined" sx={S.BTN_OUTLINE}
             startIcon={<QrCodeIcon />}
             onClick={() => navigate('/certificates/verify')}
           >
@@ -289,25 +289,25 @@ export const CertificateDashboard = () => {
               </Typography>
               <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
                 <Button
-                  variant="outlined"
+                  variant="outlined" sx={S.BTN_OUTLINE}
                   onClick={() => navigate('/certificates/manage?tab=0')}
                 >
                   Manage Templates / टेम्पलेट व्यवस्थापन
                 </Button>
                 <Button
-                  variant="outlined"
+                  variant="outlined" sx={S.BTN_OUTLINE}
                   onClick={() => navigate('/certificates/manage?tab=2')}
                 >
                   Generate Certificate / प्रमाणपत्र उत्पन्न गर्नुहोस्
                 </Button>
                 <Button
-                  variant="outlined"
+                  variant="outlined" sx={S.BTN_OUTLINE}
                   onClick={() => navigate('/certificates/manage?tab=1')}
                 >
                   View All Certificates / सबै प्रमाणपत्र हेर्नुहोस्
                 </Button>
                 <Button
-                  variant="outlined"
+                  variant="outlined" sx={S.BTN_OUTLINE}
                   startIcon={<QrCodeIcon />}
                   onClick={() => navigate('/certificates/verify')}
                 >

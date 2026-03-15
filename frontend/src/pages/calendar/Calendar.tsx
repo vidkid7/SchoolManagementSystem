@@ -167,13 +167,13 @@ const Calendar = () => {
 
   // Category colors and icons
   const categoryConfig = {
-    academic: { color: '#4a5568', icon: <SchoolIcon />, label: 'Academic' },
-    sports: { color: '#4a5568', icon: <SportsIcon />, label: 'Sports' },
-    cultural: { color: '#6b7280', icon: <CulturalIcon />, label: 'Cultural' },
-    holiday: { color: '#8b5a5a', icon: <HolidayIcon />, label: 'Holiday' },
-    exam: { color: '#6b7280', icon: <ExamIcon />, label: 'Exam' },
-    meeting: { color: '#6b7280', icon: <MeetingIcon />, label: 'Meeting' },
-    other: { color: '#757575', icon: <EventIcon />, label: 'Other' },
+    academic: { color: C.neutral, icon: <SchoolIcon />, label: 'Academic' },
+    sports: { color: C.neutral, icon: <SportsIcon />, label: 'Sports' },
+    cultural: { color: C.neutral, icon: <CulturalIcon />, label: 'Cultural' },
+    holiday: { color: C.danger, icon: <HolidayIcon />, label: 'Holiday' },
+    exam: { color: C.neutral, icon: <ExamIcon />, label: 'Exam' },
+    meeting: { color: C.neutral, icon: <MeetingIcon />, label: 'Meeting' },
+    other: { color: C.neutral, icon: <EventIcon />, label: 'Other' },
   };
 
   // Fetch events
@@ -813,7 +813,7 @@ const Calendar = () => {
               <ChevronLeftIcon />
             </IconButton>
             <Button
-              variant="outlined"
+              variant="outlined" sx={S.BTN_OUTLINE}
               startIcon={<TodayIcon />}
               onClick={handleToday}
               size="small"
@@ -874,7 +874,7 @@ const Calendar = () => {
 
             {/* Export Calendar Button */}
             <Button
-              variant="outlined"
+              variant="outlined" sx={S.BTN_OUTLINE}
               startIcon={<FileDownloadIcon />}
               onClick={handleExportCalendar}
               disabled={exportLoading}
@@ -885,7 +885,7 @@ const Calendar = () => {
 
             {/* Add Event Button (Admin only) */}
             <Button
-              variant="contained"
+              variant="contained" sx={S.BTN_PRIMARY}
               startIcon={<AddIcon />}
               onClick={handleOpenAddEvent}
             >
@@ -1140,7 +1140,7 @@ const Calendar = () => {
           <Button onClick={() => setShowEventDialog(false)}>{t('common.close')}</Button>
           {!selectedEvent && (
             <Button
-              variant="contained"
+              variant="contained" sx={S.BTN_PRIMARY}
               onClick={handleSaveEvent}
               disabled={saveLoading}
             >

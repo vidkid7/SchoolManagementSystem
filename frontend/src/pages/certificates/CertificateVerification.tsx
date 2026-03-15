@@ -292,14 +292,14 @@ export const CertificateVerification = () => {
                 variant="contained"
                 onClick={handleVerify}
                 disabled={loading}
-                sx={{ minWidth: 150, whiteSpace: 'nowrap' }}
+                sx={{ ...S.BTN_PRIMARY,  minWidth: 150, whiteSpace: 'nowrap' }}
               >
                 {loading ? <CircularProgress size={24} /> : 'Verify / प्रमाणित गर्नुहोस्'}
               </Button>
             </Box>
             <Box sx={{ mt: 2 }}>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 startIcon={<QrCodeIcon />}
                 onClick={handleScanQrCode}
               >

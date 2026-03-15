@@ -336,7 +336,7 @@ export const RoleManagement = () => {
                     <TableCell>
                       <Button
                         size="small"
-                        variant="outlined"
+                        variant="outlined" sx={S.BTN_OUTLINE}
                         onClick={() => openPermissionDialog(role)}
                       >
                         {t('roles.managePermissions')} ({role.permissions?.length || 0})
@@ -554,7 +554,7 @@ const PermissionMatrix = ({ permissions, rolePermissions, onSave }: PermissionMa
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
             <Button
               size="small"
-              variant="outlined"
+              variant="outlined" sx={S.BTN_OUTLINE}
               onClick={() => {
                 const allIds = permissions.map(p => p.id);
                 setSelectedPermissions(new Set(allIds));
@@ -564,7 +564,7 @@ const PermissionMatrix = ({ permissions, rolePermissions, onSave }: PermissionMa
             </Button>
             <Button
               size="small"
-              variant="outlined"
+              variant="outlined" sx={S.BTN_OUTLINE}
               onClick={() => setSelectedPermissions(new Set())}
             >
               Deselect All

@@ -234,7 +234,7 @@ export function LibraryReports() {
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', gap: 2 }}>
                   <Button
-                    variant="contained"
+                    variant="contained" sx={S.BTN_PRIMARY}
                     startIcon={loading ? <CircularProgress size={20} /> : <DownloadIcon />}
                     onClick={handleGenerateReport}
                     disabled={loading || !startDate || !endDate}
@@ -243,7 +243,7 @@ export function LibraryReports() {
                     {loading ? t('common.loading') : t('library.downloadPDF')}
                   </Button>
                   <Button
-                    variant="outlined"
+                    variant="outlined" sx={S.BTN_OUTLINE}
                     startIcon={<PrintIcon />}
                     onClick={handlePrint}
                     disabled={loading || !startDate || !endDate}
@@ -280,7 +280,7 @@ export function LibraryReports() {
             <Divider sx={{ mb: 2 }} />
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <Button 
-                variant="outlined" 
+                variant="outlined" sx={S.BTN_OUTLINE} 
                 size="small" 
                 startIcon={<ReportIcon />}
                 onClick={() => handleQuickReport('today')}
@@ -288,7 +288,7 @@ export function LibraryReports() {
                 {t('library.todayActivity')}
               </Button>
               <Button 
-                variant="outlined" 
+                variant="outlined" sx={S.BTN_OUTLINE} 
                 size="small" 
                 startIcon={<ReportIcon />}
                 onClick={() => handleQuickReport('week')}
@@ -296,7 +296,7 @@ export function LibraryReports() {
                 {t('library.thisWeek')}
               </Button>
               <Button 
-                variant="outlined" 
+                variant="outlined" sx={S.BTN_OUTLINE} 
                 size="small" 
                 startIcon={<ReportIcon />}
                 onClick={() => handleQuickReport('month')}
@@ -304,7 +304,7 @@ export function LibraryReports() {
                 {t('library.thisMonth')}
               </Button>
               <Button 
-                variant="outlined" 
+                variant="outlined" sx={S.BTN_OUTLINE} 
                 size="small" 
                 startIcon={<ReportIcon />}
                 onClick={() => handleQuickReport('year')}

@@ -287,7 +287,7 @@ const TransportPortal: React.FC = () => {
       <TabPanel value={tab} index={2}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="h6" fontWeight={600}>{t('transport.pickupPoints')}</Typography>
-          <Button variant="contained" color="info" startIcon={<AddIcon />} onClick={() => { setFormData({}); setPickupDialog(true); }}>{t('transport.addPickupPoint')}</Button>
+          <Button variant="contained" sx={S.BTN_PRIMARY} color="info" startIcon={<AddIcon />} onClick={() => { setFormData({}); setPickupDialog(true); }}>{t('transport.addPickupPoint')}</Button>
         </Box>
         <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
@@ -380,7 +380,7 @@ const TransportPortal: React.FC = () => {
       <TabPanel value={tab} index={6}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="h6" fontWeight={600}>{t('transport.maintenanceRecords')}</Typography>
-          <Button variant="contained" color="warning" startIcon={<AddIcon />} onClick={() => { setEditMaintenance(null); setFormData({}); setMaintenanceDialog(true); }}>{t('transport.addRecord')}</Button>
+          <Button variant="contained" sx={S.BTN_PRIMARY} color="warning" startIcon={<AddIcon />} onClick={() => { setEditMaintenance(null); setFormData({}); setMaintenanceDialog(true); }}>{t('transport.addRecord')}</Button>
         </Box>
         <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
@@ -499,7 +499,7 @@ const TransportPortal: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => { setPickupDialog(false); setFormData({}); }}>{t('common.cancel')}</Button>
-          <Button variant="contained" color="info" onClick={handleCreatePickup}>Create</Button>
+          <Button variant="contained" sx={S.BTN_PRIMARY} color="info" onClick={handleCreatePickup}>Create</Button>
         </DialogActions>
       </Dialog>
 
@@ -550,7 +550,7 @@ const TransportPortal: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => { setMaintenanceDialog(false); setEditMaintenance(null); setFormData({}); }}>{t('common.cancel')}</Button>
-          <Button variant="contained" color="warning" onClick={handleSaveMaintenance}>{editMaintenance ? t('common.update') : t('common.create')}</Button>
+          <Button variant="contained" sx={S.BTN_PRIMARY} color="warning" onClick={handleSaveMaintenance}>{editMaintenance ? t('common.update') : t('common.create')}</Button>
         </DialogActions>
       </Dialog>
     </Box>

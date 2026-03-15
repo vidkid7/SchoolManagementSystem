@@ -511,7 +511,7 @@ interface TeacherPerformanceData {
                 variant="outlined" 
                 startIcon={<Print />}
                 onClick={handlePrint}
-                sx={{ 
+                sx={{ ...S.BTN_OUTLINE,  
                   borderRadius: R.lg,
                   borderColor: alpha(theme.palette.primary.main, 0.3),
                   '&:hover': { borderColor: theme.palette.primary.main, bgcolor: alpha(theme.palette.primary.main, 0.05) }
@@ -524,7 +524,7 @@ interface TeacherPerformanceData {
                 startIcon={loading ? <CircularProgress size={18} /> : <Refresh />}
                 onClick={fetchAllData}
                 disabled={loading}
-                sx={{ 
+                sx={{ ...S.BTN_OUTLINE,  
                   borderRadius: R.lg,
                   borderColor: alpha(theme.palette.primary.main, 0.3),
                   '&:hover': { borderColor: theme.palette.primary.main, bgcolor: alpha(theme.palette.primary.main, 0.05) }
@@ -783,7 +783,7 @@ interface TeacherPerformanceData {
                   startIcon={exporting === 'enrollment' ? <CircularProgress size={16} /> : <FileCopy />} 
                   onClick={() => handleExport('enrollment', 'pdf')}
                   disabled={exporting === 'enrollment'}
-                  sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}
+                  sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}
                 >
                   {t('reports.pdf')}
                 </Button>
@@ -793,7 +793,7 @@ interface TeacherPerformanceData {
                   startIcon={exporting === 'enrollment' ? <CircularProgress size={16} /> : <Download />} 
                   onClick={() => handleExport('enrollment', 'excel')}
                   disabled={exporting === 'enrollment'}
-                  sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}
+                  sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}
                 >
                   {t('reports.excel')}
                 </Button>
@@ -1021,10 +1021,10 @@ interface TeacherPerformanceData {
                 {t('reports.attendance')} {t('reports.overview')}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('attendance', 'pdf')} sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('attendance', 'pdf')} sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.pdf')}
                 </Button>
-                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('attendance', 'excel')} sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('attendance', 'excel')} sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.excel')}
                 </Button>
               </Box>
@@ -1123,10 +1123,10 @@ interface TeacherPerformanceData {
                 {t('reports.feeCollection')} {t('reports.overview')}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('fee-collection', 'pdf')} sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('fee-collection', 'pdf')} sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.pdf')}
                 </Button>
-                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('fee-collection', 'excel')} sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('fee-collection', 'excel')} sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.excel')}
                 </Button>
               </Box>
@@ -1313,10 +1313,10 @@ interface TeacherPerformanceData {
                 {t('reports.examination')} {t('reports.overview')}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('examination', 'pdf')} sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('examination', 'pdf')} sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.pdf')}
                 </Button>
-                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('examination', 'excel')} sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('examination', 'excel')} sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.excel')}
                 </Button>
               </Box>
@@ -1508,10 +1508,10 @@ interface TeacherPerformanceData {
                 {t('reports.library')} {t('reports.overview')}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('library', 'pdf')} sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('library', 'pdf')} sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.pdf')}
                 </Button>
-                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('library', 'excel')} sx={{ borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('library', 'excel')} sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.excel')}
                 </Button>
               </Box>
@@ -1699,10 +1699,10 @@ interface TeacherPerformanceData {
                 {t('reports.ecaSports')} {t('reports.overview')}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('eca', 'pdf')} sx={{ borderRadius: R.lg, borderColor: alpha(C.danger, 0.3), color: C.danger, '&:hover': { borderColor: C.danger, bgcolor: alpha(C.danger, 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('eca', 'pdf')} sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, borderColor: alpha(C.danger, 0.3), color: C.danger, '&:hover': { borderColor: C.danger, bgcolor: alpha(C.danger, 0.05) } }}>
                   {t('reports.pdf')}
                 </Button>
-                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('eca', 'excel')} sx={{ borderRadius: R.lg, borderColor: alpha(C.danger, 0.3), color: C.danger, '&:hover': { borderColor: C.danger, bgcolor: alpha(C.danger, 0.05) } }}>
+                <Button variant="outlined" size="small" startIcon={<Download />} onClick={() => handleExport('eca', 'excel')} sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, borderColor: alpha(C.danger, 0.3), color: C.danger, '&:hover': { borderColor: C.danger, bgcolor: alpha(C.danger, 0.05) } }}>
                   {t('reports.excel')}
                 </Button>
               </Box>
@@ -1873,7 +1873,7 @@ interface TeacherPerformanceData {
                 placeholder="1"
                 sx={{ width: 120 }}
               />
-              <Button variant="outlined" size="small" startIcon={<Refresh />} onClick={fetchAllData}>{t('reports.refresh')}</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} size="small" startIcon={<Refresh />} onClick={fetchAllData}>{t('reports.refresh')}</Button>
             </Box>
             {teacherPerformanceData ? (
               <Grid container spacing={3}>

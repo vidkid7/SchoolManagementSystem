@@ -293,7 +293,7 @@ export const StudentList = () => {
                 variant="outlined"
                 startIcon={<RefreshIcon />}
                 onClick={() => fetchStudents()}
-                sx={{ 
+                sx={{ ...S.BTN_OUTLINE,  
                   borderRadius: 2,
                   borderColor: 'rgba(255,255,255,0.3)',
                   color: 'white',
@@ -309,7 +309,7 @@ export const StudentList = () => {
                 variant="outlined"
                 startIcon={<UploadIcon />}
                 onClick={() => navigate(`/students/bulk-import`)}
-                sx={{ 
+                sx={{ ...S.BTN_OUTLINE,  
                   borderRadius: 2,
                   borderColor: 'rgba(255,255,255,0.3)',
                   color: 'white',
@@ -325,7 +325,7 @@ export const StudentList = () => {
                 variant="outlined"
                 startIcon={<AddIcon />}
                 onClick={() => navigate(`/students/bulk-add`)}
-                sx={{ 
+                sx={{ ...S.BTN_OUTLINE,  
                   borderRadius: 2,
                   borderColor: 'rgba(255,255,255,0.3)',
                   color: 'white',
@@ -539,7 +539,7 @@ export const StudentList = () => {
               startIcon={<ClearIcon />}
               onClick={clearFilters}
               disabled={!hasActiveFilters}
-              sx={{ 
+              sx={{ ...S.BTN_OUTLINE,  
                 borderRadius: 2,
                 borderColor: alpha(theme.palette.primary.main, 0.3),
                 '&:hover': { borderColor: theme.palette.primary.main }

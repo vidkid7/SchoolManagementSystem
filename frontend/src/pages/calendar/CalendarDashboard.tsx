@@ -136,7 +136,7 @@ export const CalendarDashboard = () => {
             Please ensure the backend server is running and the API endpoints are accessible.
           </Typography>
         </Alert>
-        <Button variant="outlined" onClick={fetchStats} sx={{ mt: 2 }}>
+        <Button variant="outlined" onClick={fetchStats} sx={{ ...S.BTN_OUTLINE,  mt: 2 }}>
           {isNepali ? 'पुन: प्रयास गर्नुहोस्' : 'Retry'}
         </Button>
       </Box>
@@ -151,7 +151,7 @@ export const CalendarDashboard = () => {
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
-            variant="outlined"
+            variant="outlined" sx={S.BTN_OUTLINE}
             startIcon={<CalendarIcon />}
             onClick={() => navigate('/calendar')}
           >
@@ -410,28 +410,28 @@ export const CalendarDashboard = () => {
               </Typography>
               <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
                 <Button
-                  variant="outlined"
+                  variant="outlined" sx={S.BTN_OUTLINE}
                   startIcon={<CalendarIcon />}
                   onClick={() => navigate('/calendar')}
                 >
                   {isNepali ? 'पूर्ण पात्रो हेर्नुहोस्' : 'View Full Calendar'}
                 </Button>
                 <Button
-                  variant="outlined"
+                  variant="outlined" sx={S.BTN_OUTLINE}
                   startIcon={<AddIcon />}
                   onClick={() => navigate('/calendar?action=create')}
                 >
                   {isNepali ? 'कार्यक्रम सिर्जना गर्नुहोस्' : 'Create Event'}
                 </Button>
                 <Button
-                  variant="outlined"
+                  variant="outlined" sx={S.BTN_OUTLINE}
                   startIcon={<HolidayIcon />}
                   onClick={() => navigate('/calendar?filter=holiday')}
                 >
                   {isNepali ? 'बिदाहरू हेर्नुहोस्' : 'View Holidays'}
                 </Button>
                 <Button
-                  variant="outlined"
+                  variant="outlined" sx={S.BTN_OUTLINE}
                   startIcon={<ExamIcon />}
                   onClick={() => navigate('/calendar?filter=exam')}
                 >

@@ -479,7 +479,7 @@ export const StaffAssignments = () => {
                       variant="outlined"
                       startIcon={<AddIcon />}
                       onClick={openAddDialog}
-                      sx={{ mt: 2 }}
+                      sx={{ ...S.BTN_OUTLINE,  mt: 2 }}
                     >
                       {t('staff.form.addAssignment')}
                     </Button>
@@ -664,7 +664,7 @@ export const StaffAssignments = () => {
           </Grid>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleCloseDialog} variant="outlined">
+          <Button onClick={handleCloseDialog} variant="outlined" sx={S.BTN_OUTLINE}>
             {t('common.cancel')}
           </Button>
           <Button

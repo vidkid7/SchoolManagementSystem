@@ -898,7 +898,7 @@ const AccountantPortal: React.FC = () => {
                   <Typography variant="body2" sx={{ color: theme.palette.text.disabled }}>{t('finance.studentsPending') || 'Students Pending'}</Typography>
                   <Typography variant="body2" fontWeight={700}>{reportData.pendingReport?.count ?? '—'}</Typography>
                 </Box>
-                <Button size="small" variant="outlined" fullWidth sx={{ mt: 2, color: C.warning, borderColor: C.warningBdr, textTransform: 'none', fontWeight: 600, borderRadius: 1.5, '&:hover': { background: C.warningBg, borderColor: C.warning } }} onClick={() => nav('/finance/reports')}>{t('finance.viewDetails') || 'View Details'} →</Button>
+                <Button size="small" variant="outlined" fullWidth sx={{ ...S.BTN_OUTLINE,  mt: 2, color: C.warning, borderColor: C.warningBdr, textTransform: 'none', fontWeight: 600, borderRadius: 1.5, '&:hover': { background: C.warningBg, borderColor: C.warning } }} onClick={() => nav('/finance/reports')}>{t('finance.viewDetails') || 'View Details'} →</Button>
               </CardContent>
             </Card>
           </Grid>
@@ -914,7 +914,7 @@ const AccountantPortal: React.FC = () => {
                 </Box>
                 <Typography variant="h2" fontWeight={800} sx={{ color: C.danger, lineHeight: 1, mb: 0.5 }}>{reportData.defaulters?.length ?? 0}</Typography>
                 <Typography variant="caption" sx={{ color: theme.palette.text.disabled }}>{t('finance.studentsWithOverdue') || 'Students with overdue invoices'}</Typography>
-                <Button size="small" variant="outlined" fullWidth sx={{ mt: 2, color: C.danger, borderColor: C.dangerBdr, textTransform: 'none', fontWeight: 600, borderRadius: 1.5, '&:hover': { background: C.dangerBg, borderColor: C.danger } }} onClick={() => nav('/finance/reports')}>{t('finance.viewDefaulters') || 'View Defaulters'} →</Button>
+                <Button size="small" variant="outlined" fullWidth sx={{ ...S.BTN_OUTLINE,  mt: 2, color: C.danger, borderColor: C.dangerBdr, textTransform: 'none', fontWeight: 600, borderRadius: 1.5, '&:hover': { background: C.dangerBg, borderColor: C.danger } }} onClick={() => nav('/finance/reports')}>{t('finance.viewDefaulters') || 'View Defaulters'} →</Button>
               </CardContent>
             </Card>
           </Grid>

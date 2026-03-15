@@ -434,7 +434,7 @@ export const SchoolConfiguration = () => {
           {!editMode ? (
             <>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 startIcon={<RefreshIcon />}
                 onClick={fetchConfig}
               >
@@ -451,7 +451,7 @@ export const SchoolConfiguration = () => {
           ) : (
             <>
               <Button
-                variant="outlined"
+                variant="outlined" sx={S.BTN_OUTLINE}
                 onClick={handleCancel}
                 disabled={saving}
               >
@@ -519,7 +519,7 @@ export const SchoolConfiguration = () => {
                     />
                     <label htmlFor="logo-upload">
                       <Button
-                        variant="outlined"
+                        variant="outlined" sx={S.BTN_OUTLINE}
                         component="span"
                         startIcon={<UploadIcon />}
                         disabled={uploading || !editMode}
@@ -814,7 +814,7 @@ export const SchoolConfiguration = () => {
             Deactivating the configuration will disable it system-wide. This action can be reversed.
           </Alert>
           <Button
-            variant="outlined"
+            variant="outlined" sx={S.BTN_OUTLINE}
             color="error"
             onClick={handleDeactivate}
             disabled={saving}

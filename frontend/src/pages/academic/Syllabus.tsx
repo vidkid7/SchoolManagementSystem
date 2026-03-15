@@ -356,7 +356,7 @@ export const Syllabus = () => {
                     </Typography>
                   </Box>
                   <Button
-                    variant="contained"
+                    variant="contained" sx={S.BTN_PRIMARY}
                     startIcon={<AddIcon />}
                     onClick={handleOpenDialog}
                   >
@@ -403,7 +403,7 @@ export const Syllabus = () => {
                           <Box sx={{ display: 'flex', gap: 1 }}>
                             <Button
                               size="small"
-                              variant="outlined"
+                              variant="outlined" sx={S.BTN_OUTLINE}
                               onClick={() => handleOpenProgressDialog(topic)}
                             >
                               Update Progress
@@ -465,7 +465,7 @@ export const Syllabus = () => {
                 variant="contained"
                 startIcon={<AddIcon />}
                 onClick={handleCreateSyllabus}
-                sx={{ mt: 2 }}
+                sx={{ ...S.BTN_PRIMARY,  mt: 2 }}
               >
                 Create Syllabus
               </Button>
@@ -520,7 +520,7 @@ export const Syllabus = () => {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button variant="contained" onClick={handleSaveTopic}>
+          <Button variant="contained" sx={S.BTN_PRIMARY} onClick={handleSaveTopic}>
             Add Topic
           </Button>
         </DialogActions>
@@ -550,7 +550,7 @@ export const Syllabus = () => {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleCloseProgressDialog}>Cancel</Button>
-          <Button variant="contained" onClick={handleUpdateProgress}>
+          <Button variant="contained" sx={S.BTN_PRIMARY} onClick={handleUpdateProgress}>
             Update
           </Button>
         </DialogActions>

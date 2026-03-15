@@ -235,7 +235,7 @@ const NonTeachingStaffPortal: React.FC = () => {
       <TabPanel value={tab} index={2}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="h6" fontWeight={600}>{t('portal.leaveManagement')}</Typography>
-          <Button variant="contained" color="warning" startIcon={<LeaveIcon />} onClick={() => setLeaveDialogOpen(true)}>
+          <Button variant="contained" sx={S.BTN_PRIMARY} color="warning" startIcon={<LeaveIcon />} onClick={() => setLeaveDialogOpen(true)}>
             {t('portal.requestLeave')}
           </Button>
         </Box>
@@ -296,7 +296,7 @@ const NonTeachingStaffPortal: React.FC = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setLeaveDialogOpen(false)}>{t('common.cancel')}</Button>
-            <Button variant="contained" color="warning" onClick={handleLeaveSubmit} disabled={leaveSubmitting || !leaveForm.startDate || !leaveForm.endDate || !leaveForm.reason}>
+            <Button variant="contained" sx={S.BTN_PRIMARY} color="warning" onClick={handleLeaveSubmit} disabled={leaveSubmitting || !leaveForm.startDate || !leaveForm.endDate || !leaveForm.reason}>
               {leaveSubmitting ? t('portal.submitting') : t('portal.submitLeave')}
             </Button>
           </DialogActions>

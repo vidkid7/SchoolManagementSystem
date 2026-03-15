@@ -344,7 +344,7 @@ export function NewInquiry() {
 
           <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
             <Button
-              variant="outlined"
+              variant="outlined" sx={S.BTN_OUTLINE}
               onClick={() => navigate('/admissions/list')}
               disabled={loading}
             >
@@ -352,7 +352,7 @@ export function NewInquiry() {
             </Button>
             <Button
               type="submit"
-              variant="contained"
+              variant="contained" sx={S.BTN_PRIMARY}
               startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
               disabled={loading}
             >
