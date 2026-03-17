@@ -591,6 +591,9 @@ class AuthService {
       }
     }
 
+    return userJson;
+  }
+
   /**
    * Get account lockout status
    * @param identifier - Username or email
