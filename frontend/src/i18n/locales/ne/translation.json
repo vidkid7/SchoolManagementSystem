@@ -111,7 +111,18 @@
       "saturday": "शनिवार",
       "sunday": "आइतवार"
     },
-    "school": "विद्यालय"
+    "school": "विद्यालय",
+    "title": "शीर्षक",
+    "category": "श्रेणी",
+    "from": "देखि",
+    "to": "सम्म",
+    "record": "रेकर्ड",
+    "register": "दर्ता",
+    "inactive": "निष्क्रिय",
+    "today": "आज",
+    "week": "हप्ता",
+    "month": "महिना",
+    "year": "वर्ष"
   },
   "auth": {
     "login": "लगइन",
@@ -166,7 +177,8 @@
     "myPortal": "मेरो पोर्टल",
     "parentPortal": "अभिभावक पोर्टल",
     "users": "प्रयोगकर्ता व्यवस्थापन",
-    "sportsEca": "खेलकुद र पाठ्येतर"
+    "sportsEca": "खेलकुद र पाठ्येतर",
+    "messages": "सन्देशहरू"
   },
   "dashboard": {
     "welcome": "स्वागत छ",
@@ -304,7 +316,19 @@
     "syllabus": "Syllabus",
     "syllabusDesc": "Manage subject syllabus and topics",
     "academicCalendar": "Academic Calendar",
-    "academicCalendarDesc": "View and manage school events"
+    "academicCalendarDesc": "View and manage school events",
+    "jan": "जन",
+    "feb": "फेब",
+    "mar": "मार्च",
+    "apr": "अप्रि",
+    "may": "मे",
+    "jun": "जुन",
+    "jul": "जुल",
+    "aug": "अग",
+    "sep": "सेप",
+    "oct": "अक्टो",
+    "nov": "नोभ",
+    "dec": "डिसे"
   },
   "students": {
     "title": "विद्यार्थी",
@@ -470,7 +494,15 @@
       "promoting": "पदोन्नति गर्दै...",
       "promoteButton": "विद्यार्थी पदोन्नति गर्नुहोस्"
     },
-    "libraryFineTip": "किताबहरू समयमा फिर्ता गर्नुहोस् र जरिवानाबाट बच्नुहोस्। हालको जरिवाना दर: रू ५ प्रति दिन।"
+    "libraryFineTip": "किताबहरू समयमा फिर्ता गर्नुहोस् र जरिवानाबाट बच्नुहोस्। हालको जरिवाना दर: रू ५ प्रति दिन।",
+    "currentClassId": "हालको कक्षा",
+    "currentClassIdPlaceholder": "हालको कक्षा छान्नुहोस्",
+    "localGuardianRelationPlaceholder": "सम्बन्ध लेख्नुहोस्",
+    "medicalInfo": "चिकित्सा जानकारी",
+    "motherPhone": "आमाको फोन",
+    "phone": "फोन",
+    "photoUrl": "फोटो URL",
+    "students": "विद्यार्थीहरू"
   },
   "sportsECA": {
     "title": "ECA र खेलकुद",
@@ -578,7 +610,9 @@
     "failedToSaveSubject": "विषय बचत गर्न असफल",
     "failedToDeleteClass": "कक्षा मेटाउन असफल: {{message}}",
     "sectionPlaceholder": "उदा., A, B, C, A1, B1",
-    "sectionHelperText": "शाखाको नाम प्रविष्ट गर्नुहोस् (उदा., A, B, C)"
+    "sectionHelperText": "शाखाको नाम प्रविष्ट गर्नुहोस् (उदा., A, B, C)",
+    "academicYear": "शैक्षिक वर्ष",
+    "periodAlreadyAssigned": "यो अवधि पहिले नै तोकिएको छ"
   },
   "academicYears": {
     "title": "शैक्षिक वर्ष व्यवस्थापन",
@@ -1262,14 +1296,18 @@
     "dashboard": "ड्यासबोर्ड",
     "feeStructure": "शुल्क संरचना",
     "feeStructures": "शुल्क संरचनाहरू",
+    "feeStructuresSubtitle": "विभिन्न कक्षा र श्रेणीका लागि शुल्क संरचना व्यवस्थापन गर्नुहोस्",
     "invoices": "बीजकहरू",
+    "invoicesFound": "बीजकहरू फेला परे",
     "payments": "भुक्तानीहरू",
+    "paymentsLoaded": "भुक्तानी लोड भयो",
     "paymentGateways": "भुक्तानी गेटवे",
     "refunds": "रिफंडहरू",
     "reports": "प्रतिवेदनहरू",
     "quickActions": "छिटो कार्यहरू",
     "recentTransactions": "हालैका लेनदेन",
     "studentFees": "विद्यार्थी शुल्क",
+    "studentsShown": "विद्यार्थी देखाइएको",
     "gateways": "गेटवेहरू",
     "feeType": "शुल्क प्रकार",
     "amount": "रकम",
@@ -2060,7 +2098,14 @@
     "noData": "कुनै डेटा उपलब्ध छैन",
     "yearGrowth": "Year-on-year growth",
     "totalFeesPending": "Total Fees Pending",
-    "overdueBooks": "Overdue Books"
+    "overdueBooks": "Overdue Books",
+    "attendanceRate": "उपस्थिति दर",
+    "exportFailed": "निर्यात असफल",
+    "exportSuccess": "निर्यात सफल",
+    "improvement": "सुधार",
+    "loginRequired": "प्रतिवेदन हेर्न लगइन आवश्यक छ",
+    "noPermission": "तपाईंलाई यो प्रतिवेदन हेर्ने अनुमति छैन",
+    "teacherId": "शिक्षक आईडी"
   },
   "settings": {
     "title": "सेटिङ",
@@ -3221,7 +3266,15 @@
     "minStock": "न्यूनतम स्टक",
     "location": "स्थान",
     "roomNumber": "कोठा नम्बर",
-    "type": "प्रकार"
+    "type": "प्रकार",
+    "category": "श्रेणी",
+    "day": "दिन",
+    "description": "विवरण",
+    "items": "सामानहरू",
+    "mealType": "खाना प्रकार",
+    "quantity": "परिमाण",
+    "studentId": "विद्यार्थी आईडी",
+    "unit": "एकाइ"
   },
   "transport": {
     "routes": "मार्गहरू",
@@ -3595,6 +3648,7 @@
     "assessmentMethods": "मूल्याङ्कन विधि",
     "uploadMaterials": "शिक्षण सामग्री अपलोड गर्नुहोस्",
     "saveAsDraft": "ड्राफ्ट सुरक्षित गर्नुहोस्",
-    "saveAndSchedule": "सुरक्षित र तालिका"
+    "saveAndSchedule": "सुरक्षित र तालिका",
+    "submitted": "पेश गरिएको"
   }
 }

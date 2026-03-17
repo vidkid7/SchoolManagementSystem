@@ -179,6 +179,12 @@ router.delete(
 // ==================== Fine Management Routes ====================
 
 router.get(
+  '/fines',
+  authorize(...readRoles),
+  libraryController.getAllFines.bind(libraryController)
+);
+
+router.get(
   '/fines/:studentId',
   authorize(...readRoles),
   libraryController.getFinesByStudent.bind(libraryController)

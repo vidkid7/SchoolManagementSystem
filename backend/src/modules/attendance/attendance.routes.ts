@@ -137,6 +137,17 @@ router.post(
 // ==================== Leave Applications ====================
 
 /**
+ * @route   GET /api/v1/attendance/leave/my
+ * @desc    Get current user's leave applications
+ * @access  Private (any authenticated user)
+ */
+router.get(
+  '/leave/my',
+  authenticate,
+  attendanceController.getMyLeaves
+);
+
+/**
  * @route   POST /api/v1/attendance/leave/apply
  * @desc    Apply for leave
  * @access  Private (Student, Parent)

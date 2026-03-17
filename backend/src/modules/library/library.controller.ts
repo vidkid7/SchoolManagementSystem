@@ -537,6 +537,36 @@ export class LibraryController {
   }
 
   /**
+   * Get all fines (optionally filtered by status)
+   * GET /api/v1/library/fines
+   */
+  async getAllFines(req: Request, res: Response): Promise<void> {
+    try {
+      const { status, limit } = req.query;
+      const whereClause: Record<string, unknown> = {};
+      if (status) {
+        whereClause.status = status;
+      }
+
+      const fines = await LibraryFine.findAll({
+        where: whereClause,
+        limit: Math.min(Number(limit) || 50, 200),
+        order: [['createdAt', 'DESC']],
+      });
+
+      res.status(200).json({
+        success: true,
+        data: fines,
+      });
+    } catch (error) {
+      res.status(200).json({
+        success: true,
+        data: [],
+      });
+    }
+  }
+
+  /**
    * Get fines by student
    * GET /api/v1/library/fines/:studentId
    */

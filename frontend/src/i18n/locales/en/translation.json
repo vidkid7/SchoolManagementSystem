@@ -111,7 +111,18 @@
       "saturday": "Saturday",
       "sunday": "Sunday"
     },
-    "school": "School"
+    "school": "School",
+    "title": "Title",
+    "category": "Category",
+    "from": "From",
+    "to": "To",
+    "record": "Record",
+    "register": "Register",
+    "inactive": "Inactive",
+    "today": "Today",
+    "week": "Week",
+    "month": "Month",
+    "year": "Year"
   },
   "auth": {
     "login": "Sign In",
@@ -166,7 +177,8 @@
     "teacherPortal": "Teacher Portal",
     "myPortal": "My Portal",
     "parentPortal": "Parent Portal",
-    "users": "User Management"
+    "users": "User Management",
+    "messages": "Messages"
   },
   "dashboard": {
     "welcome": "Welcome",
@@ -304,7 +316,19 @@
     "monthlyCollectionOverview": "Monthly collection overview",
     "circulations": "Circulations",
     "ecaActivitiesLabel": "ECA Activities",
-    "viewDetails": "View Details"
+    "viewDetails": "View Details",
+    "jan": "Jan",
+    "feb": "Feb",
+    "mar": "Mar",
+    "apr": "Apr",
+    "may": "May",
+    "jun": "Jun",
+    "jul": "Jul",
+    "aug": "Aug",
+    "sep": "Sep",
+    "oct": "Oct",
+    "nov": "Nov",
+    "dec": "Dec"
   },
   "students": {
     "title": "Students",
@@ -430,7 +454,47 @@
     "expired": "Expired",
     "expiringSoon": "Expiring Soon",
     "documentActive": "Active",
-    "libraryFineTip": "Return books on time to avoid fines. Current fine rate: Rs. 5 per day for overdue books."
+    "libraryFineTip": "Return books on time to avoid fines. Current fine rate: Rs. 5 per day for overdue books.",
+    "promote": {
+      "academicPerformance": "Academic Performance",
+      "cannotPromote": "Cannot Promote",
+      "cannotPromoteWarning": "This student does not meet the minimum requirements for promotion.",
+      "currentClass": "Current Class",
+      "failed": "Promotion failed. Please try again.",
+      "nextClass": "Next Class",
+      "obtainedMarks": "Obtained Marks",
+      "percentage": "Percentage",
+      "promoteButton": "Promote Student",
+      "promoting": "Promoting...",
+      "rank": "Rank",
+      "remarks": "Remarks",
+      "title": "Promote Student",
+      "totalMarks": "Total Marks"
+    },
+    "transfer": {
+      "currentAssignment": "Current Assignment",
+      "external": "External Transfer",
+      "failed": "Transfer failed. Please try again.",
+      "internal": "Internal Transfer",
+      "newClass": "New Class",
+      "newRollNumber": "New Roll Number",
+      "newSection": "New Section",
+      "reason": "Reason",
+      "reasonHelper": "Please provide a reason for this transfer",
+      "reasonRequired": "Reason is required",
+      "title": "Transfer Student",
+      "transferButton": "Transfer Student",
+      "transferType": "Transfer Type",
+      "transferring": "Transferring..."
+    },
+    "currentClassId": "Current Class",
+    "currentClassIdPlaceholder": "Select current class",
+    "localGuardianRelationPlaceholder": "Enter relation",
+    "medicalInfo": "Medical Information",
+    "motherPhone": "Mother's Phone",
+    "phone": "Phone",
+    "photoUrl": "Photo URL",
+    "students": "Students"
   },
   "sportsECA": {
     "title": "Sports & ECA",
@@ -538,7 +602,9 @@
     "failedToSaveSubject": "Failed to save subject",
     "failedToDeleteClass": "Failed to delete class: {{message}}",
     "sectionPlaceholder": "e.g., A, B, C, A1, B1",
-    "sectionHelperText": "Enter section name (e.g., A, B, C)"
+    "sectionHelperText": "Enter section name (e.g., A, B, C)",
+    "academicYear": "Academic Year",
+    "periodAlreadyAssigned": "This period is already assigned"
   },
   "academicYears": {
     "title": "Academic Years Management",
@@ -1220,14 +1286,18 @@
     "dashboard": "Finance Dashboard",
     "feeStructure": "Fee Structure",
     "feeStructures": "Fee Structures",
+    "feeStructuresSubtitle": "Manage fee structures for different classes and categories",
     "invoices": "Invoices",
+    "invoicesFound": "invoices found",
     "payments": "Payments",
+    "paymentsLoaded": "payments loaded",
     "paymentGateways": "Payment Gateways",
     "refunds": "Refunds",
     "reports": "Reports",
     "quickActions": "Quick Actions",
     "recentTransactions": "Recent Transactions",
     "studentFees": "Student Fees",
+    "studentsShown": "students shown",
     "gateways": "Gateways",
     "feeType": "Fee Type",
     "amount": "Amount",
@@ -2170,7 +2240,14 @@
     "noData": "No data available",
     "yearGrowth": "Year-on-year growth",
     "totalFeesPending": "Total Fees Pending",
-    "overdueBooks": "Overdue Books"
+    "overdueBooks": "Overdue Books",
+    "attendanceRate": "Attendance Rate",
+    "exportFailed": "Export failed",
+    "exportSuccess": "Export successful",
+    "improvement": "Improvement",
+    "loginRequired": "Login required to view reports",
+    "noPermission": "You do not have permission to view this report",
+    "teacherId": "Teacher ID"
   },
   "settings": {
     "title": "Settings",
@@ -3330,7 +3407,15 @@
     "minStock": "Min Stock",
     "location": "Location",
     "roomNumber": "Room Number",
-    "type": "Type"
+    "type": "Type",
+    "category": "Category",
+    "day": "Day",
+    "description": "Description",
+    "items": "Items",
+    "mealType": "Meal Type",
+    "quantity": "Quantity",
+    "studentId": "Student ID",
+    "unit": "Unit"
   },
   "transport": {
     "routes": "Routes",
@@ -3552,6 +3637,7 @@
     "assessmentMethods": "Assessment Methods",
     "uploadMaterials": "Upload Teaching Materials",
     "saveAsDraft": "Save as Draft",
-    "saveAndSchedule": "Save & Schedule"
+    "saveAndSchedule": "Save & Schedule",
+    "submitted": "Submitted"
   }
 }

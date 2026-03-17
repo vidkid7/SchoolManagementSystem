@@ -54,7 +54,7 @@ class TransportController {
     try {
       const userId = req.user?.userId;
       const user = await User.findByPk(userId, {
-        attributes: ['id', 'username', 'email', 'firstName', 'lastName', 'phoneNumber', 'role', 'status', 'createdAt']
+        attributes: ['user_id', 'username', 'email', 'role', 'status', 'phone_number', 'createdAt']
       });
 
       if (!user) {

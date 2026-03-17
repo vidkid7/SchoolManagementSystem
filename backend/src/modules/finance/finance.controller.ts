@@ -855,7 +855,12 @@ class FinanceController {
    */
   getPaymentGatewayTransactions = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const limit = Math.min(Number(req.query.limit) || 10, 100);
-    const transactions = await paymentGatewayRepository.findAll({});
+    let transactions: any[] = [];
+    try {
+      transactions = await paymentGatewayRepository.findAll({});
+    } catch (err) {
+      logger.warn('Could not fetch gateway transactions (table may not exist yet)', { error: (err as Error).message });
+    }
     const list = transactions.slice(0, limit).map((t: any) => ({
       id: t.transactionId,
       gateway: t.gateway,

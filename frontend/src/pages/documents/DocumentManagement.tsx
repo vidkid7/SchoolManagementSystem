@@ -921,14 +921,14 @@ export const DocumentManagement = () => {
             setUploadDialogOpen(false);
             resetUploadForm();
           }} disabled={uploading}>
-            {t('Cancel')}
+            {t('documents.cancel')}
           </Button>
           <Button
             variant="contained" sx={S.BTN_PRIMARY}
             onClick={handleUpload}
             disabled={!uploadForm.file || !uploadForm.name || uploading}
           >
-            {t('Upload')}
+            {t('documents.upload')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -950,8 +950,8 @@ export const DocumentManagement = () => {
           {selectedDocument && (
             <Box>
               <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)}>
-                <Tab label={t('Preview')} />
-                <Tab label={t('Details')} />
+                <Tab label={t('documents.preview')} />
+                <Tab label={t('documents.details')} />
               </Tabs>
 
               <TabPanel value={tabValue} index={0}>
@@ -967,14 +967,14 @@ export const DocumentManagement = () => {
                       <Box>
                         <PdfIcon sx={{ fontSize: 64, mb: 2 }} />
                         <Typography>
-                          {t('PDF Preview - Use download to view full document')}
+                          {t('documents.preview')}
                         </Typography>
                       </Box>
                     ) : (
                       <Box>
                         <DocIcon sx={{ fontSize: 64, mb: 2 }} />
                         <Typography>
-                          {t('Preview not available for this file type')}
+                          {t('documents.failedToPreviewDocument')}
                         </Typography>
                       </Box>
                     )}
@@ -986,19 +986,19 @@ export const DocumentManagement = () => {
                 <Grid container spacing={2}>
                   <Grid item xs={6}>
                     <Typography variant="body2" color="text.secondary">
-                      {t('Original Name')}
+                      {t('documents.originalName')}
                     </Typography>
                     <Typography>{selectedDocument.originalName}</Typography>
                   </Grid>
                   <Grid item xs={6}>
                     <Typography variant="body2" color="text.secondary">
-                      {t('File Size')}
+                      {t('documents.fileSize')}
                     </Typography>
                     <Typography>{formatFileSize(selectedDocument.size)}</Typography>
                   </Grid>
                   <Grid item xs={6}>
                     <Typography variant="body2" color="text.secondary">
-                      {t('Category')}
+                      {t('documents.category')}
                     </Typography>
                     <Chip
                       label={t(DOCUMENT_CATEGORIES.find(c => c.value === selectedDocument.category)?.label || selectedDocument.category)}
@@ -1007,7 +1007,7 @@ export const DocumentManagement = () => {
                   </Grid>
                   <Grid item xs={6}>
                     <Typography variant="body2" color="text.secondary">
-                      {t('Access Level')}
+                      {t('documents.accessLevel')}
                     </Typography>
                     <Chip
                       label={t(selectedDocument.accessLevel)}
@@ -1017,13 +1017,13 @@ export const DocumentManagement = () => {
                   </Grid>
                   <Grid item xs={6}>
                     <Typography variant="body2" color="text.secondary">
-                      {t('Uploaded By')}
+                      {t('documents.uploadedBy')}
                     </Typography>
                     <Typography>{selectedDocument.uploadedByName || selectedDocument.uploadedBy}</Typography>
                   </Grid>
                   <Grid item xs={6}>
                     <Typography variant="body2" color="text.secondary">
-                      {t('Upload Date')}
+                      {t('documents.uploadDate')}
                     </Typography>
                     <Typography>
                       {new Date(selectedDocument.createdAt).toLocaleString()}
@@ -1032,7 +1032,7 @@ export const DocumentManagement = () => {
                   {selectedDocument.description && (
                     <Grid item xs={12}>
                       <Typography variant="body2" color="text.secondary">
-                        {t('Description')}
+                        {t('documents.description')}
                       </Typography>
                       <Typography>{selectedDocument.description}</Typography>
                     </Grid>
@@ -1040,7 +1040,7 @@ export const DocumentManagement = () => {
                   {selectedDocument.tags && selectedDocument.tags.length > 0 && (
                     <Grid item xs={12}>
                       <Typography variant="body2" color="text.secondary" gutterBottom>
-                        {t('Tags')}
+                        {t('documents.tags')}
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                         {selectedDocument.tags.map((tag) => (
@@ -1056,7 +1056,7 @@ export const DocumentManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setPreviewDialogOpen(false)}>
-            {t('Close')}
+            {t('documents.close')}
           </Button>
           {selectedDocument && (
             <Button
@@ -1064,7 +1064,7 @@ export const DocumentManagement = () => {
               startIcon={<DownloadIcon />}
               onClick={() => handleDownload(selectedDocument)}
             >
-              {t('Download')}
+              {t('documents.download')}
             </Button>
           )}
         </DialogActions>
@@ -1101,7 +1101,7 @@ export const DocumentManagement = () => {
                       }
                     }}
                   >
-                    {t('Download')}
+                    {t('documents.download')}
                   </Button>
                 }
               >
@@ -1122,7 +1122,7 @@ export const DocumentManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setVersionsDialogOpen(false)}>
-            {t('Close')}
+            {t('documents.close')}
           </Button>
         </DialogActions>
       </Dialog>

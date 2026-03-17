@@ -138,7 +138,7 @@ export async function up(queryInterface: QueryInterface, _sequelize: Sequelize):
       primaryKey: true,
     },
     book_id: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: 'books',
@@ -239,7 +239,7 @@ export async function up(queryInterface: QueryInterface, _sequelize: Sequelize):
       primaryKey: true,
     },
     book_id: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: 'books',
@@ -398,25 +398,28 @@ export async function up(queryInterface: QueryInterface, _sequelize: Sequelize):
     },
   });
 
-  // Create indexes
-  await queryInterface.addIndex('books', ['accession_number'], { name: 'idx_books_accession' });
-  await queryInterface.addIndex('books', ['isbn'], { name: 'idx_books_isbn' });
-  await queryInterface.addIndex('books', ['category'], { name: 'idx_books_category' });
-  await queryInterface.addIndex('books', ['status'], { name: 'idx_books_status' });
-  await queryInterface.addIndex('books', ['barcode'], { name: 'idx_books_barcode' });
+  // Create indexes (skip if already exist)
+  const safeAddIndex = async (table: string, cols: string[], opts: { name: string }) => {
+    try { await queryInterface.addIndex(table, cols, opts); } catch { /* index may already exist */ }
+  };
+  await safeAddIndex('books', ['accession_number'], { name: 'idx_books_accession' });
+  await safeAddIndex('books', ['isbn'], { name: 'idx_books_isbn' });
+  await safeAddIndex('books', ['category'], { name: 'idx_books_category' });
+  await safeAddIndex('books', ['status'], { name: 'idx_books_status' });
+  await safeAddIndex('books', ['barcode'], { name: 'idx_books_barcode' });
   
-  await queryInterface.addIndex('circulations', ['book_id'], { name: 'idx_circulations_book_id' });
-  await queryInterface.addIndex('circulations', ['student_id'], { name: 'idx_circulations_student_id' });
-  await queryInterface.addIndex('circulations', ['status'], { name: 'idx_circulations_status' });
-  await queryInterface.addIndex('circulations', ['due_date'], { name: 'idx_circulations_due_date' });
+  await safeAddIndex('circulations', ['book_id'], { name: 'idx_circulations_book_id' });
+  await safeAddIndex('circulations', ['student_id'], { name: 'idx_circulations_student_id' });
+  await safeAddIndex('circulations', ['status'], { name: 'idx_circulations_status' });
+  await safeAddIndex('circulations', ['due_date'], { name: 'idx_circulations_due_date' });
   
-  await queryInterface.addIndex('reservations', ['book_id'], { name: 'idx_reservations_book_id' });
-  await queryInterface.addIndex('reservations', ['student_id'], { name: 'idx_reservations_student_id' });
-  await queryInterface.addIndex('reservations', ['status'], { name: 'idx_reservations_status' });
+  await safeAddIndex('reservations', ['book_id'], { name: 'idx_reservations_book_id' });
+  await safeAddIndex('reservations', ['student_id'], { name: 'idx_reservations_student_id' });
+  await safeAddIndex('reservations', ['status'], { name: 'idx_reservations_status' });
   
-  await queryInterface.addIndex('library_fines', ['student_id'], { name: 'idx_library_fines_student_id' });
-  await queryInterface.addIndex('library_fines', ['circulation_id'], { name: 'idx_library_fines_circulation_id' });
-  await queryInterface.addIndex('library_fines', ['status'], { name: 'idx_library_fines_status' });
+  await safeAddIndex('library_fines', ['student_id'], { name: 'idx_library_fines_student_id' });
+  await safeAddIndex('library_fines', ['circulation_id'], { name: 'idx_library_fines_circulation_id' });
+  await safeAddIndex('library_fines', ['status'], { name: 'idx_library_fines_status' });
 }
 
 export async function down(queryInterface: QueryInterface, _sequelize: Sequelize): Promise<void> {

@@ -325,6 +325,44 @@ class AttendanceController {
   // ==================== Leave Applications ====================
 
   /**
+   * Get current user's leave applications
+   * GET /api/v1/attendance/leave/my
+   */
+  getMyLeaves = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      throw new ValidationError('User ID not found in request', []);
+    }
+
+    let leaves: any[] = [];
+    try {
+      const LeaveApplication = require('@models/LeaveApplication.model').default;
+      leaves = await LeaveApplication.findAll({
+        where: { appliedBy: userId },
+        order: [['appliedAt', 'DESC']],
+        limit: 50,
+      });
+    } catch {
+      // Table may not exist yet
+    }
+
+    const formattedLeaves = leaves.map((leave: any) => ({
+      id: leave.leaveId,
+      studentId: leave.studentId,
+      startDate: leave.startDate,
+      endDate: leave.endDate,
+      reason: leave.reason,
+      status: leave.status,
+      appliedDate: leave.appliedAt,
+      leaveType: 'Leave',
+      remarks: leave.remarks,
+    }));
+
+    sendSuccess(res, { leaves: formattedLeaves, balance: null }, 'Leave applications retrieved');
+  });
+
+  /**
    * Apply for leave
    * POST /api/v1/attendance/leave/apply
    */

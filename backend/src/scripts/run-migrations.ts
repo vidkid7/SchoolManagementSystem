@@ -23,6 +23,16 @@ import * as addMunicipalityArchitecture from '../migrations/20260308000001-add-m
 import * as addSchoolTenantIsolation from '../migrations/20260308000002-add-school-tenant-isolation';
 import * as addSchoolConfigFormatColumns from '../migrations/20260308000003-add-school-config-format-columns';
 import * as createArchiveTables from '../migrations/033-create-archive-tables';
+import * as createLeaveApplicationsTable from '../migrations/014-create-leave-applications-table';
+import * as createFeeStructureTables from '../migrations/015-create-fee-structure-tables';
+import * as createInvoiceTables from '../migrations/016-create-invoice-tables';
+import * as createPaymentsTable from '../migrations/017-create-payments-table';
+import * as createLibraryTables from '../migrations/023-create-library-tables';
+import * as createHostelTables from '../migrations/20260315000005-create-hostel-tables';
+import * as createAssignmentsTable from '../migrations/20260315000001-create-assignments-table';
+import * as createAssignmentSubmissionsTable from '../migrations/20260315000002-create-assignment-submissions-table';
+import * as createLessonPlansTable from '../migrations/20260315000003-create-lesson-plans-table';
+import * as createSyllabusProgressTable from '../migrations/20260315000004-create-syllabus-progress-table';
 
 /**
  * Migration Runner
@@ -122,6 +132,56 @@ const migrations: Migration[] = [
     name: '033-create-archive-tables',
     up: (createArchiveTables as any).default.up,
     down: (createArchiveTables as any).default.down
+  },
+  {
+    name: '014-create-leave-applications-table',
+    up: createLeaveApplicationsTable.up,
+    down: createLeaveApplicationsTable.down
+  },
+  {
+    name: '015-create-fee-structure-tables',
+    up: createFeeStructureTables.up,
+    down: createFeeStructureTables.down
+  },
+  {
+    name: '016-create-invoice-tables',
+    up: createInvoiceTables.up,
+    down: createInvoiceTables.down
+  },
+  {
+    name: '017-create-payments-table',
+    up: createPaymentsTable.up,
+    down: createPaymentsTable.down
+  },
+  {
+    name: '023-create-library-tables',
+    up: createLibraryTables.up,
+    down: createLibraryTables.down
+  },
+  {
+    name: '20260315000005-create-hostel-tables',
+    up: createHostelTables.up,
+    down: createHostelTables.down
+  },
+  {
+    name: '20260315000001-create-assignments-table',
+    up: createAssignmentsTable.up,
+    down: createAssignmentsTable.down
+  },
+  {
+    name: '20260315000002-create-assignment-submissions-table',
+    up: createAssignmentSubmissionsTable.up,
+    down: createAssignmentSubmissionsTable.down
+  },
+  {
+    name: '20260315000003-create-lesson-plans-table',
+    up: createLessonPlansTable.up,
+    down: createLessonPlansTable.down
+  },
+  {
+    name: '20260315000004-create-syllabus-progress-table',
+    up: createSyllabusProgressTable.up,
+    down: createSyllabusProgressTable.down
   }
 ];
 
@@ -162,7 +222,7 @@ async function runMigrations(): Promise<void> {
         logger.info(`Migration completed: ${migration.name}`);
       } catch (error: unknown) {
         const err = error as { parent?: { code?: string } };
-        if (err.parent?.code === 'ER_TABLE_EXISTS_ERROR' || err.parent?.code === 'ER_DUP_KEYNAME') {
+        if (err.parent?.code === 'ER_TABLE_EXISTS_ERROR' || err.parent?.code === 'ER_DUP_KEYNAME' || err.parent?.code === 'ER_FK_INCOMPATIBLE_COLUMNS' || err.parent?.code === 'ER_DUP_ENTRY') {
           await sequelize.query('INSERT INTO migrations (name) VALUES (?)', {
             replacements: [migration.name],
           });
