@@ -298,11 +298,11 @@ class AuthService {
     } else if (user.role === 'Municipality_Admin') {
       // Fallback: find any municipality and link the admin to it
       try {
-        const municipality = await Municipality.findOne({ attributes: ['municipalityId', 'code'] });
+        const municipality = await Municipality.findOne({ attributes: ['id', 'code'] });
         if (municipality) {
           userJson.municipalityCode = municipality.code;
           // Also fix the user record for future logins
-          await user.update({ municipalityId: municipality.municipalityId });
+          await user.update({ municipalityId: municipality.id });
           logger.info('Auto-linked municipality admin to municipality', {
             userId: user.userId, municipalityCode: municipality.code
           });
@@ -579,10 +579,24 @@ class AuthService {
       }
     } else if (user.role === 'Municipality_Admin') {
       try {
-        const municipality = await Municipality.findOne({ attributes: ['municipalityId', 'code'] });
+        const municipality = await Municipality.findOne({ attributes: ['id', 'code'] });
         if (municipality) {
           userJson.municipalityCode = municipality.code;
-          await user.update({ municipalityId: municipality.municipalityId });
+          await user.update({ municipalityId: municipality.id });
+        } else {
+          userJson.municipalityCode = 'KMC';
+        }
+      } catch {
+        userJson.municipalityCode = 'KMC';
+      }
+    }
+
+    // Fallback: ensure all users have a municipalityCode for routing
+    if (!userJson.municipalityCode) {
+      try {
+        const municipality = await Municipality.findOne({ attributes: ['code'] });
+        if (municipality) {
+          userJson.municipalityCode = municipality.code;
         } else {
           userJson.municipalityCode = 'KMC';
         }

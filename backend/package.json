@@ -7,7 +7,7 @@
     "dev": "nodemon --exec ts-node --transpile-only -r tsconfig-paths/register src/server.ts",
     "build": "node build.js",
     "build:strict": "tsc",
-    "start": "node fix-db-columns.js && node dist/server.js",
+    "start": "node dist/server.js",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "test:unit": "jest --testPathPattern=unit",
