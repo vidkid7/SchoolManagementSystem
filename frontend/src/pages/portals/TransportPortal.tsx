@@ -111,7 +111,7 @@ const TransportPortal: React.FC = () => {
   };
 
   const handleDeleteRoute = async (id: number) => {
-    if (!window.confirm('Delete this route?')) return;
+    if (!window.confirm(t('portal.confirmDeleteRoute'))) return;
     try {
       await apiClient.delete(`/api/v1/transport/routes/${id}`, authHdr(accessToken!));
       loadData();
@@ -148,7 +148,7 @@ const TransportPortal: React.FC = () => {
   };
 
   const handleDeleteDriver = async (id: number) => {
-    if (!window.confirm('Delete this driver?')) return;
+    if (!window.confirm(t('portal.confirmDeleteDriver'))) return;
     try {
       await apiClient.delete(`/api/v1/transport/drivers/${id}`, authHdr(accessToken!));
       loadData();
@@ -241,8 +241,8 @@ const TransportPortal: React.FC = () => {
                   <TableCell>{r.departureTime || '—'}</TableCell>
                   <TableCell><Chip label={r.status} size="small" color={r.status === 'active' ? 'success' : 'default'} /></TableCell>
                   <TableCell>
-                    <Tooltip title="Edit"><IconButton size="small" onClick={() => { setEditRoute(r); setFormData({ ...r }); setRouteDialog(true); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
-                    <Tooltip title="Delete"><IconButton size="small" color="error" onClick={() => handleDeleteRoute(r.id)}><CancelIcon fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title={t('common.edit')}><IconButton size="small" onClick={() => { setEditRoute(r); setFormData({ ...r }); setRouteDialog(true); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title={t('common.delete')}><IconButton size="small" color="error" onClick={() => handleDeleteRoute(r.id)}><CancelIcon fontSize="small" /></IconButton></Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
@@ -275,7 +275,7 @@ const TransportPortal: React.FC = () => {
                   <TableCell>{v.driverPhone || '—'}</TableCell>
                   <TableCell><Chip label={v.status} size="small" color={v.status === 'active' ? 'success' : 'default'} /></TableCell>
                   <TableCell>
-                    <Tooltip title="Edit"><IconButton size="small" onClick={() => { setEditVehicle(v); setFormData({ ...v }); setVehicleDialog(true); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title={t('common.edit')}><IconButton size="small" onClick={() => { setEditVehicle(v); setFormData({ ...v }); setVehicleDialog(true); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
@@ -367,8 +367,8 @@ const TransportPortal: React.FC = () => {
                   <TableCell>{d.phone || '—'}</TableCell>
                   <TableCell><Chip label={d.status} size="small" color={d.status === 'active' ? 'success' : d.status === 'on-leave' ? 'warning' : 'default'} /></TableCell>
                   <TableCell>
-                    <Tooltip title="Edit"><IconButton size="small" onClick={() => { setEditDriver(d); setFormData({ ...d }); setDriverDialog(true); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
-                    <Tooltip title="Delete"><IconButton size="small" color="error" onClick={() => handleDeleteDriver(d.id)}><DeleteIcon fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title={t('common.edit')}><IconButton size="small" onClick={() => { setEditDriver(d); setFormData({ ...d }); setDriverDialog(true); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title={t('common.delete')}><IconButton size="small" color="error" onClick={() => handleDeleteDriver(d.id)}><DeleteIcon fontSize="small" /></IconButton></Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
@@ -401,7 +401,7 @@ const TransportPortal: React.FC = () => {
                   <TableCell>{new Date(m.date).toLocaleDateString()}</TableCell>
                   <TableCell><Chip label={m.status} size="small" color={m.status === 'completed' ? 'success' : m.status === 'in-progress' ? 'warning' : 'info'} /></TableCell>
                   <TableCell>
-                    <Tooltip title="Edit"><IconButton size="small" onClick={() => { setEditMaintenance(m); setFormData({ ...m }); setMaintenanceDialog(true); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title={t('common.edit')}><IconButton size="small" onClick={() => { setEditMaintenance(m); setFormData({ ...m }); setMaintenanceDialog(true); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
@@ -455,10 +455,10 @@ const TransportPortal: React.FC = () => {
           <TextField label={t('transport.routeName')} value={formData.routeName ?? ''} onChange={e => setFormData({ ...formData, routeName: e.target.value })} fullWidth required />
           <TextField label={t('transport.origin')} value={formData.origin ?? ''} onChange={e => setFormData({ ...formData, origin: e.target.value })} fullWidth required />
           <TextField label={t('transport.destination')} value={formData.destination ?? ''} onChange={e => setFormData({ ...formData, destination: e.target.value })} fullWidth required />
-          <TextField label="Driver Name" value={formData.driverName ?? ''} onChange={e => setFormData({ ...formData, driverName: e.target.value })} fullWidth />
-          <TextField label="Driver Phone" value={formData.driverPhone ?? ''} onChange={e => setFormData({ ...formData, driverPhone: e.target.value })} fullWidth />
-          <TextField label="Departure Time (HH:MM)" value={formData.departureTime ?? ''} onChange={e => setFormData({ ...formData, departureTime: e.target.value })} fullWidth />
-          <TextField label="Arrival Time (HH:MM)" value={formData.arrivalTime ?? ''} onChange={e => setFormData({ ...formData, arrivalTime: e.target.value })} fullWidth />
+          <TextField label={t('transport.driverName')} value={formData.driverName ?? ''} onChange={e => setFormData({ ...formData, driverName: e.target.value })} fullWidth />
+          <TextField label={t('transport.driverPhone')} value={formData.driverPhone ?? ''} onChange={e => setFormData({ ...formData, driverPhone: e.target.value })} fullWidth />
+          <TextField label={t('transport.departureTime')} value={formData.departureTime ?? ''} onChange={e => setFormData({ ...formData, departureTime: e.target.value })} fullWidth />
+          <TextField label={t('transport.arrivalTime')} value={formData.arrivalTime ?? ''} onChange={e => setFormData({ ...formData, arrivalTime: e.target.value })} fullWidth />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => { setRouteDialog(false); setEditRoute(null); setFormData({}); }}>{t('common.cancel')}</Button>
@@ -470,18 +470,18 @@ const TransportPortal: React.FC = () => {
       <Dialog open={vehicleDialog} onClose={() => { setVehicleDialog(false); setEditVehicle(null); setFormData({}); }} maxWidth="sm" fullWidth>
         <DialogTitle>{editVehicle ? t('transport.editVehicle') : t('transport.addNewVehicle')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-          <TextField label="Vehicle Number" value={formData.vehicleNumber ?? ''} onChange={e => setFormData({ ...formData, vehicleNumber: e.target.value })} fullWidth required />
+          <TextField label={t('transport.vehicleNumber')} value={formData.vehicleNumber ?? ''} onChange={e => setFormData({ ...formData, vehicleNumber: e.target.value })} fullWidth required />
           <FormControl fullWidth>
-            <InputLabel>Type</InputLabel>
-            <Select label="Type" value={formData.type ?? ''} onChange={e => setFormData({ ...formData, type: e.target.value })}>
+            <InputLabel>{t('transport.type')}</InputLabel>
+            <Select label={t('transport.type')} value={formData.type ?? ''} onChange={e => setFormData({ ...formData, type: e.target.value })}>
               {['Bus', 'Minibus', 'Van', 'Car'].map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
             </Select>
           </FormControl>
-          <TextField label="Capacity" type="number" value={formData.capacity ?? 40} onChange={e => setFormData({ ...formData, capacity: Number(e.target.value) })} fullWidth />
-          <TextField label="Driver Name" value={formData.driverName ?? ''} onChange={e => setFormData({ ...formData, driverName: e.target.value })} fullWidth />
-          <TextField label="Driver Phone" value={formData.driverPhone ?? ''} onChange={e => setFormData({ ...formData, driverPhone: e.target.value })} fullWidth />
-          <TextField label="Insurance Expiry" type="date" value={formData.insuranceExpiry ?? ''} onChange={e => setFormData({ ...formData, insuranceExpiry: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
-          <TextField label="Registration Expiry" type="date" value={formData.registrationExpiry ?? ''} onChange={e => setFormData({ ...formData, registrationExpiry: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
+          <TextField label={t('transport.capacity')} type="number" value={formData.capacity ?? 40} onChange={e => setFormData({ ...formData, capacity: Number(e.target.value) })} fullWidth />
+          <TextField label={t('transport.driverName')} value={formData.driverName ?? ''} onChange={e => setFormData({ ...formData, driverName: e.target.value })} fullWidth />
+          <TextField label={t('transport.driverPhone')} value={formData.driverPhone ?? ''} onChange={e => setFormData({ ...formData, driverPhone: e.target.value })} fullWidth />
+          <TextField label={t('transport.insuranceExpiry')} type="date" value={formData.insuranceExpiry ?? ''} onChange={e => setFormData({ ...formData, insuranceExpiry: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
+          <TextField label={t('transport.registrationExpiry')} type="date" value={formData.registrationExpiry ?? ''} onChange={e => setFormData({ ...formData, registrationExpiry: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => { setVehicleDialog(false); setEditVehicle(null); setFormData({}); }}>{t('common.cancel')}</Button>
@@ -493,14 +493,14 @@ const TransportPortal: React.FC = () => {
       <Dialog open={pickupDialog} onClose={() => { setPickupDialog(false); setFormData({}); }} maxWidth="sm" fullWidth>
         <DialogTitle>{t('transport.addPickupPointTitle')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-          <TextField label="Name" value={formData.name ?? ''} onChange={e => setFormData({ ...formData, name: e.target.value })} fullWidth required />
+          <TextField label={t('common.name')} value={formData.name ?? ''} onChange={e => setFormData({ ...formData, name: e.target.value })} fullWidth required />
           <TextField label={t('transport.address')} value={formData.address ?? ''} onChange={e => setFormData({ ...formData, address: e.target.value })} fullWidth required />
-          <TextField label="Route ID (optional)" type="number" value={formData.routeId ?? ''} onChange={e => setFormData({ ...formData, routeId: e.target.value ? Number(e.target.value) : null })} fullWidth />
-          <TextField label="Estimated Pickup Time (HH:MM)" value={formData.estimatedTime ?? ''} onChange={e => setFormData({ ...formData, estimatedTime: e.target.value })} fullWidth />
+          <TextField label={t('transport.routeIdOptional')} type="number" value={formData.routeId ?? ''} onChange={e => setFormData({ ...formData, routeId: e.target.value ? Number(e.target.value) : null })} fullWidth />
+          <TextField label={t('transport.estimatedPickupTime')} value={formData.estimatedTime ?? ''} onChange={e => setFormData({ ...formData, estimatedTime: e.target.value })} fullWidth />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => { setPickupDialog(false); setFormData({}); }}>{t('common.cancel')}</Button>
-          <Button variant="contained" sx={S.BTN_PRIMARY} color="info" onClick={handleCreatePickup}>Create</Button>
+          <Button variant="contained" sx={S.BTN_PRIMARY} color="info" onClick={handleCreatePickup}>{t('common.create')}</Button>
         </DialogActions>
       </Dialog>
 
@@ -508,15 +508,15 @@ const TransportPortal: React.FC = () => {
       <Dialog open={driverDialog} onClose={() => { setDriverDialog(false); setEditDriver(null); setFormData({}); }} maxWidth="sm" fullWidth>
         <DialogTitle>{editDriver ? t('transport.editDriver') : t('transport.addNewDriver')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-          <TextField label="Name" value={formData.name ?? ''} onChange={e => setFormData({ ...formData, name: e.target.value })} fullWidth required />
-          <TextField label="License Number" value={formData.licenseNumber ?? ''} onChange={e => setFormData({ ...formData, licenseNumber: e.target.value })} fullWidth required />
-          <TextField label="License Expiry" type="date" value={formData.licenseExpiry ?? ''} onChange={e => setFormData({ ...formData, licenseExpiry: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
-          <TextField label="Phone" value={formData.phone ?? ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} fullWidth />
-          <TextField label="Address" value={formData.address ?? ''} onChange={e => setFormData({ ...formData, address: e.target.value })} fullWidth />
-          <TextField label="Assigned Vehicle ID (optional)" type="number" value={formData.assignedVehicleId ?? ''} onChange={e => setFormData({ ...formData, assignedVehicleId: e.target.value ? Number(e.target.value) : null })} fullWidth />
+          <TextField label={t('common.name')} value={formData.name ?? ''} onChange={e => setFormData({ ...formData, name: e.target.value })} fullWidth required />
+          <TextField label={t('transport.licenseNo')} value={formData.licenseNumber ?? ''} onChange={e => setFormData({ ...formData, licenseNumber: e.target.value })} fullWidth required />
+          <TextField label={t('transport.licenseExpiry')} type="date" value={formData.licenseExpiry ?? ''} onChange={e => setFormData({ ...formData, licenseExpiry: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
+          <TextField label={t('transport.phone')} value={formData.phone ?? ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} fullWidth />
+          <TextField label={t('transport.address')} value={formData.address ?? ''} onChange={e => setFormData({ ...formData, address: e.target.value })} fullWidth />
+          <TextField label={t('transport.assignedVehicleIdOptional')} type="number" value={formData.assignedVehicleId ?? ''} onChange={e => setFormData({ ...formData, assignedVehicleId: e.target.value ? Number(e.target.value) : null })} fullWidth />
           <FormControl fullWidth>
-            <InputLabel>Status</InputLabel>
-            <Select label="Status" value={formData.status ?? 'active'} onChange={e => setFormData({ ...formData, status: e.target.value })}>
+            <InputLabel>{t('common.status')}</InputLabel>
+            <Select label={t('common.status')} value={formData.status ?? 'active'} onChange={e => setFormData({ ...formData, status: e.target.value })}>
               {['active', 'inactive', 'on-leave'].map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
             </Select>
           </FormControl>
@@ -533,18 +533,18 @@ const TransportPortal: React.FC = () => {
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
           <TextField label={t('transport.vehicleId')} type="number" value={formData.vehicleId ?? ''} onChange={e => setFormData({ ...formData, vehicleId: Number(e.target.value) })} fullWidth required />
           <FormControl fullWidth>
-            <InputLabel>Type</InputLabel>
-            <Select label="Type" value={formData.type ?? ''} onChange={e => setFormData({ ...formData, type: e.target.value })}>
+            <InputLabel>{t('transport.type')}</InputLabel>
+            <Select label={t('transport.type')} value={formData.type ?? ''} onChange={e => setFormData({ ...formData, type: e.target.value })}>
               {['Oil Change', 'Tire Replacement', 'Engine Repair', 'Brake Service', 'AC Service', 'General Inspection', 'Other'].map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
             </Select>
           </FormControl>
-          <TextField label="Description" value={formData.description ?? ''} onChange={e => setFormData({ ...formData, description: e.target.value })} fullWidth multiline rows={2} />
+          <TextField label={t('transport.description')} value={formData.description ?? ''} onChange={e => setFormData({ ...formData, description: e.target.value })} fullWidth multiline rows={2} />
           <TextField label={t('transport.cost')} type="number" value={formData.cost ?? 0} onChange={e => setFormData({ ...formData, cost: Number(e.target.value) })} fullWidth />
-          <TextField label="Date" type="date" value={formData.date ?? ''} onChange={e => setFormData({ ...formData, date: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
-          <TextField label="Next Due Date" type="date" value={formData.nextDueDate ?? ''} onChange={e => setFormData({ ...formData, nextDueDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
+          <TextField label={t('transport.date')} type="date" value={formData.date ?? ''} onChange={e => setFormData({ ...formData, date: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
+          <TextField label={t('transport.nextDueDate')} type="date" value={formData.nextDueDate ?? ''} onChange={e => setFormData({ ...formData, nextDueDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
           <FormControl fullWidth>
-            <InputLabel>Status</InputLabel>
-            <Select label="Status" value={formData.status ?? 'scheduled'} onChange={e => setFormData({ ...formData, status: e.target.value })}>
+            <InputLabel>{t('common.status')}</InputLabel>
+            <Select label={t('common.status')} value={formData.status ?? 'scheduled'} onChange={e => setFormData({ ...formData, status: e.target.value })}>
               {['scheduled', 'in-progress', 'completed', 'cancelled'].map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
             </Select>
           </FormControl>

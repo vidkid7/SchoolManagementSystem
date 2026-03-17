@@ -98,7 +98,7 @@ const LibrarianPortal: React.FC = () => {
         apiClient.get('/api/v1/library/statistics', authHdr(accessToken)).catch(() => ({ data: { data: null } })),
         apiClient.get('/api/v1/library/books?limit=50', authHdr(accessToken)).catch(() => ({ data: { data: [] } })),
         apiClient.get('/api/v1/library/fines?limit=50', authHdr(accessToken)).catch(() => ({ data: { data: [] } })),
-        apiClient.get('/api/v1/users/me', authHdr(accessToken)).catch(() => ({ data: { data: null } })),
+        apiClient.get('/api/v1/auth/me', authHdr(accessToken)).catch(() => ({ data: { data: null } })),
       ]);
       const s = statsRes.data?.data;
       if (s) {
@@ -239,7 +239,7 @@ const LibrarianPortal: React.FC = () => {
               <TableRow sx={{ bgcolor: S.TH_BG }}>
                 <TableCell>{t('common.title')}</TableCell>
                 <TableCell>{t('portal.author')}</TableCell>
-                <TableCell>ISBN</TableCell>
+                <TableCell>{t('library.isbn')}</TableCell>
                 <TableCell>{t('common.category')}</TableCell>
                 <TableCell>{t('portal.copies')}</TableCell>
                 <TableCell>{t('portal.available')}</TableCell>
@@ -295,7 +295,7 @@ const LibrarianPortal: React.FC = () => {
           <Button sx={S.BTN_PRIMARY} startIcon={<CirculationIcon />} onClick={() => navigate(`/library/circulation`)}>
             {t('portal.issueReturnBooks')}
           </Button>
-          <Button sx={S.BTN_OUTLINE} startIcon={<ReservationIcon />} onClick={() => navigate(`/library/reservations`)}>
+          <Button sx={S.BTN_OUTLINE} startIcon={<ReservationIcon />} onClick={() => navigate(`/library/management`)}>
             {t('portal.manageReservations')}
           </Button>
         </Box>

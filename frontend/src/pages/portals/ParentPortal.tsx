@@ -92,13 +92,14 @@ const ParentPortal: React.FC = () => {
   const [behavior, setBehavior] = useState<any[]>([]);
   const [calendar, setCalendar] = useState<any[]>([]);
   const [certificates, setCertificates] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
     apiClient.get('/api/v1/parents/children').then((res) => {
       const list = res.data?.data || [];
       setChildren(list.map((c: any) => ({ id: c.studentId ?? c.id, name: c.name, class: c.class ?? '', section: c.section ?? '', rollNo: c.rollNo ?? 0 })));
-    }).catch(() => setChildren([])).finally(() => setLoading(false));
+    }).catch(() => { setChildren([]); setError(t('portal.failedToLoadData')); }).finally(() => setLoading(false));
   }, []);
 
   const selectedChild = children[selectedChildIndex];
@@ -163,6 +164,7 @@ const ParentPortal: React.FC = () => {
 
   return (
     <Box sx={{ p: 3, mt: { xs: 7, sm: 8 } }}>
+      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
       {/* Header */}
       <Box sx={{ ...S.PAGE_HEADER, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

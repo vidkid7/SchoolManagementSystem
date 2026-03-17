@@ -206,7 +206,7 @@ export default function MunicipalityAdminPortal() {
 
       await apiClient.post('/municipality-admin/schools', payload);
       setSchoolForm(initialSchoolForm);
-      setMessage('School created successfully');
+      setMessage(t('portal.schoolCreatedSuccess'));
       await loadData();
     } catch (err: any) {
       setError(err.response?.data?.message || t('portal.failedToLoadData'));
@@ -222,7 +222,7 @@ export default function MunicipalityAdminPortal() {
       const endpoint = school.isActive ? 'deactivate' : 'activate';
       await apiClient.post(`/municipality-admin/schools/${school.id}/${endpoint}`);
       setMessage(
-        school.isActive ? 'School deactivated successfully' : 'School activated successfully'
+        school.isActive ? t('portal.schoolDeactivatedSuccess') : t('portal.schoolActivatedSuccess')
       );
       await loadData();
     } catch (err: any) {
@@ -252,7 +252,7 @@ export default function MunicipalityAdminPortal() {
         phoneNumber: adminForm.phoneNumber || undefined,
       });
       setAdminDialogOpen(false);
-      setMessage('School admin created successfully');
+      setMessage(t('portal.schoolAdminCreatedSuccess'));
       await loadData();
     } catch (err: any) {
       setError(err.response?.data?.message || t('portal.failedToLoadData'));
@@ -302,7 +302,7 @@ export default function MunicipalityAdminPortal() {
               <CardContent>
                 <Stack direction="row" spacing={1} alignItems="center">
                   <SchoolIcon color="primary" />
-                  <Typography variant="subtitle2">Total Schools</Typography>
+                  <Typography variant="subtitle2">{t('portal.totalSchools')}</Typography>
                 </Stack>
                 <Typography variant="h5" fontWeight={700}>
                   {dashboard.summary.totalSchools}
@@ -315,7 +315,7 @@ export default function MunicipalityAdminPortal() {
               <CardContent>
                 <Stack direction="row" spacing={1} alignItems="center">
                   <CheckCircleIcon color="success" />
-                  <Typography variant="subtitle2">Active Schools</Typography>
+                  <Typography variant="subtitle2">{t('portal.activeSchools')}</Typography>
                 </Stack>
                 <Typography variant="h5" fontWeight={700}>
                   {dashboard.summary.activeSchools}
@@ -326,7 +326,7 @@ export default function MunicipalityAdminPortal() {
           <Grid item xs={12} md={3}>
             <Card>
               <CardContent>
-                <Typography variant="subtitle2">Inactive Schools</Typography>
+                <Typography variant="subtitle2">{t('portal.inactiveSchools')}</Typography>
                 <Typography variant="h5" fontWeight={700}>
                   {dashboard.summary.inactiveSchools}
                 </Typography>
@@ -336,7 +336,7 @@ export default function MunicipalityAdminPortal() {
           <Grid item xs={12} md={3}>
             <Card>
               <CardContent>
-                <Typography variant="subtitle2">Active School Admins</Typography>
+                <Typography variant="subtitle2">{t('portal.activeSchoolAdmins')}</Typography>
                 <Typography variant="h5" fontWeight={700}>
                   {dashboard.summary.activeSchoolAdmins}
                 </Typography>
@@ -353,33 +353,33 @@ export default function MunicipalityAdminPortal() {
               <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
                 <AssessmentIcon color="primary" />
                 <Typography variant="h6" fontWeight={700}>
-                  Reports Overview
+                  {t('portal.reportsOverview')}
                 </Typography>
               </Stack>
               {reports?.userMetrics ? (
                 <Stack spacing={0.75}>
                   <Typography variant="body2">
-                    <strong>Total Users:</strong> {reports.userMetrics.totalUsers}
+                    <strong>{t('portal.totalUsers')}:</strong> {reports.userMetrics.totalUsers}
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Teachers:</strong> {reports.userMetrics.byRole?.teachers}
+                    <strong>{t('portal.teachers')}:</strong> {reports.userMetrics.byRole?.teachers}
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Students:</strong> {reports.userMetrics.byRole?.students}
+                    <strong>{t('portal.studentsLabel')}:</strong> {reports.userMetrics.byRole?.students}
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Parents:</strong> {reports.userMetrics.byRole?.parents}
+                    <strong>{t('portal.parentsLabel')}:</strong> {reports.userMetrics.byRole?.parents}
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Support Staff:</strong> {reports.userMetrics.byRole?.supportStaff}
+                    <strong>{t('portal.supportStaff')}:</strong> {reports.userMetrics.byRole?.supportStaff}
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Suspended/Locked Users:</strong>{' '}
+                    <strong>{t('portal.suspendedLockedUsers')}:</strong>{' '}
                     {(reports.userMetrics.byStatus?.suspended ?? 0) + (reports.userMetrics.byStatus?.locked ?? 0)}
                   </Typography>
                 </Stack>
               ) : (
-                <Typography color="text.secondary">Reports data unavailable.</Typography>
+                <Typography color="text.secondary">{t('portal.reportsDataUnavailable')}</Typography>
               )}
             </CardContent>
           </Card>
@@ -390,7 +390,7 @@ export default function MunicipalityAdminPortal() {
               <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
                 <WarningAmberIcon color="warning" />
                 <Typography variant="h6" fontWeight={700}>
-                  Incidents
+                  {t('portal.incidents')}
                 </Typography>
               </Stack>
               {incidents?.summary ? (
@@ -425,12 +425,12 @@ export default function MunicipalityAdminPortal() {
                       </Box>
                     ))}
                     {(incidents.incidents || []).length === 0 && (
-                      <Typography color="text.secondary">No incidents found.</Typography>
+                      <Typography color="text.secondary">{t('portal.noIncidentsFound')}</Typography>
                     )}
                   </Stack>
                 </>
               ) : (
-                <Typography color="text.secondary">Incident data unavailable.</Typography>
+                <Typography color="text.secondary">{t('portal.incidentDataUnavailable')}</Typography>
               )}
             </CardContent>
           </Card>
@@ -442,13 +442,13 @@ export default function MunicipalityAdminPortal() {
           <Card>
             <CardContent>
               <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-                Add School
+                {t('portal.addSchool')}
               </Typography>
               <Box component="form" onSubmit={handleCreateSchool}>
                 <Stack spacing={1.5}>
                   <TextField
                     required
-                    label="School Name"
+                    label={t('portal.schoolName')}
                     value={schoolForm.schoolNameEn}
                     onChange={(event) =>
                       setSchoolForm((previous) => ({
@@ -458,7 +458,7 @@ export default function MunicipalityAdminPortal() {
                     }
                   />
                   <TextField
-                    label="School Code"
+                    label={t('portal.schoolCode')}
                     value={schoolForm.schoolCode}
                     onChange={(event) =>
                       setSchoolForm((previous) => ({
@@ -468,7 +468,7 @@ export default function MunicipalityAdminPortal() {
                     }
                   />
                   <TextField
-                    label="Address"
+                    label={t('portal.addressLabel')}
                     value={schoolForm.addressEn}
                     onChange={(event) =>
                       setSchoolForm((previous) => ({
@@ -478,7 +478,7 @@ export default function MunicipalityAdminPortal() {
                     }
                   />
                   <TextField
-                    label="Phone"
+                    label={t('portal.phone')}
                     value={schoolForm.phone}
                     onChange={(event) =>
                       setSchoolForm((previous) => ({
@@ -488,7 +488,7 @@ export default function MunicipalityAdminPortal() {
                     }
                   />
                   <TextField
-                    label="Email"
+                    label={t('portal.email')}
                     type="email"
                     value={schoolForm.email}
                     onChange={(event) =>
@@ -504,7 +504,7 @@ export default function MunicipalityAdminPortal() {
                     startIcon={<AddIcon />}
                     disabled={savingSchool || !schoolForm.schoolNameEn.trim()}
                   >
-                    {savingSchool ? 'Saving...' : 'Create School'}
+                    {savingSchool ? t('portal.saving') : t('portal.createSchool')}
                   </Button>
                 </Stack>
               </Box>
@@ -516,15 +516,15 @@ export default function MunicipalityAdminPortal() {
           <Card>
             <CardContent>
               <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-                Schools In Municipality
+                {t('portal.schoolsInMunicipality')}
               </Typography>
               <Table size="small">
                 <TableHead sx={{ bgcolor: S.TH_BG }}>
                   <TableRow>
-                    <TableCell>School</TableCell>
-                    <TableCell>Code</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell align="right">Actions</TableCell>
+                    <TableCell>{t('common.school')}</TableCell>
+                    <TableCell>{t('portal.schoolCode')}</TableCell>
+                    <TableCell>{t('common.status')}</TableCell>
+                    <TableCell align="right">{t('common.actions')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -545,7 +545,7 @@ export default function MunicipalityAdminPortal() {
                         <Chip
                           size="small"
                           color={school.isActive ? 'success' : 'default'}
-                          label={school.isActive ? 'Active' : 'Inactive'}
+                          label={school.isActive ? t('portal.active') : t('portal.inactive')}
                         />
                       </TableCell>
                       <TableCell align="right" sx={S.TD}>
@@ -556,7 +556,7 @@ export default function MunicipalityAdminPortal() {
                             startIcon={<PersonAddIcon />}
                             onClick={() => openCreateAdminDialog(school)}
                           >
-                            Add Admin
+                            {t('portal.addAdmin')}
                           </Button>
                           <Button
                             size="small"
@@ -564,7 +564,7 @@ export default function MunicipalityAdminPortal() {
                             variant="contained" sx={S.BTN_PRIMARY}
                             onClick={() => void toggleSchoolStatus(school)}
                           >
-                            {school.isActive ? 'Deactivate' : 'Activate'}
+                            {school.isActive ? t('portal.deactivate') : t('portal.activate')}
                           </Button>
                         </Stack>
                       </TableCell>
@@ -573,7 +573,7 @@ export default function MunicipalityAdminPortal() {
                   {schools.length === 0 && (
                     <TableRow sx={S.TR_HOVER}>
                       <TableCell colSpan={4} sx={S.TD}>
-                        <Typography color="text.secondary">No schools found for this municipality.</Typography>
+                        <Typography color="text.secondary">{t('portal.noSchoolsFound')}</Typography>
                       </TableCell>
                     </TableRow>
                   )}
@@ -585,7 +585,7 @@ export default function MunicipalityAdminPortal() {
       </Grid>
 
       <Dialog open={adminDialogOpen} onClose={() => setAdminDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Create School Admin</DialogTitle>
+        <DialogTitle>{t('portal.createSchoolAdmin')}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             {selectedSchool ? `School: ${selectedSchool.schoolNameEn}` : ''}
@@ -593,7 +593,7 @@ export default function MunicipalityAdminPortal() {
           <Stack spacing={1.5}>
             <TextField
               required
-              label="Username"
+              label={t('portal.username')}
               value={adminForm.username}
               onChange={(event) =>
                 setAdminForm((previous) => ({
@@ -604,7 +604,7 @@ export default function MunicipalityAdminPortal() {
             />
             <TextField
               required
-              label="Email"
+              label={t('portal.email')}
               type="email"
               value={adminForm.email}
               onChange={(event) =>
@@ -616,7 +616,7 @@ export default function MunicipalityAdminPortal() {
             />
             <TextField
               required
-              label="Password"
+              label={t('portal.password')}
               type="password"
               value={adminForm.password}
               onChange={(event) =>
@@ -627,7 +627,7 @@ export default function MunicipalityAdminPortal() {
               }
             />
             <TextField
-              label="Phone Number"
+              label={t('portal.phone')}
               value={adminForm.phoneNumber}
               onChange={(event) =>
                 setAdminForm((previous) => ({
@@ -639,7 +639,7 @@ export default function MunicipalityAdminPortal() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAdminDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setAdminDialogOpen(false)}>{t('common.cancel')}</Button>
           <Button
             sx={S.BTN_PRIMARY}
             onClick={() => void handleCreateSchoolAdmin()}
@@ -650,7 +650,7 @@ export default function MunicipalityAdminPortal() {
               !adminForm.password.trim()
             }
           >
-            {savingAdmin ? 'Creating...' : 'Create Admin'}
+            {savingAdmin ? t('portal.creating') : t('portal.createAdmin')}
           </Button>
         </DialogActions>
       </Dialog>

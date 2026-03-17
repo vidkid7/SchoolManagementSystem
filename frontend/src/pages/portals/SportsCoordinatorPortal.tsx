@@ -115,7 +115,7 @@ const SportsCoordinatorPortal: React.FC = () => {
         apiClient.get('/api/v1/sports/teams?limit=50', authHdr(accessToken)).catch(() => ({ data: { data: [] } })),
         apiClient.get('/api/v1/sports/tournaments?limit=50', authHdr(accessToken)).catch(() => ({ data: { data: [] } })),
         apiClient.get('/api/v1/sports/achievements?limit=50', authHdr(accessToken)).catch(() => ({ data: { data: [] } })),
-        apiClient.get('/api/v1/users/me', authHdr(accessToken)).catch(() => ({ data: { data: null } })),
+        apiClient.get('/api/v1/auth/me', authHdr(accessToken)).catch(() => ({ data: { data: null } })),
       ]);
       const s = statsRes.data?.data;
       if (s) {

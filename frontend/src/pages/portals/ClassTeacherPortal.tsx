@@ -117,7 +117,7 @@ const ClassTeacherPortal: React.FC = () => {
       setPendingTasks(Array.isArray(tasks) ? tasks : tasks?.tasks ?? []);
       // Try to get profile
       try {
-        const profileRes = await apiClient.get('/api/v1/users/me', authHdr(accessToken));
+        const profileRes = await apiClient.get('/api/v1/auth/me', authHdr(accessToken));
         setProfile(profileRes.data?.data ?? null);
       } catch { /* ignore */ }
     } catch {
@@ -264,7 +264,7 @@ const ClassTeacherPortal: React.FC = () => {
               </Grid>
             </Grid>
         </Box>
-        <Button sx={S.BTN_PRIMARY} startIcon={<AttendanceIcon />} onClick={() => navigate('/attendance/marking')}>
+        <Button sx={S.BTN_PRIMARY} startIcon={<AttendanceIcon />} onClick={() => navigate('/attendance/mark')}>
           {t('portal.markAttendance')}
         </Button>
       </TabPanel>
@@ -373,7 +373,7 @@ const ClassTeacherPortal: React.FC = () => {
                 <List dense>
                   {[
                     { label: t('portal.myClasses'), path: '/teacher/classes', icon: <SchoolIcon color="primary" /> },
-                    { label: t('portal.attendance'), path: '/attendance/marking', icon: <AttendanceIcon color="primary" /> },
+                    { label: t('portal.attendance'), path: '/attendance/mark', icon: <AttendanceIcon color="primary" /> },
                     { label: t('portal.assignments'), path: '/teacher/assignments', icon: <AssignmentIcon color="primary" /> },
                     { label: t('portal.lessonPlans'), path: '/teacher/lesson-planning', icon: <LessonIcon color="primary" /> },
                     { label: t('communication.messages'), path: '/communication/messages', icon: <MessageIcon color="primary" /> },

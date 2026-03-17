@@ -110,7 +110,8 @@
       "friday": "Friday",
       "saturday": "Saturday",
       "sunday": "Sunday"
-    }
+    },
+    "school": "School"
   },
   "auth": {
     "login": "Sign In",
@@ -834,7 +835,11 @@
       "classTeacher": "Class Teacher",
       "subjectTeacher": "Subject Teacher",
       "accountant": "Accountant",
-      "librarian": "Librarian"
+      "librarian": "Librarian",
+      "teacher": "Teacher",
+      "principal": "Principal",
+      "vicePrincipal": "Vice Principal",
+      "supportStaff": "Support Staff"
     },
     "classTeacherView": {
       "subtitle": "View class teacher information and contact details",
@@ -3228,7 +3233,48 @@
     "circulationReportDesc": "View book issue/return statistics",
     "goToAssignments": "Go to Assignments",
     "parentPortal": "Parent Portal",
-    "upcomingTournaments": "Upcoming Tournaments"
+    "upcomingTournaments": "Upcoming Tournaments",
+    "schoolCreatedSuccess": "School created successfully",
+    "schoolDeactivatedSuccess": "School deactivated successfully",
+    "schoolActivatedSuccess": "School activated successfully",
+    "schoolAdminCreatedSuccess": "School admin created successfully",
+    "reportsOverview": "Reports Overview",
+    "totalUsers": "Total Users",
+    "studentsLabel": "Students",
+    "parentsLabel": "Parents",
+    "supportStaff": "Support Staff",
+    "suspendedLockedUsers": "Suspended/Locked Users",
+    "reportsDataUnavailable": "Reports data unavailable.",
+    "noIncidentsFound": "No incidents found.",
+    "incidentDataUnavailable": "Incident data unavailable.",
+    "addSchool": "Add School",
+    "schoolName": "School Name",
+    "schoolCode": "School Code",
+    "addressLabel": "Address",
+    "password": "Password",
+    "schoolsInMunicipality": "Schools In Municipality",
+    "addAdmin": "Add Admin",
+    "inactive": "Inactive",
+    "createSchoolAdmin": "Create School Admin",
+    "creating": "Creating...",
+    "createAdmin": "Create Admin",
+    "saving": "Saving...",
+    "noSchoolsFound": "No schools found for this municipality.",
+    "confirmDeleteRoom": "Delete this room?",
+    "confirmDeleteMenu": "Delete this menu?",
+    "confirmDeleteItem": "Delete this item?",
+    "confirmDeleteRoute": "Delete this route?",
+    "confirmDeleteDriver": "Delete this driver?",
+    "checkOut": "Check Out",
+    "approve": "Approve",
+    "reject": "Reject",
+    "confirmDeleteFeeStructure": "Delete this fee structure? This cannot be undone.",
+    "mode": "Mode",
+    "testSandbox": "Test / Sandbox",
+    "live": "Live",
+    "activeSchoolAdmins": "Active School Admins",
+    "activate": "Activate",
+    "deactivate": "Deactivate"
   },
   "hostel": {
     "rooms": "Rooms",
@@ -3283,7 +3329,8 @@
     "itemName": "Item Name",
     "minStock": "Min Stock",
     "location": "Location",
-    "roomNumber": "Room Number"
+    "roomNumber": "Room Number",
+    "type": "Type"
   },
   "transport": {
     "routes": "Routes",
@@ -3332,7 +3379,23 @@
     "attendanceDesc": "Use the attendance marking section to record daily transport attendance. Route-wise attendance reports will appear here once students are linked to routes.",
     "estimatedTime": "Est. Time",
     "routeId": "Route ID",
-    "address": "Address"
+    "address": "Address",
+    "phone": "Phone",
+    "description": "Description",
+    "date": "Date",
+    "nextDueDate": "Next Due Date",
+    "routeIdOptional": "Route ID (optional)",
+    "estimatedPickupTime": "Estimated Pickup Time (HH:MM)",
+    "assignedVehicleIdOptional": "Assigned Vehicle ID (optional)",
+    "driverName": "Driver Name",
+    "driverPhone": "Driver Phone",
+    "departureTime": "Departure Time (HH:MM)",
+    "arrivalTime": "Arrival Time (HH:MM)",
+    "vehicleNumber": "Vehicle Number",
+    "capacity": "Capacity",
+    "insuranceExpiry": "Insurance Expiry",
+    "registrationExpiry": "Registration Expiry",
+    "stopsCommaSeparated": "Stops (comma-separated)"
   },
   "notifications": {
     "title": "Notification Center",

@@ -318,7 +318,7 @@ const AccountantPortal: React.FC = () => {
   };
 
   const handleDeleteFeeStructure = async (id: number) => {
-    if (!accessToken || !window.confirm('Delete this fee structure? This cannot be undone.')) return;
+    if (!accessToken || !window.confirm(t('portal.confirmDeleteFeeStructure'))) return;
     try {
       await (apiClient as any).delete(`/api/v1/finance/fee-structures/${id}`, authHdr(accessToken));
       setSuccess(t('finance.feeStructureDeleted') || 'Fee structure deleted');
@@ -967,7 +967,7 @@ const AccountantPortal: React.FC = () => {
                     </Box>
                     <StatusBadge status={cfg.enabled ? 'active' : 'inactive'} />
                   </Box>
-                  <Typography variant="caption" sx={{ color: theme.palette.text.disabled }}>Mode: {cfg.testMode ? 'Test / Sandbox' : 'Live'}</Typography>
+                  <Typography variant="caption" sx={{ color: theme.palette.text.disabled }}>{t('portal.mode')}: {cfg.testMode ? t('portal.testSandbox') : t('portal.live')}</Typography>
                 </CardContent>
               </Card>
             </Grid>

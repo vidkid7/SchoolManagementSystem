@@ -138,7 +138,7 @@ const HostelPortal: React.FC = () => {
   };
 
   const handleDeleteRoom = async (id: number) => {
-    if (!window.confirm('Delete this room?')) return;
+    if (!window.confirm(t('portal.confirmDeleteRoom'))) return;
     try {
       await apiClient.delete(`/api/v1/hostel/rooms/${id}`, authHdr(accessToken!));
       loadData();
@@ -193,7 +193,7 @@ const HostelPortal: React.FC = () => {
   };
 
   const handleDeleteMessMenu = async (id: number) => {
-    if (!window.confirm('Delete this menu?')) return;
+    if (!window.confirm(t('portal.confirmDeleteMenu'))) return;
     try {
       await apiClient.delete(`/api/v1/hostel/mess-menu/${id}`, authHdr(accessToken!));
       loadData();
@@ -212,7 +212,7 @@ const HostelPortal: React.FC = () => {
   };
 
   const handleDeleteInventory = async (id: number) => {
-    if (!window.confirm('Delete this item?')) return;
+    if (!window.confirm(t('portal.confirmDeleteItem'))) return;
     try {
       await apiClient.delete(`/api/v1/hostel/inventory/${id}`, authHdr(accessToken!));
       loadData();
@@ -295,8 +295,8 @@ const HostelPortal: React.FC = () => {
                   <TableCell>{r.occupied}</TableCell>
                   <TableCell><Chip label={r.status} size="small" color={r.status === 'available' ? 'success' : r.status === 'occupied' ? 'error' : 'default'} /></TableCell>
                   <TableCell>
-                    <Tooltip title="Edit"><IconButton size="small" onClick={() => { setEditRoom(r); setFormData({ ...r }); setRoomDialog(true); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
-                    <Tooltip title="Delete"><IconButton size="small" color="error" onClick={() => handleDeleteRoom(r.id)}><CancelIcon fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title={t('common.edit')}><IconButton size="small" onClick={() => { setEditRoom(r); setFormData({ ...r }); setRoomDialog(true); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title={t('common.delete')}><IconButton size="small" color="error" onClick={() => handleDeleteRoom(r.id)}><CancelIcon fontSize="small" /></IconButton></Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
@@ -383,7 +383,7 @@ const HostelPortal: React.FC = () => {
                   <TableCell><Chip label={v.status} size="small" color={v.status === 'checked-in' ? 'success' : 'default'} /></TableCell>
                   <TableCell>
                     {v.status === 'checked-in' && (
-                      <Tooltip title="Check Out"><IconButton size="small" color="warning" onClick={() => handleCheckoutVisitor(v.id)}><CheckoutIcon fontSize="small" /></IconButton></Tooltip>
+                      <Tooltip title={t('portal.checkOut')}><IconButton size="small" color="warning" onClick={() => handleCheckoutVisitor(v.id)}><CheckoutIcon fontSize="small" /></IconButton></Tooltip>
                     )}
                   </TableCell>
                 </TableRow>
@@ -415,8 +415,8 @@ const HostelPortal: React.FC = () => {
                   <TableCell>
                     {l.status === 'pending' && (
                       <>
-                        <Tooltip title="Approve"><IconButton size="small" color="success" onClick={() => handleProcessLeave(l.id, 'approve')}><CheckCircleOutline fontSize="small" /></IconButton></Tooltip>
-                        <Tooltip title="Reject"><IconButton size="small" color="error" onClick={() => handleProcessLeave(l.id, 'reject')}><CancelIcon fontSize="small" /></IconButton></Tooltip>
+                        <Tooltip title={t('portal.approve')}><IconButton size="small" color="success" onClick={() => handleProcessLeave(l.id, 'approve')}><CheckCircleOutline fontSize="small" /></IconButton></Tooltip>
+                        <Tooltip title={t('portal.reject')}><IconButton size="small" color="error" onClick={() => handleProcessLeave(l.id, 'reject')}><CancelIcon fontSize="small" /></IconButton></Tooltip>
                       </>
                     )}
                   </TableCell>
@@ -478,8 +478,8 @@ const HostelPortal: React.FC = () => {
                   <TableCell>{Array.isArray(m.items) ? m.items.join(', ') : m.items}</TableCell>
                   <TableCell>{m.specialNotes || '—'}</TableCell>
                   <TableCell>
-                    <Tooltip title="Edit"><IconButton size="small" onClick={() => { setEditMenu(m); setFormData({ ...m, items: Array.isArray(m.items) ? m.items.join(', ') : m.items }); setMessDialog(true); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
-                    <Tooltip title="Delete"><IconButton size="small" color="error" onClick={() => handleDeleteMessMenu(m.id)}><DeleteIcon fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title={t('common.edit')}><IconButton size="small" onClick={() => { setEditMenu(m); setFormData({ ...m, items: Array.isArray(m.items) ? m.items.join(', ') : m.items }); setMessDialog(true); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title={t('common.delete')}><IconButton size="small" color="error" onClick={() => handleDeleteMessMenu(m.id)}><DeleteIcon fontSize="small" /></IconButton></Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
@@ -512,8 +512,8 @@ const HostelPortal: React.FC = () => {
                   <TableCell>{i.minStock}</TableCell>
                   <TableCell>{i.location || '—'}</TableCell>
                   <TableCell>
-                    <Tooltip title="Edit"><IconButton size="small" onClick={() => { setEditInventory(i); setFormData({ ...i }); setInventoryDialog(true); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
-                    <Tooltip title="Delete"><IconButton size="small" color="error" onClick={() => handleDeleteInventory(i.id)}><DeleteIcon fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title={t('common.edit')}><IconButton size="small" onClick={() => { setEditInventory(i); setFormData({ ...i }); setInventoryDialog(true); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title={t('common.delete')}><IconButton size="small" color="error" onClick={() => handleDeleteInventory(i.id)}><DeleteIcon fontSize="small" /></IconButton></Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
@@ -568,16 +568,16 @@ const HostelPortal: React.FC = () => {
           <TextField label={t('hostel.roomNumber')} value={formData.roomNumber ?? ''} onChange={e => setFormData({ ...formData, roomNumber: e.target.value })} fullWidth required />
           <TextField label={t('hostel.floor')} type="number" value={formData.floor ?? 1} onChange={e => setFormData({ ...formData, floor: Number(e.target.value) })} fullWidth />
           <FormControl fullWidth>
-            <InputLabel>Type</InputLabel>
-            <Select label="Type" value={formData.type ?? ''} onChange={e => setFormData({ ...formData, type: e.target.value })}>
+            <InputLabel>{t('common.type')}</InputLabel>
+            <Select label={t('common.type')} value={formData.type ?? ''}onChange={e => setFormData({ ...formData, type: e.target.value })}>
               {['Single', 'Double', 'Triple', 'Dormitory'].map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
             </Select>
           </FormControl>
           <TextField label={t('hostel.capacity')} type="number" value={formData.capacity ?? 2} onChange={e => setFormData({ ...formData, capacity: Number(e.target.value) })} fullWidth />
-          <TextField label="Description" value={formData.description ?? ''} onChange={e => setFormData({ ...formData, description: e.target.value })} fullWidth multiline rows={2} />
+          <TextField label={t('hostel.description')} value={formData.description ?? ''} onChange={e => setFormData({ ...formData, description: e.target.value })} fullWidth multiline rows={2} />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setRoomDialog(false); setEditRoom(null); setFormData({}); }}>{t('common.cancel')}</Button>
+          <Button onClick={() => { setRoomDialog(false);setEditRoom(null); setFormData({}); }}>{t('common.cancel')}</Button>
           <Button sx={S.BTN_PRIMARY} onClick={handleSaveRoom}>{editRoom ? t('common.update') : t('common.create')}</Button>
         </DialogActions>
       </Dialog>
@@ -586,9 +586,9 @@ const HostelPortal: React.FC = () => {
       <Dialog open={disciplineDialog} onClose={() => { setDisciplineDialog(false); setFormData({}); }} maxWidth="sm" fullWidth>
         <DialogTitle>{t('hostel.recordDisciplineViolation')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-          <TextField label="Student ID" type="number" value={formData.studentId ?? ''} onChange={e => setFormData({ ...formData, studentId: Number(e.target.value) })} fullWidth required />
-          <TextField label={t('hostel.violation')} value={formData.violation ?? ''} onChange={e => setFormData({ ...formData, violation: e.target.value })} fullWidth required />
-          <TextField label="Description" value={formData.description ?? ''} onChange={e => setFormData({ ...formData, description: e.target.value })} fullWidth multiline rows={2} />
+          <TextField label={t('hostel.studentId')} type="number" value={formData.studentId ?? ''} onChange={e => setFormData({ ...formData, studentId: Number(e.target.value) })} fullWidth required />
+          <TextField label={t('hostel.violation')}value={formData.violation ?? ''} onChange={e => setFormData({ ...formData, violation: e.target.value })} fullWidth required />
+          <TextField label={t('hostel.description')} value={formData.description ?? ''} onChange={e => setFormData({ ...formData, description: e.target.value })} fullWidth multiline rows={2} />
           <FormControl fullWidth>
             <InputLabel>{t('hostel.severity')}</InputLabel>
             <Select label={t('hostel.severity')} value={formData.severity ?? 'minor'} onChange={e => setFormData({ ...formData, severity: e.target.value })}>
@@ -608,8 +608,8 @@ const HostelPortal: React.FC = () => {
         <DialogTitle>{t('hostel.registerVisitor')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
           <TextField label={t('hostel.visitorName')} value={formData.visitorName ?? ''} onChange={e => setFormData({ ...formData, visitorName: e.target.value })} fullWidth required />
-          <TextField label="Student ID" type="number" value={formData.studentId ?? ''} onChange={e => setFormData({ ...formData, studentId: Number(e.target.value) })} fullWidth required />
-          <TextField label={t('hostel.relation')} value={formData.relation ?? ''} onChange={e => setFormData({ ...formData, relation: e.target.value })} fullWidth />
+          <TextField label={t('hostel.studentId')} type="number" value={formData.studentId ?? ''} onChange={e => setFormData({ ...formData, studentId: Number(e.target.value) })} fullWidth required />
+          <TextField label={t('hostel.relation')}value={formData.relation ?? ''} onChange={e => setFormData({ ...formData, relation: e.target.value })} fullWidth />
           <TextField label={t('common.phone')} value={formData.phone ?? ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} fullWidth />
           <TextField label={t('hostel.purpose')} value={formData.purpose ?? ''} onChange={e => setFormData({ ...formData, purpose: e.target.value })} fullWidth multiline rows={2} />
         </DialogContent>
@@ -623,8 +623,8 @@ const HostelPortal: React.FC = () => {
       <Dialog open={incidentDialog} onClose={() => { setIncidentDialog(false); setFormData({}); }} maxWidth="sm" fullWidth>
         <DialogTitle>{t('hostel.recordIncident')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-          <TextField label="Title" value={formData.title ?? ''} onChange={e => setFormData({ ...formData, title: e.target.value })} fullWidth required />
-          <TextField label="Description" value={formData.description ?? ''} onChange={e => setFormData({ ...formData, description: e.target.value })} fullWidth multiline rows={3} required />
+          <TextField label={t('common.title')} value={formData.title ?? ''} onChange={e => setFormData({ ...formData, title: e.target.value })} fullWidth required />
+          <TextField label={t('hostel.description')} value={formData.description ?? ''} onChange={e => setFormData({ ...formData, description: e.target.value })} fullWidth multiline rows={3} required />
           <FormControl fullWidth>
             <InputLabel>{t('hostel.severity')}</InputLabel>
             <Select label={t('hostel.severity')} value={formData.severity ?? 'low'} onChange={e => setFormData({ ...formData, severity: e.target.value })}>
@@ -644,14 +644,14 @@ const HostelPortal: React.FC = () => {
         <DialogTitle>{editMenu ? t('hostel.editMenu') : t('hostel.createMessMenu')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
           <FormControl fullWidth>
-            <InputLabel>Day</InputLabel>
-            <Select label="Day" value={formData.day ?? ''} onChange={e => setFormData({ ...formData, day: e.target.value })}>
+            <InputLabel>{t('portal.day')}</InputLabel>
+            <Select label={t('portal.day')}value={formData.day ?? ''} onChange={e => setFormData({ ...formData, day: e.target.value })}>
               {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => <MenuItem key={d} value={d}>{d}</MenuItem>)}
             </Select>
           </FormControl>
           <FormControl fullWidth>
-            <InputLabel>Meal Type</InputLabel>
-            <Select label="Meal Type" value={formData.mealType ?? ''} onChange={e => setFormData({ ...formData, mealType: e.target.value })}>
+            <InputLabel>{t('hostel.mealType')}</InputLabel>
+            <Select label={t('hostel.mealType')}value={formData.mealType ?? ''} onChange={e => setFormData({ ...formData, mealType: e.target.value })}>
               {['breakfast', 'lunch', 'dinner', 'snack'].map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
             </Select>
           </FormControl>
@@ -670,13 +670,13 @@ const HostelPortal: React.FC = () => {
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
           <TextField label={t('hostel.itemName')} value={formData.name ?? ''} onChange={e => setFormData({ ...formData, name: e.target.value })} fullWidth required />
           <FormControl fullWidth>
-            <InputLabel>Category</InputLabel>
-            <Select label="Category" value={formData.category ?? ''} onChange={e => setFormData({ ...formData, category: e.target.value })}>
+            <InputLabel>{t('hostel.category')}</InputLabel>
+            <Select label={t('hostel.category')}value={formData.category ?? ''} onChange={e => setFormData({ ...formData, category: e.target.value })}>
               {['Kitchen', 'Cleaning', 'Furniture', 'Bedding', 'Electrical', 'Stationery', 'Other'].map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
             </Select>
           </FormControl>
-          <TextField label="Quantity" type="number" value={formData.quantity ?? 0} onChange={e => setFormData({ ...formData, quantity: Number(e.target.value) })} fullWidth />
-          <TextField label="Unit" value={formData.unit ?? 'pcs'} onChange={e => setFormData({ ...formData, unit: e.target.value })} fullWidth />
+          <TextField label={t('hostel.quantity')} type="number" value={formData.quantity ?? 0} onChange={e => setFormData({ ...formData, quantity: Number(e.target.value) })} fullWidth />
+          <TextField label={t('hostel.unit')} value={formData.unit ?? 'pcs'} onChange={e => setFormData({ ...formData, unit: e.target.value })} fullWidth />
           <TextField label={t('hostel.minStock')} type="number" value={formData.minStock ?? 0} onChange={e => setFormData({ ...formData, minStock: Number(e.target.value) })} fullWidth />
           <TextField label={t('hostel.location')} value={formData.location ?? ''} onChange={e => setFormData({ ...formData, location: e.target.value })} fullWidth />
         </DialogContent>

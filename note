@@ -252,7 +252,7 @@ API Base:    https://schoolmanagementsystem-production-4bb7.up.railway.app/api/v
 11  | Non_Teaching_Staff   | nts_school          | Staff@123         | ✅ active
 12  | Municipality_Admin   | municipalityadmin   | Municipality@123  | ✅ active
 13  | Student              | student_0001        | Student@123       | ✅ active
-14  | Parent               | parent_0001         | Parent@123        | ✅ active
+14  | Parent               | parent_0001         | 41        | ✅ active
 
 Total: 150 students (student_0001 to student_0150)
 Total: 50 parents (parent_0001 to parent_0150, every 3rd student has a parent)

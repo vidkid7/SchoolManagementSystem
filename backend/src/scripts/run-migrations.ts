@@ -22,6 +22,7 @@ import * as createSchoolConfigTable from '../migrations/032-create-school-config
 import * as addMunicipalityArchitecture from '../migrations/20260308000001-add-municipality-architecture';
 import * as addSchoolTenantIsolation from '../migrations/20260308000002-add-school-tenant-isolation';
 import * as addSchoolConfigFormatColumns from '../migrations/20260308000003-add-school-config-format-columns';
+import * as createArchiveTables from '../migrations/033-create-archive-tables';
 
 /**
  * Migration Runner
@@ -116,6 +117,11 @@ const migrations: Migration[] = [
     name: '20260308000003-add-school-config-format-columns',
     up: addSchoolConfigFormatColumns.up,
     down: addSchoolConfigFormatColumns.down
+  },
+  {
+    name: '033-create-archive-tables',
+    up: (createArchiveTables as any).default.up,
+    down: (createArchiveTables as any).default.down
   }
 ];
 

@@ -105,7 +105,7 @@ const ECACoordinatorPortal: React.FC = () => {
         apiClient.get('/api/v1/eca?limit=50', authHdr(accessToken)).catch(() => ({ data: { data: [] } })),
         apiClient.get('/api/v1/eca/events?limit=50', authHdr(accessToken)).catch(() => ({ data: { data: [] } })),
         apiClient.get('/api/v1/eca/achievements?limit=50', authHdr(accessToken)).catch(() => ({ data: { data: [] } })),
-        apiClient.get('/api/v1/users/me', authHdr(accessToken)).catch(() => ({ data: { data: null } })),
+        apiClient.get('/api/v1/auth/me', authHdr(accessToken)).catch(() => ({ data: { data: null } })),
       ]);
       const s = statsRes.data?.data;
       if (s) {

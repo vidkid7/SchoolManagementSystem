@@ -99,7 +99,7 @@ const DepartmentHeadPortal: React.FC = () => {
       setPerformance(Array.isArray(perf) ? perf : perf?.classes ?? []);
       // Try to get profile
       try {
-        const profileRes = await apiClient.get('/api/v1/users/me', authHdr(accessToken));
+        const profileRes = await apiClient.get('/api/v1/auth/me', authHdr(accessToken));
         setProfile(profileRes.data?.data ?? null);
       } catch { /* ignore */ }
     } catch {

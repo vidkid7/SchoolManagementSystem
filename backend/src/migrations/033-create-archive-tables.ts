@@ -12,10 +12,6 @@ export default {
       academic_year_id: {
         type: DataTypes.INTEGER.UNSIGNED,
         allowNull: false,
-        references: {
-          model: 'academic_years',
-          key: 'id',
-        },
       },
       academic_year_name: {
         type: DataTypes.STRING(100),
@@ -28,10 +24,6 @@ export default {
       archived_by: {
         type: DataTypes.INTEGER.UNSIGNED,
         allowNull: false,
-        references: {
-          model: 'users',
-          key: 'id',
-        },
       },
       status: {
         type: DataTypes.ENUM('in_progress', 'completed', 'failed', 'restored'),

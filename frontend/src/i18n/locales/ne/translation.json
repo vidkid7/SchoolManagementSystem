@@ -110,7 +110,8 @@
       "friday": "शुक्रवार",
       "saturday": "शनिवार",
       "sunday": "आइतवार"
-    }
+    },
+    "school": "विद्यालय"
   },
   "auth": {
     "login": "लगइन",
@@ -874,7 +875,11 @@
       "classTeacher": "कक्षा शिक्षक",
       "subjectTeacher": "विषय शिक्षक",
       "accountant": "लेखापाल",
-      "librarian": "पुस्तकालय व्यवस्थापक"
+      "librarian": "पुस्तकालय व्यवस्थापक",
+      "teacher": "शिक्षक",
+      "principal": "प्रधानाध्यापक",
+      "vicePrincipal": "उपप्रधानाध्यापक",
+      "supportStaff": "सहायक कर्मचारी"
     },
     "classTeacherView": {
       "subtitle": "कक्षा शिक्षक जानकारी र सम्पर्क विवरण हेर्नुहोस्",
@@ -3119,7 +3124,48 @@
     "currentlyIssued": "हाल जारी",
     "deptMessagesDesc": "आफ्नो विभागका शिक्षकहरूलाई सन्देश पठाउनुहोस्।",
     "viewAllStaff": "सबै कर्मचारी हेर्नुहोस्",
-    "updateStatus": "स्थिति अपडेट"
+    "updateStatus": "स्थिति अपडेट",
+    "schoolCreatedSuccess": "विद्यालय सफलतापूर्वक सिर्जना गरियो",
+    "schoolDeactivatedSuccess": "विद्यालय सफलतापूर्वक निष्क्रिय गरियो",
+    "schoolActivatedSuccess": "विद्यालय सफलतापूर्वक सक्रिय गरियो",
+    "schoolAdminCreatedSuccess": "विद्यालय प्रशासक सफलतापूर्वक सिर्जना गरियो",
+    "reportsOverview": "प्रतिवेदन अवलोकन",
+    "totalUsers": "कुल प्रयोगकर्ताहरू",
+    "studentsLabel": "विद्यार्थीहरू",
+    "parentsLabel": "अभिभावकहरू",
+    "supportStaff": "सहयोगी कर्मचारी",
+    "suspendedLockedUsers": "निलम्बित/लक गरिएका प्रयोगकर्ताहरू",
+    "reportsDataUnavailable": "प्रतिवेदन डाटा उपलब्ध छैन।",
+    "noIncidentsFound": "कुनै घटना भेटिएन।",
+    "incidentDataUnavailable": "घटना डाटा उपलब्ध छैन।",
+    "addSchool": "विद्यालय थप्नुहोस्",
+    "schoolName": "विद्यालयको नाम",
+    "schoolCode": "विद्यालय कोड",
+    "addressLabel": "ठेगाना",
+    "password": "पासवर्ड",
+    "schoolsInMunicipality": "नगरपालिकाका विद्यालयहरू",
+    "addAdmin": "प्रशासक थप्नुहोस्",
+    "inactive": "निष्क्रिय",
+    "createSchoolAdmin": "विद्यालय प्रशासक सिर्जना गर्नुहोस्",
+    "creating": "सिर्जना गर्दै...",
+    "createAdmin": "प्रशासक सिर्जना गर्नुहोस्",
+    "saving": "सुरक्षित गर्दै...",
+    "noSchoolsFound": "यस नगरपालिकामा कुनै विद्यालय भेटिएन।",
+    "confirmDeleteRoom": "यो कोठा मेटाउनुहुन्छ?",
+    "confirmDeleteMenu": "यो मेनु मेटाउनुहुन्छ?",
+    "confirmDeleteItem": "यो वस्तु मेटाउनुहुन्छ?",
+    "confirmDeleteRoute": "यो मार्ग मेटाउनुहुन्छ?",
+    "confirmDeleteDriver": "यो चालक मेटाउनुहुन्छ?",
+    "checkOut": "चेक आउट",
+    "approve": "स्वीकृत गर्नुहोस्",
+    "reject": "अस्वीकार गर्नुहोस्",
+    "confirmDeleteFeeStructure": "यो शुल्क संरचना मेटाउनुहुन्छ? यो पूर्ववत गर्न सकिँदैन।",
+    "mode": "मोड",
+    "testSandbox": "परीक्षण / स्यान्डबक्स",
+    "live": "लाइभ",
+    "activeSchoolAdmins": "सक्रिय विद्यालय प्रशासकहरू",
+    "activate": "सक्रिय गर्नुहोस्",
+    "deactivate": "निष्क्रिय गर्नुहोस्"
   },
   "hostel": {
     "rooms": "कोठाहरू",
@@ -3174,7 +3220,8 @@
     "itemName": "सामानको नाम",
     "minStock": "न्यूनतम स्टक",
     "location": "स्थान",
-    "roomNumber": "कोठा नम्बर"
+    "roomNumber": "कोठा नम्बर",
+    "type": "प्रकार"
   },
   "transport": {
     "routes": "मार्गहरू",
@@ -3223,7 +3270,23 @@
     "attendanceDesc": "दैनिक यातायात उपस्थिति रेकर्ड गर्न उपस्थिति चिन्ह लगाउने खण्ड प्रयोग गर्नुहोस्।",
     "estimatedTime": "अनुमानित समय",
     "routeId": "मार्ग ID",
-    "address": "ठेगाना"
+    "address": "ठेगाना",
+    "phone": "फोन",
+    "description": "विवरण",
+    "date": "मिति",
+    "nextDueDate": "अर्को म्याद मिति",
+    "routeIdOptional": "मार्ग आईडी (वैकल्पिक)",
+    "estimatedPickupTime": "अनुमानित पिकअप समय (HH:MM)",
+    "assignedVehicleIdOptional": "तोकिएको सवारी आईडी (वैकल्पिक)",
+    "driverName": "चालकको नाम",
+    "driverPhone": "चालकको फोन",
+    "departureTime": "प्रस्थान समय (HH:MM)",
+    "arrivalTime": "आगमन समय (HH:MM)",
+    "vehicleNumber": "सवारी नम्बर",
+    "capacity": "क्षमता",
+    "insuranceExpiry": "बीमा म्याद",
+    "registrationExpiry": "दर्ता म्याद",
+    "stopsCommaSeparated": "बिसौनीहरू (अल्पविरामले छुट्याइएको)"
   },
   "notifications": {
     "title": "सूचना केन्द्र",
