@@ -1,0 +1,10 @@
+src/pages/portals/LibrarianPortal.tsx(129,6): error TS17008: JSX element 'Box' has no corresponding closing tag.
+src/pages/portals/LibrarianPortal.tsx(175,8): error TS17008: JSX element 'TabPanel' has no corresponding closing tag.
+src/pages/portals/LibrarianPortal.tsx(202,92): error TS17014: JSX fragment has no corresponding closing tag.
+src/pages/portals/LibrarianPortal.tsx(205,14): error TS17008: JSX element 'TableContainer' has no corresponding closing tag.
+src/pages/portals/LibrarianPortal.tsx(206,16): error TS17008: JSX element 'Table' has no corresponding closing tag.
+src/pages/portals/LibrarianPortal.tsx(216,18): error TS17008: JSX element 'TableBody' has no corresponding closing tag.
+src/pages/portals/LibrarianPortal.tsx(389,7): error TS17002: Expected corresponding JSX closing tag for 'TableRow'.
+src/pages/portals/LibrarianPortal.tsx(390,4): error TS1005: ')' expected.
+src/pages/portals/LibrarianPortal.tsx(391,1): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/pages/portals/LibrarianPortal.tsx(394,1): error TS1005: '</' expected.

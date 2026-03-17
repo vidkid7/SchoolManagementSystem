@@ -229,3 +229,31 @@ Access: View child's information
 
 
 now in similar way,check design consistency like admin dashboard across all portals all pages ,colour theme ,translations,navigations,in each pages and sub pages of each portal.go deeply in each pages sub pages,check each buttons features functions popups drawers and everything deeply in each portal if they are working and are not tehre any error in the databse loading and other things.check navigations in each buttons,pages and roles properly and deeply,see translations in each pages sub pages and fix it.login each portal and then see the situation errors yourself and fix them.also check all the apis are connected properly no hardcoded and dummy datas are used in our pages and subpages in all portal fix them
+
+===============================================================================
+RAILWAY DEPLOYMENT CREDENTIALS (Production)
+===============================================================================
+Backend URL: https://schoolmanagementsystem-production-4bb7.up.railway.app
+API Base:    https://schoolmanagementsystem-production-4bb7.up.railway.app/api/v1
+===============================================================================
+
+ #  | Role                 | Username            | Password          | Status
+----|----------------------|---------------------|-------------------|--------
+ 1  | School_Admin         | admin_school        | Admin@123         | ✅ active
+ 2  | Class_Teacher        | ct_school           | Teacher@123       | ✅ active
+ 3  | Subject_Teacher      | st_school           | Teacher@123       | ✅ active
+ 4  | Department_Head      | dh_school           | DeptHead@123      | ✅ active
+ 5  | ECA_Coordinator      | eca_school          | ECACoord@123      | ✅ active
+ 6  | Sports_Coordinator   | sc_school           | SportsCoord@123   | ✅ active
+ 7  | Librarian            | lib_school          | Librarian@123     | ✅ active
+ 8  | Accountant           | acc_school          | Accountant@123    | ✅ active
+ 9  | Transport_Manager    | tm_school           | Transport@123     | ✅ active
+10  | Hostel_Warden        | hw_school           | Hostel@123        | ✅ active
+11  | Non_Teaching_Staff   | nts_school          | Staff@123         | ✅ active
+12  | Municipality_Admin   | municipalityadmin   | Municipality@123  | ✅ active
+13  | Student              | student_0001        | Student@123       | ✅ active
+14  | Parent               | parent_0001         | Parent@123        | ✅ active
+
+Total: 150 students (student_0001 to student_0150)
+Total: 50 parents (parent_0001 to parent_0150, every 3rd student has a parent)
+===============================================================================
