@@ -100,6 +100,28 @@ async function fix() {
     await sequelize.query('UPDATE users SET failed_login_attempts = 0, account_locked_until = NULL WHERE failed_login_attempts > 0 OR account_locked_until IS NOT NULL');
     console.log('✅ Reset all account locks and failed login attempts');
 
+    // Ensure municipality exists and link municipality admin
+    try {
+      const [munis] = await sequelize.query(\"SELECT municipality_id, code FROM municipalities LIMIT 1\");
+      let municipalityId = null;
+      if (munis.length > 0) {
+        municipalityId = munis[0].municipality_id;
+        console.log('Found municipality: ' + munis[0].code + ' (' + municipalityId + ')');
+      } else {
+        // Create a default municipality
+        const uuid = require('crypto').randomUUID();
+        await sequelize.query(\"INSERT INTO municipalities (municipality_id, name_en, name_ne, code, province, district, type, total_wards, created_at, updated_at) VALUES ('\" + uuid + \"', 'Kathmandu Metropolitan City', 'काठमाडौं महानगरपालिका', 'KMC', 'Bagmati', 'Kathmandu', 'Metropolitan', 32, NOW(), NOW()) ON DUPLICATE KEY UPDATE municipality_id=municipality_id\");
+        municipalityId = uuid;
+        console.log('Created default municipality: KMC (' + municipalityId + ')');
+      }
+      if (municipalityId) {
+        await sequelize.query(\"UPDATE users SET municipality_id = '\" + municipalityId + \"' WHERE role = 'Municipality_Admin' AND municipality_id IS NULL\");
+        console.log('✅ Linked municipality admin to municipality');
+      }
+    } catch (munErr) {
+      console.log('⚠️  Municipality setup warning: ' + munErr.message);
+    }
+
     console.log('✅ All column fixes completed');
   } catch (err) {
     console.log('⚠️  Column fix warning:', err.message);
