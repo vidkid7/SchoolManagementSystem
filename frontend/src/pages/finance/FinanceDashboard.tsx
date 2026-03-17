@@ -34,7 +34,6 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
-
 interface FinanceStats {
   totalRevenue: number;
   pendingAmount: number;
@@ -107,56 +106,66 @@ if (statsRes.data?.data) {
     {
       title: t('finance.totalRevenue'),
       value: `NPR ${(stats.totalRevenue || 0).toLocaleString()}`,
-      icon: <BalanceIcon sx={{ fontSize: 40, color: C.success }} />,
+      icon: <BalanceIcon sx={{ fontSize: 32 }} />,
       color: C.success,
+      bgColor: C.successBg,
       action: () => navigate(`/finance/reports`),
     },
     {
       title: t('finance.pendingAmount'),
       value: `NPR ${(stats.pendingAmount || 0).toLocaleString()}`,
-      icon: <WarningIcon sx={{ fontSize: 40, color: C.warning }} />,
+      icon: <WarningIcon sx={{ fontSize: 32 }} />,
       color: C.warning,
+      bgColor: C.warningBg,
       action: () => navigate(`/finance/invoices?status=pending`),
     },
     {
       title: t('finance.collectedToday'),
       value: `NPR ${(stats.collectedToday || 0).toLocaleString()}`,
-      icon: <TrendingUpIcon sx={{ fontSize: 40, color: C.primary }} />,
+      icon: <TrendingUpIcon sx={{ fontSize: 32 }} />,
       color: C.primary,
+      bgColor: C.primaryBg,
       action: () => navigate(`/finance/payments`),
     },
     {
       title: t('finance.overdueInvoices'),
       value: (stats.overdueInvoices || 0).toString(),
-      icon: <ReceiptIcon sx={{ fontSize: 40, color: C.danger }} />,
+      icon: <ReceiptIcon sx={{ fontSize: 32 }} />,
       color: C.danger,
+      bgColor: C.dangerBg,
       action: () => navigate(`/finance/invoices?status=overdue`),
     },
   ];
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" fontWeight={600}>
-          {t('finance.dashboard')}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="contained" sx={S.BTN_PRIMARY}
-            startIcon={<AddIcon />}
-            onClick={() => navigate(`/finance/fee-structures/new`)}
-          >
-            {t('finance.newFeeStructure')}
-          </Button>
-          <Button
-            variant="outlined" sx={S.BTN_OUTLINE}
-            startIcon={<ReceiptIcon />}
-            onClick={() => navigate(`/finance/invoices/generate`)}
-          >
-            {t('finance.generateInvoice')}
-          </Button>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <BalanceIcon sx={{ fontSize: 32, color: C.primary }} />
+            <Box>
+              <Typography variant="h5" fontWeight={700}>{t('finance.dashboard')}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('finance.subtitle')}</Typography>
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="contained" sx={S.BTN_PRIMARY}
+              startIcon={<AddIcon />}
+              onClick={() => navigate(`/finance/fee-structures/new`)}
+            >
+              {t('finance.newFeeStructure')}
+            </Button>
+            <Button
+              variant="outlined" sx={S.BTN_OUTLINE}
+              startIcon={<ReceiptIcon />}
+              onClick={() => navigate(`/finance/invoices/generate`)}
+            >
+              {t('finance.generateInvoice')}
+            </Button>
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
       <Grid container spacing={3}>
         {statCards.map((card, index) => (
@@ -180,7 +189,9 @@ if (statsRes.data?.data) {
                       {card.value}
                     </Typography>
                   </Box>
-                  {card.icon}
+                  <Box sx={{ backgroundColor: card.bgColor, color: card.color, p: 1.5, borderRadius: R.lg, display: 'flex', alignItems: 'center' }}>
+                    {card.icon}
+                  </Box>
                 </Box>
               </CardContent>
             </Card>

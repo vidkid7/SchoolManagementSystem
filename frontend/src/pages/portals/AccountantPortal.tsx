@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box, Grid, Card, CardContent, Typography, Button, Divider, Avatar, List, ListItem,
   ListItemButton, ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
-  TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogTitle,
+  TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem, Select, FormControl, InputLabel,
   IconButton, Tooltip, InputAdornment, useTheme, LinearProgress,
 } from '@mui/material';
@@ -363,42 +363,15 @@ const AccountantPortal: React.FC = () => {
   );
 
   return (
-    <Box sx={{ minHeight: '100vh', p: { xs: 2, md: 3 } }}>
+    <Box sx={{ minHeight: '100vh', p: { xs: 2, md: 3 }, mt: { xs: 7, sm: 8 } }}>
 
-      {/* ── Hero Header ──────────────────────────────────────────────────── */}
-      <Box sx={{
-        ...GLASS_ELEVATED,
-        p: { xs: 2.5, md: 3 },
-        mb: 3,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: 2,
-        position: 'relative',
-        overflow: 'hidden',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0, left: 0, right: 0, bottom: 0,
-          background: `linear-gradient(135deg, ${C.primaryBg} 0%, ${C.purpleBg} 100%)`,
-          pointerEvents: 'none',
-        },
-      }}>
-        <Box display="flex" alignItems="center" gap={2} sx={{ position: 'relative', zIndex: 1 }}>
-          <Avatar sx={{
-            background: `linear-gradient(135deg, ${C.primary} 0%, ${C.purple} 100%)`,
-            width: 54, height: 54,
-            boxShadow: `0 4px 16px rgba(0,122,255,0.4), 0 0 0 1px rgba(255,255,255,0.2) inset`,
-            border: '1px solid rgba(255,255,255,0.2)',
-          }}>
-            <AccountIcon fontSize="large" />
-          </Avatar>
-          <Box>
-            <Typography variant="h5" fontWeight={800} sx={{ letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-              {t('finance.portal') || 'Finance Portal'}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+      {/* ── Header ──────────────────────────────────────────────────── */}
+      <Paper sx={S.PAGE_HEADER}>
+        <Box display="flex" alignItems="center" gap={2}>
+          <AccountIcon sx={{ fontSize: 32, color: C.primary }} />
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h5" fontWeight={700}>{t('finance.portal') || 'Finance Portal'}</Typography>
+            <Typography variant="body2" color="text.secondary">
               {t('common.welcome')}, <strong>{user?.firstName || user?.username}</strong>
               <Chip label={t('roles.accountant') || 'Accountant'} size="small" sx={{
                 ml: 1, height: 18, fontSize: '0.68rem', fontWeight: 700,
@@ -406,19 +379,19 @@ const AccountantPortal: React.FC = () => {
               }} />
             </Typography>
           </Box>
+          <Tooltip title={t('common.refresh') || 'Refresh data'}>
+            <IconButton onClick={loadCore} sx={{
+              color: C.primary,
+              background: C.primaryBg,
+              border: `1px solid ${C.primaryBdr}`,
+              borderRadius: 1.5,
+              '&:hover': { background: C.primaryBg, transform: 'rotate(180deg)', transition: 'transform 0.5s ease' },
+            }}>
+              <RefreshIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
-        <Tooltip title={t('common.refresh') || 'Refresh data'} sx={{ position: 'relative', zIndex: 1 }}>
-          <IconButton onClick={loadCore} sx={{
-            color: C.primary,
-            background: C.primaryBg,
-            border: `1px solid ${C.primaryBdr}`,
-            borderRadius: 1.5,
-            '&:hover': { background: C.primaryBg, transform: 'rotate(180deg)', transition: 'transform 0.5s ease' },
-          }}>
-            <RefreshIcon />
-          </IconButton>
-        </Tooltip>
-      </Box>
+      </Paper>
 
       {/* ── Alerts ─────────────────────────────────────────────────────────── */}
       {error && <Alert severity="error" sx={{ mb: 2, ...GLASS }} onClose={() => setError(null)}>{error}</Alert>}

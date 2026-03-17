@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box, Grid, Card, CardContent, Typography, Button, Divider, Avatar, List, ListItem,
+  Box, Grid, Card, CardContent, Typography, Button, Divider, List, ListItem,
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog,
   DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select,
@@ -91,11 +91,11 @@ const TransportPortal: React.FC = () => {
       setDriversList(driversRes.data?.data?.drivers ?? []);
       setMaintenance(maintenanceRes.data?.data?.records ?? []);
     } catch {
-      setError('Failed to load transport data');
+      setError(t('portal.failedToLoadData'));
     } finally {
       setLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, t]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -107,7 +107,7 @@ const TransportPortal: React.FC = () => {
         await apiClient.post('/api/v1/transport/routes', formData, authHdr(accessToken!));
       }
       setRouteDialog(false); setEditRoute(null); setFormData({}); loadData();
-    } catch { setError('Failed to save route'); }
+    } catch { setError(t('portal.failedToLoadData')); }
   };
 
   const handleDeleteRoute = async (id: number) => {
@@ -115,7 +115,7 @@ const TransportPortal: React.FC = () => {
     try {
       await apiClient.delete(`/api/v1/transport/routes/${id}`, authHdr(accessToken!));
       loadData();
-    } catch { setError('Failed to delete route'); }
+    } catch { setError(t('portal.failedToLoadData')); }
   };
 
   const handleSaveVehicle = async () => {
@@ -126,14 +126,14 @@ const TransportPortal: React.FC = () => {
         await apiClient.post('/api/v1/transport/vehicles', formData, authHdr(accessToken!));
       }
       setVehicleDialog(false); setEditVehicle(null); setFormData({}); loadData();
-    } catch { setError('Failed to save vehicle'); }
+    } catch { setError(t('portal.failedToLoadData')); }
   };
 
   const handleCreatePickup = async () => {
     try {
       await apiClient.post('/api/v1/transport/pickup-points', formData, authHdr(accessToken!));
       setPickupDialog(false); setFormData({}); loadData();
-    } catch { setError('Failed to create pickup point'); }
+    } catch { setError(t('portal.failedToLoadData')); }
   };
 
   const handleSaveDriver = async () => {
@@ -144,7 +144,7 @@ const TransportPortal: React.FC = () => {
         await apiClient.post('/api/v1/transport/drivers', formData, authHdr(accessToken!));
       }
       setDriverDialog(false); setEditDriver(null); setFormData({}); loadData();
-    } catch { setError('Failed to save driver'); }
+    } catch { setError(t('portal.failedToLoadData')); }
   };
 
   const handleDeleteDriver = async (id: number) => {
@@ -152,7 +152,7 @@ const TransportPortal: React.FC = () => {
     try {
       await apiClient.delete(`/api/v1/transport/drivers/${id}`, authHdr(accessToken!));
       loadData();
-    } catch { setError('Failed to delete driver'); }
+    } catch { setError(t('portal.failedToLoadData')); }
   };
 
   const handleSaveMaintenance = async () => {
@@ -163,32 +163,33 @@ const TransportPortal: React.FC = () => {
         await apiClient.post('/api/v1/transport/maintenance', formData, authHdr(accessToken!));
       }
       setMaintenanceDialog(false); setEditMaintenance(null); setFormData({}); loadData();
-    } catch { setError('Failed to save maintenance record'); }
+    } catch { setError(t('portal.failedToLoadData')); }
   };
 
   if (loading) return <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh"><CircularProgress /></Box>;
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box display="flex" alignItems="center" gap={2} mb={3}>
-        <Avatar sx={{ bgcolor: 'primary.main', width: 56, height: 56 }}>
-          <BusIcon fontSize="large" />
-        </Avatar>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>{t('portal.transportManagement')}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t('portal.welcome')}, {user?.firstName || user?.username} — {t('portal.transportManager')}
-          </Typography>
+    <Box sx={{ p: 3, mt: { xs: 7, sm: 8 } }}>
+      {/* Header */}
+      <Paper sx={S.PAGE_HEADER}>
+        <Box display="flex" alignItems="center" gap={2}>
+          <BusIcon sx={{ fontSize: 32, color: C.primary }} />
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h5" fontWeight={700}>{t('portal.transportManagement')}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('portal.welcome')}, {user?.firstName || user?.username} — {t('portal.transportManager')}
+            </Typography>
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
 
       {/* Stats */}
       <Grid container spacing={2} mb={3}>
         {[
-          { label: t('dashboard.totalStudents'), value: data?.summary.totalStudents ?? '--', icon: <PeopleIcon />, color: C.primary },
-          { label: t('portal.activeStudents'), value: data?.summary.activeStudents ?? '--', icon: <ActiveIcon />, color: C.success },
+          { label: t('dashboard.totalStudents'), value: data?.summary?.totalStudents ?? '--', icon: <PeopleIcon />, color: C.primary },
+          { label: t('portal.activeStudents'), value: data?.summary?.activeStudents ?? '--', icon: <ActiveIcon />, color: C.success },
           { label: t('portal.routes'), value: routes.length, icon: <RouteIcon />, color: C.info },
           { label: t('portal.vehicles'), value: vehicles.length, icon: <VehicleIcon />, color: C.warning },
         ].map(stat => (

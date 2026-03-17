@@ -209,7 +209,7 @@ export const ClassManagement = () => {
       const academicYearId = currentYear?.academicYearId || currentYear?.academic_year_id || fallbackYear?.academicYearId || fallbackYear?.academic_year_id;
 
       if (!academicYearId) {
-        throw new Error('No academic year available. Please create an academic year first.');
+        throw new Error(t('academic.noAcademicYearAvailable'));
       }
       
       const payload = {
@@ -229,7 +229,7 @@ export const ClassManagement = () => {
       fetchData();
     } catch (error: any) {
       console.error('Failed to save class:', error);
-      setError(error.response?.data?.message || 'Failed to save class');
+      setError(error.response?.data?.message || t('academic.failedToSaveClass'));
     }
   };
 
@@ -254,7 +254,7 @@ export const ClassManagement = () => {
       fetchData();
     } catch (error: any) {
       console.error('Failed to save subject:', error);
-      setError(error.response?.data?.message || 'Failed to save subject');
+      setError(error.response?.data?.message || t('academic.failedToSaveSubject'));
     }
   };
 
@@ -270,7 +270,7 @@ export const ClassManagement = () => {
     } catch (error: any) {
       console.error('Failed to delete class:', error);
       const errorMessage = error.response?.data?.message || error.message || t('academic.failedToLoad');
-      setError(`Failed to delete class: ${errorMessage}`);
+      setError(t('academic.failedToDeleteClass', { message: errorMessage }));
     }
   };
 
@@ -290,20 +290,27 @@ export const ClassManagement = () => {
 
   return (
     <Box>
-      <Box sx={{ mb: 3 }}>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+          <SchoolIcon sx={{ fontSize: 32, color: 'primary.main' }} />
+          <Box>
+            <Typography variant="h4" fontWeight={600}>
+              {t('academic.title')}
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              {t('academic.subtitle')}
+            </Typography>
+          </Box>
+        </Box>
         <Button
           startIcon={<BackIcon />}
           onClick={() => navigate(`/academic`)}
-          sx={{ mb: 2 }}
+          sx={{ mt: 1 }}
           variant="text"
         >
           {t('common.back')}
         </Button>
-        
-        <Typography variant="h4" fontWeight={600}>
-          {t('academic.title')}
-        </Typography>
-      </Box>
+      </Paper>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
@@ -650,7 +657,7 @@ export const ClassManagement = () => {
                   value={classForm.section}
                   onChange={(e) => setClassForm({ ...classForm, section: e.target.value })}
                   placeholder="A, B, C, A1, B1, etc."
-                  helperText="Enter section name (e.g., A, B, C, A1, B1)"
+                  helperText={t('academic.sectionHelperText')}
                 />
               </Grid>
               <Grid item xs={12}>

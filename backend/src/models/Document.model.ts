@@ -85,7 +85,7 @@ export class Document
    * Check if document is an image
    */
   public isImage(): boolean {
-    return this.mimeType.startsWith('image/');
+    return this.mimeType ? this.mimeType.startsWith('image/') : false;
   }
 
   /**
@@ -117,34 +117,19 @@ export class Document
   }
 
   public toJSON(): object {
+    const values = this.get({ plain: true }) as any;
+    const mimeType: string = values.mimeType || '';
+    const viewableTypes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'application/pdf', 'text/plain', 'text/html', 'text/csv',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
     return {
-      documentId: this.documentId,
-      documentNumber: this.documentNumber,
-      name: this.name,
-      originalName: this.originalName,
-      description: this.description,
-      category: this.category,
-      mimeType: this.mimeType,
-      size: this.size,
-      compressedSize: this.compressedSize,
-      actualSize: this.getActualSize(),
-      storagePath: this.storagePath,
-      thumbnailPath: this.thumbnailPath,
-      version: this.version,
-      parentDocumentId: this.parentDocumentId,
-      uploadedBy: this.uploadedBy,
-      accessLevel: this.accessLevel,
-      allowedRoles: this.allowedRoles,
-      allowedUserIds: this.allowedUserIds,
-      isCompressed: this.isCompressed,
-      compressionRatio: this.compressionRatio,
-      tags: this.tags,
-      metadata: this.metadata,
-      status: this.status,
-      isImage: this.isImage(),
-      isViewable: this.isViewable(),
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
+      ...values,
+      actualSize: values.isCompressed && values.compressedSize ? values.compressedSize : values.size,
+      isImage: mimeType.startsWith('image/'),
+      isViewable: viewableTypes.includes(mimeType),
     };
   }
 }

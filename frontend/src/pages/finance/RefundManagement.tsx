@@ -121,18 +121,20 @@ export function RefundManagement() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" fontWeight={600}>
-          {t('finance.refundManagement')}
-        </Typography>
-        <Button
-          variant="contained" sx={S.BTN_PRIMARY}
-          startIcon={<RefundIcon />}
-          onClick={() => setOpenDialog(true)}
-        >
-          {t('finance.processRefund')}
-        </Button>
-      </Box>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h5" fontWeight={700}>
+            {t('finance.refundManagement')}
+          </Typography>
+          <Button
+            variant="contained" sx={S.BTN_PRIMARY}
+            startIcon={<RefundIcon />}
+            onClick={() => setOpenDialog(true)}
+          >
+            {t('finance.processRefund')}
+          </Button>
+        </Box>
+      </Paper>
 
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
@@ -199,6 +201,7 @@ export function RefundManagement() {
           page={page}
           onPageChange={(_, newPage) => setPage(newPage)}
           rowsPerPage={rowsPerPage}
+          rowsPerPageOptions={[10, 20, 50, 100]}
           onRowsPerPageChange={(e) => {
             setRowsPerPage(parseInt(e.target.value, 10));
             setPage(0);

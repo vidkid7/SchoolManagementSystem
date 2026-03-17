@@ -81,7 +81,6 @@ interface Timetable {
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const PERIODS = [
-  { number: 1, start: '08:00', end: '08:45' },
   { number: 2, start: '08:45', end: '09:30' },
   { number: 3, start: '09:30', end: '10:15' },
   { number: 4, start: '10:30', end: '11:15' },
@@ -112,6 +111,14 @@ export const Timetable = () => {
     teacherId: '',
     roomNumber: '',
   });
+
+  const getDayName = (dayIndex: number) => [
+    t('academic.monday'),
+    t('academic.tuesday'),
+    t('academic.wednesday'),
+    t('academic.thursday'),
+    t('academic.friday'),
+  ][dayIndex] || DAYS[dayIndex];
 
   useEffect(() => {
     fetchClasses();
@@ -165,8 +172,7 @@ export const Timetable = () => {
       setTimetables(Array.isArray(timetableData) ? timetableData : []);
     } catch (error) {
       console.error('Failed to fetch timetable:', error);
-      setError('Failed to load timetable');
-    } finally {
+      setError(t('academic.failedToLoadSyllabus'));
       setLoading(false);
     }
   };
@@ -182,8 +188,7 @@ export const Timetable = () => {
     const existingPeriod = getPeriodForSlot(dayIndex, periodNumber);
     
     if (existingPeriod) {
-      // If period exists, show a message or allow editing
-      setError('This period already has a subject assigned. Delete it first to reassign.');
+      setError(t('academic.periodAlreadyAssigned') || 'This period already has a subject assigned. Delete it first to reassign.');
       return;
     }
     
@@ -288,7 +293,7 @@ export const Timetable = () => {
       } else if (errorMessage) {
         setError(errorMessage);
       } else {
-        setError('Failed to save period');
+        setError(t('academic.failedToSaveTopic'));
       }
     }
   };
@@ -304,11 +309,15 @@ export const Timetable = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" fontWeight={600}>
-          Timetable Management
-        </Typography>
-      </Box>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <ScheduleIcon sx={{ fontSize: 32, color: C.primary }} />
+          <Box>
+            <Typography variant="h5" fontWeight={700}>{t('academic.timetableManagement')}</Typography>
+            <Typography variant="body2" color="text.secondary">{t('academic.timetableSubtitle')}</Typography>
+          </Box>
+        </Box>
+      </Paper>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
@@ -321,15 +330,15 @@ export const Timetable = () => {
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
-              <InputLabel>Select Class</InputLabel>
+              <InputLabel>{t('academic.selectClass')}</InputLabel>
               <Select
                 value={selectedClass || ''}
-                label="Select Class"
+                label={t('academic.selectClass')}
                 onChange={(e) => setSelectedClass(Number(e.target.value))}
               >
                 {classes.map((cls) => (
                   <MenuItem key={cls.classId} value={cls.classId}>
-                    Class {cls.gradeLevel} - Section {cls.section}
+                    {t('academic.classSection', { grade: cls.gradeLevel, section: cls.section })}
                   </MenuItem>
                 ))}
               </Select>
@@ -341,10 +350,10 @@ export const Timetable = () => {
                 <ScheduleIcon color="primary" sx={{ fontSize: 40 }} />
                 <Box>
                   <Typography variant="h6">
-                    Class {selectedClassInfo.gradeLevel} - {selectedClassInfo.section}
+                    {t('academic.classSection', { grade: selectedClassInfo.gradeLevel, section: selectedClassInfo.section })}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {timetables.length} days scheduled
+                    {t('academic.daysScheduled', { count: timetables.length })}
                   </Typography>
                 </Box>
               </Box>
@@ -361,11 +370,11 @@ export const Timetable = () => {
               <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow sx={{ bgcolor: 'primary.main' }}>
                   <TableCell sx={{ color: 'white', fontWeight: 600, minWidth: 100 }}>
-                    Period / Day
+                    {t('academic.periodDay')}
                   </TableCell>
-                  {DAYS.map((day, index) => (
+                  {DAYS.map((_, index) => (
                     <TableCell key={index} align="center" sx={{ color: 'white', fontWeight: 600 }}>
-                      {day}
+                      {getDayName(index)}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -376,7 +385,7 @@ export const Timetable = () => {
                     <TableCell sx={{ ...S.TD, bgcolor: 'grey.50', fontWeight: 600 }}>
                       <Box>
                         <Typography variant="body2" fontWeight={600}>
-                          Period {period.number}
+                          {t('academic.periodN', { number: period.number })}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                           {period.start} - {period.end}
@@ -397,7 +406,7 @@ export const Timetable = () => {
                           {periodData ? (
                             <Box>
                               <Chip
-                                label={periodData.subject?.code || 'Subject'}
+                                label={periodData.subject?.code || t('common.subject')}
                                 size="small"
                                 color="primary"
                                 sx={{ mb: 0.5 }}
@@ -409,7 +418,7 @@ export const Timetable = () => {
                               )}
                               {periodData.roomNumber && (
                                 <Typography variant="caption" display="block" color="text.secondary">
-                                  Room {periodData.roomNumber}
+                                  {t('academic.roomN', { number: periodData.roomNumber })}
                                 </Typography>
                               )}
                             </Box>
@@ -433,7 +442,7 @@ export const Timetable = () => {
         <Paper sx={{ ...S.GLASS, p: 5, textAlign: 'center' }}>
           <ScheduleIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h6" color="text.secondary">
-            Select a class to view and manage timetable
+            {t('academic.selectClassForTimetable')}
           </Typography>
         </Paper>
       )}
@@ -441,16 +450,16 @@ export const Timetable = () => {
       {/* Add/Edit Period Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 600 }}>
-          Add Period - {DAYS[periodForm.dayOfWeek - 1]} Period {periodForm.periodNumber}
+          {t('academic.addPeriodTitle', { day: getDayName(periodForm.dayOfWeek - 1), number: periodForm.periodNumber })}
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>Subject</InputLabel>
+                <InputLabel>{t('common.subject')}</InputLabel>
                 <Select
                   value={periodForm.subjectId}
-                  label="Subject"
+                  label={t('common.subject')}
                   onChange={(e) => setPeriodForm({ ...periodForm, subjectId: e.target.value })}
                 >
                   {subjects.map((subject) => (
@@ -463,13 +472,13 @@ export const Timetable = () => {
             </Grid>
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>Teacher (Optional)</InputLabel>
+                <InputLabel>{t('academic.teacherOptional')}</InputLabel>
                 <Select
                   value={periodForm.teacherId}
-                  label="Teacher (Optional)"
+                  label={t('academic.teacherOptional')}
                   onChange={(e) => setPeriodForm({ ...periodForm, teacherId: e.target.value })}
                 >
-                  <MenuItem value="">None</MenuItem>
+                  <MenuItem value="">{t('common.none')}</MenuItem>
                   {teachers.map((teacher) => (
                     <MenuItem key={teacher.staffId} value={teacher.staffId}>
                       {teacher.firstName} {teacher.lastName}
@@ -480,7 +489,7 @@ export const Timetable = () => {
             </Grid>
             <Grid item xs={6}>
               <TextField
-                label="Start Time"
+                label={t('attendance.startDate')}
                 type="time"
                 fullWidth
                 value={periodForm.startTime}
@@ -490,7 +499,7 @@ export const Timetable = () => {
             </Grid>
             <Grid item xs={6}>
               <TextField
-                label="End Time"
+                label={t('attendance.endDate')}
                 type="time"
                 fullWidth
                 value={periodForm.endTime}
@@ -500,19 +509,19 @@ export const Timetable = () => {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Room Number (Optional)"
+                label={t('academic.roomNumberOptional')}
                 fullWidth
                 value={periodForm.roomNumber}
                 onChange={(e) => setPeriodForm({ ...periodForm, roomNumber: e.target.value })}
-                placeholder="e.g., 101, Lab-A"
+                placeholder={t('academic.roomNumberPlaceholder')}
               />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handleCloseDialog}>{t('common.cancel')}</Button>
           <Button variant="contained" sx={S.BTN_PRIMARY} onClick={handleSavePeriod}>
-            Save Period
+            {t('academic.savePeriod')}
           </Button>
         </DialogActions>
       </Dialog>

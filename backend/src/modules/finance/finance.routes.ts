@@ -368,6 +368,18 @@ router.post(
 // ==================== Refunds ====================
 
 /**
+ * @route   GET /api/v1/finance/refunds
+ * @desc    Get all refunds with pagination
+ * @access  Private (School_Admin, Accountant)
+ */
+router.get(
+  '/refunds',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.ACCOUNTANT),
+  financeController.getRefunds
+);
+
+/**
  * @route   POST /api/v1/finance/refunds
  * @desc    Process refund
  * @access  Private (School_Admin, Accountant)

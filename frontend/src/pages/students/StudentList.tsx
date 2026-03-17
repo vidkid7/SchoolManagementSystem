@@ -224,98 +224,114 @@ export const StudentList = () => {
     );
   };
 
+  const isDark = theme.palette.mode === 'dark';
+
   return (
-    <Box sx={{ mt: 2, mb: 4 }} key={i18n.language}>
-      {/* Header Section */}
-      <MotionCard 
+    <Box sx={{ p: { xs: 2, md: 3 }, minHeight: '100vh' }} key={i18n.language}>
+      {/* Hero Header — Liquid Glass (matching Dashboard) */}
+      <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        elevation={0}
-        sx={{ 
-          mb: 3,
-          borderRadius: 2,
-          background: theme.palette.mode === 'dark' 
-            ? 'linear-gradient(135deg, rgba(28,28,30,0.4) 0%, rgba(28,28,30,0.6) 100%)' 
-            : 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.5) 100%)',
-          backdropFilter: 'blur(40px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-          border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.4)'}`,
-          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.04)',
-          color: theme.palette.text.primary,
-          position: 'relative',
-          overflow: 'hidden',
-        }}
       >
-        <Box sx={{
-          position: 'absolute',
-          top: -50,
-          right: -50,
-          width: 200,
-          height: 200,
-          borderRadius: '50%',
-          background: 'rgba(255,255,255,0.08)',
-        }} />
-        <Box sx={{
-          position: 'absolute',
-          bottom: -30,
-          left: -30,
-          width: 150,
-          height: 150,
-          borderRadius: '50%',
-          background: 'rgba(255,255,255,0.06)',
-        }} />
-        <CardContent sx={{ p: 3, position: 'relative', zIndex: 1 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box sx={{ 
-                p: 1.5, 
-                borderRadius: 2, 
-                bgcolor: 'rgba(255,255,255,0.2)',
-                backdropFilter: 'blur(10px)',
-              }}>
-                <PeopleIcon sx={{ fontSize: 32 }} />
-              </Box>
-              <Box>
-                <Typography variant="h4" fontWeight={800} sx={{ letterSpacing: '-0.02em' }}>
+        <Box
+          sx={{
+            mb: 3,
+            p: { xs: 2.5, md: 3.5 },
+            borderRadius: 3,
+            background: isDark
+              ? 'linear-gradient(135deg, rgba(102,126,234,0.12) 0%, rgba(118,75,162,0.08) 50%, rgba(240,147,251,0.06) 100%)'
+              : 'linear-gradient(135deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.62) 100%)',
+            backdropFilter: 'blur(40px) saturate(200%)',
+            WebkitBackdropFilter: 'blur(40px) saturate(200%)',
+            border: isDark
+              ? '1px solid rgba(255,255,255,0.1)'
+              : '1px solid rgba(255,255,255,0.65)',
+            boxShadow: isDark
+              ? 'inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.3)'
+              : 'inset 0 1px 0 rgba(255,255,255,0.9), 0 8px 32px rgba(102,126,234,0.08)',
+            position: 'relative',
+            overflow: 'hidden',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '45%',
+              background: isDark
+                ? 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%)'
+                : 'linear-gradient(180deg, rgba(255,255,255,0.5) 0%, transparent 100%)',
+              pointerEvents: 'none',
+              borderRadius: '24px 24px 0 0',
+              zIndex: 1,
+            },
+          }}
+        >
+          <Box sx={{ position: 'absolute', top: -60, right: -60, width: 200, height: 200, borderRadius: '50%', background: isDark ? 'radial-gradient(circle, rgba(102,126,234,0.2) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(102,126,234,0.12) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(40px)', animation: 'liquidFloat 8s ease-in-out infinite' }} />
+          <Box sx={{ position: 'absolute', bottom: -40, left: '30%', width: 160, height: 160, borderRadius: '50%', background: isDark ? 'radial-gradient(circle, rgba(240,147,251,0.15) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(240,147,251,0.08) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(30px)', animation: 'liquidFloat 10s ease-in-out infinite reverse' }} />
+          
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, position: 'relative', zIndex: 1 }}>
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+                <PeopleIcon sx={{ fontSize: 32, color: C.neutral }} />
+                <Typography variant="h4" fontWeight={800} sx={{
+                  color: 'text.primary',
+                  letterSpacing: '-0.02em',
+                }}>
                   {t('students.title')}
                 </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, opacity: 0.9 }}>
-                  <TrendingUp sx={{ fontSize: 16 }} />
-                  <Typography variant="body2">
-                    {formatWithSeparators(total)} {t('dashboard.totalStudents').toLowerCase()}
-                  </Typography>
-                </Box>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                <TrendingUp sx={{ fontSize: 16, color: 'text.secondary' }} />
+                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                  {formatWithSeparators(total)} {t('dashboard.totalStudents').toLowerCase()}
+                </Typography>
               </Box>
             </Box>
-            <Box sx={{ display: 'flex', gap: 1.5 }}>
-              <Button
-                variant="outlined"
-                startIcon={<RefreshIcon />}
-                onClick={() => fetchStudents()}
-                sx={{ ...S.BTN_OUTLINE,  
-                  borderRadius: 2,
-                  borderColor: 'rgba(255,255,255,0.3)',
-                  color: 'white',
-                  '&:hover': { 
-                    borderColor: 'rgba(255,255,255,0.5)', 
-                    bgcolor: 'rgba(255,255,255,0.1)' 
-                  }
-                }}
-              >
-                {t('common.refresh')}
-              </Button>
+            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+              <Tooltip title={t('common.refresh')}>
+                <span>
+                <IconButton
+                  onClick={() => fetchStudents()}
+                  disabled={loading}
+                  sx={{
+                    background: isDark
+                      ? 'rgba(255,255,255,0.08)'
+                      : 'rgba(102, 126, 234, 0.1)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: 2,
+                    p: 1.2,
+                    '&:hover': {
+                      background: isDark
+                        ? 'rgba(255,255,255,0.15)'
+                        : 'rgba(102, 126, 234, 0.2)',
+                    }
+                  }}
+                >
+                  <RefreshIcon sx={{
+                    fontSize: 20,
+                    animation: loading ? 'spin 1s linear infinite' : 'none',
+                    '@keyframes spin': {
+                      '0%': { transform: 'rotate(0deg)' },
+                      '100%': { transform: 'rotate(360deg)' },
+                    }
+                  }} />
+                </IconButton>
+                </span>
+              </Tooltip>
               <Button
                 variant="outlined"
                 startIcon={<UploadIcon />}
                 onClick={() => navigate(`/students/bulk-import`)}
-                sx={{ ...S.BTN_OUTLINE,  
+                sx={{
                   borderRadius: 2,
-                  borderColor: 'rgba(255,255,255,0.3)',
-                  color: 'white',
-                  '&:hover': { 
-                    borderColor: 'rgba(255,255,255,0.5)', 
-                    bgcolor: 'rgba(255,255,255,0.1)' 
+                  borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(102,126,234,0.3)',
+                  color: isDark ? 'rgba(255,255,255,0.9)' : C.neutral,
+                  backdropFilter: 'blur(10px)',
+                  '&:hover': {
+                    borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(102,126,234,0.5)',
+                    bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(102,126,234,0.05)',
                   }
                 }}
               >
@@ -325,13 +341,14 @@ export const StudentList = () => {
                 variant="outlined"
                 startIcon={<AddIcon />}
                 onClick={() => navigate(`/students/bulk-add`)}
-                sx={{ ...S.BTN_OUTLINE,  
+                sx={{
                   borderRadius: 2,
-                  borderColor: 'rgba(255,255,255,0.3)',
-                  color: 'white',
-                  '&:hover': { 
-                    borderColor: 'rgba(255,255,255,0.5)', 
-                    bgcolor: 'rgba(255,255,255,0.1)' 
+                  borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(102,126,234,0.3)',
+                  color: isDark ? 'rgba(255,255,255,0.9)' : C.neutral,
+                  backdropFilter: 'blur(10px)',
+                  '&:hover': {
+                    borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(102,126,234,0.5)',
+                    bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(102,126,234,0.05)',
                   }
                 }}
               >
@@ -340,216 +357,318 @@ export const StudentList = () => {
               <Button
                 startIcon={<AddIcon />}
                 onClick={() => navigate(`/students/create`)}
-                sx={S.BTN_PRIMARY}
+                sx={{
+                  borderRadius: 2,
+                  background: isDark
+                    ? 'linear-gradient(135deg, rgba(102,126,234,0.35) 0%, rgba(118,75,162,0.3) 100%)'
+                    : 'linear-gradient(135deg, rgba(102,126,234,0.2) 0%, rgba(118,75,162,0.15) 100%)',
+                  backdropFilter: 'blur(20px) saturate(180%)',
+                  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                  border: isDark ? '1px solid rgba(102,126,234,0.3)' : '1px solid rgba(102,126,234,0.25)',
+                  color: isDark ? '#fff' : C.neutral,
+                  fontWeight: 600,
+                  boxShadow: isDark
+                    ? '0 6px 20px rgba(102,126,234,0.2), inset 0 1px 0 rgba(255,255,255,0.1)'
+                    : '0 6px 20px rgba(102,126,234,0.15), inset 0 1px 0 rgba(255,255,255,0.5)',
+                  transition: 'all 0.4s cubic-bezier(0.2, 0, 0, 1)',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: isDark
+                      ? '0 12px 32px rgba(102,126,234,0.3), inset 0 1px 0 rgba(255,255,255,0.15)'
+                      : '0 12px 32px rgba(102,126,234,0.25), inset 0 1px 0 rgba(255,255,255,0.7)',
+                  }
+                }}
               >
                 {t('students.addStudent')}
               </Button>
             </Box>
           </Box>
-        </CardContent>
-      </MotionCard>
+        </Box>
+      </motion.div>
 
-      {/* Quick Stats */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      {/* Quick Stats - Matching Dashboard Style */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
         {[
-          { icon: <PeopleIcon />, labelKey: 'dashboard.totalStudents', value: total, gradient: 'linear-gradient(135deg, #475569 0%, #334155 100%)', color: C.neutral },
-          { icon: <ActiveIcon />, labelKey: 'students.active', value: students.filter(s => s.status === 'active').length || 0, gradient: 'linear-gradient(135deg, #059669 0%, #047857 100%)', color: C.success },
-          { icon: <SchoolIcon />, labelKey: 'students.class', value: new Set(students.map(s => s.class?.gradeLevel).filter(Boolean)).size || 0, gradient: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', color: C.primary },
-          { icon: <GroupIcon />, labelKey: 'students.section', value: new Set(students.map(s => s.class?.section).filter(Boolean)).size || 0, gradient: `linear-gradient(135deg, ${C.warning} 0%, #b45309 100%)`, color: C.warning },
-        ].map((stat, index) => {
-          return (
+          { icon: <PeopleIcon />, labelKey: 'dashboard.totalStudents', value: total, color: C.neutral, bg: 'linear-gradient(135deg, #475569 0%, #334155 100%)' },
+          { icon: <ActiveIcon />, labelKey: 'students.active', value: students.filter(s => s.status === 'active').length || 0, color: C.success, bg: 'linear-gradient(135deg, #059669 0%, #047857 100%)' },
+          { icon: <SchoolIcon />, labelKey: 'students.class', value: new Set(students.map(s => s.class?.gradeLevel).filter(Boolean)).size || 0, color: C.primary, bg: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)' },
+          { icon: <GroupIcon />, labelKey: 'students.section', value: new Set(students.map(s => s.class?.section).filter(Boolean)).size || 0, color: C.warning, bg: 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)' },
+        ].map((stat, index) => (
           <Grid item xs={6} md={3} key={stat.labelKey}>
             <MotionCard
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: index * 0.1 }}
-              elevation={0}
-              whileHover={{ scale: 1.02, y: -4 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, delay: index * 0.1, type: 'spring', stiffness: 120, damping: 12 }}
+              whileHover={{ scale: 1.04, y: -6 }}
               sx={{
                 borderRadius: 2,
-                border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.4)'}`,
-                background: theme.palette.mode === 'dark' ? 'rgba(28,28,30,0.6)' : 'rgba(255,255,255,0.65)',
-                backdropFilter: 'blur(40px) saturate(180%)',
-                WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-                color: theme.palette.text.primary,
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                position: 'relative',
                 overflow: 'hidden',
-                '&:hover': {
-                  boxShadow: `0 12px 32px ${alpha(stat.color, 0.2)}`,
-                },
+                position: 'relative',
+                background: isDark
+                  ? `linear-gradient(145deg, ${alpha(stat.color, 0.18)} 0%, ${alpha(stat.color, 0.06)} 100%)`
+                  : `linear-gradient(145deg, ${alpha(stat.color, 0.14)} 0%, ${alpha(stat.color, 0.04)} 100%)`,
+                backdropFilter: 'blur(10px) saturate(120%)',
+                WebkitBackdropFilter: 'blur(10px) saturate(120%)',
+                border: `1px solid ${alpha(stat.color, isDark ? 0.2 : 0.25)}`,
+                boxShadow: `0 2px 8px ${alpha(stat.color, 0.1)}`,
+                transition: 'all 0.3s ease',
                 '&::before': {
-                  content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: stat.gradient,
-                }
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '50%',
+                  background: `linear-gradient(180deg, ${alpha('#ffffff', isDark ? 0.03 : 0.15)} 0%, transparent 100%)`,
+                  pointerEvents: 'none',
+                  borderRadius: '8px 8px 0 0',
+                  zIndex: 1,
+                },
+                '&:hover': {
+                  boxShadow: `0 4px 12px ${alpha(stat.color, 0.15)}`,
+                  border: `1px solid ${alpha(stat.color, isDark ? 0.3 : 0.35)}`,
+                },
               }}
             >
-              <Box sx={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: stat.gradient, opacity: 0.08 }} />
-              <CardContent sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2, position: 'relative' }}>
-                <Box sx={{ 
-                  p: 1.5, 
-                  borderRadius: 2, 
-                  background: stat.gradient,
-                  color: '#fff',
-                  boxShadow: `0 4px 12px ${alpha(stat.color, 0.3)}`,
-                  display: 'flex',
-                }}>
-                  {stat.icon}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: -30,
+                  right: -30,
+                  width: 120,
+                  height: 120,
+                  borderRadius: '50%',
+                  background: `radial-gradient(circle, ${alpha(stat.color, isDark ? 0.15 : 0.1)} 0%, transparent 70%)`,
+                  pointerEvents: 'none',
+                  filter: 'blur(20px)',
+                }}
+              />
+              <CardContent sx={{ p: 2.5, position: 'relative', zIndex: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                  <Box
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: stat.bg,
+                      color: '#fff',
+                      boxShadow: `0 4px 12px ${alpha(stat.color, 0.3)}`,
+                    }}
+                  >
+                    {stat.icon}
+                  </Box>
                 </Box>
-                <Box>
-                  <Typography variant="h4" fontWeight={800}>{formatWithSeparators(stat.value)}</Typography>
-                  <Typography variant="caption" sx={{ opacity: 0.9 }}>{t(stat.labelKey)}</Typography>
-                </Box>
+                <Typography variant="h4" fontWeight={800} sx={{ mb: 0.5, color: 'text.primary' }}>
+                  {formatWithSeparators(stat.value)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                  {t(stat.labelKey)}
+                </Typography>
               </CardContent>
             </MotionCard>
           </Grid>
-        )})}
+        ))}
       </Grid>
 
-      {/* Filters */}
-      <Paper 
-        elevation={0}
-        sx={{ 
-          ...S.GLASS,
-          p: 2.5, 
-          mb: 3,
-          borderRadius: 2,
-        }}
+      {/* Filters - Matching Dashboard Style */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <FilterIcon sx={{ color: theme.palette.primary.main }} />
-          <Typography variant="subtitle1" fontWeight={600}>
-            {t('common.filter')} & {t('common.search')}
-          </Typography>
-          {hasActiveFilters && (
-            <Chip 
-              label={`${formatNumber([search && '1', classFilter && '1', sectionFilter && '1', statusFilter && '1'].filter(Boolean).length)} ${t('common.active')}`}
-              size="small"
-              color="primary"
-              sx={{ ml: 'auto', height: 22, fontSize: '0.7rem' }}
-            />
-          )}
-        </Box>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              label={t('common.search')}
-              placeholder={`${t('students.firstName')}, ${t('students.studentId')}, ${t('students.contactNumber')}...`}
-              variant="outlined"
-              size="small"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: 'text.secondary' }} />
-                  </InputAdornment>
-                ),
-                endAdornment: search && (
-                  <InputAdornment position="end">
-                    <ToggleButtonGroup
-                      value={searchMode}
-                      exclusive
-                      onChange={(_e, newMode) => newMode && setSearchMode(newMode)}
-                      size="small"
-                      sx={{ height: 28 }}
-                    >
-                      <ToggleButton value="exact" sx={{ px: 1.5, py: 0.5 }}>
-                        <Tooltip title={t('students.exactSearch') || 'Exact Search'}>
-                          <ExactIcon fontSize="small" />
-                        </Tooltip>
-                      </ToggleButton>
-                      <ToggleButton value="fuzzy" sx={{ px: 1.5, py: 0.5 }}>
-                        <Tooltip title={t('students.fuzzySearch') || 'Fuzzy Search (handles typos)'}>
-                          <Badge badgeContent="AI" color="primary" sx={{ '& .MuiBadge-badge': { fontSize: '0.5rem', height: 14, minWidth: 14 } }}>
-                            <FuzzyIcon fontSize="small" />
-                          </Badge>
-                        </Tooltip>
-                      </ToggleButton>
-                    </ToggleButtonGroup>
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
+        <Box
+          sx={{
+            p: 3,
+            mb: 3,
+            borderRadius: 2,
+            background: isDark
+              ? 'rgba(30, 30, 40, 0.6)'
+              : 'rgba(255, 255, 255, 0.8)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            border: isDark
+              ? '1px solid rgba(255, 255, 255, 0.1)'
+              : '1px solid rgba(0, 0, 0, 0.08)',
+            boxShadow: isDark
+              ? '0 2px 8px rgba(0,0,0,0.3)'
+              : '0 2px 8px rgba(0,0,0,0.04)',
+            position: 'relative',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '30%',
+              background: isDark
+                ? 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%)'
+                : 'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 100%)',
+              pointerEvents: 'none',
+              zIndex: 1,
+              borderRadius: '8px 8px 0 0',
+            },
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, position: 'relative', zIndex: 2 }}>
+            <FilterIcon sx={{ color: C.neutral }} />
+            <Typography variant="subtitle1" fontWeight={700}>
+              {t('common.filter')} & {t('common.search')}
+            </Typography>
+            {hasActiveFilters && (
+              <Chip 
+                label={`${formatNumber([search && '1', classFilter && '1', sectionFilter && '1', statusFilter && '1'].filter(Boolean).length)} ${t('common.active')}`}
+                size="small"
+                sx={{
+                  ml: 'auto',
+                  height: 22,
+                  fontSize: '0.7rem',
+                  bgcolor: alpha(C.neutral, 0.15),
+                  color: C.neutral,
+                  fontWeight: 700,
+                }}
+              />
+            )}
+          </Box>
+          <Grid container spacing={2} alignItems="center" sx={{ position: 'relative', zIndex: 2 }}>
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                label={t('common.search')}
+                placeholder={`${t('students.firstName')}, ${t('students.studentId')}, ${t('students.contactNumber')}...`}
+                variant="outlined"
+                size="small"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: 'text.secondary' }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: search && (
+                    <InputAdornment position="end">
+                      <ToggleButtonGroup
+                        value={searchMode}
+                        exclusive
+                        onChange={(_e, newMode) => newMode && setSearchMode(newMode)}
+                        size="small"
+                        sx={{ height: 28 }}
+                      >
+                        <ToggleButton value="exact" sx={{ px: 1.5, py: 0.5 }}>
+                          <Tooltip title={t('students.exactSearch') || 'Exact Search'}>
+                            <ExactIcon fontSize="small" />
+                          </Tooltip>
+                        </ToggleButton>
+                        <ToggleButton value="fuzzy" sx={{ px: 1.5, py: 0.5 }}>
+                          <Tooltip title={t('students.fuzzySearch') || 'Fuzzy Search (handles typos)'}>
+                            <Badge badgeContent="AI" color="primary" sx={{ '& .MuiBadge-badge': { fontSize: '0.5rem', height: 14, minWidth: 14 } }}>
+                              <FuzzyIcon fontSize="small" />
+                            </Badge>
+                          </Tooltip>
+                        </ToggleButton>
+                      </ToggleButtonGroup>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                  }
+                }}
+              />
+            </Grid>
+            
+            <Grid item xs={6} md={2}>
+              <FormControl fullWidth size="small">
+                <InputLabel>{t('students.class')}</InputLabel>
+                <Select
+                  value={classFilter}
+                  label={t('students.class')}
+                  onChange={(e) => setClassFilter(e.target.value)}
+                  sx={{ 
+                    borderRadius: 2,
+                    bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                  }}
+                >
+                  <MenuItem value="">{t('reports.all')} {t('students.class')}</MenuItem>
+                  {[1,2,3,4,5,6,7,8,9,10,11,12].map((c) => (
+                    <MenuItem key={c} value={c}>{t('students.class')} {formatNumber(c)}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={6} md={2}>
+              <FormControl fullWidth size="small">
+                <InputLabel>{t('students.section')}</InputLabel>
+                <Select
+                  value={sectionFilter}
+                  label={t('students.section')}
+                  onChange={(e) => setSectionFilter(e.target.value)}
+                  sx={{ 
+                    borderRadius: 2,
+                    bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                  }}
+                >
+                  <MenuItem value="">{t('reports.all')} {t('students.section')}</MenuItem>
+                  {['A', 'B', 'C', 'D', 'E'].map((s) => (
+                    <MenuItem key={s} value={s}>{t('students.section')} {s}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={6} md={2}>
+              <FormControl fullWidth size="small">
+                <InputLabel>{t('students.status')}</InputLabel>
+                <Select
+                  value={statusFilter}
+                  label={t('students.status')}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  sx={{ 
+                    borderRadius: 2,
+                    bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                  }}
+                >
+                  <MenuItem value="">{t('reports.all')} {t('students.status')}</MenuItem>
+                  <MenuItem value="active">{t('students.active')}</MenuItem>
+                  <MenuItem value="inactive">{t('students.inactive')}</MenuItem>
+                  <MenuItem value="graduated">{t('students.graduated')}</MenuItem>
+                  <MenuItem value="transferred">{t('students.transferred')}</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={6} md={2}>
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<ClearIcon />}
+                onClick={clearFilters}
+                disabled={!hasActiveFilters}
+                sx={{
                   borderRadius: 2,
-                  bgcolor: alpha(theme.palette.background.default, 0.5),
-                }
-              }}
-            />
-          </Grid>
-          
-          <Grid item xs={6} md={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel>{t('students.class')}</InputLabel>
-              <Select
-                value={classFilter}
-                label={t('students.class')}
-                onChange={(e) => setClassFilter(e.target.value)}
-                sx={{ borderRadius: 2 }}
+                  borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
+                  color: isDark ? 'rgba(255,255,255,0.7)' : 'text.secondary',
+                  '&:hover': {
+                    borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)',
+                    bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                  },
+                  '&:disabled': {
+                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                  }
+                }}
               >
-                <MenuItem value="">{t('reports.all')} {t('students.class')}</MenuItem>
-                {[1,2,3,4,5,6,7,8,9,10,11,12].map((c) => (
-                  <MenuItem key={c} value={c}>{t('students.class')} {formatNumber(c)}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+                {t('common.clear')}
+              </Button>
+            </Grid>
           </Grid>
-
-          <Grid item xs={6} md={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel>{t('students.section')}</InputLabel>
-              <Select
-                value={sectionFilter}
-                label={t('students.section')}
-                onChange={(e) => setSectionFilter(e.target.value)}
-                sx={{ borderRadius: 2 }}
-              >
-                <MenuItem value="">{t('reports.all')} {t('students.section')}</MenuItem>
-                {['A', 'B', 'C'].map((s) => (
-                  <MenuItem key={s} value={s}>{t('students.section')} {s}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={6} md={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel>{t('students.status')}</InputLabel>
-              <Select
-                value={statusFilter}
-                label={t('students.status')}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                sx={{ borderRadius: 2 }}
-              >
-                <MenuItem value="">{t('reports.all')} {t('students.status')}</MenuItem>
-                <MenuItem value="active">{t('students.active')}</MenuItem>
-                <MenuItem value="inactive">{t('students.inactive')}</MenuItem>
-                <MenuItem value="graduated">{t('students.graduated')}</MenuItem>
-                <MenuItem value="transferred">{t('students.transferred')}</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={6} md={2}>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<ClearIcon />}
-              onClick={clearFilters}
-              disabled={!hasActiveFilters}
-              sx={{ ...S.BTN_OUTLINE,  
-                borderRadius: 2,
-                borderColor: alpha(theme.palette.primary.main, 0.3),
-                '&:hover': { borderColor: theme.palette.primary.main }
-              }}
-            >
-              {t('common.clear')}
-            </Button>
-          </Grid>
-        </Grid>
-      </Paper>
+        </Box>
+      </motion.div>
 
       {/* Student Table */}
       <Paper 

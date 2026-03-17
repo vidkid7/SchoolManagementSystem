@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box, Grid, Card, CardContent, Typography, Button, Divider, Avatar, List, ListItem,
+  Box, Grid, Card, CardContent, Typography, Button, Divider, List, ListItem,
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, useTheme,
 } from '@mui/material';
@@ -109,11 +109,11 @@ export const TeacherPortal: React.FC = () => {
       const notifList = notifRes.data?.data;
       setNotifications(Array.isArray(notifList) ? notifList : notifList?.notifications ?? []);
     } catch {
-      setError('Failed to load teacher dashboard');
+      setError(t('portal.failedToLoadData'));
     } finally {
       setLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, t]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -126,19 +126,19 @@ export const TeacherPortal: React.FC = () => {
   const profile = data?.profile;
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, mt: { xs: 7, sm: 8 } }}>
       {/* Header */}
-      <Box display="flex" alignItems="center" gap={2} mb={3}>
-        <Avatar sx={{ bgcolor: 'primary.main', width: 56, height: 56 }}>
-          <TeacherIcon fontSize="large" />
-        </Avatar>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>{t('menu.teacherPortal')}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Welcome, {user?.firstName || user?.username} — {t('roles.teacher') || 'Teacher'}
-          </Typography>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box display="flex" alignItems="center" gap={2}>
+          <TeacherIcon sx={{ fontSize: 32, color: C.primary }} />
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h5" fontWeight={700}>{t('menu.teacherPortal')}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('portal.welcome')}, {user?.firstName || user?.username} — {t('roles.teacher')}
+            </Typography>
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
 

@@ -162,7 +162,7 @@ const ParentPortal: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, mt: { xs: 7, sm: 8 } }}>
       {/* Header */}
       <Box sx={{ ...S.PAGE_HEADER, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

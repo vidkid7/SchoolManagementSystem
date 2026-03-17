@@ -142,16 +142,18 @@ export function AttendanceSettings() {
 
   return (
     <Box>
-      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-          <SettingsIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-          <Typography variant="h5" fontWeight={600}>
-            {t('attendance.rulesAndSettings')}
-          </Typography>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <SettingsIcon sx={{ fontSize: 32, color: C.primary }} />
+          <Box>
+            <Typography variant="h5" fontWeight={600}>
+              {t('attendance.rulesAndSettings')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('attendance.configureDescription')}
+            </Typography>
+          </Box>
         </Box>
-        <Typography variant="body2" color="text.secondary">
-          {t('attendance.configureDescription')}
-        </Typography>
 
         {success && <Alert severity="success" sx={{ mt: 2, borderRadius: R.md }}>{success}</Alert>}
         {error && <Alert severity="error" sx={{ mt: 2, borderRadius: R.md }}>{error}</Alert>}

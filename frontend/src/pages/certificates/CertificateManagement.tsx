@@ -55,7 +55,7 @@ import {
   CheckBox as CheckBoxIcon,
   CheckBoxOutlineBlank as CheckBoxOutlineBlankIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import apiClient from '../../services/apiClient';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { useTranslation } from 'react-i18next';
@@ -112,7 +112,7 @@ export const CertificateManagement = () => {
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
   const [tabValue, setTabValue] = useState(0);
   
   // Templates state
@@ -350,7 +350,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4">
-          Certificate Management / प्रमाणपत्र व्यवस्थापन
+          {t('certificates.management')}
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
@@ -358,16 +358,16 @@ const handleRevokeCertificate = async (certificateId: number) => {
             startIcon={<QrCodeIcon />}
             onClick={() => navigate('/certificates/verify')}
           >
-            Verify Certificate / प्रमाणपत्र प्रमाणित गर्नुहोस्
+            {t('certificates.verifyCertificate')}
           </Button>
         </Box>
       </Box>
 
       <Paper sx={{ ...S.GLASS, mb: 3 }}>
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
-          <Tab label="Templates / टेम्पलेट" />
-          <Tab label="Certificates / प्रमाणपत्र" />
-          <Tab label="Generate / उत्पन्न गर्नुहोस्" />
+          <Tab label={t('certificates.templates')} />
+          <Tab label={t('certificates.title')} />
+          <Tab label={t('certificates.generate')} />
         </Tabs>
       </Paper>
 
@@ -376,7 +376,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
         <Paper sx={{ ...S.GLASS, p: 2, mb: 3 }}>
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             <TextField
-              label="Search Templates / खोज्नुहोस्"
+              label={t('certificates.searchTemplates')}
               variant="outlined"
               size="small"
               value={templateSearch}
@@ -387,13 +387,13 @@ const handleRevokeCertificate = async (certificateId: number) => {
               }}
             />
             <FormControl size="small" sx={{ minWidth: 200 }}>
-              <InputLabel>Type / प्रकार</InputLabel>
+              <InputLabel>{t('common.type')}</InputLabel>
               <Select
                 value={templateTypeFilter}
-                label="Type / प्रकार"
+                label={t('common.type')}
                 onChange={(e) => setTemplateTypeFilter(e.target.value)}
               >
-                <MenuItem value="">All / सबै</MenuItem>
+                <MenuItem value="">{t('common.all')}</MenuItem>
                 {CERTIFICATE_TYPES.map((type) => (
                   <MenuItem key={type.value} value={type.value}>
                     {type.label}
@@ -406,7 +406,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
               startIcon={<AddIcon />}
               onClick={() => setTemplateDialogOpen(true)}
             >
-              Add Template / टेम्पलेट थप्नुहोस्
+              {t('certificates.addTemplate')}
             </Button>
           </Box>
         </Paper>
@@ -416,11 +416,11 @@ const handleRevokeCertificate = async (certificateId: number) => {
             <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
                 <TableCell>ID</TableCell>
-                <TableCell>Name / नाम</TableCell>
-                <TableCell>Type / प्रकार</TableCell>
-                <TableCell>Status / स्थिति</TableCell>
-                <TableCell>Created / सिर्जित</TableCell>
-                <TableCell align="right">Actions / कार्यहरू</TableCell>
+                <TableCell>{t('common.name')}</TableCell>
+                <TableCell>{t('common.type')}</TableCell>
+                <TableCell>{t('common.status')}</TableCell>
+                <TableCell>{t('common.created')}</TableCell>
+                <TableCell align="right">{t('common.actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -433,7 +433,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
               ) : templates.length === 0 ? (
                 <TableRow sx={S.TR_HOVER}>
                   <TableCell colSpan={6} align="center" sx={S.TD}>
-                    No templates found / कुनै टेम्पलेट फेला परेन
+                    {t('certificates.noTemplatesFound')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -483,7 +483,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
         <Paper sx={{ ...S.GLASS, p: 2, mb: 3 }}>
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             <TextField
-              label="Search Certificates / खोज्नुहोस्"
+              label={t('certificates.searchCertificates')}
               variant="outlined"
               size="small"
               value={certSearch}
@@ -494,13 +494,13 @@ const handleRevokeCertificate = async (certificateId: number) => {
               }}
             />
             <FormControl size="small" sx={{ minWidth: 200 }}>
-              <InputLabel>Type / प्रकार</InputLabel>
+              <InputLabel>{t('common.type')}</InputLabel>
               <Select
                 value={certTypeFilter}
-                label="Type / प्रकार"
+                label={t('common.type')}
                 onChange={(e) => setCertTypeFilter(e.target.value)}
               >
-                <MenuItem value="">All / सबै</MenuItem>
+                <MenuItem value="">{t('common.all')}</MenuItem>
                 {CERTIFICATE_TYPES.map((type) => (
                   <MenuItem key={type.value} value={type.value}>
                     {type.label}
@@ -509,15 +509,15 @@ const handleRevokeCertificate = async (certificateId: number) => {
               </Select>
             </FormControl>
             <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>Status / स्थिति</InputLabel>
+              <InputLabel>{t('common.status')}</InputLabel>
               <Select
                 value={certStatusFilter}
-                label="Status / स्थिति"
+                label={t('common.status')}
                 onChange={(e) => setCertStatusFilter(e.target.value)}
               >
-                <MenuItem value="">All / सबै</MenuItem>
-                <MenuItem value="active">Active / सक्रिय</MenuItem>
-                <MenuItem value="revoked">Revoked / रद्द</MenuItem>
+                <MenuItem value="">{t('common.all')}</MenuItem>
+                <MenuItem value="active">{t('certificates.active')}</MenuItem>
+                <MenuItem value="revoked">{t('certificates.revoked')}</MenuItem>
               </Select>
             </FormControl>
             <Button
@@ -525,7 +525,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
               startIcon={<RefreshIcon />}
               onClick={fetchCertificates}
             >
-              Refresh / ताजा गर्नुहोस्
+              {t('common.refresh')}
             </Button>
           </Box>
         </Paper>
@@ -534,12 +534,12 @@ const handleRevokeCertificate = async (certificateId: number) => {
           <Table>
             <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
-                <TableCell>Certificate No. / प्रमाणपत्र नं.</TableCell>
-                <TableCell>Student / विद्यार्थी</TableCell>
-                <TableCell>Type / प्रकार</TableCell>
-                <TableCell>Issued Date / जारी मिति</TableCell>
-                <TableCell>Status / स्थिति</TableCell>
-                <TableCell align="right">Actions / कार्यहरू</TableCell>
+                <TableCell>{t('certificates.certificateNo')}</TableCell>
+                <TableCell>{t('certificates.student')}</TableCell>
+                <TableCell>{t('common.type')}</TableCell>
+                <TableCell>{t('certificates.issuedDate')}</TableCell>
+                <TableCell>{t('common.status')}</TableCell>
+                <TableCell align="right">{t('common.actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -552,7 +552,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
               ) : certificates.length === 0 ? (
                 <TableRow sx={S.TR_HOVER}>
                   <TableCell colSpan={6} align="center" sx={S.TD}>
-                    No certificates found / कुनै प्रमाणपत्र फेला परेन
+                    {t('certificates.noCertificatesFound')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -673,20 +673,20 @@ const handleRevokeCertificate = async (certificateId: number) => {
 
       {/* Create Template Dialog */}
       <Dialog open={templateDialogOpen} onClose={() => setTemplateDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Create Certificate Template / प्रमाणपत्र टेम्पलेट सिर्जना गर्नुहोस्</DialogTitle>
+        <DialogTitle>{t('certificates.createTemplate')}</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
-              label="Template Name / टेम्पलेट नाम"
+              label={t('certificates.templateName')}
               fullWidth
               value={templateForm.name}
               onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })}
             />
             <FormControl fullWidth>
-              <InputLabel>Certificate Type / प्रमाणपत्र प्रकार</InputLabel>
+              <InputLabel>{t('certificates.certificateType')}</InputLabel>
               <Select
                 value={templateForm.type}
-                label="Certificate Type / प्रमाणपत्र प्रकार"
+                label={t('certificates.certificateType')}
                 onChange={(e) => setTemplateForm({ ...templateForm, type: e.target.value })}
               >
                 {CERTIFICATE_TYPES.map((type) => (
@@ -697,7 +697,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
               </Select>
             </FormControl>
             <TextField
-              label="Template HTML / टेम्पलेट HTML"
+              label={t('certificates.templateHtml')}
               fullWidth
               multiline
               rows={6}
@@ -709,9 +709,9 @@ const handleRevokeCertificate = async (certificateId: number) => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setTemplateDialogOpen(false)}>Cancel / रद्द गर्नुहोस्</Button>
+          <Button onClick={() => setTemplateDialogOpen(false)}>{t('common.cancel')}</Button>
           <Button variant="contained" sx={S.BTN_PRIMARY} onClick={handleCreateTemplate}>
-            Create / सिर्जना गर्नुहोस्
+            {t('common.create')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -723,7 +723,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Certificate Details / प्रमाणपत्र विवरण</DialogTitle>
+        <DialogTitle>{t('certificates.certificateDetails')}</DialogTitle>
         <DialogContent>
           {selectedCertificate && (
             <Box sx={{ pt: 2 }}>
@@ -735,31 +735,31 @@ const handleRevokeCertificate = async (certificateId: number) => {
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Student Name / विद्यार्थीको नाम
+                    {t('certificates.studentName')}
                   </Typography>
                   <Typography variant="body1">{selectedCertificate.studentName}</Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Certificate Type / प्रमाणपत्र प्रकार
+                    {t('certificates.certificateType')}
                   </Typography>
                   <Typography variant="body1">{getTypeLabel(selectedCertificate.type)}</Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Issued Date BS / जारी मिति (BS)
+                    {t('certificates.issuedDateBS')}
                   </Typography>
                   <Typography variant="body1">{selectedCertificate.issuedDateBS}</Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Issued Date AD / जारी मिति (AD)
+                    {t('certificates.issuedDateAD')}
                   </Typography>
                   <Typography variant="body1">{selectedCertificate.issuedDate}</Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Status / स्थिति
+                    {t('common.status')}
                   </Typography>
                   <Chip
                     label={selectedCertificate.status}
@@ -774,7 +774,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
                       startIcon={<DownloadIcon />}
                       onClick={() => window.open(selectedCertificate.pdfUrl, '_blank')}
                     >
-                      Download PDF / पीडीएफ डाउनलोड गर्नुहोस्
+                      {t('certificates.downloadPdf')}
                     </Button>
                   </Grid>
                 )}
@@ -783,22 +783,22 @@ const handleRevokeCertificate = async (certificateId: number) => {
           )}
         </DialogContent>
 <DialogActions>
-          <Button onClick={() => setSelectedCertificate(null)}>Close / बन्द गर्नुहोस्</Button>
+          <Button onClick={() => setSelectedCertificate(null)}>{t('common.close')}</Button>
         </DialogActions>
       </Dialog>
 
       {/* Generate Single Certificate Dialog */}
       <Dialog open={generateDialogOpen} onClose={() => setGenerateDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Generate Single Certificate / एकल प्रमाणपत्र उत्पन्न गर्नुहोस्</DialogTitle>
+        <DialogTitle>{t('certificates.singleGenerate')}</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth required>
-                  <InputLabel>Template / टेम्पलेट</InputLabel>
+                  <InputLabel>{t('certificates.template')}</InputLabel>
                   <Select
                     value={generateForm.templateId}
-                    label="Template / टेम्पलेट"
+                    label={t('certificates.template')}
                     onChange={(e) => setGenerateForm({ ...generateForm, templateId: e.target.value })}
                   >
                     {availableTemplates.map((template) => (
@@ -811,10 +811,10 @@ const handleRevokeCertificate = async (certificateId: number) => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth required>
-                  <InputLabel>Student / विद्यार्थी</InputLabel>
+                  <InputLabel>{t('certificates.student')}</InputLabel>
                   <Select
                     value={generateForm.studentId}
-                    label="Student / विद्यार्थी"
+                    label={t('certificates.student')}
                     onChange={(e) => {
                       const student = students.find(s => s.studentId === parseInt(e.target.value));
                       setGenerateForm({ 
@@ -834,7 +834,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
-                  label="Issued Date (BS) / जारी मिति (BS)"
+                  label={t('certificates.issuedDateBS')}
                   fullWidth
                   required
                   value={generateForm.issuedDateBS}
@@ -844,7 +844,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
-                  label="Academic Year / शैक्षिक वर्ष"
+                  label={t('common.academicYear')}
                   fullWidth
                   value={generateForm.academicYear}
                   onChange={(e) => setGenerateForm({ ...generateForm, academicYear: e.target.value })}
@@ -853,7 +853,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
-                  label="Student Name / विद्यार्थीको नाम"
+                  label={t('certificates.studentName')}
                   fullWidth
                   value={generateForm.studentName}
                   onChange={(e) => setGenerateForm({ ...generateForm, studentName: e.target.value })}
@@ -861,7 +861,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
-                  label="Parent/Guardian Name / अभिभावकको नाम"
+                  label={t('certificates.parentGuardianName')}
                   fullWidth
                   value={generateForm.parentName}
                   onChange={(e) => setGenerateForm({ ...generateForm, parentName: e.target.value })}
@@ -869,7 +869,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
-                  label="Class / कक्षा"
+                  label={t('common.class')}
                   fullWidth
                   value={generateForm.className}
                   onChange={(e) => setGenerateForm({ ...generateForm, className: e.target.value })}
@@ -877,7 +877,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
-                  label="Roll Number / रोल नम्बर"
+                  label={t('certificates.rollNumber')}
                   fullWidth
                   value={generateForm.rollNumber}
                   onChange={(e) => setGenerateForm({ ...generateForm, rollNumber: e.target.value })}
@@ -887,20 +887,20 @@ const handleRevokeCertificate = async (certificateId: number) => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setGenerateDialogOpen(false)}>Cancel / रद्द गर्नुहोस्</Button>
+          <Button onClick={() => setGenerateDialogOpen(false)}>{t('common.cancel')}</Button>
           <Button 
             variant="contained" sx={S.BTN_PRIMARY} 
             onClick={handleGenerateCertificate}
             disabled={generating || !generateForm.templateId || !generateForm.studentId || !generateForm.issuedDateBS}
           >
-            {generating ? <CircularProgress size={24} /> : 'Generate / उत्पन्न गर्नुहोस्'}
+            {generating ? <CircularProgress size={24} /> : t('certificates.generate')}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Bulk Generate Dialog */}
       <Dialog open={bulkGenerateDialogOpen} onClose={() => setBulkGenerateDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Bulk Generate Certificates / थोक प्रमाणपत्र उत्पन्न गर्नुहोस्</DialogTitle>
+        <DialogTitle>{t('certificates.bulkGenerateCertificates')}</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Alert severity="info">
@@ -909,10 +909,10 @@ const handleRevokeCertificate = async (certificateId: number) => {
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth required>
-                  <InputLabel>Template / टेम्पलेट</InputLabel>
+                  <InputLabel>{t('certificates.template')}</InputLabel>
                   <Select
                     value={bulkForm.templateId}
-                    label="Template / टेम्पलेट"
+                    label={t('certificates.template')}
                     onChange={(e) => setBulkForm({ ...bulkForm, templateId: e.target.value })}
                   >
                     {availableTemplates.map((template) => (
@@ -925,7 +925,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
-                  label="Issued Date (BS) / जारी मिति (BS)"
+                  label={t('certificates.issuedDateBS')}
                   fullWidth
                   required
                   value={bulkForm.issuedDateBS}
@@ -935,7 +935,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
               </Grid>
               <Grid item xs={12}>
                 <TextField
-                  label="Academic Year / शैक्षिक वर्ष"
+                  label={t('common.academicYear')}
                   fullWidth
                   value={bulkForm.academicYear}
                   onChange={(e) => setBulkForm({ ...bulkForm, academicYear: e.target.value })}
@@ -944,7 +944,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
               </Grid>
               <Grid item xs={12}>
                 <Typography variant="subtitle2" gutterBottom>
-                  Select Students / विद्यार्थी छान्नुहोस् ({bulkForm.selectedStudents.length} selected)
+                  {t('certificates.selectStudents')} ({bulkForm.selectedStudents.length} selected)
                 </Typography>
                 <Autocomplete
                   multiple
@@ -970,7 +970,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
                     );
                   }}
                   renderInput={(params) => (
-                    <TextField {...params} label="Students / विद्यार्थीहरू" placeholder="Search students..." />
+                    <TextField {...params} label={t('certificates.students')} placeholder="Search students..." />
                   )}
                 />
               </Grid>
@@ -978,7 +978,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setBulkGenerateDialogOpen(false)}>Cancel / रद्द गर्नुहोस्</Button>
+          <Button onClick={() => setBulkGenerateDialogOpen(false)}>{t('common.cancel')}</Button>
           <Button 
             variant="contained" sx={S.BTN_PRIMARY} 
             onClick={handleBulkGenerate}

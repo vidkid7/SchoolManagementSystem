@@ -113,7 +113,7 @@ export const EnhancedStudentPortal: React.FC = () => {
         setAttendance(results[0].value.data.data);
       }
       if (results[1].status === 'fulfilled') {
-        setGrades(results[1].value.data.data || []);
+        setGrades(Array.isArray(results[1].value.data.data) ? results[1].value.data.data : []);
       }
       if (results[2].status === 'fulfilled') {
         setFees(results[2].value.data.data);
@@ -261,6 +261,7 @@ export const EnhancedStudentPortal: React.FC = () => {
   return (
     <Box sx={{
       p: { xs: 2, md: 3 },
+      mt: { xs: 7, sm: 8 },
       minHeight: '100vh',
       background: S.dark
         ? 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)'
@@ -503,7 +504,9 @@ export const EnhancedStudentPortal: React.FC = () => {
           {/* Timetable Tab */}
           <TabPanel value={tabValue} index={3}>
             {(() => {
-              const entries = timetable?.entries || timetable?.periods || timetable?.timetable || (Array.isArray(timetable) ? timetable : []);
+              const entries = timetable?.entries || timetable?.periods ||
+                (Array.isArray(timetable?.timetable) ? timetable.timetable : null) ||
+                (Array.isArray(timetable) ? timetable : []);
               if (!timetable || entries.length === 0) {
                 return (
                   <Box sx={S.EMPTY_STATE}>

@@ -130,7 +130,10 @@ export class LibraryService {
 
     const { count, rows } = await Circulation.findAndCountAll({
       where: whereClause,
-      include: [Book, Student],
+      include: [
+        { model: Book, as: 'book' },
+        { model: Student, as: 'student' },
+      ],
       order: [['dueDate', 'DESC']],
       limit,
       offset: (page - 1) * limit,

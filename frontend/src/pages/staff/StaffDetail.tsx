@@ -187,14 +187,14 @@ export const StaffDetail = () => {
       setStaff(response.data.data);
     } catch (err) {
       console.error('Failed to fetch staff:', err);
-      setError('Failed to load staff details');
+      setError(t('staff.failedToLoad'));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this staff member?')) {
+    if (!window.confirm(t('staff.confirmDeleteStaff'))) {
       return;
     }
     try {
@@ -202,7 +202,7 @@ export const StaffDetail = () => {
       navigate(`/staff`);
     } catch (err) {
       console.error('Failed to delete staff:', err);
-      setError('Failed to delete staff');
+      setError(t('staff.failedToDelete'));
     }
   };
 
@@ -221,7 +221,7 @@ export const StaffDetail = () => {
   if (error || !staff) {
     return (
       <Box sx={{ p: 3 }}>
-        <Alert severity="error">{error || 'Staff not found'}</Alert>
+        <Alert severity="error">{error || t('staff.notFound')}</Alert>
         <Button startIcon={<BackIcon />} onClick={() => navigate(`/staff`)} sx={{ mt: 2 }}>
           {t('common.back')}
         </Button>
@@ -513,13 +513,13 @@ export const StaffDetail = () => {
               <Tab 
                 icon={<DocumentIcon />} 
                 iconPosition="start" 
-                label="Documents" 
+                label={t('staff.form.documents')} 
               />
               {staff.position === 'teacher' && (
                 <Tab 
                   icon={<AssignmentIcon />} 
                   iconPosition="start" 
-                  label="Assignments" 
+                  label={t('staff.form.assignments')} 
                 />
               )}
             </Tabs>

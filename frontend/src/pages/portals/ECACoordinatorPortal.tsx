@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box, Grid, Card, CardContent, Typography, Button, Divider, Avatar, List, ListItem,
+  Box, Grid, Card, CardContent, Typography, Button, Divider, List, ListItem,
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog,
   DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select,
@@ -98,7 +98,7 @@ const ECACoordinatorPortal: React.FC = () => {
   const S = useAdminStyles(theme);
 
   const loadData = useCallback(async () => {
-    if (!accessToken) return;
+    if (!accessToken) { setLoading(false); return; }
     try {
       const [statsRes, activitiesRes, eventsRes, achievementsRes, profileRes] = await Promise.all([
         apiClient.get('/api/v1/eca/statistics', authHdr(accessToken)).catch(() => ({ data: { data: null } })),
@@ -124,29 +124,28 @@ const ECACoordinatorPortal: React.FC = () => {
       setAchievements(Array.isArray(ac) ? ac : ac?.achievements ?? []);
       setProfile(profileRes.data?.data ?? null);
     } catch {
-      setError('Failed to load ECA dashboard');
+      setError(t('portal.failedToLoadData'));
     } finally {
       setLoading(false);
     }
-  }, [accessToken]);
-
-  useEffect(() => { loadData(); }, [loadData]);
+  }, [accessToken, t]);
 
   if (loading) return <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh"><CircularProgress /></Box>;
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box display="flex" alignItems="center" gap={2} mb={3}>
-        <Avatar sx={{ bgcolor: 'info.main', width: 56, height: 56 }}>
-          <ECAIcon fontSize="large" />
-        </Avatar>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>{t('portal.ecaCoordinatorPortal')}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t('portal.welcome')}, {user?.firstName || user?.username} — {t('portal.extraCurricularActivities')}
-          </Typography>
+    <Box sx={{ p: 3, mt: { xs: 7, sm: 8 } }}>
+      {/* Header */}
+      <Paper sx={S.PAGE_HEADER}>
+        <Box display="flex" alignItems="center" gap={2}>
+          <ECAIcon sx={{ fontSize: 32, color: C.info }} />
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h5" fontWeight={700}>{t('portal.ecaCoordinatorPortal')}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('portal.welcome')}, {user?.firstName || user?.username} — {t('portal.extraCurricularActivities')}
+            </Typography>
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
 

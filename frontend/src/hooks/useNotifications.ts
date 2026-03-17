@@ -60,7 +60,7 @@ export function useNotifications(): UseNotificationsReturn {
       const { data } = await api.get('/notifications', {
         params: { page: pageNum, limit: PAGE_SIZE },
       });
-      const fetched: Notification[] = data.data.notifications;
+      const fetched: Notification[] = Array.isArray(data.data?.notifications) ? data.data.notifications : [];
       setNotifications((prev) => (replace ? fetched : [...prev, ...fetched]));
       setHasMore(pageNum < data.data.totalPages);
     } catch {

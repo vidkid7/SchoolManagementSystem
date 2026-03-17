@@ -201,7 +201,7 @@ export const ClassSubjects = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Paper sx={S.PAGE_HEADER}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <IconButton
             onClick={() => navigate(`/academic`)}
@@ -213,11 +213,17 @@ export const ClassSubjects = () => {
           >
             <ArrowBackIcon />
           </IconButton>
-          <Typography variant="h4" fontWeight={600}>
-            {t('classSubjects.title')}
-          </Typography>
+          <AssignmentIcon sx={{ fontSize: 32, color: 'primary.main' }} />
+          <Box>
+            <Typography variant="h4" fontWeight={600}>
+              {t('classSubjects.title')}
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              {t('academic.classSubjectAssignmentDesc')}
+            </Typography>
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>

@@ -243,39 +243,28 @@ export const RoleManagement = () => {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Box
-            sx={{
-              width: 48,
-              height: 48,
-              borderRadius: R.lg,
-              background: `linear-gradient(135deg, ${C.primary} 0%, ${C.purple} 100%)`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 14px rgba(0,0,0,0.1)',
-            }}
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <SecurityIcon sx={{ fontSize: 32, color: C.primary }} />
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                {t('roles.title')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t('settings.roleAndPermissions')}
+              </Typography>
+            </Box>
+          </Box>
+          <Button
+            startIcon={<AddIcon />}
+            onClick={() => setRoleDialog({ open: true, mode: 'create' })}
+            sx={{ ...S.BTN_PRIMARY, borderRadius: R.lg }}
           >
-            <SecurityIcon sx={{ color: '#fff', fontSize: 24 }} />
-          </Box>
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 600 }}>
-              {t('roles.title')}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t('settings.roleAndPermissions')}
-            </Typography>
-          </Box>
+            {t('roles.addRole')}
+          </Button>
         </Box>
-        <Button
-          startIcon={<AddIcon />}
-          onClick={() => setRoleDialog({ open: true, mode: 'create' })}
-          sx={{ ...S.BTN_PRIMARY, borderRadius: R.lg }}
-        >
-          {t('roles.addRole')}
-        </Button>
-      </Box>
+      </Paper>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
@@ -391,7 +380,7 @@ export const RoleManagement = () => {
                                 variant="outlined"
                                 sx={{ fontSize: '0.75rem' }}
                               />
-                            )) || <Typography variant="body2" color="text.secondary">No permissions assigned</Typography>}
+                            )) || <Typography variant="body2" color="text.secondary">{t('roles.noPermissionsAssigned')}</Typography>}
                           </Box>
                         </Box>
                       </Collapse>
@@ -478,7 +467,7 @@ export const RoleManagement = () => {
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Select permissions to assign to this role.
+            {t('roles.selectPermissionsHint')}
           </Typography>
           <PermissionMatrix
             permissions={permissions}
@@ -560,14 +549,14 @@ const PermissionMatrix = ({ permissions, rolePermissions, onSave }: PermissionMa
                 setSelectedPermissions(new Set(allIds));
               }}
             >
-              Select All
+              {t('roles.selectAll')}
             </Button>
             <Button
               size="small"
               variant="outlined" sx={S.BTN_OUTLINE}
               onClick={() => setSelectedPermissions(new Set())}
             >
-              Deselect All
+              {t('roles.deselectAll')}
             </Button>
           </Box>
         </Grid>

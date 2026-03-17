@@ -274,36 +274,14 @@ export function FinancialReports() {
 
   return (
     <Box>
-      {/* Header Card with Blue Theme */}
-      <Paper 
-        sx={{ 
-          ...S.GLASS,
-          p: 3, 
-          mb: 3,
-          background: `linear-gradient(135deg, ${C.primary} 0%, ${C.primary} 100%)`,
-          color: 'white',
-          borderRadius: R.lg,
-        }}
-      >
+      <Paper sx={S.PAGE_HEADER}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Box
-            sx={{
-              width: 56,
-              height: 56,
-              borderRadius: R.lg,
-              background: alpha('#ffffff', 0.2),
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <ReportIcon sx={{ fontSize: 32 }} />
-          </Box>
+          <ReportIcon sx={{ fontSize: 32 }} />
           <Box>
             <Typography variant="h5" fontWeight={700}>
               {t('finance.financialReports')}
             </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+            <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.5 }}>
               {t('finance.generateComprehensiveReports')}
             </Typography>
           </Box>

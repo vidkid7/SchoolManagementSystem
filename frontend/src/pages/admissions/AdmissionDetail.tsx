@@ -4,7 +4,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
   Paper,
@@ -66,17 +67,17 @@ interface AdmissionDetail {
   rejectionReason?: string;
 }
 
-const statusLabels: Record<string, string> = {
-  inquiry: 'Inquiry',
-  applied: 'Applied',
-  test_scheduled: 'Test Scheduled',
-  tested: 'Tested',
-  interview_scheduled: 'Interview Scheduled',
-  interviewed: 'Interviewed',
-  admitted: 'Admitted',
-  enrolled: 'Enrolled',
-  rejected: 'Rejected',
-  withdrawn: 'Withdrawn',
+const statusKeyMap: Record<string, string> = {
+  inquiry: 'admissions.inquiry',
+  applied: 'admissions.applied',
+  test_scheduled: 'admissions.testScheduled',
+  tested: 'admissions.tested',
+  interview_scheduled: 'admissions.interviewScheduled',
+  interviewed: 'admissions.interviewed',
+  admitted: 'admissions.admitted',
+  enrolled: 'admissions.enrolled',
+  rejected: 'admissions.rejected',
+  withdrawn: 'admissions.withdrawn',
 };
 
 export function AdmissionDetail() {
@@ -84,7 +85,7 @@ export function AdmissionDetail() {
   const S = useAdminStyles(theme);
   const { t } = useTranslation();
   const { id } = useParams();
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
   const [loading, setLoading] = useState(true);
   const [admission, setAdmission] = useState<AdmissionDetail | null>(null);
   const [success, setSuccess] = useState('');
@@ -118,7 +119,7 @@ export function AdmissionDetail() {
       setAdmission(response.data?.data);
     } catch (error: any) {
       console.error('Failed to fetch admission:', error);
-      setError('Failed to load admission details');
+      setError(t('admissions.failedToLoad'));
     } finally {
       setLoading(false);
     }
@@ -127,11 +128,11 @@ export function AdmissionDetail() {
   const handleConvertToApplication = async () => {
     try {
       await api.post(`/admissions/${id}/apply`);
-      setSuccess('Converted to application successfully!');
+      setSuccess(t('admissions.convertedSuccessfully'));
       setConvertDialog(false);
       fetchAdmission();
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Failed to convert to application');
+      setError(error.response?.data?.message || t('admissions.failedToConvert'));
     }
   };
 
@@ -140,11 +141,11 @@ export function AdmissionDetail() {
       await api.post(`/admissions/${id}/schedule-test`, {
         admissionTestDate: testDate,
       });
-      setSuccess('Test scheduled successfully!');
+      setSuccess(t('admissions.testScheduledSuccessfully'));
       setTestDialog(false);
       fetchAdmission();
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Failed to schedule test');
+      setError(error.response?.data?.message || t('admissions.failedToScheduleTest'));
     }
   };
 
@@ -154,11 +155,11 @@ export function AdmissionDetail() {
         admissionTestScore: parseFloat(testScore),
         admissionTestRemarks: testRemarks,
       });
-      setSuccess('Test score recorded successfully!');
+      setSuccess(t('admissions.testScoreRecordedSuccessfully'));
       setTestDialog(false);
       fetchAdmission();
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Failed to record test score');
+      setError(error.response?.data?.message || t('admissions.failedToRecordTestScore'));
     }
   };
 
@@ -167,11 +168,11 @@ export function AdmissionDetail() {
       await api.post(`/admissions/${id}/schedule-interview`, {
         interviewDate,
       });
-      setSuccess('Interview scheduled successfully!');
+      setSuccess(t('admissions.interviewScheduledSuccessfully'));
       setInterviewDialog(false);
       fetchAdmission();
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Failed to schedule interview');
+      setError(error.response?.data?.message || t('admissions.failedToScheduleInterview'));
     }
   };
 
@@ -181,22 +182,22 @@ export function AdmissionDetail() {
         interviewFeedback,
         interviewScore: interviewScore ? parseInt(interviewScore) : undefined,
       });
-      setSuccess('Interview feedback recorded successfully!');
+      setSuccess(t('admissions.interviewRecordedSuccessfully'));
       setInterviewDialog(false);
       fetchAdmission();
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Failed to record interview');
+      setError(error.response?.data?.message || t('admissions.failedToRecordInterview'));
     }
   };
 
   const handleAdmit = async () => {
     try {
       await api.post(`/admissions/${id}/admit`);
-      setSuccess('Student admitted successfully!');
+      setSuccess(t('admissions.admittedSuccessfully'));
       setAdmitDialog(false);
       fetchAdmission();
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Failed to admit student');
+      setError(error.response?.data?.message || t('admissions.failedToAdmit'));
     }
   };
 
@@ -205,22 +206,22 @@ export function AdmissionDetail() {
       await api.post(`/admissions/${id}/reject`, {
         rejectionReason,
       });
-      setSuccess('Application rejected');
+      setSuccess(t('admissions.applicationRejected'));
       setRejectDialog(false);
       fetchAdmission();
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Failed to reject application');
+      setError(error.response?.data?.message || t('admissions.failedToReject'));
     }
   };
 
   const handleEnroll = async () => {
     try {
       await api.post(`/admissions/${id}/enroll`);
-      setSuccess('Student enrolled successfully!');
+      setSuccess(t('admissions.enrolledSuccessfully'));
       setEnrollDialog(false);
       fetchAdmission();
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Failed to enroll student');
+      setError(error.response?.data?.message || t('admissions.failedToEnroll'));
     }
   };
 
@@ -235,7 +236,7 @@ export function AdmissionDetail() {
   if (!admission) {
     return (
       <Paper sx={{ ...S.GLASS, p: 3 }}>
-        <Alert severity="error">Admission not found</Alert>
+        <Alert severity="error">{t('admissions.notFound')}</Alert>
       </Paper>
     );
   }
@@ -249,14 +250,14 @@ export function AdmissionDetail() {
               startIcon={<BackIcon />}
               onClick={() => navigate('/admissions/list')}
             >
-              Back
+              {t('common.back')}
             </Button>
             <Typography variant="h5" fontWeight={600}>
-              Admission Details
+              {t('admissions.admissionDetails')}
             </Typography>
           </Box>
           <Chip
-            label={statusLabels[admission.status]}
+            label={t(statusKeyMap[admission.status] || admission.status)}
             color={admission.status === 'enrolled' ? 'success' : 'primary'}
           />
         </Box>
@@ -266,84 +267,84 @@ export function AdmissionDetail() {
 
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
-            <Typography variant="h6" gutterBottom>Student Information</Typography>
+            <Typography variant="h6" gutterBottom>{t('admissions.studentInformation')}</Typography>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">Temporary ID</Typography>
+              <Typography variant="body2" color="text.secondary">{t('admissions.temporaryId')}</Typography>
               <Typography variant="body1">{admission.temporaryId}</Typography>
             </Box>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">Full Name</Typography>
+              <Typography variant="body2" color="text.secondary">{t('admissions.fullName')}</Typography>
               <Typography variant="body1">
                 {`${admission.firstNameEn} ${admission.middleNameEn || ''} ${admission.lastNameEn}`}
               </Typography>
             </Box>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">Date of Birth</Typography>
+              <Typography variant="body2" color="text.secondary">{t('admissions.dateOfBirth')}</Typography>
               <Typography variant="body1">
-                {admission.dateOfBirthAD ? new Date(admission.dateOfBirthAD).toLocaleDateString() : 'N/A'}
+                {admission.dateOfBirthAD ? new Date(admission.dateOfBirthAD).toLocaleDateString() : t('common.na')}
               </Typography>
             </Box>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">Gender</Typography>
-              <Typography variant="body1">{admission.gender || 'N/A'}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('admissions.gender')}</Typography>
+              <Typography variant="body1">{admission.gender || t('common.na')}</Typography>
             </Box>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">Applying for Class</Typography>
-              <Typography variant="body1">Class {admission.applyingForClass}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('admissions.applyingForClass')}</Typography>
+              <Typography variant="body1">{t('common.class')} {admission.applyingForClass}</Typography>
             </Box>
           </Grid>
 
           <Grid item xs={12} md={6}>
-            <Typography variant="h6" gutterBottom>Contact Information</Typography>
+            <Typography variant="h6" gutterBottom>{t('admissions.contactInformation')}</Typography>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">Phone</Typography>
-              <Typography variant="body1">{admission.phone || 'N/A'}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('admissions.phone')}</Typography>
+              <Typography variant="body1">{admission.phone || t('common.na')}</Typography>
             </Box>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">Email</Typography>
-              <Typography variant="body1">{admission.email || 'N/A'}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('admissions.email')}</Typography>
+              <Typography variant="body1">{admission.email || t('common.na')}</Typography>
             </Box>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">Address</Typography>
-              <Typography variant="body1">{admission.addressEn || 'N/A'}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('admissions.address')}</Typography>
+              <Typography variant="body1">{admission.addressEn || t('common.na')}</Typography>
             </Box>
           </Grid>
 
           <Grid item xs={12}>
             <Divider sx={{ my: 2 }} />
-            <Typography variant="h6" gutterBottom>Parent/Guardian Information</Typography>
+            <Typography variant="h6" gutterBottom>{t('admissions.parentGuardianInformation')}</Typography>
           </Grid>
 
           <Grid item xs={12} md={4}>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">Father's Name</Typography>
-              <Typography variant="body1">{admission.fatherName || 'N/A'}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('admissions.fatherName')}</Typography>
+              <Typography variant="body1">{admission.fatherName || t('common.na')}</Typography>
             </Box>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">Father's Phone</Typography>
-              <Typography variant="body1">{admission.fatherPhone || 'N/A'}</Typography>
-            </Box>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">Mother's Name</Typography>
-              <Typography variant="body1">{admission.motherName || 'N/A'}</Typography>
-            </Box>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">Mother's Phone</Typography>
-              <Typography variant="body1">{admission.motherPhone || 'N/A'}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('admissions.fatherPhone')}</Typography>
+              <Typography variant="body1">{admission.fatherPhone || t('common.na')}</Typography>
             </Box>
           </Grid>
 
           <Grid item xs={12} md={4}>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">Guardian's Name</Typography>
-              <Typography variant="body1">{admission.guardianName || 'N/A'}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('admissions.motherName')}</Typography>
+              <Typography variant="body1">{admission.motherName || t('common.na')}</Typography>
             </Box>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">Guardian's Phone</Typography>
-              <Typography variant="body1">{admission.guardianPhone || 'N/A'}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('admissions.motherPhone')}</Typography>
+              <Typography variant="body1">{admission.motherPhone || t('common.na')}</Typography>
+            </Box>
+          </Grid>
+
+          <Grid item xs={12} md={4}>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary">{t('admissions.guardianName')}</Typography>
+              <Typography variant="body1">{admission.guardianName || t('common.na')}</Typography>
+            </Box>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary">{t('admissions.guardianPhone')}</Typography>
+              <Typography variant="body1">{admission.guardianPhone || t('common.na')}</Typography>
             </Box>
           </Grid>
         </Grid>
@@ -351,45 +352,45 @@ export function AdmissionDetail() {
         <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           {admission.status === 'inquiry' && (
             <Button variant="contained" sx={S.BTN_PRIMARY} onClick={() => setConvertDialog(true)}>
-              Convert to Application
+              {t('admissions.convertToApplication')}
             </Button>
           )}
           {admission.status === 'applied' && (
             <>
               <Button variant="contained" sx={S.BTN_PRIMARY} onClick={() => setTestDialog(true)}>
-                Schedule Test
+                {t('admissions.scheduleTest')}
               </Button>
               <Button variant="contained" sx={S.BTN_PRIMARY} onClick={() => setInterviewDialog(true)}>
-                Schedule Interview
+                {t('admissions.scheduleInterview')}
               </Button>
               <Button variant="contained" sx={S.BTN_PRIMARY} color="success" onClick={() => setAdmitDialog(true)}>
-                Admit Directly
+                {t('admissions.admitDirectly')}
               </Button>
             </>
           )}
           {admission.status === 'test_scheduled' && (
             <Button variant="contained" sx={S.BTN_PRIMARY} onClick={() => setTestDialog(true)}>
-              Record Test Score
+              {t('admissions.recordTestScore')}
             </Button>
           )}
           {(admission.status === 'tested' || admission.status === 'interviewed') && (
             <Button variant="contained" sx={S.BTN_PRIMARY} color="success" onClick={() => setAdmitDialog(true)}>
-              Admit Student
+              {t('admissions.admitStudent')}
             </Button>
           )}
           {admission.status === 'interview_scheduled' && (
             <Button variant="contained" sx={S.BTN_PRIMARY} onClick={() => setInterviewDialog(true)}>
-              Record Interview
+              {t('admissions.recordInterview')}
             </Button>
           )}
           {admission.status === 'admitted' && (
             <Button variant="contained" sx={S.BTN_PRIMARY} color="success" onClick={() => setEnrollDialog(true)}>
-              Enroll Student
+              {t('admissions.enrollStudent')}
             </Button>
           )}
           {!['enrolled', 'rejected', 'withdrawn'].includes(admission.status) && (
             <Button variant="outlined" sx={S.BTN_OUTLINE} color="error" onClick={() => setRejectDialog(true)}>
-              Reject
+              {t('admissions.reject')}
             </Button>
           )}
         </Box>
@@ -397,16 +398,16 @@ export function AdmissionDetail() {
 
       {/* Convert Dialog */}
       <Dialog open={convertDialog} onClose={() => setConvertDialog(false)}>
-        <DialogTitle>Convert to Application</DialogTitle>
+        <DialogTitle>{t('admissions.convertToApplication')}</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to convert this inquiry to an application?
+            {t('admissions.confirmConvert')}
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConvertDialog(false)}>Cancel</Button>
+          <Button onClick={() => setConvertDialog(false)}>{t('common.cancel')}</Button>
           <Button variant="contained" sx={S.BTN_PRIMARY} onClick={handleConvertToApplication}>
-            Convert
+            {t('admissions.convert')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -414,14 +415,14 @@ export function AdmissionDetail() {
       {/* Test Dialog */}
       <Dialog open={testDialog} onClose={() => setTestDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {admission.status === 'applied' ? 'Schedule Test' : 'Record Test Score'}
+          {admission.status === 'applied' ? t('admissions.scheduleTest') : t('admissions.recordTestScore')}
         </DialogTitle>
         <DialogContent>
           {admission.status === 'applied' ? (
             <TextField
               fullWidth
               type="datetime-local"
-              label="Test Date & Time"
+              label={t('admissions.testDateAndTime')}
               value={testDate}
               onChange={(e) => setTestDate(e.target.value)}
               InputLabelProps={{ shrink: true }}
@@ -432,7 +433,7 @@ export function AdmissionDetail() {
               <TextField
                 fullWidth
                 type="number"
-                label="Test Score"
+                label={t('admissions.testScore')}
                 value={testScore}
                 onChange={(e) => setTestScore(e.target.value)}
                 sx={{ mt: 2, mb: 2 }}
@@ -441,7 +442,7 @@ export function AdmissionDetail() {
                 fullWidth
                 multiline
                 rows={3}
-                label="Remarks"
+                label={t('admissions.testRemarks')}
                 value={testRemarks}
                 onChange={(e) => setTestRemarks(e.target.value)}
               />
@@ -449,12 +450,12 @@ export function AdmissionDetail() {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setTestDialog(false)}>Cancel</Button>
+          <Button onClick={() => setTestDialog(false)}>{t('common.cancel')}</Button>
           <Button
             variant="contained" sx={S.BTN_PRIMARY}
             onClick={admission.status === 'applied' ? handleScheduleTest : handleRecordTestScore}
           >
-            {admission.status === 'applied' ? 'Schedule' : 'Record'}
+            {admission.status === 'applied' ? t('admissions.schedule') : t('admissions.record')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -462,14 +463,14 @@ export function AdmissionDetail() {
       {/* Interview Dialog */}
       <Dialog open={interviewDialog} onClose={() => setInterviewDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {admission.status === 'applied' || admission.status === 'tested' ? 'Schedule Interview' : 'Record Interview'}
+          {admission.status === 'applied' || admission.status === 'tested' ? t('admissions.scheduleInterview') : t('admissions.recordInterview')}
         </DialogTitle>
         <DialogContent>
           {admission.status === 'applied' || admission.status === 'tested' ? (
             <TextField
               fullWidth
               type="datetime-local"
-              label="Interview Date & Time"
+              label={t('admissions.interviewDateAndTime')}
               value={interviewDate}
               onChange={(e) => setInterviewDate(e.target.value)}
               InputLabelProps={{ shrink: true }}
@@ -481,7 +482,7 @@ export function AdmissionDetail() {
                 fullWidth
                 multiline
                 rows={4}
-                label="Interview Feedback"
+                label={t('admissions.interviewFeedback')}
                 value={interviewFeedback}
                 onChange={(e) => setInterviewFeedback(e.target.value)}
                 sx={{ mt: 2, mb: 2 }}
@@ -489,7 +490,7 @@ export function AdmissionDetail() {
               <TextField
                 fullWidth
                 type="number"
-                label="Interview Score (Optional)"
+                label={t('admissions.interviewScoreOptional')}
                 value={interviewScore}
                 onChange={(e) => setInterviewScore(e.target.value)}
               />
@@ -497,66 +498,66 @@ export function AdmissionDetail() {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setInterviewDialog(false)}>Cancel</Button>
+          <Button onClick={() => setInterviewDialog(false)}>{t('common.cancel')}</Button>
           <Button
             variant="contained" sx={S.BTN_PRIMARY}
             onClick={admission.status === 'interview_scheduled' ? handleRecordInterview : handleScheduleInterview}
           >
-            {admission.status === 'interview_scheduled' ? 'Record' : 'Schedule'}
+            {admission.status === 'interview_scheduled' ? t('admissions.record') : t('admissions.schedule')}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Admit Dialog */}
       <Dialog open={admitDialog} onClose={() => setAdmitDialog(false)}>
-        <DialogTitle>Admit Student</DialogTitle>
+        <DialogTitle>{t('admissions.admitStudent')}</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to admit this student?
+            {t('admissions.confirmAdmit')}
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAdmitDialog(false)}>Cancel</Button>
+          <Button onClick={() => setAdmitDialog(false)}>{t('common.cancel')}</Button>
           <Button variant="contained" sx={S.BTN_PRIMARY} color="success" onClick={handleAdmit}>
-            Admit
+            {t('admissions.admit')}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Enroll Dialog */}
       <Dialog open={enrollDialog} onClose={() => setEnrollDialog(false)}>
-        <DialogTitle>Enroll Student</DialogTitle>
+        <DialogTitle>{t('admissions.enrollStudent')}</DialogTitle>
         <DialogContent>
           <Typography>
-            This will create a student record and enroll the student. Continue?
+            {t('admissions.confirmEnroll')}
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEnrollDialog(false)}>Cancel</Button>
+          <Button onClick={() => setEnrollDialog(false)}>{t('common.cancel')}</Button>
           <Button variant="contained" sx={S.BTN_PRIMARY} color="success" onClick={handleEnroll}>
-            Enroll
+            {t('admissions.enrollStudent')}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Reject Dialog */}
       <Dialog open={rejectDialog} onClose={() => setRejectDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Reject Application</DialogTitle>
+        <DialogTitle>{t('admissions.rejectApplication')}</DialogTitle>
         <DialogContent>
           <TextField
             fullWidth
             multiline
             rows={4}
-            label="Rejection Reason"
+            label={t('admissions.rejectionReason')}
             value={rejectionReason}
             onChange={(e) => setRejectionReason(e.target.value)}
             sx={{ mt: 2 }}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setRejectDialog(false)}>Cancel</Button>
+          <Button onClick={() => setRejectDialog(false)}>{t('common.cancel')}</Button>
           <Button variant="contained" sx={S.BTN_PRIMARY} color="error" onClick={handleReject}>
-            Reject
+            {t('admissions.reject')}
           </Button>
         </DialogActions>
       </Dialog>

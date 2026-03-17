@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box, Grid, Card, CardContent, Typography, Button, Divider, Avatar, List, ListItem,
+  Box, Grid, Card, CardContent, Typography, Button, Divider, List, ListItem,
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog,
   DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select,
@@ -103,11 +103,11 @@ const DepartmentHeadPortal: React.FC = () => {
         setProfile(profileRes.data?.data ?? null);
       } catch { /* ignore */ }
     } catch {
-      setError('Failed to load department dashboard');
+      setError(t('portal.failedToLoadData'));
     } finally {
       setLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, t]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -120,18 +120,18 @@ const DepartmentHeadPortal: React.FC = () => {
   const teachers = dashboard.teachers ?? [];
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box display="flex" alignItems="center" gap={2} mb={3}>
-        <Avatar sx={{ bgcolor: 'secondary.main', width: 56, height: 56 }}>
-          <DeptIcon fontSize="large" />
-        </Avatar>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>{t('portal.departmentHeadPortal')}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t('portal.welcome')}, {user?.firstName || user?.username} — {dashboard.department?.name || t('portal.departmentHead')}
-          </Typography>
+    <Box sx={{ p: 3, mt: { xs: 7, sm: 8 } }}>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box display="flex" alignItems="center" gap={2}>
+          <DeptIcon sx={{ fontSize: 32, color: C.purple }} />
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h5" fontWeight={700}>{t('portal.departmentHeadPortal')}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('portal.welcome')}, {user?.firstName || user?.username} — {dashboard.department?.name || t('portal.departmentHead')}
+            </Typography>
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
 

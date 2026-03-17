@@ -256,7 +256,7 @@ const AdminSettings: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, minHeight: '100vh' }}>
+    <Box sx={{ p: { xs: 2, md: 3 }, mt: { xs: 7, sm: 8 }, minHeight: '100vh' }}>
 
       {/* ── Page Header ───────────────────────────────────────────────────── */}
       <Box sx={{

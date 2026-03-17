@@ -254,24 +254,11 @@ export function ReportCards() {
   const GLASS = S.GLASS;
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-          <Box
-            sx={{
-              width: 48,
-              height: 48,
-              borderRadius: R.lg,
-              background: C.primaryBg,
-              border: `1px solid ${alpha(C.primary, 0.2)}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <ReportIcon sx={{ fontSize: 24, color: C.primary }} />
-          </Box>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <ReportIcon sx={{ fontSize: 32, color: C.primary }} />
           <Box>
             <Typography variant="h5" fontWeight={700}>
               {t('examinations.generateReportCards')}
@@ -281,7 +268,7 @@ export function ReportCards() {
             </Typography>
           </Box>
         </Box>
-      </Box>
+      </Paper>
 
       {success && (
         <Alert severity="success" sx={{ mb: 3, ...GLASS }} onClose={() => setSuccess('')}>

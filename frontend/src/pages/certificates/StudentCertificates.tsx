@@ -72,7 +72,7 @@ const fetchCertificates = async () => {
       setCertificates(response.data.data || []);
     } catch (err) {
       console.error('Failed to fetch certificates:', err);
-      setError('Failed to load certificates');
+      setError(t('certificates.noCertificates'));
     } finally {
       setLoading(false);
     }
@@ -115,16 +115,20 @@ const fetchCertificates = async () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
-          My Certificates / मेरा प्रमाणपत्रहरू
-        </Typography>
-      </Box>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <DescriptionIcon sx={{ fontSize: 32, color: C.primary }} />
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>{t('certificates.myCertificates')}</Typography>
+            <Typography variant="body2" color="text.secondary">{t('certificates.subtitle')}</Typography>
+          </Box>
+        </Box>
+      </Paper>
 
       <Paper sx={{ ...S.GLASS, mb: 3 }}>
         <Tabs value={selectedTab} onChange={(_, newValue) => setSelectedTab(newValue)}>
-          <Tab label={`Available / उपलब्ध (${activeCertificates.length})`} />
-          <Tab label={`Revoked / रद्द (${revokedCertificates.length})`} />
+          <Tab label={`${t('certificates.available')} (${activeCertificates.length})`} />
+          <Tab label={`${t('certificates.revoked')} (${revokedCertificates.length})`} />
         </Tabs>
       </Paper>
 
@@ -140,12 +144,12 @@ const fetchCertificates = async () => {
         <Paper sx={{ ...S.GLASS, p: 4, textAlign: 'center' }}>
           <DescriptionIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h6" gutterBottom>
-            No Certificates Available / कुनै प्रमाणपत्र उपलब्ध छैन
+            {t('certificates.noCertificates')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {selectedTab === 0 
-              ? 'You have not received any certificates yet.'
-              : 'No revoked certificates.'}
+            {selectedTab === 0
+              ? t('certificates.noCertAvailable')
+              : t('certificates.noRevokedCerts')}
           </Typography>
         </Paper>
       ) : (
@@ -153,11 +157,11 @@ const fetchCertificates = async () => {
           <Table>
             <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
-                <TableCell>Certificate No. / प्रमाणपत्र नं.</TableCell>
-                <TableCell>Type / प्रकार</TableCell>
-                <TableCell>Issued Date / जारी मिति</TableCell>
-                <TableCell>Status / स्थिति</TableCell>
-                <TableCell align="right">Actions / कार्यहरू</TableCell>
+                <TableCell>{t('certificates.certificateNo')}</TableCell>
+                <TableCell>{t('certificates.certificateType')}</TableCell>
+                <TableCell>{t('certificates.issuedDate')}</TableCell>
+                <TableCell>{t('certificates.status')}</TableCell>
+                <TableCell align="right">{t('common.actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -239,7 +243,7 @@ const fetchCertificates = async () => {
             <Box sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h5">
-                  Certificate Details / प्रमाणपत्र विवरण
+                  {t('certificates.certificateDetailTitle')}
                 </Typography>
                 <IconButton onClick={() => setSelectedCertificate(null)}>
                   <DownloadIcon />
@@ -252,12 +256,12 @@ const fetchCertificates = async () => {
                     severity={selectedCertificate.status === 'active' ? 'success' : 'error'}
                     sx={{ mb: 2 }}
                   >
-                    Certificate {selectedCertificate.status === 'active' ? 'is valid' : 'has been revoked'}
+                    {`${t('certificates.title')} ${selectedCertificate.status === 'active' ? t('certificates.certIsValid') : t('certificates.certRevoked')}`}
                   </Alert>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Certificate Number
+                    {t('certificates.certificateNumber')}
                   </Typography>
                   <Typography variant="body1" fontWeight="bold">
                     {selectedCertificate.certificateNumber}
@@ -265,7 +269,7 @@ const fetchCertificates = async () => {
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Status
+                    {t('certificates.status')}
                   </Typography>
                   <Chip
                     label={selectedCertificate.status}
@@ -275,7 +279,7 @@ const fetchCertificates = async () => {
                 </Grid>
                 <Grid item xs={12}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Certificate Type
+                    {t('certificates.certificateType')}
                   </Typography>
                   <Typography variant="body1">
                     {getTypeLabel(selectedCertificate.type)}
@@ -283,7 +287,7 @@ const fetchCertificates = async () => {
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Issued Date (BS)
+                    {t('certificates.issuedDateBS')}
                   </Typography>
                   <Typography variant="body1">
                     {selectedCertificate.issuedDateBS}
@@ -291,7 +295,7 @@ const fetchCertificates = async () => {
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Issued Date (AD)
+                    {t('certificates.issuedDate')}
                   </Typography>
                   <Typography variant="body1">
                     {selectedCertificate.issuedDate}
@@ -301,7 +305,7 @@ const fetchCertificates = async () => {
 
               <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                 <Button onClick={() => setSelectedCertificate(null)}>
-                  Close / बन्द गर्नुहोस्
+                  {t('common.close')}
                 </Button>
                 {selectedCertificate.pdfUrl && selectedCertificate.status === 'active' && (
                   <Button
@@ -312,7 +316,7 @@ const fetchCertificates = async () => {
                       setSelectedCertificate(null);
                     }}
                   >
-                    Download PDF / पीडीएफ डाउनलोड गर्नुहोस्
+                    {t('certificates.downloadPdf')}
                   </Button>
                 )}
               </Box>

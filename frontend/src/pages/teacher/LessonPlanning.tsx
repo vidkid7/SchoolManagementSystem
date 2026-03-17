@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -71,6 +72,7 @@ const authHdr = (token: string) => ({ headers: { Authorization: `Bearer ${token}
 export const LessonPlanning = () => {
   const theme = useTheme();
   const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const { accessToken } = useSelector((state: RootState) => state.auth);
   const [tabValue, setTabValue] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
@@ -95,11 +97,11 @@ export const LessonPlanning = () => {
       setLessonPlans(plansRes.data?.data?.lessonPlans ?? plansRes.data?.data ?? []);
       setSyllabusTopics(progressRes.data?.data?.progress ?? progressRes.data?.data ?? []);
     } catch {
-      setError('Failed to load lesson plans');
+      setError(t('portal.failedToLoadData'));
     } finally {
       setLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, t]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -153,48 +155,54 @@ export const LessonPlanning = () => {
       setOpenDialog(false);
       loadData();
     } catch {
-      setError('Failed to create lesson plan');
+      setError(t('portal.failedToLoadData'));
       setOpenDialog(false);
     }
   };
 
-  const handleDeletePlan = async (planId: number | string) => {
+  const handleDeletePlan= async (planId: number | string) => {
     if (!accessToken) return;
     try {
       await apiClient.delete(`/api/v1/lesson-plans/${planId}`, authHdr(accessToken));
       setLessonPlans(prev => prev.filter((p: any) => p.id !== planId));
     } catch {
-      setError('Failed to delete lesson plan');
+      setError(t('portal.failedToLoadData'));
     }
   };
 
-  const handleStatusChange = async (planId: number | string, newStatus: string) => {
+  const handleStatusChange= async (planId: number | string, newStatus: string) => {
     if (!accessToken) return;
     try {
       await apiClient.patch(`/api/v1/lesson-plans/${planId}/status`, { status: newStatus }, authHdr(accessToken));
       setLessonPlans(prev => prev.map((p: any) => p.id === planId ? { ...p, status: newStatus } : p));
     } catch {
-      setError('Failed to update lesson plan status');
+      setError(t('portal.failedToLoadData'));
     }
   };
 
-  if (loading) return <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh"><CircularProgress /></Box>;
+  if (loading)return <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh"><CircularProgress /></Box>;
 
   return (
-    <Box>
+    <Box sx={{ mt: { xs: 7, sm: 8 } }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
-          Lesson Planning / पाठ योजना
-        </Typography>
-        <Button
-          variant="contained" sx={S.BTN_PRIMARY}
-          startIcon={<AddIcon />}
-          onClick={handleCreatePlan}
-        >
-          Create Lesson Plan / नयाँ योजना
-        </Button>
-      </Box>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <ScheduleIcon sx={{ fontSize: 32, color: C.primary }} />
+            <Box>
+              <Typography variant="h5" fontWeight={700}>{t('teacher.lessonPlanning')}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('teacher.lessonPlanningSubtitle')}</Typography>
+            </Box>
+          </Box>
+          <Button
+            variant="contained" sx={S.BTN_PRIMARY}
+            startIcon={<AddIcon />}
+            onClick={handleCreatePlan}
+          >
+            {t('teacher.createLessonPlan')}
+          </Button>
+        </Box>
+      </Paper>
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
 
@@ -203,25 +211,25 @@ export const LessonPlanning = () => {
         <Grid container spacing={3}>
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
-              <InputLabel>Subject / विषय</InputLabel>
+              <InputLabel>{t('common.subject')}</InputLabel>
               <Select
                 value={selectedSubject}
-                label="Subject / विषय"
+                label={t('common.subject')}
                 onChange={(e) => setSelectedSubject(e.target.value)}
               >
-                <MenuItem value="Mathematics">Mathematics / गणित</MenuItem>
-                <MenuItem value="Physics">Physics / भौतिक विज्ञान</MenuItem>
-                <MenuItem value="Chemistry">Chemistry / रसायन विज्ञान</MenuItem>
+                <MenuItem value="Mathematics">Mathematics</MenuItem>
+                <MenuItem value="Physics">Physics</MenuItem>
+                <MenuItem value="Chemistry">Chemistry</MenuItem>
               </Select>
             </FormControl>
           </Grid>
 
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
-              <InputLabel>Class / कक्षा</InputLabel>
+              <InputLabel>{t('common.class')}</InputLabel>
               <Select
                 value={selectedClass}
-                label="Class / कक्षा"
+                label={t('common.class')}
                 onChange={(e) => setSelectedClass(e.target.value)}
               >
                 <MenuItem value="Class 10 A">Class 10 A</MenuItem>
@@ -239,7 +247,7 @@ export const LessonPlanning = () => {
               sx={{ ...S.BTN_OUTLINE,  height: '56px' }}
               startIcon={<ViewIcon />}
             >
-              View Calendar / पात्रो हेर्नुहोस्
+              {t('teacher.viewCalendar')}
             </Button>
           </Grid>
         </Grid>
@@ -248,8 +256,8 @@ export const LessonPlanning = () => {
       {/* Tabs */}
       <Paper>
         <Tabs value={tabValue} onChange={(_e, newValue) => setTabValue(newValue)}>
-          <Tab label="Lesson Plans / पाठ योजना" />
-          <Tab label="Syllabus Progress / पाठ्यक्रम प्रगति" />
+          <Tab label={t('portal.lessonPlans')} />
+          <Tab label={t('teacher.syllabusProgress')} />
         </Tabs>
 
         {/* Lesson Plans Tab */}
@@ -282,7 +290,7 @@ export const LessonPlanning = () => {
                     </Box>
 
                     <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
-                      Learning Objectives:
+                      {t('teacher.learningObjectives')}:
                     </Typography>
                     <List dense>
                       {(plan.objectives ?? []).map((obj: string, index: number) => (
@@ -308,7 +316,7 @@ export const LessonPlanning = () => {
                       <DeleteIcon />
                     </IconButton>
                     <Button size="small" startIcon={<AttachFileIcon />} sx={{ ml: 'auto' }}>
-                      Materials (3)
+                      {t('teacher.materials')}
                     </Button>
                   </CardActions>
                 </Card>
@@ -321,7 +329,7 @@ export const LessonPlanning = () => {
         <TabPanel value={tabValue} index={1}>
           <Box sx={{ mb: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Overall Progress / समग्र प्रगति
+              {t('teacher.overallProgress')}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Box sx={{ flexGrow: 1, mr: 2 }}>
@@ -332,7 +340,7 @@ export const LessonPlanning = () => {
                 />
               </Box>
               <Typography variant="body2" color="text.secondary">
-                {syllabusTopics.length > 0 ? Math.round(syllabusTopics.reduce((sum: number, t: any) => sum + (t.progress ?? 0), 0) / syllabusTopics.length) : 0}% Complete
+                {syllabusTopics.length > 0 ? Math.round(syllabusTopics.reduce((sum: number, t: any) => sum + (t.progress ?? 0), 0) / syllabusTopics.length) : 0}% {t('teacher.complete')}
               </Typography>
             </Box>
           </Box>
@@ -376,10 +384,10 @@ export const LessonPlanning = () => {
 
                   <CardActions>
                     <Button size="small" startIcon={<EditIcon />}>
-                      Update Progress
+                      {t('teacher.updateProgress')}
                     </Button>
                     <Button size="small" startIcon={<ViewIcon />}>
-                      View Details
+                      {t('common.details')}
                     </Button>
                   </CardActions>
                 </Card>
@@ -391,24 +399,24 @@ export const LessonPlanning = () => {
 
       {/* Create Lesson Plan Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>Create Lesson Plan / नयाँ पाठ योजना</DialogTitle>
+        <DialogTitle>{t('teacher.createLessonPlan')}</DialogTitle>
         <DialogContent>
           <Grid container spacing={3} sx={{ mt: 1 }}>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
-                <InputLabel>Subject / विषय</InputLabel>
-                <Select label="Subject / विषय" defaultValue="">
-                  <MenuItem value="Mathematics">Mathematics / गणित</MenuItem>
-                  <MenuItem value="Physics">Physics / भौतिक विज्ञान</MenuItem>
-                  <MenuItem value="Chemistry">Chemistry / रसायन विज्ञान</MenuItem>
+                <InputLabel>{t('common.subject')}</InputLabel>
+                <Select label={t('common.subject')} defaultValue="">
+                  <MenuItem value="Mathematics">Mathematics</MenuItem>
+                  <MenuItem value="Physics">Physics</MenuItem>
+                  <MenuItem value="Chemistry">Chemistry</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
 
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
-                <InputLabel>Class / कक्षा</InputLabel>
-                <Select label="Class / कक्षा" defaultValue="">
+                <InputLabel>{t('common.class')}</InputLabel>
+                <Select label={t('common.class')} defaultValue="">
                   <MenuItem value="Class 10 A">Class 10 A</MenuItem>
                   <MenuItem value="Class 10 B">Class 10 B</MenuItem>
                   <MenuItem value="Class 11 Science">Class 11 Science</MenuItem>
@@ -427,7 +435,7 @@ export const LessonPlanning = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Date / मिति"
+                label={t('common.date')}
                 type="date"
                 InputLabelProps={{ shrink: true }}
               />
@@ -436,8 +444,8 @@ export const LessonPlanning = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Duration / अवधि"
-                placeholder="e.g., 45 mins"
+                label={t('teacher.duration')}
+                placeholder={t('teacher.duration')}
               />
             </Grid>
 
@@ -446,8 +454,8 @@ export const LessonPlanning = () => {
                 fullWidth
                 multiline
                 rows={3}
-                label="Learning Objectives / सिकाइ उद्देश्य"
-                placeholder="Enter learning objectives (one per line)"
+                label={t('teacher.learningObjectives')}
+                placeholder={t('teacher.learningObjectives')}
               />
             </Grid>
 
@@ -456,8 +464,8 @@ export const LessonPlanning = () => {
                 fullWidth
                 multiline
                 rows={4}
-                label="Teaching Activities / शिक्षण गतिविधि"
-                placeholder="Describe teaching activities and methods"
+                label={t('teacher.teachingActivities')}
+                placeholder={t('teacher.teachingActivities')}
               />
             </Grid>
 
@@ -466,8 +474,8 @@ export const LessonPlanning = () => {
                 fullWidth
                 multiline
                 rows={3}
-                label="Assessment Methods / मूल्याङ्कन विधि"
-                placeholder="How will you assess student learning?"
+                label={t('teacher.assessmentMethods')}
+                placeholder={t('teacher.assessmentMethods')}
               />
             </Grid>
 
@@ -477,19 +485,19 @@ export const LessonPlanning = () => {
                 startIcon={<AttachFileIcon />}
                 component="label"
               >
-                Upload Teaching Materials
+                {t('teacher.uploadMaterials')}
                 <input type="file" hidden multiple />
               </Button>
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel / रद्द गर्नुहोस्</Button>
+          <Button onClick={handleCloseDialog}>{t('common.cancel')}</Button>
           <Button onClick={() => handleSavePlan('draft')} variant="contained" sx={S.BTN_PRIMARY}>
-            Save as Draft / ड्राफ्ट सुरक्षित गर्नुहोस्
+            {t('teacher.saveAsDraft')}
           </Button>
           <Button onClick={() => handleSavePlan('scheduled')} variant="contained" sx={S.BTN_PRIMARY} color="success">
-            Save & Schedule / सुरक्षित र तालिका
+            {t('teacher.saveAndSchedule')}
           </Button>
         </DialogActions>
       </Dialog>

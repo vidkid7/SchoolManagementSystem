@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogTitle,
   Grid,
+  Paper,
   Stack,
   Table,
   TableBody,
@@ -173,11 +174,12 @@ export default function MunicipalityAdminPortal() {
       ]);
 
       setDashboard(dashboardResponse.data.data as DashboardData);
-      setSchools(schoolsResponse.data.data as School[]);
+      const schoolsData = schoolsResponse.data.data;
+      setSchools(Array.isArray(schoolsData) ? schoolsData : schoolsData?.schools || schoolsData?.items || []);
       setReports(reportsResponse.data.data as ReportsData);
       setIncidents(incidentsResponse.data.data as IncidentsData);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load municipality data');
+      setError(err.response?.data?.message || t('portal.failedToLoadData'));
     } finally {
       setLoading(false);
     }
@@ -207,7 +209,7 @@ export default function MunicipalityAdminPortal() {
       setMessage('School created successfully');
       await loadData();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create school');
+      setError(err.response?.data?.message || t('portal.failedToLoadData'));
     } finally {
       setSavingSchool(false);
     }
@@ -224,7 +226,7 @@ export default function MunicipalityAdminPortal() {
       );
       await loadData();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update school status');
+      setError(err.response?.data?.message || t('portal.failedToLoadData'));
     }
   };
 
@@ -253,7 +255,7 @@ export default function MunicipalityAdminPortal() {
       setMessage('School admin created successfully');
       await loadData();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create school admin');
+      setError(err.response?.data?.message || t('portal.failedToLoadData'));
     } finally {
       setSavingAdmin(false);
     }
@@ -268,19 +270,19 @@ export default function MunicipalityAdminPortal() {
   }
 
   return (
-    <Box>
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
-        <LocationCityIcon color="primary" />
-        <Typography variant="h5" fontWeight={700}>
-          {t('portal.municipalityAdminPortal')}
-        </Typography>
-      </Stack>
-
-      {dashboard && (
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-          {dashboard.municipality.nameEn} ({dashboard.municipality.code}) - {dashboard.municipality.district}
-        </Typography>
-      )}
+    <Box sx={{ p: 3, mt: { xs: 7, sm: 8 } }}>
+      {/* Header */}
+      <Paper sx={S.PAGE_HEADER}>
+        <Box display="flex" alignItems="center" gap={2}>
+          <LocationCityIcon sx={{ fontSize: 32, color: C.primary }} />
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h5" fontWeight={700}>{t('portal.municipalityAdminPortal')}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {dashboard ? `${dashboard.municipality?.nameEn ?? ''} (${dashboard.municipality?.code ?? ''}) - ${dashboard.municipality?.district ?? ''}` : t('portal.manageSchools')}
+            </Typography>
+          </Box>
+        </Box>
+      </Paper>
 
       {message && (
         <Alert severity="success" sx={{ mb: 2 }}>
@@ -354,26 +356,26 @@ export default function MunicipalityAdminPortal() {
                   Reports Overview
                 </Typography>
               </Stack>
-              {reports ? (
+              {reports?.userMetrics ? (
                 <Stack spacing={0.75}>
                   <Typography variant="body2">
                     <strong>Total Users:</strong> {reports.userMetrics.totalUsers}
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Teachers:</strong> {reports.userMetrics.byRole.teachers}
+                    <strong>Teachers:</strong> {reports.userMetrics.byRole?.teachers}
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Students:</strong> {reports.userMetrics.byRole.students}
+                    <strong>Students:</strong> {reports.userMetrics.byRole?.students}
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Parents:</strong> {reports.userMetrics.byRole.parents}
+                    <strong>Parents:</strong> {reports.userMetrics.byRole?.parents}
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Support Staff:</strong> {reports.userMetrics.byRole.supportStaff}
+                    <strong>Support Staff:</strong> {reports.userMetrics.byRole?.supportStaff}
                   </Typography>
                   <Typography variant="body2">
                     <strong>Suspended/Locked Users:</strong>{' '}
-                    {reports.userMetrics.byStatus.suspended + reports.userMetrics.byStatus.locked}
+                    {(reports.userMetrics.byStatus?.suspended ?? 0) + (reports.userMetrics.byStatus?.locked ?? 0)}
                   </Typography>
                 </Stack>
               ) : (
@@ -391,7 +393,7 @@ export default function MunicipalityAdminPortal() {
                   Incidents
                 </Typography>
               </Stack>
-              {incidents ? (
+              {incidents?.summary ? (
                 <>
                   <Typography variant="body2" sx={{ mb: 1.5 }}>
                     {incidents.summary.totalIncidents} tracked issue(s):{' '}
@@ -399,7 +401,7 @@ export default function MunicipalityAdminPortal() {
                     {incidents.summary.flaggedUsers} flagged user(s)
                   </Typography>
                   <Stack spacing={1}>
-                    {incidents.incidents.slice(0, 5).map((incident) => (
+                    {(incidents.incidents || []).slice(0, 5).map((incident) => (
                       <Box
                         key={incident.id}
                         sx={{
@@ -422,7 +424,7 @@ export default function MunicipalityAdminPortal() {
                         </Typography>
                       </Box>
                     ))}
-                    {incidents.incidents.length === 0 && (
+                    {(incidents.incidents || []).length === 0 && (
                       <Typography color="text.secondary">No incidents found.</Typography>
                     )}
                   </Stack>

@@ -226,3 +226,6 @@ Username: parent_0001 to parent_NNNN (numbered sequentially)
 Password: Parent@123
 Role: Parent
 Access: View child's information
+
+
+now in similar way,check design consistency like admin dashboard across all portals all pages ,colour theme ,translations,navigations,in each pages and sub pages of each portal.go deeply in each pages sub pages,check each buttons features functions popups drawers and everything deeply in each portal if they are working and are not tehre any error in the databse loading and other things.check navigations in each buttons,pages and roles properly and deeply,see translations in each pages sub pages and fix it.login each portal and then see the situation errors yourself and fix them.also check all the apis are connected properly no hardcoded and dummy datas are used in our pages and subpages in all portal fix them

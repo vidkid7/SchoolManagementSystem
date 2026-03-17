@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { PersonAdd as InquiryIcon, Save as SaveIcon } from '@mui/icons-material';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
-import { useNavigate } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import api from '../../config/api';
 import { useTranslation } from 'react-i18next';
 
@@ -26,7 +26,7 @@ export function NewInquiry() {
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -74,13 +74,13 @@ export function NewInquiry() {
         previousClass: formData.previousClass ? parseInt(formData.previousClass) : undefined,
       });
       
-      setSuccess('Inquiry created successfully!');
+      setSuccess(t('admissions.inquiryCreatedSuccessfully'));
       setTimeout(() => {
         navigate(`/admissions/${response.data.data.admissionId}`);
       }, 1500);
     } catch (error: any) {
       console.error('Failed to create inquiry:', error);
-      setError(error.response?.data?.message || 'Failed to create inquiry');
+      setError(error.response?.data?.message || t('admissions.failedToCreateInquiry'));
     } finally {
       setLoading(false);
     }
@@ -92,7 +92,7 @@ export function NewInquiry() {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
           <InquiryIcon sx={{ fontSize: 32, color: 'primary.main' }} />
           <Typography variant="h5" fontWeight={600}>
-            New Admission Inquiry
+            {t('admissions.newAdmissionInquiry')}
           </Typography>
         </Box>
 
@@ -101,14 +101,14 @@ export function NewInquiry() {
 
         <form onSubmit={handleSubmit}>
           <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-            Student Information
+            {t('admissions.studentInformation')}
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
                 required
-                label="First Name (English)"
+                label={t('admissions.firstNameEnglish')}
                 name="firstNameEn"
                 value={formData.firstNameEn}
                 onChange={handleChange}
@@ -117,7 +117,7 @@ export function NewInquiry() {
             <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
-                label="Middle Name (English)"
+                label={t('admissions.middleNameEnglish')}
                 name="middleNameEn"
                 value={formData.middleNameEn}
                 onChange={handleChange}
@@ -127,7 +127,7 @@ export function NewInquiry() {
               <TextField
                 fullWidth
                 required
-                label="Last Name (English)"
+                label={t('admissions.lastNameEnglish')}
                 name="lastNameEn"
                 value={formData.lastNameEn}
                 onChange={handleChange}
@@ -137,7 +137,7 @@ export function NewInquiry() {
               <TextField
                 fullWidth
                 type="date"
-                label="Date of Birth"
+                label={t('admissions.dateOfBirth')}
                 name="dateOfBirthAD"
                 value={formData.dateOfBirthAD}
                 onChange={handleChange}
@@ -148,14 +148,14 @@ export function NewInquiry() {
               <TextField
                 fullWidth
                 select
-                label="Gender"
+                label={t('admissions.gender')}
                 name="gender"
                 value={formData.gender}
                 onChange={handleChange}
               >
-                <MenuItem value="male">Male</MenuItem>
-                <MenuItem value="female">Female</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
+                <MenuItem value="male">{t('admissions.male')}</MenuItem>
+                <MenuItem value="female">{t('admissions.female')}</MenuItem>
+                <MenuItem value="other">{t('admissions.other')}</MenuItem>
               </TextField>
             </Grid>
             <Grid item xs={12} md={4}>
@@ -163,26 +163,26 @@ export function NewInquiry() {
                 fullWidth
                 required
                 select
-                label="Applying for Class"
+                label={t('admissions.applyingForClass')}
                 name="applyingForClass"
                 value={formData.applyingForClass}
                 onChange={handleChange}
               >
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((cls) => (
-                  <MenuItem key={cls} value={cls}>Class {cls}</MenuItem>
+                  <MenuItem key={cls} value={cls}>{t('common.class')} {cls}</MenuItem>
                 ))}
               </TextField>
             </Grid>
           </Grid>
 
           <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-            Contact Information
+            {t('admissions.contactInformation')}
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Phone"
+                label={t('admissions.phone')}
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
@@ -192,7 +192,7 @@ export function NewInquiry() {
               <TextField
                 fullWidth
                 type="email"
-                label="Email"
+                label={t('admissions.email')}
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
@@ -203,7 +203,7 @@ export function NewInquiry() {
                 fullWidth
                 multiline
                 rows={2}
-                label="Address"
+                label={t('admissions.address')}
                 name="addressEn"
                 value={formData.addressEn}
                 onChange={handleChange}
@@ -212,13 +212,13 @@ export function NewInquiry() {
           </Grid>
 
           <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-            Parent/Guardian Information
+            {t('admissions.parentGuardianInformation')}
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Father's Name"
+                label={t('admissions.fatherName')}
                 name="fatherName"
                 value={formData.fatherName}
                 onChange={handleChange}
@@ -227,7 +227,7 @@ export function NewInquiry() {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Father's Phone"
+                label={t('admissions.fatherPhone')}
                 name="fatherPhone"
                 value={formData.fatherPhone}
                 onChange={handleChange}
@@ -236,7 +236,7 @@ export function NewInquiry() {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Mother's Name"
+                label={t('admissions.motherName')}
                 name="motherName"
                 value={formData.motherName}
                 onChange={handleChange}
@@ -245,7 +245,7 @@ export function NewInquiry() {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Mother's Phone"
+                label={t('admissions.motherPhone')}
                 name="motherPhone"
                 value={formData.motherPhone}
                 onChange={handleChange}
@@ -254,7 +254,7 @@ export function NewInquiry() {
             <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
-                label="Guardian's Name"
+                label={t('admissions.guardianName')}
                 name="guardianName"
                 value={formData.guardianName}
                 onChange={handleChange}
@@ -263,7 +263,7 @@ export function NewInquiry() {
             <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
-                label="Guardian's Phone"
+                label={t('admissions.guardianPhone')}
                 name="guardianPhone"
                 value={formData.guardianPhone}
                 onChange={handleChange}
@@ -272,7 +272,7 @@ export function NewInquiry() {
             <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
-                label="Guardian's Relation"
+                label={t('admissions.guardianRelation')}
                 name="guardianRelation"
                 value={formData.guardianRelation}
                 onChange={handleChange}
@@ -281,13 +281,13 @@ export function NewInquiry() {
           </Grid>
 
           <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-            Previous Education
+            {t('admissions.previousEducation')}
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Previous School"
+                label={t('admissions.previousSchool')}
                 name="previousSchool"
                 value={formData.previousSchool}
                 onChange={handleChange}
@@ -297,36 +297,36 @@ export function NewInquiry() {
               <TextField
                 fullWidth
                 select
-                label="Previous Class"
+                label={t('admissions.previousClass')}
                 name="previousClass"
                 value={formData.previousClass}
                 onChange={handleChange}
               >
-                <MenuItem value="">None</MenuItem>
+                <MenuItem value="">{t('admissions.none')}</MenuItem>
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((cls) => (
-                  <MenuItem key={cls} value={cls}>Class {cls}</MenuItem>
+                  <MenuItem key={cls} value={cls}>{t('common.class')} {cls}</MenuItem>
                 ))}
               </TextField>
             </Grid>
           </Grid>
 
           <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-            Inquiry Details
+            {t('admissions.inquiryDetails')}
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 select
-                label="Inquiry Source"
+                label={t('admissions.inquirySource')}
                 name="inquirySource"
                 value={formData.inquirySource}
                 onChange={handleChange}
               >
-                <MenuItem value="walk-in">Walk-in</MenuItem>
-                <MenuItem value="phone">Phone</MenuItem>
-                <MenuItem value="online">Online</MenuItem>
-                <MenuItem value="referral">Referral</MenuItem>
+                <MenuItem value="walk-in">{t('admissions.walkIn')}</MenuItem>
+                <MenuItem value="phone">{t('admissions.phoneInquiry')}</MenuItem>
+                <MenuItem value="online">{t('admissions.online')}</MenuItem>
+                <MenuItem value="referral">{t('admissions.referral')}</MenuItem>
               </TextField>
             </Grid>
             <Grid item xs={12}>
@@ -334,7 +334,7 @@ export function NewInquiry() {
                 fullWidth
                 multiline
                 rows={3}
-                label="Inquiry Notes"
+                label={t('admissions.inquiryNotes')}
                 name="inquiryNotes"
                 value={formData.inquiryNotes}
                 onChange={handleChange}
@@ -348,7 +348,7 @@ export function NewInquiry() {
               onClick={() => navigate('/admissions/list')}
               disabled={loading}
             >
-              Cancel
+              {t('admissions.cancel')}
             </Button>
             <Button
               type="submit"
@@ -356,7 +356,7 @@ export function NewInquiry() {
               startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
               disabled={loading}
             >
-              Create Inquiry
+              {t('admissions.createInquiry')}
             </Button>
           </Box>
         </form>

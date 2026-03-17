@@ -207,7 +207,7 @@ export const TeacherDashboard = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ mt: { xs: 7, sm: 8 } }}>
       {/* Header */}
       <Box sx={{ ...S.PAGE_HEADER, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>

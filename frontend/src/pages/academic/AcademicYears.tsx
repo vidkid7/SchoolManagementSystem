@@ -108,7 +108,7 @@ export const AcademicYears = () => {
       }, 100);
     } catch (err) {
       console.error('Failed to fetch terms:', err);
-      setError('Failed to load terms');
+      setError(t('academicYears.failedToLoadTerms'));
     }
   };
 
@@ -184,17 +184,17 @@ export const AcademicYears = () => {
   const handleSaveYear = async () => {
     try {
       if (!yearForm.name || !yearForm.startDateBS || !yearForm.endDateBS || !yearForm.startDateAD || !yearForm.endDateAD) {
-        setError('Please fill in all required fields');
+        setError(t('academicYears.fillAllRequiredFields'));
         return;
       }
 
       const bsDateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!bsDateRegex.test(yearForm.startDateBS)) {
-        setError('Start Date (BS) must be in YYYY-MM-DD format (e.g., 2081-01-01)');
+        setError(t('academicYears.startDateBSFormat'));
         return;
       }
       if (!bsDateRegex.test(yearForm.endDateBS)) {
-        setError('End Date (BS) must be in YYYY-MM-DD format (e.g., 2081-12-30)');
+        setError(t('academicYears.endDateBSFormat'));
         return;
       }
 
@@ -220,7 +220,7 @@ export const AcademicYears = () => {
         const errorMessages = error.response.data.errors.map((e: any) => `${e.field}: ${e.message}`).join(', ');
         setError(errorMessages);
       } else {
-        setError(error.response?.data?.message || error.response?.data?.error || 'Failed to save academic year');
+        setError(error.response?.data?.message || error.response?.data?.error || t('academicYears.failedToSaveYear'));
       }
     }
   };
@@ -245,36 +245,43 @@ export const AcademicYears = () => {
       if (selectedYearId) fetchTerms(selectedYearId);
     } catch (err: any) {
       console.error('Failed to save term:', err);
-      setError(err.response?.data?.message || 'Failed to save term');
+      setError(err.response?.data?.message || t('academicYears.failedToSaveTerm'));
     }
   };
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton
-            onClick={() => navigate(`/academic`)}
-            sx={{
-              bgcolor: 'background.paper',
-              boxShadow: 1,
-              '&:hover': { bgcolor: 'grey.100' },
-            }}
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <IconButton
+              onClick={() => navigate(`/academic`)}
+              sx={{
+                bgcolor: 'background.paper',
+                boxShadow: 1,
+                '&:hover': { bgcolor: 'grey.100' },
+              }}
+            >
+              <ArrowBackIcon />
+            </IconButton>
+            <Box>
+              <Typography variant="h5" fontWeight={700}>
+                {t('academicYears.title')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t('academicYears.autoDetectionInfo').substring(0, 80) + '...'}
+              </Typography>
+            </Box>
+          </Box>
+          <Button
+            sx={S.BTN_PRIMARY}
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
           >
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h4" fontWeight={600}>
-            {t('academicYears.title')}
-          </Typography>
+            {t('academicYears.addAcademicYear')}
+          </Button>
         </Box>
-        <Button
-          sx={S.BTN_PRIMARY}
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-        >
-          {t('academicYears.addAcademicYear')}
-        </Button>
-      </Box>
+      </Paper>
 
       <Alert
         severity="info"

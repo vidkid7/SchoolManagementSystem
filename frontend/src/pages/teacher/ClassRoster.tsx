@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
@@ -66,6 +67,7 @@ interface ClassInfo {
 export function ClassRoster() {
   const theme = useTheme();
   const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const navigate = useSlugNavigate();
   const [students, setStudents] = useState<Student[]>([]);
   const [classInfo, setClassInfo] = useState<ClassInfo | null>(null);
@@ -85,7 +87,7 @@ export function ClassRoster() {
       setClassInfo(response.data?.data?.classInfo || null);
       setStudents(response.data?.data?.students || []);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load class data');
+      setError(t('portal.failedToLoadData'));
     } finally {
       setLoading(false);
     }
@@ -106,10 +108,16 @@ export function ClassRoster() {
   };
 
   return (
-    <Box>
-      <Typography variant="h5" fontWeight={600} gutterBottom>
-        My Class Roster
-      </Typography>
+    <Box sx={{ mt: { xs: 7, sm: 8 } }}>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <PersonIcon sx={{ fontSize: 32, color: C.primary }} />
+          <Box>
+            <Typography variant="h5" fontWeight={700}>{t('teacher.myClassRoster')}</Typography>
+            <Typography variant="body2" color="text.secondary">{t('teacher.classRosterSubtitle')}</Typography>
+          </Box>
+        </Box>
+      </Paper>
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
@@ -118,21 +126,21 @@ export function ClassRoster() {
           <CardContent>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6} md={3}>
-                <Typography variant="body2" color="text.secondary">Class</Typography>
+                <Typography variant="body2" color="text.secondary">{t('common.class')}</Typography>
                 <Typography variant="h6" fontWeight={600}>
                   {classInfo.name} - {classInfo.section}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
-                <Typography variant="body2" color="text.secondary">Grade Level</Typography>
-                <Typography variant="h6" fontWeight={600}>Grade {classInfo.gradeLevel}</Typography>
+                <Typography variant="body2" color="text.secondary">{t('teacher.gradeLevel')}</Typography>
+                <Typography variant="h6" fontWeight={600}>{t('teacher.grade')} {classInfo.gradeLevel}</Typography>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
-                <Typography variant="body2" color="text.secondary">Total Students</Typography>
+                <Typography variant="body2" color="text.secondary">{t('portal.totalStudents')}</Typography>
                 <Typography variant="h6" fontWeight={600}>{stats.total}</Typography>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
-                <Typography variant="body2" color="text.secondary">Avg Attendance</Typography>
+                <Typography variant="body2" color="text.secondary">{t('portal.avgAttendance')}</Typography>
                 <Typography variant="h6" fontWeight={600} color="primary.main">
                   {stats.avgAttendance.toFixed(1)}%
                 </Typography>
@@ -147,7 +155,7 @@ export function ClassRoster() {
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              placeholder="Search by name or roll number..."
+              placeholder={t('teacher.searchStudents')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               InputProps={{
@@ -173,25 +181,25 @@ export function ClassRoster() {
         <Table>
           <TableHead sx={{ bgcolor: S.TH_BG }}>
             <TableRow>
-              <TableCell>Roll No</TableCell>
-              <TableCell>Student</TableCell>
-              <TableCell>Gender</TableCell>
-              <TableCell>Contact</TableCell>
-              <TableCell>Parent Contact</TableCell>
-              <TableCell>Attendance</TableCell>
-              <TableCell>Avg Grade</TableCell>
-              <TableCell align="center">Actions</TableCell>
+              <TableCell>{t('teacher.rollNo')}</TableCell>
+              <TableCell>{t('portal.student')}</TableCell>
+              <TableCell>{t('teacher.gender')}</TableCell>
+              <TableCell>{t('teacher.contact')}</TableCell>
+              <TableCell>{t('teacher.parentContact')}</TableCell>
+              <TableCell>{t('portal.attendance')}</TableCell>
+              <TableCell>{t('teacher.avgGrade')}</TableCell>
+              <TableCell align="center">{t('common.actions')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow sx={S.TR_HOVER}>
-                <TableCell colSpan={8} align="center" sx={S.TD}>Loading...</TableCell>
+                <TableCell colSpan={8} align="center" sx={S.TD}>{t('common.loading')}</TableCell>
               </TableRow>
             ) : filteredStudents.length === 0 ? (
               <TableRow sx={S.TR_HOVER}>
                 <TableCell colSpan={8} align="center" sx={S.TD}>
-                  No students found
+                  {t('teacher.noStudentsFound')}
                 </TableCell>
               </TableRow>
             ) : (

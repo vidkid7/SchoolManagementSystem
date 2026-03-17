@@ -97,7 +97,7 @@ interface Event {
 }
 
 export const EventManagement = () => {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const isNepali = i18n.language === 'ne';
@@ -236,10 +236,10 @@ export const EventManagement = () => {
       setError('');
       if (selectedEvent) {
         await apiClient.put(`/api/v1/calendar/events/${selectedEvent.eventId}`, formData);
-        setSuccess('Event updated successfully');
+        setSuccess(t('calendar.eventUpdated'));
       } else {
         await apiClient.post('/api/v1/calendar/events', formData);
-        setSuccess('Event created successfully');
+        setSuccess(t('calendar.eventCreated'));
       }
       handleCloseDialog();
       fetchEvents();
@@ -251,11 +251,11 @@ export const EventManagement = () => {
   };
 
   const handleDelete = async (eventId: number) => {
-    if (!window.confirm('Are you sure you want to delete this event?')) return;
+    if (!window.confirm(t('calendar.confirmDelete'))) return;
 
     try {
       await apiClient.delete(`/api/v1/calendar/events/${eventId}`);
-      setSuccess('Event deleted successfully');
+      setSuccess(t('calendar.eventDeleted'));
       fetchEvents();
       setTimeout(() => setSuccess(''), 3000);
     } catch (error: any) {
@@ -289,18 +289,24 @@ export const EventManagement = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
-          {isNepali ? 'कार्यक्रम व्यवस्थापन' : 'Event Management'}
-        </Typography>
-        <Button
-          sx={S.BTN_PRIMARY}
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-        >
-          {isNepali ? 'कार्यक्रम थप्नुहोस्' : 'Add Event'}
-        </Button>
-      </Box>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <EventIcon sx={{ fontSize: 32, color: C.primary }} />
+            <Box>
+              <Typography variant="h5" fontWeight={700}>{t('calendar.eventManagement')}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('calendar.eventManagementSubtitle')}</Typography>
+            </Box>
+          </Box>
+          <Button
+            sx={S.BTN_PRIMARY}
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
+          >
+            {t('calendar.addEvent')}
+          </Button>
+        </Box>
+      </Paper>
 
       {success && (
         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
@@ -317,7 +323,7 @@ export const EventManagement = () => {
       <Paper sx={{ ...S.GLASS, p: 2, mb: 3 }}>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           <TextField
-            label={isNepali ? 'खोज्नुहोस्' : 'Search'}
+            label={t('calendar.search')}
             variant="outlined"
             size="small"
             value={search}
@@ -328,13 +334,13 @@ export const EventManagement = () => {
             }}
           />
           <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>{isNepali ? 'प्रकार' : 'Category'}</InputLabel>
+            <InputLabel>{t('calendar.category')}</InputLabel>
             <Select
               value={categoryFilter}
-              label={isNepali ? 'प्रकार' : 'Category'}
+              label={t('calendar.category')}
               onChange={(e) => setCategoryFilter(e.target.value)}
             >
-              <MenuItem value="">{isNepali ? 'सबै' : 'All'}</MenuItem>
+              <MenuItem value="">{t('calendar.audienceAll')}</MenuItem>
               {EVENT_CATEGORIES.map((cat) => (
                 <MenuItem key={cat.value} value={cat.value}>
                   {cat.label}
@@ -343,17 +349,17 @@ export const EventManagement = () => {
             </Select>
           </FormControl>
           <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>{isNepali ? 'स्थिति' : 'Status'}</InputLabel>
+            <InputLabel>{t('calendar.status')}</InputLabel>
             <Select
               value={statusFilter}
-              label={isNepali ? 'स्थिति' : 'Status'}
+              label={t('calendar.status')}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <MenuItem value="">{isNepali ? 'सबै' : 'All'}</MenuItem>
-              <MenuItem value="scheduled">Scheduled</MenuItem>
-              <MenuItem value="ongoing">Ongoing</MenuItem>
-              <MenuItem value="completed">Completed</MenuItem>
-              <MenuItem value="cancelled">Cancelled</MenuItem>
+              <MenuItem value="">{t('calendar.audienceAll')}</MenuItem>
+              <MenuItem value="scheduled">{t('calendar.scheduled')}</MenuItem>
+              <MenuItem value="ongoing">{t('calendar.ongoing')}</MenuItem>
+              <MenuItem value="completed">{t('calendar.completed')}</MenuItem>
+              <MenuItem value="cancelled">{t('calendar.cancelled')}</MenuItem>
             </Select>
           </FormControl>
           <Button
@@ -361,7 +367,7 @@ export const EventManagement = () => {
             startIcon={<RefreshIcon />}
             onClick={fetchEvents}
           >
-            {isNepali ? 'ताजा गर्नुहोस्' : 'Refresh'}
+            {t('calendar.refresh')}
           </Button>
         </Box>
       </Paper>
@@ -371,13 +377,13 @@ export const EventManagement = () => {
           <TableHead sx={{ bgcolor: S.TH_BG }}>
             <TableRow>
               <TableCell>ID</TableCell>
-              <TableCell>{isNepali ? 'शीर्षक' : 'Title'}</TableCell>
-              <TableCell>{isNepali ? 'प्रकार' : 'Category'}</TableCell>
-              <TableCell>{isNepali ? 'मिति' : 'Date'}</TableCell>
-              <TableCell>{isNepali ? 'समय' : 'Time'}</TableCell>
-              <TableCell>{isNepali ? 'स्थान' : 'Venue'}</TableCell>
-              <TableCell>{isNepali ? 'स्थिति' : 'Status'}</TableCell>
-              <TableCell align="right">{isNepali ? 'कार्यहरू' : 'Actions'}</TableCell>
+              <TableCell>{t('calendar.eventTitle')}</TableCell>
+              <TableCell>{t('calendar.category')}</TableCell>
+              <TableCell>{t('calendar.date')}</TableCell>
+              <TableCell>{t('calendar.time')}</TableCell>
+              <TableCell>{t('calendar.venue')}</TableCell>
+              <TableCell>{t('calendar.status')}</TableCell>
+              <TableCell align="right">{t('calendar.actions')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -390,7 +396,7 @@ export const EventManagement = () => {
             ) : events.length === 0 ? (
               <TableRow sx={S.TR_HOVER}>
                 <TableCell colSpan={8} align="center" sx={S.TD}>
-                  {isNepali ? 'कुनै कार्यक्रम फेला परेन' : 'No events found'}
+                  {t('calendar.noEventsFound')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -403,7 +409,7 @@ export const EventManagement = () => {
                         {isNepali && event.titleNp ? event.titleNp : event.title}
                       </Typography>
                       {event.isHoliday && (
-                        <Chip label="Holiday" size="small" color="error" sx={{ mt: 0.5 }} />
+                        <Chip label={t('calendar.categories.holiday')} size="small" color="error" sx={{ mt: 0.5 }} />
                       )}
                     </Box>
                   </TableCell>
@@ -473,15 +479,15 @@ export const EventManagement = () => {
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>
           {selectedEvent
-            ? isNepali ? 'कार्यक्रम सम्पादन गर्नुहोस्' : 'Edit Event'
-            : isNepali ? 'नयाँ कार्यक्रम थप्नुहोस्' : 'Add New Event'}
+            ? t('calendar.editEvent')
+            : t('calendar.addNewEvent')}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <TextField
-                  label={isNepali ? 'शीर्षक (अंग्रेजी)' : 'Title (English)'}
+                  label={t('calendar.form.titleEn')}
                   fullWidth
                   required
                   value={formData.title}
@@ -490,7 +496,7 @@ export const EventManagement = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
-                  label={isNepali ? 'शीर्षक (नेपाली)' : 'Title (Nepali)'}
+                  label={t('calendar.form.titleNp')}
                   fullWidth
                   value={formData.titleNp}
                   onChange={(e) => setFormData({ ...formData, titleNp: e.target.value })}
@@ -498,7 +504,7 @@ export const EventManagement = () => {
               </Grid>
               <Grid item xs={12}>
                 <TextField
-                  label={isNepali ? 'विवरण' : 'Description'}
+                  label={t('calendar.description')}
                   fullWidth
                   multiline
                   rows={3}
@@ -508,15 +514,15 @@ export const EventManagement = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth required>
-                  <InputLabel>{isNepali ? 'प्रकार' : 'Category'}</InputLabel>
+                  <InputLabel>{t('calendar.category')}</InputLabel>
                   <Select
                     value={formData.category}
-                    label={isNepali ? 'प्रकार' : 'Category'}
+                    label={t('calendar.category')}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   >
                     {EVENT_CATEGORIES.map((cat) => (
                       <MenuItem key={cat.value} value={cat.value}>
-                        {cat.label}
+                        {t(`calendar.categories.${cat.value}`)}
                       </MenuItem>
                     ))}
                   </Select>
@@ -524,15 +530,15 @@ export const EventManagement = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth>
-                  <InputLabel>{isNepali ? 'लक्षित दर्शक' : 'Target Audience'}</InputLabel>
+                  <InputLabel>{t('calendar.targetAudience')}</InputLabel>
                   <Select
                     value={formData.targetAudience}
-                    label={isNepali ? 'लक्षित दर्शक' : 'Target Audience'}
+                    label={t('calendar.targetAudience')}
                     onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value })}
                   >
                     {TARGET_AUDIENCES.map((aud) => (
                       <MenuItem key={aud.value} value={aud.value}>
-                        {aud.label}
+                        {t(`calendar.audience${aud.value.charAt(0).toUpperCase() + aud.value.slice(1)}`)}
                       </MenuItem>
                     ))}
                   </Select>
@@ -540,7 +546,7 @@ export const EventManagement = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
-                  label={isNepali ? 'सुरु मिति' : 'Start Date'}
+                  label={t('calendar.form.startDate')}
                   type="date"
                   fullWidth
                   required
@@ -551,7 +557,7 @@ export const EventManagement = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
-                  label={isNepali ? 'अन्त्य मिति' : 'End Date'}
+                  label={t('calendar.form.endDate')}
                   type="date"
                   fullWidth
                   InputLabelProps={{ shrink: true }}
@@ -561,7 +567,7 @@ export const EventManagement = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
-                  label={isNepali ? 'सुरु समय' : 'Start Time'}
+                  label={t('calendar.form.startTime')}
                   type="time"
                   fullWidth
                   InputLabelProps={{ shrink: true }}
@@ -571,7 +577,7 @@ export const EventManagement = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
-                  label={isNepali ? 'अन्त्य समय' : 'End Time'}
+                  label={t('calendar.form.endTime')}
                   type="time"
                   fullWidth
                   InputLabelProps={{ shrink: true }}
@@ -581,7 +587,7 @@ export const EventManagement = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
-                  label={isNepali ? 'स्थान' : 'Venue'}
+                  label={t('calendar.form.venueEn')}
                   fullWidth
                   value={formData.venue}
                   onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
@@ -589,7 +595,7 @@ export const EventManagement = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
-                  label={isNepali ? 'रंग' : 'Color'}
+                  label={t('calendar.color')}
                   type="color"
                   fullWidth
                   value={formData.color}
@@ -604,7 +610,7 @@ export const EventManagement = () => {
                       onChange={(e) => setFormData({ ...formData, isHoliday: e.target.checked })}
                     />
                   }
-                  label={isNepali ? 'बिदा हो' : 'Is Holiday'}
+                  label={t('calendar.isHoliday')}
                 />
                 <FormControlLabel
                   control={
@@ -613,7 +619,7 @@ export const EventManagement = () => {
                       onChange={(e) => setFormData({ ...formData, isNepalGovernmentHoliday: e.target.checked })}
                     />
                   }
-                  label={isNepali ? 'सरकारी बिदा हो' : 'Is Government Holiday'}
+                  label={t('calendar.isGovtHoliday')}
                 />
                 <FormControlLabel
                   control={
@@ -622,21 +628,21 @@ export const EventManagement = () => {
                       onChange={(e) => setFormData({ ...formData, isRecurring: e.target.checked })}
                     />
                   }
-                  label={isNepali ? 'दोहोरिने' : 'Recurring'}
+                  label={t('calendar.recurring')}
                 />
               </Grid>
               {formData.isRecurring && (
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
-                    <InputLabel>{isNepali ? 'दोहोरिने ढाँचा' : 'Recurrence Pattern'}</InputLabel>
+                    <InputLabel>{t('calendar.recurrencePattern')}</InputLabel>
                     <Select
                       value={formData.recurrencePattern}
-                      label={isNepali ? 'दोहोरिने ढाँचा' : 'Recurrence Pattern'}
+                      label={t('calendar.recurrencePattern')}
                       onChange={(e) => setFormData({ ...formData, recurrencePattern: e.target.value })}
                     >
                       {RECURRENCE_PATTERNS.map((pattern) => (
                         <MenuItem key={pattern.value} value={pattern.value}>
-                          {pattern.label}
+                          {t(`calendar.recurrencePatterns.${pattern.value}`)}
                         </MenuItem>
                       ))}
                     </Select>
@@ -648,12 +654,10 @@ export const EventManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>
-            {isNepali ? 'रद्द गर्नुहोस्' : 'Cancel'}
+            {t('common.cancel')}
           </Button>
           <Button sx={S.BTN_PRIMARY} onClick={handleSubmit}>
-            {selectedEvent
-              ? isNepali ? 'अद्यावधिक गर्नुहोस्' : 'Update'
-              : isNepali ? 'सिर्जना गर्नुहोस्' : 'Create'}
+            {selectedEvent ? t('common.save') : t('common.save')}
           </Button>
         </DialogActions>
       </Dialog>

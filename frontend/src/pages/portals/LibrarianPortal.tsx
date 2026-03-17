@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box, Grid, Card, CardContent, Typography, Button, Divider, Avatar, List, ListItem,
+  Box, Grid, Card, CardContent, Typography, Button, Divider, List, ListItem,
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog,
   DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select,
@@ -115,29 +115,29 @@ const LibrarianPortal: React.FC = () => {
       setFines(Array.isArray(fn) ? fn : fn?.fines ?? []);
       setProfile(profileRes.data?.data ?? null);
     } catch {
-      setError('Failed to load library dashboard');
+      setError(t('portal.failedToLoadData'));
     } finally {
       setLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, t]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
   if (loading) return <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh"><CircularProgress /></Box>;
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box display="flex" alignItems="center" gap={2} mb={3}>
-        <Avatar sx={{ bgcolor: 'primary.main', width: 56, height: 56 }}>
-          <LibraryIcon fontSize="large" />
-        </Avatar>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>{t('portal.librarianPortal')}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t('portal.welcome')}, {user?.firstName || user?.username} — {t('roles.categories.library')}
-          </Typography>
+    <Box sx={{ p: 3, mt: { xs: 7, sm: 8 } }}>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box display="flex" alignItems="center" gap={2}>
+          <LibraryIcon sx={{ fontSize: 32, color: C.primary }} />
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h5" fontWeight={700}>{t('portal.librarianPortal')}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('portal.welcome')}, {user?.firstName || user?.username} — {t('roles.categories.library')}
+            </Typography>
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
 
@@ -218,7 +218,7 @@ const LibrarianPortal: React.FC = () => {
                     <TableRow key={f.id} hover>
                       <TableCell>{f.studentName || `Student #${f.studentId || '—'}`}</TableCell>
                       <TableCell>{f.bookTitle || '—'}</TableCell>
-                      <TableCell><strong>Rs {Number(f.amount).toLocaleString()}</strong></TableCell>
+                      <TableCell><strong>{t('common.currency')} {Number(f.amount).toLocaleString()}</strong></TableCell>
                       <TableCell>{f.reason || '—'}</TableCell>
                       <TableCell><Chip label={f.status || 'pending'} size="small" color="warning" /></TableCell>
                     </TableRow>
@@ -323,7 +323,7 @@ const LibrarianPortal: React.FC = () => {
                 <TableRow key={f.id} hover>
                   <TableCell>{f.studentName || `Student #${f.studentId || '—'}`}</TableCell>
                   <TableCell>{f.bookTitle || '—'}</TableCell>
-                  <TableCell><strong>Rs {Number(f.amount).toLocaleString()}</strong></TableCell>
+                  <TableCell><strong>{t('common.currency')} {Number(f.amount).toLocaleString()}</strong></TableCell>
                   <TableCell>{f.reason || '—'}</TableCell>
                   <TableCell>{f.date ? new Date(f.date).toLocaleDateString() : '—'}</TableCell>
                   <TableCell>

@@ -52,29 +52,6 @@ interface Exam {
   status: string;
 }
 
-const statusColors: Record<string, any> = {
-  scheduled: 'info',
-  ongoing: 'warning',
-  completed: 'success',
-  cancelled: 'error',
-};
-
-const statusLabels: Record<string, string> = {
-  scheduled: 'Scheduled',
-  ongoing: 'Ongoing',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-};
-
-const examTypes: Record<string, string> = {
-  unit_test: 'Unit Test',
-  first_terminal: 'First Terminal',
-  second_terminal: 'Second Terminal',
-  final: 'Final',
-  practical: 'Practical',
-  project: 'Project',
-};
-
 export function ExamList() {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -92,6 +69,29 @@ export function ExamList() {
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [classFilter, setClassFilter] = useState('');
+
+  const statusColors: Record<string, any> = {
+    scheduled: 'info',
+    ongoing: 'warning',
+    completed: 'success',
+    cancelled: 'error',
+  };
+
+  const statusLabels: Record<string, string> = {
+    scheduled: t('examinations.statuses.scheduled'),
+    ongoing: t('examinations.statuses.ongoing'),
+    completed: t('examinations.statuses.completed'),
+    cancelled: t('examinations.statuses.cancelled'),
+  };
+
+  const examTypes: Record<string, string> = {
+    unit_test: t('examinations.examTypes.unitTest'),
+    first_terminal: t('examinations.examTypes.firstTerminal'),
+    second_terminal: t('examinations.examTypes.secondTerminal'),
+    final: t('examinations.examTypes.final'),
+    practical: t('examinations.examTypes.practical'),
+    project: t('examinations.examTypes.project'),
+  };
 
   useEffect(() => {
     fetchExams();
@@ -189,7 +189,7 @@ export function ExamList() {
 
   return (
     <Box>
-      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
+      <Paper sx={S.PAGE_HEADER}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h5" fontWeight={600}>
             {t('examinations.examinationManagement')}

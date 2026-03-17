@@ -4,7 +4,8 @@
  * Central hub for all academic management features
  */
 
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
   Typography,
@@ -12,6 +13,7 @@ import {
   Card,
   CardContent,
   CardActionArea,
+  Paper,
   useTheme,
 } from '@mui/material';
 import {
@@ -37,47 +39,47 @@ export const AcademicDashboard = () => {
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
 
   const features: FeatureCard[] = [
     {
-      title: 'Classes & Subjects',
-      description: 'Manage classes, sections, and subjects',
+      title: t('academic.classesSubjects'),
+      description: t('academic.classesSubjectsDesc'),
       icon: <SchoolIcon sx={{ fontSize: 50 }} />,
       path: '/academic/classes',
       color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     },
     {
-      title: 'Academic Years',
-      description: 'Manage academic years and terms',
+      title: t('academic.academicYears'),
+      description: t('academic.academicYearsDesc'),
       icon: <CalendarIcon sx={{ fontSize: 50 }} />,
       path: '/academic/years',
       color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
     },
     {
-      title: 'Class-Subject Assignment',
-      description: 'Assign subjects to classes and teachers',
+      title: t('academic.classSubjectAssignment'),
+      description: t('academic.classSubjectAssignmentDesc'),
       icon: <AssignmentIcon sx={{ fontSize: 50 }} />,
       path: '/academic/class-subjects',
       color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
     },
     {
-      title: 'Timetable',
-      description: 'Create and manage class timetables',
+      title: t('academic.timetable'),
+      description: t('academic.timetableDesc'),
       icon: <ScheduleIcon sx={{ fontSize: 50 }} />,
       path: '/academic/timetable',
       color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
     },
     {
-      title: 'Syllabus',
-      description: 'Manage subject syllabus and topics',
+      title: t('academic.syllabus'),
+      description: t('academic.syllabusDesc'),
       icon: <BookIcon sx={{ fontSize: 50 }} />,
       path: '/academic/syllabus',
       color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
     },
     {
-      title: 'Academic Calendar',
-      description: 'View and manage school events',
+      title: t('academic.academicCalendar'),
+      description: t('academic.academicCalendarDesc'),
       icon: <EventIcon sx={{ fontSize: 50 }} />,
       path: '/academic/calendar',
       color: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
@@ -86,14 +88,15 @@ export const AcademicDashboard = () => {
 
   return (
     <Box>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight={600} gutterBottom>
-          Academic Management
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Manage all academic aspects of your school
-        </Typography>
-      </Box>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <SchoolIcon sx={{ fontSize: 32, color: C.primary }} />
+          <Box>
+            <Typography variant="h5" fontWeight={700}>{t('academic.dashboardTitle')}</Typography>
+            <Typography variant="body2" color="text.secondary">{t('academic.dashboardSubtitle')}</Typography>
+          </Box>
+        </Box>
+      </Paper>
 
       <Grid container spacing={3}>
         {features.map((feature, index) => (

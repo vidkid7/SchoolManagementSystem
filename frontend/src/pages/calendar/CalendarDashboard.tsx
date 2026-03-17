@@ -16,6 +16,7 @@ import {
   CardContent,
   Typography,
   Button,
+  Paper,
   CircularProgress,
   Alert,
   Chip,
@@ -70,20 +71,20 @@ export const CalendarDashboard = () => {
   const navigate = useSlugNavigate();
   const theme = useTheme();
   const S = useAdminStyles(theme);
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isNepali = i18n.language === 'ne';
   const [stats, setStats] = useState<CalendarStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const categoryConfig: Record<string, { color: string; icon: JSX.Element; label: string }> = {
-    academic: { color: C.primary, icon: <SchoolIcon />, label: 'Academic' },
-    sports: { color: C.primary, icon: <SportsIcon />, label: 'Sports' },
-    cultural: { color: C.neutral, icon: <CulturalIcon />, label: 'Cultural' },
-    holiday: { color: C.danger, icon: <HolidayIcon />, label: 'Holiday' },
-    exam: { color: C.neutral, icon: <ExamIcon />, label: 'Exam' },
-    meeting: { color: C.neutral, icon: <MeetingIcon />, label: 'Meeting' },
-    other: { color: C.neutral, icon: <EventIcon />, label: 'Other' },
+    academic: { color: C.primary, icon: <SchoolIcon />, label: t('calendar.categories.academic') },
+    sports: { color: C.primary, icon: <SportsIcon />, label: t('calendar.categories.sports') },
+    cultural: { color: C.neutral, icon: <CulturalIcon />, label: t('calendar.categories.cultural') },
+    holiday: { color: C.danger, icon: <HolidayIcon />, label: t('calendar.categories.holiday') },
+    exam: { color: C.neutral, icon: <ExamIcon />, label: t('calendar.categories.exam') },
+    meeting: { color: C.neutral, icon: <MeetingIcon />, label: t('calendar.categories.meeting') },
+    other: { color: C.neutral, icon: <EventIcon />, label: t('calendar.categories.other') },
   };
 
   useEffect(() => {
@@ -127,17 +128,17 @@ export const CalendarDashboard = () => {
     return (
       <Box>
         <Typography variant="h4" gutterBottom>
-          {isNepali ? 'पात्रो ड्यासबोर्ड' : 'Calendar Dashboard'}
+          {t('calendar.dashboardTitle')}
         </Typography>
         <Alert severity="error" sx={{ mt: 2 }}>
           {error}
           <br />
           <Typography variant="caption">
-            Please ensure the backend server is running and the API endpoints are accessible.
+            {t('calendar.backendError')}
           </Typography>
         </Alert>
         <Button variant="outlined" onClick={fetchStats} sx={{ ...S.BTN_OUTLINE,  mt: 2 }}>
-          {isNepali ? 'पुन: प्रयास गर्नुहोस्' : 'Retry'}
+          {t('calendar.retry')}
         </Button>
       </Box>
     );
@@ -145,44 +146,52 @@ export const CalendarDashboard = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
-          {isNepali ? 'पात्रो ड्यासबोर्ड' : 'Calendar Dashboard'}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined" sx={S.BTN_OUTLINE}
-            startIcon={<CalendarIcon />}
-            onClick={() => navigate('/calendar')}
-          >
-            {isNepali ? 'पात्रो हेर्नुहोस्' : 'View Calendar'}
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => navigate('/calendar?action=create')}
-            sx={S.BTN_PRIMARY}
-          >
-            {isNepali ? 'कार्यक्रम थप्नुहोस्' : 'Add Event'}
-          </Button>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <CalendarIcon sx={{ fontSize: 32, color: C.primary }} />
+            <Box>
+              <Typography variant="h5" fontWeight={700}>{t('calendar.dashboardTitle')}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('calendar.subtitle')}</Typography>
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="outlined" sx={S.BTN_OUTLINE}
+              startIcon={<CalendarIcon />}
+              onClick={() => navigate('/calendar')}
+            >
+              {t('calendar.viewCalendar')}
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => navigate('/calendar?action=create')}
+              sx={S.BTN_PRIMARY}
+            >
+              {t('calendar.addEvent')}
+            </Button>
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
       <Grid container spacing={3}>
         {/* Statistics Cards */}
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ ...S.GLASS }}>
             <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box display="flex" alignItems="flex-start" justifyContent="space-between">
                 <Box>
-                  <Typography color="text.secondary" gutterBottom>
-                    {isNepali ? 'कुल कार्यक्रम' : 'Total Events'}
+                  <Typography color="text.secondary" variant="body2" gutterBottom>
+                    {t('calendar.totalEvents')}
                   </Typography>
-                  <Typography variant="h4">
+                  <Typography variant="h4" fontWeight={600}>
                     {stats?.totalEvents || 0}
                   </Typography>
                 </Box>
-                <EventIcon sx={{ fontSize: 48, color: 'primary.main', opacity: 0.3 }} />
+                <Box sx={{ backgroundColor: C.primaryBg, color: C.primary, p: 1.5, borderRadius: 2, display: 'flex' }}>
+                  <EventIcon sx={{ fontSize: 32 }} />
+                </Box>
               </Box>
             </CardContent>
           </Card>
@@ -191,16 +200,18 @@ export const CalendarDashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ ...S.GLASS }}>
             <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box display="flex" alignItems="flex-start" justifyContent="space-between">
                 <Box>
-                  <Typography color="text.secondary" gutterBottom>
-                    {isNepali ? 'आगामी कार्यक्रम' : 'Upcoming Events'}
+                  <Typography color="text.secondary" variant="body2" gutterBottom>
+                    {t('calendar.upcomingEvents')}
                   </Typography>
-                  <Typography variant="h4" color="info.main">
+                  <Typography variant="h4" fontWeight={600} color="info.main">
                     {stats?.upcomingEvents || 0}
                   </Typography>
                 </Box>
-                <TrendingUpIcon sx={{ fontSize: 48, color: 'info.main', opacity: 0.3 }} />
+                <Box sx={{ backgroundColor: C.infoBg, color: C.info, p: 1.5, borderRadius: 2, display: 'flex' }}>
+                  <TrendingUpIcon sx={{ fontSize: 32 }} />
+                </Box>
               </Box>
             </CardContent>
           </Card>
@@ -209,16 +220,18 @@ export const CalendarDashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ ...S.GLASS }}>
             <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box display="flex" alignItems="flex-start" justifyContent="space-between">
                 <Box>
-                  <Typography color="text.secondary" gutterBottom>
-                    {isNepali ? 'यो हप्ता' : 'This Week'}
+                  <Typography color="text.secondary" variant="body2" gutterBottom>
+                    {t('calendar.thisWeek')}
                   </Typography>
-                  <Typography variant="h4" color="success.main">
+                  <Typography variant="h4" fontWeight={600} color="success.main">
                     {stats?.eventsThisWeek || 0}
                   </Typography>
                 </Box>
-                <CalendarIcon sx={{ fontSize: 48, color: 'success.main', opacity: 0.3 }} />
+                <Box sx={{ backgroundColor: C.successBg, color: C.success, p: 1.5, borderRadius: 2, display: 'flex' }}>
+                  <CalendarIcon sx={{ fontSize: 32 }} />
+                </Box>
               </Box>
             </CardContent>
           </Card>
@@ -227,16 +240,18 @@ export const CalendarDashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ ...S.GLASS }}>
             <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box display="flex" alignItems="flex-start" justifyContent="space-between">
                 <Box>
-                  <Typography color="text.secondary" gutterBottom>
-                    {isNepali ? 'यो महिना बिदा' : 'Holidays This Month'}
+                  <Typography color="text.secondary" variant="body2" gutterBottom>
+                    {t('calendar.holidaysThisMonth')}
                   </Typography>
-                  <Typography variant="h4" color="error.main">
+                  <Typography variant="h4" fontWeight={600} color="error.main">
                     {stats?.holidaysThisMonth || 0}
                   </Typography>
                 </Box>
-                <HolidayIcon sx={{ fontSize: 48, color: 'error.main', opacity: 0.3 }} />
+                <Box sx={{ backgroundColor: C.dangerBg, color: C.danger, p: 1.5, borderRadius: 2, display: 'flex' }}>
+                  <HolidayIcon sx={{ fontSize: 32 }} />
+                </Box>
               </Box>
             </CardContent>
           </Card>
@@ -247,7 +262,7 @@ export const CalendarDashboard = () => {
           <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                {isNepali ? 'प्रकार अनुसार कार्यक्रम' : 'Events by Category'}
+                {t('calendar.eventsByCategory')}
               </Typography>
               <Box sx={{ mt: 2 }}>
                 {stats?.eventsByCategory && Object.entries(stats.eventsByCategory).map(([category, count]) => (
@@ -285,7 +300,7 @@ export const CalendarDashboard = () => {
           <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                {isNepali ? 'आगामी बिदाहरू' : 'Upcoming Holidays'}
+                {t('calendar.upcomingHolidays')}
               </Typography>
               <List>
                 {stats?.upcomingHolidays && stats.upcomingHolidays.length > 0 ? (
@@ -302,7 +317,7 @@ export const CalendarDashboard = () => {
                                 {isNepali && holiday.titleNp ? holiday.titleNp : holiday.title}
                               </Typography>
                               {holiday.isNepalGovernmentHoliday && (
-                                <Chip label="Govt" size="small" color="error" />
+                                <Chip label={t('calendar.govtHoliday')} size="small" color="error" />
                               )}
                             </Box>
                           }
@@ -321,8 +336,8 @@ export const CalendarDashboard = () => {
                 ) : (
                   <ListItem>
                     <ListItemText
-                      primary={isNepali ? 'कुनै आगामी बिदा छैन' : 'No upcoming holidays'}
-                      secondary={isNepali ? 'अर्को बिदा अझै तोकिएको छैन' : 'No holidays scheduled yet'}
+                      primary={t('calendar.noHolidays')}
+                      secondary={t('calendar.noHolidaysScheduled')}
                     />
                   </ListItem>
                 )}
@@ -336,7 +351,7 @@ export const CalendarDashboard = () => {
           <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                {isNepali ? 'आगामी कार्यक्रमहरू' : 'Upcoming Events'}
+                {t('calendar.upcomingEvents')}
               </Typography>
               <List>
                 {stats?.upcomingEventsList && stats.upcomingEventsList.length > 0 ? (
@@ -367,7 +382,7 @@ export const CalendarDashboard = () => {
                                 }}
                               />
                               {event.isHoliday && (
-                                <Chip label={isNepali ? 'बिदा' : 'Holiday'} size="small" color="error" />
+                                <Chip label={t('calendar.categories.holiday')} size="small" color="error" />
                               )}
                             </Box>
                           }
@@ -391,8 +406,8 @@ export const CalendarDashboard = () => {
                 ) : (
                   <ListItem>
                     <ListItemText
-                      primary={isNepali ? 'कुनै आगामी कार्यक्रम छैन' : 'No upcoming events'}
-                      secondary={isNepali ? 'अर्को कार्यक्रम अझै तोकिएको छैन' : 'No events scheduled yet'}
+                      primary={t('calendar.noEvents')}
+                      secondary={t('calendar.noEventsScheduled')}
                     />
                   </ListItem>
                 )}
@@ -406,7 +421,7 @@ export const CalendarDashboard = () => {
           <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                {isNepali ? 'द्रुत कार्यहरू' : 'Quick Actions'}
+                {t('calendar.quickActions')}
               </Typography>
               <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
                 <Button
@@ -414,28 +429,28 @@ export const CalendarDashboard = () => {
                   startIcon={<CalendarIcon />}
                   onClick={() => navigate('/calendar')}
                 >
-                  {isNepali ? 'पूर्ण पात्रो हेर्नुहोस्' : 'View Full Calendar'}
+                  {t('calendar.viewFullCalendar')}
                 </Button>
                 <Button
                   variant="outlined" sx={S.BTN_OUTLINE}
                   startIcon={<AddIcon />}
                   onClick={() => navigate('/calendar?action=create')}
                 >
-                  {isNepali ? 'कार्यक्रम सिर्जना गर्नुहोस्' : 'Create Event'}
+                  {t('calendar.createEvent')}
                 </Button>
                 <Button
                   variant="outlined" sx={S.BTN_OUTLINE}
                   startIcon={<HolidayIcon />}
                   onClick={() => navigate('/calendar?filter=holiday')}
                 >
-                  {isNepali ? 'बिदाहरू हेर्नुहोस्' : 'View Holidays'}
+                  {t('calendar.viewHolidays')}
                 </Button>
                 <Button
                   variant="outlined" sx={S.BTN_OUTLINE}
                   startIcon={<ExamIcon />}
                   onClick={() => navigate('/calendar?filter=exam')}
                 >
-                  {isNepali ? 'परीक्षा तालिका' : 'Exam Schedule'}
+                  {t('calendar.examSchedule')}
                 </Button>
               </Box>
             </CardContent>

@@ -93,9 +93,11 @@ export function StudentFeeSearch() {
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={600} gutterBottom>
-        {t('finance.studentFeeSearch')}
-      </Typography>
+      <Paper sx={S.PAGE_HEADER}>
+        <Typography variant="h5" fontWeight={700}>
+          {t('finance.studentFeeSearch')}
+        </Typography>
+      </Paper>
 
       <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">

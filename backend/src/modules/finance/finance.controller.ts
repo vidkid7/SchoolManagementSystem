@@ -384,10 +384,35 @@ class FinanceController {
   // ==================== Refunds ====================
 
   /**
+   * Get all refunds with pagination
+   * GET /api/v1/finance/refunds
+   */
+  getRefunds = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const {
+      page = PAGINATION.DEFAULT_PAGE,
+      limit = PAGINATION.DEFAULT_PAGE_SIZE,
+    } = req.query;
+
+    const pageNum = Number(page);
+    const limitNum = Math.min(Number(limit), PAGINATION.MAX_PAGE_SIZE);
+    const offset = (pageNum - 1) * limitNum;
+
+    const { count, rows } = await Refund.findAndCountAll({
+      limit: limitNum,
+      offset,
+      order: [['created_at', 'DESC']],
+    });
+
+    const meta = calculatePagination(count, pageNum, limitNum);
+
+    sendSuccess(res, rows, 'Refunds retrieved successfully', HTTP_STATUS.OK, meta);
+  });
+
+  /**
    * Process refund
    * POST /api/v1/finance/refunds
    */
-  processRefund = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  processRefund= asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.userId;
     const { paymentId, reason, remarks } = req.body;
 

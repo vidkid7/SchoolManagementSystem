@@ -110,7 +110,7 @@ export function LeaveManagement() {
 
     const leaveId = selectedLeave.id || selectedLeave.leaveId;
     if (!leaveId) {
-      setError('Invalid leave application ID');
+      setError(t('attendance.invalidLeaveId'));
       console.error('Leave object:', selectedLeave);
       return;
     }
@@ -152,12 +152,14 @@ export function LeaveManagement() {
 
   return (
     <Box>
-      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
+      <Paper sx={S.PAGE_HEADER}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-          <LeaveIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-          <Typography variant="h5" fontWeight={600}>
-            {t('attendance.leaveManagement')}
-          </Typography>
+          <LeaveIcon sx={{ fontSize: 32, color: C.primary }} />
+          <Box>
+            <Typography variant="h5" fontWeight={600}>
+              {t('attendance.leaveManagement')}
+            </Typography>
+          </Box>
         </Box>
 
         {success && <Alert severity="success" sx={{ mb: 2, borderRadius: R.md }}>{success}</Alert>}
@@ -221,7 +223,7 @@ export function LeaveManagement() {
                   <TableCell sx={S.TD}>{new Date(leave.appliedDate).toLocaleDateString()}</TableCell>
                   <TableCell sx={S.TD}>
                     <Chip 
-                      label={leave.status} 
+                      label={t(`attendance.${leave.status}`, leave.status)}
                       size="small"
                       color={getStatusColor(leave.status)}
                     />

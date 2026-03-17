@@ -813,7 +813,7 @@ export const DashboardLayout = () => {
           flexGrow: 1,
           p: 3,
           width: { sm: `calc(100% - ${sidebarCollapsed ? collapsedDrawerWidth : drawerWidth}px)` },
-          mt: 7,
+          mt: { xs: 7, sm: 8 },
           minHeight: '100vh',
           background: 'transparent',
           position: 'relative',

@@ -40,7 +40,8 @@ import {
   FilterList as FilterIcon,
 } from '@mui/icons-material';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import api from '../../config/api';
 import { useTranslation } from 'react-i18next';
 
@@ -70,24 +71,13 @@ const statusColors: Record<string, any> = {
   withdrawn: 'default',
 };
 
-const statusLabels: Record<string, string> = {
-  inquiry: 'Inquiry',
-  applied: 'Applied',
-  test_scheduled: 'Test Scheduled',
-  tested: 'Tested',
-  interview_scheduled: 'Interview Scheduled',
-  interviewed: 'Interviewed',
-  admitted: 'Admitted',
-  enrolled: 'Enrolled',
-  rejected: 'Rejected',
-  withdrawn: 'Withdrawn',
-};
+
 
 export function AdmissionList() {
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [admissions, setAdmissions] = useState<Admission[]>([]);
@@ -96,6 +86,21 @@ export function AdmissionList() {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   
+  const statusKeyMap: Record<string, string> = {
+    inquiry: 'admissions.inquiry',
+    applied: 'admissions.applied',
+    test_scheduled: 'admissions.testScheduled',
+    tested: 'admissions.tested',
+    interview_scheduled: 'admissions.interviewScheduled',
+    interviewed: 'admissions.interviewed',
+    admitted: 'admissions.admitted',
+    enrolled: 'admissions.enrolled',
+    rejected: 'admissions.rejected',
+    withdrawn: 'admissions.withdrawn',
+  };
+
+  const getStatusLabel = (status: string) => t(statusKeyMap[status] || status);
+
   // Filters
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
   const [classFilter, setClassFilter] = useState('');
@@ -116,7 +121,7 @@ export function AdmissionList() {
       setAdmissions(response.data?.data || []);
     } catch (error: any) {
       console.error('Failed to fetch admissions:', error);
-      setError('Failed to load admissions');
+      setError(t('admissions.failedToLoadList'));
     } finally {
       setLoading(false);
     }
@@ -169,42 +174,42 @@ export function AdmissionList() {
 
   const getAvailableActions = (status: string) => {
     const actions = [
-      { label: 'View Details', value: 'view', icon: <ViewIcon /> },
+      { label: t('admissions.viewDetails'), value: 'view', icon: <ViewIcon /> },
     ];
 
     switch (status) {
       case 'inquiry':
-        actions.push({ label: 'Convert to Application', value: 'convert', icon: <EditIcon /> });
+        actions.push({ label: t('admissions.convertToApplication'), value: 'convert', icon: <EditIcon /> });
         break;
       case 'applied':
         actions.push(
-          { label: 'Schedule Test', value: 'schedule-test', icon: <EditIcon /> },
-          { label: 'Schedule Interview', value: 'schedule-interview', icon: <EditIcon /> },
-          { label: 'Admit Directly', value: 'admit', icon: <EditIcon /> }
+          { label: t('admissions.scheduleTest'), value: 'schedule-test', icon: <EditIcon /> },
+          { label: t('admissions.scheduleInterview'), value: 'schedule-interview', icon: <EditIcon /> },
+          { label: t('admissions.admitDirectly'), value: 'admit', icon: <EditIcon /> }
         );
         break;
       case 'test_scheduled':
-        actions.push({ label: 'Record Test Score', value: 'record-test', icon: <EditIcon /> });
+        actions.push({ label: t('admissions.recordTestScore'), value: 'record-test', icon: <EditIcon /> });
         break;
       case 'tested':
         actions.push(
-          { label: 'Schedule Interview', value: 'schedule-interview', icon: <EditIcon /> },
-          { label: 'Admit', value: 'admit', icon: <EditIcon /> }
+          { label: t('admissions.scheduleInterview'), value: 'schedule-interview', icon: <EditIcon /> },
+          { label: t('admissions.admit'), value: 'admit', icon: <EditIcon /> }
         );
         break;
       case 'interview_scheduled':
-        actions.push({ label: 'Record Interview', value: 'record-interview', icon: <EditIcon /> });
+        actions.push({ label: t('admissions.recordInterview'), value: 'record-interview', icon: <EditIcon /> });
         break;
       case 'interviewed':
-        actions.push({ label: 'Admit', value: 'admit', icon: <EditIcon /> });
+        actions.push({ label: t('admissions.admit'), value: 'admit', icon: <EditIcon /> });
         break;
       case 'admitted':
-        actions.push({ label: 'Enroll Student', value: 'enroll', icon: <EditIcon /> });
+        actions.push({ label: t('admissions.enrollStudent'), value: 'enroll', icon: <EditIcon /> });
         break;
     }
 
     if (!['enrolled', 'rejected', 'withdrawn'].includes(status)) {
-      actions.push({ label: 'Reject', value: 'reject', icon: <EditIcon /> });
+      actions.push({ label: t('admissions.reject'), value: 'reject', icon: <EditIcon /> });
     }
 
     return actions;
@@ -228,7 +233,7 @@ export function AdmissionList() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <InquiryIcon sx={{ fontSize: 32, color: 'primary.main' }} />
             <Typography variant="h5" fontWeight={600}>
-              Admission Management
+              {t('admissions.admissionManagement')}
             </Typography>
           </Box>
           <Button
@@ -236,7 +241,7 @@ export function AdmissionList() {
             startIcon={<InquiryIcon />}
             onClick={() => navigate('/admissions/new')}
           >
-            New Inquiry
+            {t('admissions.newInquiry')}
           </Button>
         </Box>
 
@@ -247,38 +252,38 @@ export function AdmissionList() {
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
-              label="Search"
-              placeholder="Name, ID, Phone, Email"
+              label={t('admissions.search')}
+              placeholder={t('admissions.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </Grid>
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
+              <InputLabel>{t('admissions.status')}</InputLabel>
               <Select
                 value={statusFilter}
-                label="Status"
+                label={t('admissions.status')}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
-                <MenuItem value="">All Statuses</MenuItem>
-                {Object.entries(statusLabels).map(([value, label]) => (
-                  <MenuItem key={value} value={value}>{label}</MenuItem>
+                <MenuItem value="">{t('admissions.allStatuses')}</MenuItem>
+                {Object.keys(statusColors).map((value) => (
+                  <MenuItem key={value} value={value}>{getStatusLabel(value)}</MenuItem>
                 ))}
               </Select>
             </FormControl>
           </Grid>
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
-              <InputLabel>Class</InputLabel>
+              <InputLabel>{t('admissions.class')}</InputLabel>
               <Select
                 value={classFilter}
-                label="Class"
+                label={t('admissions.class')}
                 onChange={(e) => setClassFilter(e.target.value)}
               >
-                <MenuItem value="">All Classes</MenuItem>
+                <MenuItem value="">{t('admissions.allClasses')}</MenuItem>
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((cls) => (
-                  <MenuItem key={cls} value={cls}>Class {cls}</MenuItem>
+                  <MenuItem key={cls} value={cls}>{t('common.class')} {cls}</MenuItem>
                 ))}
               </Select>
             </FormControl>
@@ -295,13 +300,13 @@ export function AdmissionList() {
           <Table>
             <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Class</TableCell>
-                <TableCell>Contact</TableCell>
-                <TableCell>Inquiry Date</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="center">Actions</TableCell>
+                <TableCell>{t('admissions.id')}</TableCell>
+                <TableCell>{t('admissions.name')}</TableCell>
+                <TableCell>{t('admissions.class')}</TableCell>
+                <TableCell>{t('admissions.contact')}</TableCell>
+                <TableCell>{t('admissions.inquiryDate')}</TableCell>
+                <TableCell>{t('admissions.status')}</TableCell>
+                <TableCell align="center">{t('admissions.actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -309,7 +314,7 @@ export function AdmissionList() {
                 <TableRow sx={S.TR_HOVER}>
                   <TableCell colSpan={7} align="center" sx={S.TD}>
                     <Typography color="text.secondary">
-                      No admissions found
+                      {t('admissions.noAdmissionsFound')}
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -320,7 +325,7 @@ export function AdmissionList() {
                     <TableCell sx={S.TD}>
                       {`${admission.firstNameEn} ${admission.middleNameEn || ''} ${admission.lastNameEn}`}
                     </TableCell>
-                    <TableCell sx={S.TD}>Class {admission.applyingForClass}</TableCell>
+                    <TableCell sx={S.TD}>{t('common.class')} {admission.applyingForClass}</TableCell>
                     <TableCell sx={S.TD}>
                       {admission.phone && <div>{admission.phone}</div>}
                       {admission.email && <div style={{ fontSize: '0.875rem', color: '#666' }}>{admission.email}</div>}
@@ -330,7 +335,7 @@ export function AdmissionList() {
                     </TableCell>
                     <TableCell sx={S.TD}>
                       <Chip
-                        label={statusLabels[admission.status] || admission.status}
+                        label={getStatusLabel(admission.status)}
                         color={statusColors[admission.status] || 'default'}
                         size="small"
                       />

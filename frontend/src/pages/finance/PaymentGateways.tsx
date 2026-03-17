@@ -159,12 +159,16 @@ export function PaymentGateways() {
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={600} gutterBottom>
-        {t('finance.paymentGateways')}
-      </Typography>
-      <Typography color="text.secondary" paragraph>
-        {t('finance.gatewaySettings')}
-      </Typography>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box>
+          <Typography variant="h5" fontWeight={700}>
+            {t('finance.paymentGateways')}
+          </Typography>
+          <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.5 }}>
+            {t('finance.gatewaySettings')}
+          </Typography>
+        </Box>
+      </Paper>
 
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}

@@ -21,6 +21,7 @@ import {
   FormControl,
   Select,
   MenuItem,
+  Paper,
   useTheme,
 } from '@mui/material';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
@@ -36,23 +37,12 @@ import {
   Campaign as AnnouncementIcon,
   ExitToApp as LeaveIcon,
   Circle as GeneralIcon,
+  Notifications as NotificationsIcon,
 } from '@mui/icons-material';
 import { useNotifications, Notification } from '../../hooks/useNotifications';
 import { formatDistanceToNow } from '../../utils/dateUtils';
 
 import { useTranslation } from 'react-i18next';
-
-const CATEGORY_LABELS: Record<string, string> = {
-  all: 'All',
-  attendance: 'Attendance',
-  exam: 'Exams',
-  fee: 'Finance',
-  grade: 'Grades',
-  announcement: 'Announcements',
-  leave: 'Leave',
-  library: 'Library',
-  general: 'General',
-};
 
 function categoryIcon(category: Notification['category']) {
   switch (category) {
@@ -86,6 +76,18 @@ export function UserNotifications() {
   const [tabValue, setTabValue] = useState<'all' | 'unread'>('all');
   const [category, setCategory] = useState('all');
 
+  const CATEGORY_LABELS: Record<string, string> = {
+    all: t('notifications.categories.all'),
+    attendance: t('notifications.categories.attendance'),
+    exam: t('notifications.categories.exam'),
+    fee: t('notifications.categories.fee'),
+    grade: t('notifications.categories.grade'),
+    announcement: t('notifications.categories.announcement'),
+    leave: t('notifications.categories.leave'),
+    library: t('notifications.categories.library'),
+    general: t('notifications.categories.general'),
+  };
+
   const filtered = notifications.filter((n) => {
     if (tabValue === 'unread' && n.isRead) return false;
     if (category !== 'all' && n.category !== category) return false;
@@ -94,29 +96,34 @@ export function UserNotifications() {
 
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', p: { xs: 2, md: 3 } }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
-            My Notifications
-          </Typography>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <NotificationsIcon sx={{ fontSize: 32, color: C.primary }} />
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                {t('notifications.myNotifications')}
+              </Typography>
+              {unreadCount > 0 && (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                  {unreadCount} {t('notifications.unread')}
+                </Typography>
+              )}
+            </Box>
+          </Box>
           {unreadCount > 0 && (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-              {unreadCount} unread
-            </Typography>
+            <Button
+              startIcon={<CheckAllIcon />}
+              onClick={markAllRead}
+              variant="outlined"
+              size="small"
+              sx={{ ...S.BTN_OUTLINE, borderRadius: R.lg, textTransform: 'none', fontWeight: 600 }}
+            >
+              {t('notifications.markAllRead')}
+            </Button>
           )}
         </Box>
-        {unreadCount > 0 && (
-          <Button
-            startIcon={<CheckAllIcon />}
-            onClick={markAllRead}
-            variant="outlined"
-            size="small"
-            sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, textTransform: 'none', fontWeight: 600 }}
-          >
-            Mark all read
-          </Button>
-        )}
-      </Box>
+      </Paper>
 
       <Box sx={{ ...S.GLASS, p: 2, mb: 3, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
         <Tabs
@@ -124,11 +131,11 @@ export function UserNotifications() {
           onChange={(_e, v) => setTabValue(v)}
           sx={{ minHeight: 36, '& .MuiTab-root': { minHeight: 36, py: 0.5, textTransform: 'none', fontWeight: 600, fontSize: '0.82rem' } }}
         >
-          <Tab label="All" value="all" />
+          <Tab label={t('notifications.all')} value="all" />
           <Tab
             label={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                Unread
+                {t('notifications.unreadTab')}
                 {unreadCount > 0 && (
                   <Chip label={unreadCount} size="small" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 700, background: C.primary, color: '#fff', '& .MuiChip-label': { px: 0.5 } }} />
                 )}
@@ -159,7 +166,7 @@ export function UserNotifications() {
           <Box sx={{ py: 8, textAlign: 'center' }}>
             <EmptyIcon sx={{ fontSize: 56, color: theme.palette.text.disabled, mb: 2 }} />
             <Typography color="text.secondary">
-              {tabValue === 'unread' ? 'No unread notifications' : 'No notifications yet'}
+              {tabValue === 'unread' ? t('notifications.noUnread') : t('notifications.noNotificationsYet')}
             </Typography>
           </Box>
         ) : (
@@ -249,7 +256,7 @@ export function UserNotifications() {
           <Box sx={{ p: 2, borderTop: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
             <Button fullWidth onClick={fetchMore} disabled={loading} sx={{ borderRadius: R.lg, textTransform: 'none' }}>
               {loading ? <CircularProgress size={16} sx={{ mr: 1 }} /> : null}
-              Load more
+              {t('notifications.loadMore')}
             </Button>
           </Box>
         )}

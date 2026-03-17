@@ -43,6 +43,7 @@ import {
   Search as SearchIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -85,6 +86,7 @@ export const LibraryManagement = () => {
   const { t } = useTranslation();
   const theme = useTheme();
   const S = useAdminStyles(theme);
+  const navigate = useSlugNavigate();
   const [tabValue, setTabValue] = useState(0);
   const [books, setBooks] = useState<Book[]>([]);
   const [circulations, setCirculations] = useState<Circulation[]>([]);
@@ -118,7 +120,7 @@ export const LibraryManagement = () => {
         ...(search && { search }),
       });
 
-      const response = await apiClient.get(`/api/v1/library/books?${params}`);
+      const response = await apiClient.get(`/library/books?${params}`);
       const result = response.data?.data;
       setBooks(result?.books || []);
       setTotal(result?.total || 0);
@@ -140,7 +142,7 @@ export const LibraryManagement = () => {
         status: 'issued',
       });
 
-      const response = await apiClient.get(`/api/v1/library/circulation?${params}`);
+      const response = await apiClient.get(`/library/circulation?${params}`);
       setCirculations(response.data?.data || []);
       setTotal(response.data?.meta?.total || response.data?.total || 0);
     } catch (error) {
@@ -173,7 +175,7 @@ export const LibraryManagement = () => {
 
   const handleIssueBook = async () => {
     try {
-      await apiClient.post('/api/v1/library/issue', {
+      await apiClient.post('/library/issue', {
         student_id: selectedStudentId,
         book_id: selectedBookId,
       });
@@ -190,7 +192,7 @@ export const LibraryManagement = () => {
 
   const handleReturnBook = async (circulationId: number) => {
     try {
-      await apiClient.post('/api/v1/library/return', {
+      await apiClient.post('/library/return', {
         circulation_id: circulationId,
       });
 
@@ -214,28 +216,30 @@ export const LibraryManagement = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
-          {t('library.libraryManagement')}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined" sx={S.BTN_OUTLINE}
-            startIcon={<IssueIcon />}
-            onClick={handleOpenDialog}
-          >
-            {t('library.issueBook')}
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => alert(t('library.addBook'))}
-            sx={S.BTN_PRIMARY}
-          >
-            {t('library.addBook')}
-          </Button>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h5" fontWeight={700}>
+            {t('library.libraryManagement')}
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="outlined" sx={S.BTN_OUTLINE}
+              startIcon={<IssueIcon />}
+              onClick={handleOpenDialog}
+            >
+              {t('library.issueBook')}
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => navigate('/library/books')}
+              sx={S.BTN_PRIMARY}
+            >
+              {t('library.addBook')}
+            </Button>
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
@@ -521,3 +525,4 @@ export const LibraryManagement = () => {
     </Box>
   );
 };
+

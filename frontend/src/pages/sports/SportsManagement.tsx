@@ -94,11 +94,11 @@ export function SportsManagement() {
     }));
     try {
       await apiClient.post(`/sports/${selectedSportId}/mark-attendance`, { attendanceData });
-      setSuccess('Attendance marked');
+      setSuccess(t('sports.attendanceMarked'));
       fetchEnrollments();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to mark attendance');
+      setError(err.response?.data?.message || t('sports.failedToMarkAttendance'));
     }
   };
 
@@ -122,14 +122,14 @@ export function SportsManagement() {
         studentId: parseInt(enrollForm.studentId, 10),
         teamId: enrollForm.teamId ? parseInt(enrollForm.teamId, 10) : undefined,
       });
-      setSuccess('Student enrolled');
+      setSuccess(t('sports.studentEnrolled'));
       setEnrollDialog(false);
       setEnrollSportId(null);
       setEnrollForm({ studentId: '', teamId: '' });
       if (selectedSportId && String(enrollSportId) === selectedSportId) fetchEnrollments();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Enroll failed');
+      setError(err.response?.data?.message || t('sports.enrollFailed'));
     }
   };
 
@@ -153,74 +153,76 @@ export function SportsManagement() {
       const id = editingItem?.sportId ?? editingItem?.id;
       if (editingItem) {
         await apiClient.put(`${endpoints[tabValue]}/${id}`, formData);
-        setSuccess('Updated successfully');
+        setSuccess(t('sports.updatedSuccessfully'));
       } else {
         await apiClient.post(endpoints[tabValue], formData);
-        setSuccess('Created successfully');
+        setSuccess(t('sports.createdSuccessfully'));
       }
       setOpenDialog(false);
       fetchData();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Operation failed');
+      setError(err.response?.data?.message || t('sports.operationFailed'));
     }
   };
 
   const handleDelete = async (item: any) => {
     const id = item?.sportId ?? item?.id;
-    if (!id || !confirm('Are you sure?')) return;
+    if (!id || !confirm(t('sports.confirmDelete'))) return;
     try {
       const endpoints = ['/sports', '/sports/teams', '/sports/tournaments', '/sports/achievements'];
       await apiClient.delete(`${endpoints[tabValue]}/${id}`);
-      setSuccess('Deleted successfully');
+      setSuccess(t('sports.deletedSuccessfully'));
       fetchData();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Delete failed');
+      setError(err.response?.data?.message || t('sports.deleteFailed'));
     }
   };
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={600} gutterBottom>Sports Management</Typography>
+      <Paper sx={S.PAGE_HEADER}>
+        <Typography variant="h5" fontWeight={700}>{t('sports.management')}</Typography>
+      </Paper>
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
       <Paper sx={{ ...S.GLASS }}>
         <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)}>
-          <Tab label="Sports" />
-          <Tab label="Teams" />
-          <Tab label="Tournaments" />
-          <Tab label="Achievements" />
-          <Tab label="Enrollments & Attendance" />
-          <Tab label="Student History" />
+          <Tab label={t('sports.sports')} />
+          <Tab label={t('sports.teams')} />
+          <Tab label={t('sports.tournaments')} />
+          <Tab label={t('sports.achievements')} />
+          <Tab label={t('sports.enrollmentsAndAttendance')} />
+          <Tab label={t('sports.studentHistory')} />
         </Tabs>
 
         <TabPanel value={tabValue} index={0}>
           <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>Create Sport</Button>
+            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>{t('sports.createSport')}</Button>
           </Box>
           <TableContainer>
             <Table>
               <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
-                  <TableCell>Sport Name</TableCell>
-                  <TableCell>Category</TableCell>
-                  <TableCell>Coach</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="center">Enroll</TableCell>
-                  <TableCell align="center">Actions</TableCell>
+                  <TableCell>{t('sports.sportName')}</TableCell>
+                  <TableCell>{t('sports.category')}</TableCell>
+                  <TableCell>{t('sports.coach')}</TableCell>
+                  <TableCell>{t('sports.status')}</TableCell>
+                  <TableCell align="center">{t('sports.enroll')}</TableCell>
+                  <TableCell align="center">{t('common.actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>No sports found</TableCell></TableRow> : data.map((item: any) => (
+                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('common.loading')}</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('sports.noSportsFound')}</TableCell></TableRow> : data.map((item: any) => (
                   <TableRow key={item.sportId ?? item.id} sx={S.TR_HOVER}>
                     <TableCell sx={S.TD}>{item.name}</TableCell>
                     <TableCell sx={S.TD}><Chip label={item.category} size="small" /></TableCell>
                     <TableCell sx={S.TD}>{item.coach}</TableCell>
                     <TableCell sx={S.TD}><Chip label={item.status} color={item.status === 'active' ? 'success' : 'default'} size="small" /></TableCell>
                     <TableCell align="center" sx={S.TD}>
-                      <Button size="small" startIcon={<EnrollIcon />} onClick={() => { setEnrollSportId(item.sportId ?? item.id); setEnrollDialog(true); }}>Enroll</Button>
+                      <Button size="small" startIcon={<EnrollIcon />} onClick={() => { setEnrollSportId(item.sportId ?? item.id); setEnrollDialog(true); }}>{t('sports.enroll')}</Button>
                       <IconButton size="small" onClick={() => handleOpenDialog(item)}><EditIcon fontSize="small" /></IconButton>
                       <IconButton size="small" onClick={() => handleDelete(item)} color="error"><DeleteIcon fontSize="small" /></IconButton>
                     </TableCell>
@@ -233,22 +235,22 @@ export function SportsManagement() {
 
         <TabPanel value={tabValue} index={1}>
           <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<TeamIcon />} onClick={() => handleOpenDialog()}>Create Team</Button>
+            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<TeamIcon />} onClick={() => handleOpenDialog()}>{t('sports.createTeamBtn')}</Button>
           </Box>
           <TableContainer>
             <Table>
               <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
-                  <TableCell>Team Name</TableCell>
-                  <TableCell>Sport</TableCell>
-                  <TableCell>Coach</TableCell>
-                  <TableCell>Captain</TableCell>
-                  <TableCell align="center">Players</TableCell>
-                  <TableCell align="center">Actions</TableCell>
+                  <TableCell>{t('sports.teamName')}</TableCell>
+                  <TableCell>{t('sports.sport')}</TableCell>
+                  <TableCell>{t('sports.coach')}</TableCell>
+                  <TableCell>{t('sports.captain')}</TableCell>
+                  <TableCell align="center">{t('sports.players')}</TableCell>
+                  <TableCell align="center">{t('common.actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>No teams found</TableCell></TableRow> : data.map((item: any) => (
+                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('common.loading')}</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('sports.noTeamsFound')}</TableCell></TableRow> : data.map((item: any) => (
                   <TableRow key={item.id} sx={S.TR_HOVER}>
                     <TableCell sx={S.TD}>{item.name}</TableCell>
                     <TableCell sx={S.TD}>{item.sportName}</TableCell>
@@ -268,23 +270,23 @@ export function SportsManagement() {
 
         <TabPanel value={tabValue} index={2}>
           <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<TrophyIcon />} onClick={() => handleOpenDialog()}>Create Tournament</Button>
+            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<TrophyIcon />} onClick={() => handleOpenDialog()}>{t('sports.createTournament')}</Button>
           </Box>
           <TableContainer>
             <Table>
               <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
-                  <TableCell>Tournament Name</TableCell>
-                  <TableCell>Sport</TableCell>
-                  <TableCell>Start Date</TableCell>
-                  <TableCell>End Date</TableCell>
-                  <TableCell>Venue</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="center">Actions</TableCell>
+                  <TableCell>{t('sports.tournamentName')}</TableCell>
+                  <TableCell>{t('sports.sport')}</TableCell>
+                  <TableCell>{t('sports.startDate')}</TableCell>
+                  <TableCell>{t('sports.endDate')}</TableCell>
+                  <TableCell>{t('sports.venue')}</TableCell>
+                  <TableCell>{t('sports.status')}</TableCell>
+                  <TableCell align="center">{t('common.actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={7} align="center" sx={S.TD}>Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={7} align="center" sx={S.TD}>No tournaments found</TableCell></TableRow> : data.map((item: any) => (
+                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={7} align="center" sx={S.TD}>{t('common.loading')}</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={7} align="center" sx={S.TD}>{t('sports.noTournamentsFound')}</TableCell></TableRow> : data.map((item: any) => (
                   <TableRow key={item.id} sx={S.TR_HOVER}>
                     <TableCell sx={S.TD}>{item.name}</TableCell>
                     <TableCell sx={S.TD}>{item.sportName}</TableCell>
@@ -305,20 +307,20 @@ export function SportsManagement() {
 
         <TabPanel value={tabValue} index={3}>
           <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<TrophyIcon />} onClick={() => handleOpenDialog()}>Record Achievement</Button>
+            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<TrophyIcon />} onClick={() => handleOpenDialog()}>{t('sports.recordAchievementBtn')}</Button>
           </Box>
           <TableContainer>
             <Table>
               <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
-                  <TableCell>Student Name</TableCell>
-                  <TableCell>Sport</TableCell>
-                  <TableCell>Achievement</TableCell>
-                  <TableCell>Date</TableCell>
+                  <TableCell>{t('sports.studentName')}</TableCell>
+                  <TableCell>{t('sports.sport')}</TableCell>
+                  <TableCell>{t('sports.achievement')}</TableCell>
+                  <TableCell>{t('sports.date')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>Loading...</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>No achievements found</TableCell></TableRow> : data.map((item: any) => (
+                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>{t('common.loading')}</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>{t('sports.noAchievementsFound')}</TableCell></TableRow> : data.map((item: any) => (
                   <TableRow key={item.id} sx={S.TR_HOVER}>
                     <TableCell sx={S.TD}>{item.studentName}</TableCell>
                     <TableCell sx={S.TD}>{item.sportName}</TableCell>
@@ -336,35 +338,35 @@ export function SportsManagement() {
             <TextField
               select
               size="small"
-              label="Sport"
+              label={t('sports.selectSport')}
               value={selectedSportId}
               onChange={(e) => setSelectedSportId(e.target.value)}
               sx={{ minWidth: 200 }}
             >
-              <MenuItem value="">Select sport</MenuItem>
+              <MenuItem value="">{t('sports.selectSport')}</MenuItem>
               {(sportsList.length ? sportsList : data).map((s: any) => (
                 <MenuItem key={s.sportId ?? s.id} value={String(s.sportId ?? s.id)}>{s.name}</MenuItem>
               ))}
             </TextField>
-            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<AttendanceIcon />} onClick={fetchEnrollments} disabled={!selectedSportId || enrollmentsLoading}>Load Enrollments</Button>
+            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<AttendanceIcon />} onClick={fetchEnrollments} disabled={!selectedSportId || enrollmentsLoading}>{t('sports.loadEnrollments')}</Button>
             {enrollments.length > 0 && (
-              <Button variant="outlined" sx={S.BTN_OUTLINE} onClick={handleMarkAttendance}>Mark Attendance</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} onClick={handleMarkAttendance}>{t('sports.markAttendanceBtn')}</Button>
             )}
           </Box>
-          {enrollmentsLoading ? <Typography>Loading...</Typography> : (
+          {enrollmentsLoading ? <Typography>{t('common.loading')}</Typography> : (
             <TableContainer>
               <Table size="small">
                 <TableHead sx={{ bgcolor: S.TH_BG }}>
                   <TableRow>
-                    <TableCell>Enrollment ID</TableCell>
-                    <TableCell>Student ID</TableCell>
-                    <TableCell>Attendance</TableCell>
-                    <TableCell>Present today</TableCell>
+                    <TableCell>{t('sports.enrollmentId')}</TableCell>
+                    <TableCell>{t('sports.studentId')}</TableCell>
+                    <TableCell>{t('sports.attendanceCount')}</TableCell>
+                    <TableCell>{t('sports.presentToday')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {enrollments.length === 0 ? (
-                    <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>Select a sport and click Load Enrollments</TableCell></TableRow>
+                    <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>{t('sports.selectSportClickLoad')}</TableCell></TableRow>
                   ) : (
                     enrollments.map((e: any) => (
                       <TableRow key={e.enrollmentId ?? e.id} sx={S.TR_HOVER}>
@@ -389,17 +391,17 @@ export function SportsManagement() {
 
         <TabPanel value={tabValue} index={5}>
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
-            <TextField size="small" label="Student ID" value={historyStudentId} onChange={(e) => setHistoryStudentId(e.target.value)} placeholder="Student ID" sx={{ width: 140 }} />
-            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<HistoryIcon />} onClick={fetchStudentHistory} disabled={!historyStudentId || historyLoading}>Load History</Button>
+            <TextField size="small" label={t('sports.studentId')} value={historyStudentId} onChange={(e) => setHistoryStudentId(e.target.value)} placeholder={t('sports.studentId')} sx={{ width: 140 }} />
+            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<HistoryIcon />} onClick={fetchStudentHistory} disabled={!historyStudentId || historyLoading}>{t('sports.loadHistory')}</Button>
           </Box>
-          {historyLoading && <Typography>Loading...</Typography>}
+          {historyLoading && <Typography>{t('common.loading')}</Typography>}
           {studentHistory && !historyLoading && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {studentHistory.enrollments?.length > 0 && (
                 <Box>
-                  <Typography variant="subtitle1" fontWeight={600}>Enrollments</Typography>
+                  <Typography variant="subtitle1" fontWeight={600}>{t('sports.enrollmentsAndAttendance')}</Typography>
                   <TableContainer><Table size="small">
-                    <TableHead sx={{ bgcolor: S.TH_BG }}><TableRow><TableCell>Sport</TableCell><TableCell>Status</TableCell><TableCell>Attendance</TableCell></TableRow></TableHead>
+                    <TableHead sx={{ bgcolor: S.TH_BG }}><TableRow><TableCell>{t('sports.sport')}</TableCell><TableCell>{t('sports.status')}</TableCell><TableCell>{t('sports.attendanceCount')}</TableCell></TableRow></TableHead>
                     <TableBody>
                       {studentHistory.enrollments.map((e: any) => (
                         <TableRow key={e.enrollmentId ?? e.id} sx={S.TR_HOVER}>
@@ -414,9 +416,9 @@ export function SportsManagement() {
               )}
               {studentHistory.achievements?.length > 0 && (
                 <Box>
-                  <Typography variant="subtitle1" fontWeight={600}>Achievements</Typography>
+                  <Typography variant="subtitle1" fontWeight={600}>{t('sports.achievements')}</Typography>
                   <TableContainer><Table size="small">
-                    <TableHead sx={{ bgcolor: S.TH_BG }}><TableRow><TableCell>Achievement</TableCell><TableCell>Date</TableCell></TableRow></TableHead>
+                    <TableHead sx={{ bgcolor: S.TH_BG }}><TableRow><TableCell>{t('sports.achievement')}</TableCell><TableCell>{t('sports.date')}</TableCell></TableRow></TableHead>
                     <TableBody>
                       {studentHistory.achievements.map((a: any, i: number) => (
                         <TableRow key={i} sx={S.TR_HOVER}><TableCell sx={S.TD}>{a.achievement ?? a.description}</TableCell><TableCell sx={S.TD}>{a.date ? new Date(a.date).toLocaleDateString() : '-'}</TableCell></TableRow>
@@ -425,7 +427,7 @@ export function SportsManagement() {
                   </Table></TableContainer>
                 </Box>
               )}
-              {studentHistory && !studentHistory.enrollments?.length && !studentHistory.achievements?.length && <Typography color="text.secondary">No enrollments or achievements found.</Typography>}
+              {studentHistory && !studentHistory.enrollments?.length && !studentHistory.achievements?.length && <Typography color="text.secondary">{t('sports.noEnrollmentsOrAchievements')}</Typography>}
             </Box>
           )}
         </TabPanel>
@@ -434,77 +436,77 @@ export function SportsManagement() {
       </Paper>
 
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>{editingItem ? 'Edit' : 'Create'} {['Sport', 'Team', 'Tournament', 'Achievement'][tabValue]}</DialogTitle>
+        <DialogTitle>{editingItem ? t('sports.edit') : t('common.create')} {[t('sports.sports'), t('sports.teams'), t('sports.tournaments'), t('sports.achievements')][tabValue]}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             {tabValue === 0 && (
               <>
-                <Grid item xs={12}><TextField label="Sport Name" value={formData.name || ''} onChange={(e) => setFormData({ ...formData, name: e.target.value })} fullWidth /></Grid>
+                <Grid item xs={12}><TextField label={t('sports.sportName')} value={formData.name || ''} onChange={(e) => setFormData({ ...formData, name: e.target.value })} fullWidth /></Grid>
                 <Grid item xs={12} md={6}>
-                  <TextField select label="Category" value={formData.category || ''} onChange={(e) => setFormData({ ...formData, category: e.target.value })} fullWidth>
-                    <MenuItem value="Indoor">Indoor</MenuItem>
-                    <MenuItem value="Outdoor">Outdoor</MenuItem>
-                    <MenuItem value="Team">Team</MenuItem>
-                    <MenuItem value="Individual">Individual</MenuItem>
+                  <TextField select label={t('sports.category')} value={formData.category || ''} onChange={(e) => setFormData({ ...formData, category: e.target.value })} fullWidth>
+                    <MenuItem value="Indoor">{t('sports.indoor')}</MenuItem>
+                    <MenuItem value="Outdoor">{t('sports.outdoor')}</MenuItem>
+                    <MenuItem value="Team">{t('sports.teamCategory')}</MenuItem>
+                    <MenuItem value="Individual">{t('sports.individual')}</MenuItem>
                   </TextField>
                 </Grid>
-                <Grid item xs={12} md={6}><TextField label="Coach" value={formData.coach || ''} onChange={(e) => setFormData({ ...formData, coach: e.target.value })} fullWidth /></Grid>
+                <Grid item xs={12} md={6}><TextField label={t('sports.coach')} value={formData.coach || ''} onChange={(e) => setFormData({ ...formData, coach: e.target.value })} fullWidth /></Grid>
                 <Grid item xs={12} md={6}>
-                  <TextField select label="Status" value={formData.status || 'active'} onChange={(e) => setFormData({ ...formData, status: e.target.value })} fullWidth>
-                    <MenuItem value="active">Active</MenuItem>
-                    <MenuItem value="inactive">Inactive</MenuItem>
+                  <TextField select label={t('sports.status')} value={formData.status || 'active'} onChange={(e) => setFormData({ ...formData, status: e.target.value })} fullWidth>
+                    <MenuItem value="active">{t('sports.active')}</MenuItem>
+                    <MenuItem value="inactive">{t('sports.inactive')}</MenuItem>
                   </TextField>
                 </Grid>
               </>
             )}
             {tabValue === 1 && (
               <>
-                <Grid item xs={12}><TextField label="Team Name" value={formData.name || ''} onChange={(e) => setFormData({ ...formData, name: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12} md={6}><TextField label="Sport ID" type="number" value={formData.sportId || ''} onChange={(e) => setFormData({ ...formData, sportId: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12} md={6}><TextField label="Coach" value={formData.coach || ''} onChange={(e) => setFormData({ ...formData, coach: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12}><TextField label="Captain" value={formData.captain || ''} onChange={(e) => setFormData({ ...formData, captain: e.target.value })} fullWidth /></Grid>
+                <Grid item xs={12}><TextField label={t('sports.teamName')} value={formData.name || ''} onChange={(e) => setFormData({ ...formData, name: e.target.value })} fullWidth /></Grid>
+                <Grid item xs={12} md={6}><TextField label={t('sports.sportId')} type="number" value={formData.sportId || ''} onChange={(e) => setFormData({ ...formData, sportId: e.target.value })} fullWidth /></Grid>
+                <Grid item xs={12} md={6}><TextField label={t('sports.coach')} value={formData.coach || ''} onChange={(e) => setFormData({ ...formData, coach: e.target.value })} fullWidth /></Grid>
+                <Grid item xs={12}><TextField label={t('sports.captain')} value={formData.captain || ''} onChange={(e) => setFormData({ ...formData, captain: e.target.value })} fullWidth /></Grid>
               </>
             )}
             {tabValue === 2 && (
               <>
-                <Grid item xs={12}><TextField label="Tournament Name" value={formData.name || ''} onChange={(e) => setFormData({ ...formData, name: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12} md={6}><TextField label="Sport ID" type="number" value={formData.sportId || ''} onChange={(e) => setFormData({ ...formData, sportId: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12} md={6}><TextField label="Venue" value={formData.venue || ''} onChange={(e) => setFormData({ ...formData, venue: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12} md={6}><TextField label="Start Date" type="date" value={formData.startDate || ''} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
-                <Grid item xs={12} md={6}><TextField label="End Date" type="date" value={formData.endDate || ''} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
+                <Grid item xs={12}><TextField label={t('sports.tournamentName')} value={formData.name || ''} onChange={(e) => setFormData({ ...formData, name: e.target.value })} fullWidth /></Grid>
+                <Grid item xs={12} md={6}><TextField label={t('sports.sportId')} type="number" value={formData.sportId || ''} onChange={(e) => setFormData({ ...formData, sportId: e.target.value })} fullWidth /></Grid>
+                <Grid item xs={12} md={6}><TextField label={t('sports.venue')} value={formData.venue || ''} onChange={(e) => setFormData({ ...formData, venue: e.target.value })} fullWidth /></Grid>
+                <Grid item xs={12} md={6}><TextField label={t('sports.startDate')} type="date" value={formData.startDate || ''} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
+                <Grid item xs={12} md={6}><TextField label={t('sports.endDate')} type="date" value={formData.endDate || ''} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
               </>
             )}
             {tabValue === 3 && (
               <>
-                <Grid item xs={12} md={6}><TextField label="Student ID" type="number" value={formData.studentId || ''} onChange={(e) => setFormData({ ...formData, studentId: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12} md={6}><TextField label="Sport ID" type="number" value={formData.sportId || ''} onChange={(e) => setFormData({ ...formData, sportId: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12}><TextField label="Achievement" value={formData.achievement || ''} onChange={(e) => setFormData({ ...formData, achievement: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12}><TextField label="Date" type="date" value={formData.date || ''} onChange={(e) => setFormData({ ...formData, date: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
+                <Grid item xs={12} md={6}><TextField label={t('sports.studentId')} type="number" value={formData.studentId || ''} onChange={(e) => setFormData({ ...formData, studentId: e.target.value })} fullWidth /></Grid>
+                <Grid item xs={12} md={6}><TextField label={t('sports.sportId')} type="number" value={formData.sportId || ''} onChange={(e) => setFormData({ ...formData, sportId: e.target.value })} fullWidth /></Grid>
+                <Grid item xs={12}><TextField label={t('sports.achievement')} value={formData.achievement || ''} onChange={(e) => setFormData({ ...formData, achievement: e.target.value })} fullWidth /></Grid>
+                <Grid item xs={12}><TextField label={t('sports.date')} type="date" value={formData.date || ''} onChange={(e) => setFormData({ ...formData, date: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
               </>
             )}
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained" sx={S.BTN_PRIMARY}>Submit</Button>
+          <Button onClick={() => setOpenDialog(false)}>{t('sports.cancel')}</Button>
+          <Button onClick={handleSubmit} variant="contained" sx={S.BTN_PRIMARY}>{t('sports.submit')}</Button>
         </DialogActions>
       </Dialog>
 
       <Dialog open={enrollDialog} onClose={() => { setEnrollDialog(false); setEnrollSportId(null); setEnrollForm({ studentId: '', teamId: '' }); }} maxWidth="xs" fullWidth>
-        <DialogTitle>Enroll Student</DialogTitle>
+        <DialogTitle>{t('sports.enrollStudent')}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
-              <TextField label="Student ID" type="number" value={enrollForm.studentId} onChange={(e) => setEnrollForm({ ...enrollForm, studentId: e.target.value })} fullWidth required />
+              <TextField label={t('sports.studentId')} type="number" value={enrollForm.studentId} onChange={(e) => setEnrollForm({ ...enrollForm, studentId: e.target.value })} fullWidth required />
             </Grid>
             <Grid item xs={12}>
-              <TextField label="Team ID (optional)" type="number" value={enrollForm.teamId} onChange={(e) => setEnrollForm({ ...enrollForm, teamId: e.target.value })} fullWidth />
+              <TextField label={t('sports.teamIdOptional')} type="number" value={enrollForm.teamId} onChange={(e) => setEnrollForm({ ...enrollForm, teamId: e.target.value })} fullWidth />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEnrollDialog(false)}>Cancel</Button>
-          <Button onClick={handleEnroll} variant="contained" sx={S.BTN_PRIMARY} disabled={!enrollForm.studentId}>Enroll</Button>
+          <Button onClick={() => setEnrollDialog(false)}>{t('sports.cancel')}</Button>
+          <Button onClick={handleEnroll} variant="contained" sx={S.BTN_PRIMARY} disabled={!enrollForm.studentId}>{t('sports.enroll')}</Button>
         </DialogActions>
       </Dialog>
     </Box>

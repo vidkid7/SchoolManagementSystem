@@ -42,6 +42,7 @@ import {
   ContentCopy as CopyIcon,
   CheckCircle as ActiveIcon,
   Cancel as InactiveIcon,
+  Description as DescriptionIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 
@@ -161,10 +162,10 @@ const handleSubmit = async () => {
       setError('');
       if (selectedTemplate) {
         await apiClient.put(`/api/v1/certificate-templates/${selectedTemplate.templateId}`, formData);
-        setSuccess('Template updated successfully');
+        setSuccess(t('certificates.templateUpdated'));
       } else {
         await apiClient.post('/api/v1/certificate-templates', formData);
-        setSuccess('Template created successfully');
+        setSuccess(t('certificates.templateCreated'));
       }
       handleCloseDialog();
       fetchTemplates();
@@ -176,11 +177,11 @@ const handleSubmit = async () => {
   };
 
 const handleDelete = async (templateId: number) => {
-    if (!window.confirm('Are you sure you want to delete this template?')) return;
+    if (!window.confirm(t('certificates.confirmDeleteTemplate'))) return;
 
     try {
       await apiClient.delete(`/api/v1/certificate-templates/${templateId}`);
-      setSuccess('Template deleted successfully');
+      setSuccess(t('certificates.templateDeleted'));
       fetchTemplates();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
@@ -192,7 +193,7 @@ const handleDelete = async (templateId: number) => {
 const handleToggleActive = async (templateId: number, isActive: boolean) => {
     try {
       await apiClient.patch(`/api/v1/certificate-templates/${templateId}`, { isActive: !isActive });
-      setSuccess(`Template ${!isActive ? 'activated' : 'deactivated'} successfully`);
+      setSuccess(`${!isActive ? t('certificates.templateActivated') : t('certificates.templateDeactivated')}`);
       fetchTemplates();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
@@ -208,7 +209,7 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
         name: `${template.name} (Copy)`,
         templateId: undefined,
       });
-      setSuccess('Template duplicated successfully');
+      setSuccess(t('certificates.templateDuplicated'));
       fetchTemplates();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
@@ -308,18 +309,24 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
-          Certificate Templates / प्रमाणपत्र टेम्पलेट
-        </Typography>
-        <Button
-          sx={S.BTN_PRIMARY}
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-        >
-          Create Template / टेम्पलेट सिर्जना गर्नुहोस्
-        </Button>
-      </Box>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <DescriptionIcon sx={{ fontSize: 32, color: C.primary }} />
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 700 }}>{t('certificates.templates')}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('certificates.subtitle')}</Typography>
+            </Box>
+          </Box>
+          <Button
+            sx={S.BTN_PRIMARY}
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
+          >
+            {t('certificates.createTemplate')}
+          </Button>
+        </Box>
+      </Paper>
 
       {success && (
         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
@@ -338,7 +345,7 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
           <Grid item xs={12}>
             <Paper sx={{ ...S.GLASS, p: 4, textAlign: 'center' }}>
               <Typography color="text.secondary">
-                No templates found. Create your first template to get started.
+                {t('certificates.noTemplatesFound')}
               </Typography>
             </Paper>
           </Grid>
@@ -367,10 +374,10 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
                     sx={{ mb: 2 }}
                   />
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Variables: {template.variables?.length || 0}
+                    {t('certificates.variablesCount')}: {template.variables?.length || 0}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Created: {new Date(template.createdAt).toLocaleDateString()}
+                    {t('common.created')}: {new Date(template.createdAt).toLocaleDateString()}
                   </Typography>
                 </CardContent>
                 <CardActions>
@@ -379,21 +386,21 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
                     startIcon={<ViewIcon />}
                     onClick={() => handlePreview(template)}
                   >
-                    Preview
+                    {t('certificates.preview')}
                   </Button>
                   <Button
                     size="small"
                     startIcon={<EditIcon />}
                     onClick={() => handleOpenDialog(template)}
                   >
-                    Edit
+                    {t('common.edit')}
                   </Button>
                   <Button
                     size="small"
                     startIcon={<CopyIcon />}
                     onClick={() => handleDuplicate(template)}
                   >
-                    Duplicate
+                    {t('certificates.duplicate')}
                   </Button>
                   <IconButton
                     size="small"
@@ -412,14 +419,14 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
       {/* Create/Edit Template Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="lg" fullWidth>
         <DialogTitle>
-          {selectedTemplate ? 'Edit Template' : 'Create New Template'}
+          {selectedTemplate ? t('certificates.editTemplate') : t('certificates.createTemplate')}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <TextField
-                  label="Template Name"
+                  label={t('certificates.templateName')}
                   fullWidth
                   required
                   value={formData.name}
@@ -428,10 +435,10 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth required>
-                  <InputLabel>Certificate Type</InputLabel>
+                  <InputLabel>{t('certificates.certificateType')}</InputLabel>
                   <Select
                     value={formData.type}
-                    label="Certificate Type"
+                    label={t('certificates.certificateType')}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   >
                     {CERTIFICATE_TYPES.map((type) => (
@@ -446,15 +453,15 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
 
             <Paper sx={{ ...S.GLASS, mt: 3 }}>
               <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
-                <Tab label="HTML Template" />
-                <Tab label="CSS Styles" />
-                <Tab label="Variables" />
+                <Tab label={t('certificates.htmlTemplateTab')} />
+                <Tab label={t('certificates.cssStylesTab')} />
+                <Tab label={t('certificates.variablesTab')} />
               </Tabs>
             </Paper>
 
             <TabPanel value={tabValue} index={0}>
               <TextField
-                label="HTML Template"
+                label={t('certificates.htmlTemplateTab')}
                 fullWidth
                 multiline
                 rows={15}
@@ -467,7 +474,7 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
 
             <TabPanel value={tabValue} index={1}>
               <TextField
-                label="CSS Styles"
+                label={t('certificates.cssStylesTab')}
                 fullWidth
                 multiline
                 rows={15}
@@ -484,28 +491,27 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
                 roll_number, date_of_birth, admission_date, etc.
               </Alert>
               <Typography variant="body2" color="text.secondary">
-                Variables are automatically extracted from your HTML template. 
-                Use the format {`{{variable_name}}`} in your HTML.
+                {t('certificates.availableVarsNote')}
               </Typography>
             </TabPanel>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handleCloseDialog}>{t('common.cancel')}</Button>
           <Button sx={S.BTN_PRIMARY} onClick={handleSubmit}>
-            {selectedTemplate ? 'Update' : 'Create'}
+            {selectedTemplate ? t('common.update') : t('common.create')}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Preview Dialog */}
       <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Template Preview</DialogTitle>
+        <DialogTitle>{t('certificates.preview')}</DialogTitle>
         <DialogContent>
           {selectedTemplate && (
             <Box>
               <Alert severity="info" sx={{ mb: 2 }}>
-                This is a preview with sample data. Actual certificates will use real student data.
+                {t('certificates.previewNote')}
               </Alert>
               <Paper
                 sx={{
@@ -532,7 +538,7 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPreviewOpen(false)}>Close</Button>
+          <Button onClick={() => setPreviewOpen(false)}>{t('common.close')}</Button>
         </DialogActions>
       </Dialog>
     </Box>

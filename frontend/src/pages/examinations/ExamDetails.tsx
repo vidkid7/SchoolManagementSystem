@@ -133,8 +133,8 @@ export function ExamDetails() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Paper sx={{ ...S.GLASS, p: 3 }}>
+    <Box>
+      <Paper sx={S.PAGE_HEADER}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Button
@@ -148,7 +148,7 @@ export function ExamDetails() {
               {exam.name}
             </Typography>
             <Chip
-              label={exam.status}
+              label={t(`examinations.statuses.${exam.status}`, exam.status)}
               color={statusColors[exam.status] || 'default'}
               size="small"
             />

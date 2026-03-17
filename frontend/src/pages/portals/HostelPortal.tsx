@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box, Grid, Card, CardContent, Typography, Button, Divider, Avatar, List, ListItem,
+  Box, Grid, Card, CardContent, Typography, Button, Divider, List, ListItem,
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog,
   DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select,
@@ -117,11 +117,11 @@ const HostelPortal: React.FC = () => {
       setMessMenus(messRes.data?.data?.menus ?? []);
       setInventory(inventoryRes.data?.data?.items ?? []);
     } catch {
-      setError('Failed to load hostel data');
+      setError(t('portal.failedToLoadData'));
     } finally {
       setLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, t]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -134,7 +134,7 @@ const HostelPortal: React.FC = () => {
       }
       setRoomDialog(false); setEditRoom(null); setFormData({});
       loadData();
-    } catch { setError('Failed to save room'); }
+    } catch { setError(t('portal.failedToLoadData')); }
   };
 
   const handleDeleteRoom = async (id: number) => {
@@ -142,42 +142,42 @@ const HostelPortal: React.FC = () => {
     try {
       await apiClient.delete(`/api/v1/hostel/rooms/${id}`, authHdr(accessToken!));
       loadData();
-    } catch { setError('Failed to delete room'); }
+    } catch { setError(t('portal.failedToLoadData')); }
   };
 
   const handleCreateDiscipline = async () => {
     try {
       await apiClient.post('/api/v1/hostel/discipline', formData, authHdr(accessToken!));
       setDisciplineDialog(false); setFormData({}); loadData();
-    } catch { setError('Failed to record discipline'); }
+    } catch { setError(t('portal.failedToLoadData')); }
   };
 
   const handleRegisterVisitor = async () => {
     try {
       await apiClient.post('/api/v1/hostel/visitors', formData, authHdr(accessToken!));
       setVisitorDialog(false); setFormData({}); loadData();
-    } catch { setError('Failed to register visitor'); }
+    } catch { setError(t('portal.failedToLoadData')); }
   };
 
   const handleCheckoutVisitor = async (id: number) => {
     try {
       await apiClient.put(`/api/v1/hostel/visitors/${id}/checkout`, {}, authHdr(accessToken!));
       loadData();
-    } catch { setError('Failed to checkout visitor'); }
+    } catch { setError(t('portal.failedToLoadData')); }
   };
 
   const handleProcessLeave = async (id: number, action: 'approve' | 'reject') => {
     try {
       await apiClient.put(`/api/v1/hostel/leaves/${id}/process`, { action }, authHdr(accessToken!));
       loadData();
-    } catch { setError('Failed to process leave'); }
+    } catch { setError(t('portal.failedToLoadData')); }
   };
 
   const handleCreateIncident = async () => {
     try {
       await apiClient.post('/api/v1/hostel/incidents', formData, authHdr(accessToken!));
       setIncidentDialog(false); setFormData({}); loadData();
-    } catch { setError('Failed to record incident'); }
+    } catch { setError(t('portal.failedToLoadData')); }
   };
 
   const handleSaveMessMenu = async () => {
@@ -189,7 +189,7 @@ const HostelPortal: React.FC = () => {
         await apiClient.post('/api/v1/hostel/mess-menu', payload, authHdr(accessToken!));
       }
       setMessDialog(false); setEditMenu(null); setFormData({}); loadData();
-    } catch { setError('Failed to save menu'); }
+    } catch { setError(t('portal.failedToLoadData')); }
   };
 
   const handleDeleteMessMenu = async (id: number) => {
@@ -197,7 +197,7 @@ const HostelPortal: React.FC = () => {
     try {
       await apiClient.delete(`/api/v1/hostel/mess-menu/${id}`, authHdr(accessToken!));
       loadData();
-    } catch { setError('Failed to delete menu'); }
+    } catch { setError(t('portal.failedToLoadData')); }
   };
 
   const handleSaveInventory = async () => {
@@ -208,7 +208,7 @@ const HostelPortal: React.FC = () => {
         await apiClient.post('/api/v1/hostel/inventory', formData, authHdr(accessToken!));
       }
       setInventoryDialog(false); setEditInventory(null); setFormData({}); loadData();
-    } catch { setError('Failed to save inventory item'); }
+    } catch { setError(t('portal.failedToLoadData')); }
   };
 
   const handleDeleteInventory = async (id: number) => {
@@ -216,32 +216,33 @@ const HostelPortal: React.FC = () => {
     try {
       await apiClient.delete(`/api/v1/hostel/inventory/${id}`, authHdr(accessToken!));
       loadData();
-    } catch { setError('Failed to delete item'); }
+    } catch { setError(t('portal.failedToLoadData')); }
   };
 
   if (loading) return <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh"><CircularProgress /></Box>;
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box display="flex" alignItems="center" gap={2} mb={3}>
-        <Avatar sx={{ bgcolor: 'secondary.main', width: 56, height: 56 }}>
-          <HostelIcon fontSize="large" />
-        </Avatar>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>{t('portal.hostelManagement')}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t('portal.welcome')}, {user?.firstName || user?.username} — {t('portal.hostelWarden')}
-          </Typography>
+    <Box sx={{ p: 3, mt: { xs: 7, sm: 8 } }}>
+      {/* Header */}
+      <Paper sx={S.PAGE_HEADER}>
+        <Box display="flex" alignItems="center" gap={2}>
+          <HostelIcon sx={{ fontSize: 32, color: C.purple }} />
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h5" fontWeight={700}>{t('portal.hostelManagement')}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('portal.welcome')}, {user?.firstName || user?.username} — {t('portal.hostelWarden')}
+            </Typography>
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
 
       {/* Stats */}
       <Grid container spacing={2} mb={3}>
         {[
-          { label: t('dashboard.totalStudents'), value: data?.summary.totalStudents ?? '--', icon: <PeopleIcon />, color: C.purple },
-          { label: t('portal.activeStudents'), value: data?.summary.activeStudents ?? '--', icon: <ActiveIcon />, color: C.success },
+          { label: t('dashboard.totalStudents'), value: data?.summary?.totalStudents ?? '--', icon: <PeopleIcon />, color: C.purple },
+          { label: t('portal.activeStudents'), value: data?.summary?.activeStudents ?? '--', icon: <ActiveIcon />, color: C.success },
           { label: t('hostel.rooms'), value: rooms.length, icon: <RoomIcon />, color: C.primary },
           { label: t('portal.pendingLeaves'), value: leaves.filter(l => l.status === 'pending').length, icon: <LeaveIcon />, color: C.warning },
         ].map((stat) => (

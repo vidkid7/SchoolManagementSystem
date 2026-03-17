@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box, Grid, Card, CardContent, Typography, Button, Divider, Avatar, List, ListItem,
+  Box, Grid, Card, CardContent, Typography, Button, Divider, List, ListItem,
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Select,
   MenuItem, FormControl, InputLabel, Dialog, DialogTitle, DialogContent, DialogActions,
@@ -33,7 +33,7 @@ interface Task { id: number; title: string; description: string; priority: strin
 interface ScheduleEntry { day: string; startTime: string; endTime: string; location: string; duties: string; }
 
 const authHdr = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
 
 const statusIcon = (status: string) => {
   if (status === 'completed') return <DoneIcon fontSize="small" color="success" />;
@@ -84,11 +84,11 @@ const NonTeachingStaffPortal: React.FC = () => {
       setLeaveHistory(Array.isArray(leaveData) ? leaveData : leaveData?.leaves ?? []);
       if (leaveData?.balance) setLeaveBalance(leaveData.balance);
     } catch {
-      setError('Failed to load staff dashboard');
+      setError(t('portal.failedToLoadData'));
     } finally {
       setLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, t]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -96,7 +96,7 @@ const NonTeachingStaffPortal: React.FC = () => {
     try {
       await apiClient.put(`/api/v1/non-teaching-staff/tasks/${taskId}`, { status: newStatus }, authHdr(accessToken!));
       setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
-    } catch { setError('Failed to update task status'); }
+    } catch { setError(t('portal.failedToLoadData')); }
   };
 
   const handleLeaveSubmit = async () => {
@@ -108,7 +108,7 @@ const NonTeachingStaffPortal: React.FC = () => {
       setLeaveForm({ leaveType: 'casual', startDate: '', endDate: '', reason: '' });
       loadData();
     } catch {
-      setError('Failed to submit leave request');
+      setError(t('portal.failedToLoadData'));
     } finally {
       setLeaveSubmitting(false);
     }
@@ -121,18 +121,18 @@ const NonTeachingStaffPortal: React.FC = () => {
   const completedCount = tasks.filter(t => t.status === 'completed').length;
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box display="flex" alignItems="center" gap={2} mb={3}>
-        <Avatar sx={{ bgcolor: 'warning.main', width: 56, height: 56 }}>
-          <StaffIcon fontSize="large" />
-        </Avatar>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>{t('portal.staffPortal')}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t('portal.welcome')}, {user?.firstName || user?.username} — {t('portal.nonTeachingStaff')}
-          </Typography>
+    <Box sx={{ p: 3, mt: { xs: 7, sm: 8 } }}>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box display="flex" alignItems="center" gap={2}>
+          <StaffIcon sx={{ fontSize: 32, color: C.warning }} />
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h5" fontWeight={700}>{t('portal.staffPortal')}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('portal.welcome')}, {user?.firstName || user?.username} — {t('portal.nonTeachingStaff')}
+            </Typography>
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
 
@@ -216,9 +216,10 @@ const NonTeachingStaffPortal: React.FC = () => {
                 <TableRow><TableCell colSpan={5} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('portal.noSchedule')}</Typography></TableCell></TableRow>
               ) : DAYS.map(day => {
                 const entry = schedule.find(s => s.day === day);
+                const dayLabel = t(`common.days.${day.toLowerCase()}`);
                 return (
                   <TableRow key={day} sx={entry ? {} : { bgcolor: 'grey.50' }}>
-                    <TableCell><strong>{day}</strong></TableCell>
+                    <TableCell><strong>{dayLabel}</strong></TableCell>
                     <TableCell>{entry?.startTime || '—'}</TableCell>
                     <TableCell>{entry?.endTime || '—'}</TableCell>
                     <TableCell>{entry?.location || '—'}</TableCell>

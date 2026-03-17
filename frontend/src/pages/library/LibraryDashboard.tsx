@@ -95,57 +95,67 @@ export function LibraryDashboard() {
     {
       title: t('library.totalBooks'),
       value: stats.totalBooks.toString(),
-      icon: <BookIcon sx={{ fontSize: 40, color: C.primary }} />,
+      icon: <BookIcon sx={{ fontSize: 32 }} />,
       color: C.primary,
+      bgColor: C.primaryBg,
       action: () => navigate(`/library/books`),
     },
     {
       title: t('library.available'),
       value: stats.availableBooks.toString(),
-      icon: <TrendingUpIcon sx={{ fontSize: 40, color: C.primary }} />,
-      color: C.primary,
+      icon: <TrendingUpIcon sx={{ fontSize: 32 }} />,
+      color: C.success,
+      bgColor: C.successBg,
       action: () => navigate(`/library/books`),
     },
     {
       title: t('library.issued'),
       value: stats.issuedBooks.toString(),
-      icon: <IssueIcon sx={{ fontSize: 40, color: C.neutral }} />,
-      color: C.neutral,
+      icon: <IssueIcon sx={{ fontSize: 32 }} />,
+      color: C.warning,
+      bgColor: C.warningBg,
       action: () => navigate(`/library/circulation`),
     },
     {
       title: t('library.overdue'),
       value: stats.overdueBooks.toString(),
-      icon: <WarningIcon sx={{ fontSize: 40, color: C.danger }} />,
+      icon: <WarningIcon sx={{ fontSize: 32 }} />,
       color: C.danger,
+      bgColor: C.dangerBg,
       action: () => navigate(`/library/circulation?status=overdue`),
     },
   ];
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" fontWeight={600}>
-          {t('library.libraryDashboard')}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => navigate(`/library/books/new`)}
-            sx={S.BTN_PRIMARY}
-          >
-            {t('library.addBook')}
-          </Button>
-          <Button
-            variant="outlined" sx={S.BTN_OUTLINE}
-            startIcon={<IssueIcon />}
-            onClick={() => navigate(`/library/issue`)}
-          >
-            {t('library.issueBook')}
-          </Button>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <BookIcon sx={{ fontSize: 32, color: C.primary }} />
+            <Box>
+              <Typography variant="h5" fontWeight={700}>{t('library.libraryDashboard')}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('library.subtitle')}</Typography>
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => navigate(`/library/books/new`)}
+              sx={S.BTN_PRIMARY}
+            >
+              {t('library.addBook')}
+            </Button>
+            <Button
+              variant="outlined" sx={S.BTN_OUTLINE}
+              startIcon={<IssueIcon />}
+              onClick={() => navigate(`/library/issue`)}
+            >
+              {t('library.issueBook')}
+            </Button>
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
       <Grid container spacing={3}>
         {statCards.map((card, index) => (
@@ -169,7 +179,9 @@ export function LibraryDashboard() {
                       {card.value}
                     </Typography>
                   </Box>
-                  {card.icon}
+                  <Box sx={{ backgroundColor: card.bgColor, color: card.color, p: 1.5, borderRadius: R.lg, display: 'flex', alignItems: 'center' }}>
+                    {card.icon}
+                  </Box>
                 </Box>
               </CardContent>
             </Card>
@@ -202,8 +214,8 @@ export function LibraryDashboard() {
                     }
                   >
                     <ListItemText
-                      primary={activity.bookTitle}
-                      secondary={`${activity.memberName} • ${new Date(activity.date).toLocaleDateString()}`}
+                      primary={activity.bookTitle || activity.book_title || activity.title || t('library.book')}
+                      secondary={`${activity.memberName || activity.member_name || activity.studentName || activity.student_name || ''} • ${new Date(activity.date).toLocaleDateString()}`}
                     />
                   </ListItem>
                 ))}

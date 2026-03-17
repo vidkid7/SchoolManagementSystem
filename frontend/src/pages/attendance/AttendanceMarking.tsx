@@ -218,17 +218,28 @@ export const AttendanceMarking = () => {
 
   return (
     <Box>
-      {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
-          {t('attendance.markAttendance')}
-        </Typography>
-        <Chip
-          icon={isOnline ? <SyncedIcon /> : <OfflineIcon />}
-          label={isOnline ? t('attendance.online') : t('attendance.offline')}
-          color={isOnline ? 'success' : 'warning'}
-        />
-      </Box>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ fontSize: 32, color: C.primary, display: 'flex' }}>
+              <SyncedIcon sx={{ fontSize: 32, color: isOnline ? C.primary : C.warning }} />
+            </Box>
+            <Box>
+              <Typography variant="h5" fontWeight={700}>
+                {t('attendance.markAttendance')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {isOnline ? t('attendance.online') : t('attendance.offline')}
+              </Typography>
+            </Box>
+          </Box>
+          <Chip
+            icon={isOnline ? <SyncedIcon /> : <OfflineIcon />}
+            label={isOnline ? t('attendance.online') : t('attendance.offline')}
+            color={isOnline ? 'success' : 'warning'}
+          />
+        </Box>
+      </Paper>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3, borderRadius: R.md }} onClose={() => setError('')}>

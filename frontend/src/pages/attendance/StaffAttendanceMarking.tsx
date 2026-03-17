@@ -148,12 +148,14 @@ export function StaffAttendanceMarking() {
 
   return (
     <Box>
-      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
+      <Paper sx={S.PAGE_HEADER}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-          <StaffIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-          <Typography variant="h5" fontWeight={600}>
-            {t('attendance.staffAttendanceTitle')}
-          </Typography>
+          <StaffIcon sx={{ fontSize: 32, color: C.primary }} />
+          <Box>
+            <Typography variant="h5" fontWeight={600}>
+              {t('attendance.staffAttendanceTitle')}
+            </Typography>
+          </Box>
         </Box>
 
         <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>

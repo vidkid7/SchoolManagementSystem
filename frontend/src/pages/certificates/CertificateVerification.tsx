@@ -294,7 +294,7 @@ export const CertificateVerification = () => {
                 disabled={loading}
                 sx={{ ...S.BTN_PRIMARY,  minWidth: 150, whiteSpace: 'nowrap' }}
               >
-                {loading ? <CircularProgress size={24} /> : 'Verify / प्रमाणित गर्नुहोस्'}
+                {loading ? <CircularProgress size={24} /> : t('certificates.verifyAction')}
               </Button>
             </Box>
             <Box sx={{ mt: 2 }}>
@@ -303,14 +303,14 @@ export const CertificateVerification = () => {
                 startIcon={<QrCodeIcon />}
                 onClick={handleScanQrCode}
               >
-                Scan QR Code / QR कोड स्क्यान गर्नुहोस्
+                {t('certificates.scanQrCode')}
               </Button>
             </Box>
           </CardContent>
         </Card>
 
         <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} fullWidth maxWidth="sm">
-          <DialogTitle>Scan QR Code / QR कोड स्क्यान गर्नुहोस्</DialogTitle>
+          <DialogTitle>{t('certificates.scanQrCode')}</DialogTitle>
           <DialogContent>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               Point your camera at the certificate QR code. Verification starts automatically.
@@ -350,7 +350,7 @@ export const CertificateVerification = () => {
                 )}
                 <Box>
                   <Typography variant="h5" color={result.valid ? 'success.main' : 'error.main'}>
-                    {result.valid ? 'Certificate Verified / प्रमाणपत्र प्रमाणित' : 'Certificate Not Verified / प्रमाणपत्र प्रमाणित भएन'}
+                    {result.valid ? t('certificates.certificateVerified') : t('certificates.certificateNotVerified')}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Verified at: {new Date(result.verifiedAt).toLocaleString()}

@@ -204,11 +204,11 @@ export const NotificationCenter = () => {
         message: smsForm.message,
         scheduleTime: smsForm.scheduleTime || undefined,
       });
-      setSnackbar({ open: true, message: 'SMS sent successfully!', severity: 'success' });
+      setSnackbar({ open: true, message: t('notifications.smsSentSuccess'), severity: 'success' });
       setSmsForm({ recipients: '', message: '', templateId: '', scheduleTime: '' });
       fetchHistory();
     } catch (error: any) {
-      setSnackbar({ open: true, message: error.response?.data?.error?.message || 'Failed to send SMS', severity: 'error' });
+      setSnackbar({ open: true, message: error.response?.data?.error?.message || t('notifications.failedToSendSms'), severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -222,10 +222,10 @@ export const NotificationCenter = () => {
         targetRoles: ['student', 'parent', 'staff'],
         scheduleTime: smsForm.scheduleTime || undefined,
       });
-      setSnackbar({ open: true, message: 'Bulk SMS sent successfully!', severity: 'success' });
+      setSnackbar({ open: true, message: t('notifications.bulkSmsSentSuccess'), severity: 'success' });
       fetchHistory();
     } catch (error: any) {
-      setSnackbar({ open: true, message: error.response?.data?.error?.message || 'Failed to send bulk SMS', severity: 'error' });
+      setSnackbar({ open: true, message: error.response?.data?.error?.message || t('notifications.failedToSendBulkSms'), severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -240,11 +240,11 @@ export const NotificationCenter = () => {
         body: emailForm.body,
         scheduleTime: emailForm.scheduleTime || undefined,
       });
-      setSnackbar({ open: true, message: 'Email sent successfully!', severity: 'success' });
+      setSnackbar({ open: true, message: t('notifications.emailSentSuccess'), severity: 'success' });
       setEmailForm({ recipients: '', subject: '', body: '', templateId: '', scheduleTime: '' });
       fetchHistory();
     } catch (error: any) {
-      setSnackbar({ open: true, message: error.response?.data?.error?.message || 'Failed to send email', severity: 'error' });
+      setSnackbar({ open: true, message: error.response?.data?.error?.message || t('notifications.failedToSendEmail'), severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -259,11 +259,11 @@ export const NotificationCenter = () => {
         targetRoles: pushForm.targetRoles,
         scheduleTime: pushForm.scheduleTime || undefined,
       });
-      setSnackbar({ open: true, message: 'Push notification sent successfully!', severity: 'success' });
+      setSnackbar({ open: true, message: t('notifications.pushSentSuccess'), severity: 'success' });
       setPushForm({ title: '', message: '', targetRoles: [], scheduleTime: '' });
       fetchHistory();
     } catch (error: any) {
-      setSnackbar({ open: true, message: error.response?.data?.error?.message || 'Failed to send push notification', severity: 'error' });
+      setSnackbar({ open: true, message: error.response?.data?.error?.message || t('notifications.failedToSendPush'), severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -275,9 +275,9 @@ export const NotificationCenter = () => {
         sms: smsSettings,
         email: emailSettings,
       });
-      setSnackbar({ open: true, message: 'Settings saved successfully!', severity: 'success' });
+      setSnackbar({ open: true, message: t('notifications.settingsSaved'), severity: 'success' });
     } catch (error: any) {
-      setSnackbar({ open: true, message: 'Failed to save settings', severity: 'error' });
+      setSnackbar({ open: true, message: t('notifications.failedToSaveSettings'), severity: 'error' });
     }
   };
 
@@ -301,26 +301,32 @@ export const NotificationCenter = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
-          Notification Center / सूचना केन्द्र
-        </Typography>
-        <Button
-          variant="outlined" sx={S.BTN_OUTLINE}
-          startIcon={<RefreshIcon />}
-          onClick={fetchHistory}
-        >
-          Refresh / ताजा गर्नुहोस्
-        </Button>
-      </Box>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <PushIcon sx={{ fontSize: 32, color: C.primary }} />
+            <Box>
+              <Typography variant="h5" fontWeight={700}>{t('notifications.title')}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('notifications.subtitle')}</Typography>
+            </Box>
+          </Box>
+          <Button
+            variant="outlined" sx={S.BTN_OUTLINE}
+            startIcon={<RefreshIcon />}
+            onClick={fetchHistory}
+          >
+            {t('notifications.refresh')}
+          </Button>
+        </Box>
+      </Paper>
 
       <Paper sx={{ ...S.GLASS, mb: 3 }}>
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
-          <Tab icon={<SmsIcon />} label="SMS" />
-          <Tab icon={<EmailIcon />} label="Email" />
-          <Tab icon={<PushIcon />} label="Push Notifications" />
-          <Tab icon={<HistoryIcon />} label="History / इतिहास" />
-          <Tab icon={<SettingsIcon />} label="Settings / सेटिङ" />
+          <Tab icon={<SmsIcon />} label={t('notifications.sms')} />
+          <Tab icon={<EmailIcon />} label={t('notifications.email')} />
+          <Tab icon={<PushIcon />} label={t('notifications.pushNotifications')} />
+          <Tab icon={<HistoryIcon />} label={t('notifications.history')} />
+          <Tab icon={<SettingsIcon />} label={t('notifications.settings')} />
         </Tabs>
       </Paper>
 
@@ -331,16 +337,16 @@ export const NotificationCenter = () => {
             <Card sx={{ ...S.GLASS }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  SMS Balance / SMS ब्यालेन्स
+                  {t('notifications.smsBalance')}
                 </Typography>
                 <Typography variant="h3" color="primary">
                   {smsBalance.balance}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Available credits
+                  {t('notifications.availableCredits')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  Used this month: {smsBalance.used}
+                  {t('notifications.usedThisMonth', { count: smsBalance.used })}
                 </Typography>
               </CardContent>
             </Card>
@@ -349,21 +355,21 @@ export const NotificationCenter = () => {
             <Card sx={{ ...S.GLASS }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Send SMS / SMS पठाउनुहोस्
+                  {t('notifications.sendSms')}
                 </Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <FormControl fullWidth>
-                    <InputLabel>Template (Optional)</InputLabel>
+                    <InputLabel>{t('notifications.templateOptional')}</InputLabel>
                     <Select
                       value={smsForm.templateId}
-                      label="Template (Optional)"
+                      label={t('notifications.templateOptional')}
                       onChange={(e) => {
                         const templateId = String(e.target.value);
                         const template = templates.find(t => String(t.id) === templateId) as SMSTemplate;
                         setSmsForm({ ...smsForm, templateId, message: template?.content || '' });
                       }}
                     >
-                      <MenuItem value="">None</MenuItem>
+                      <MenuItem value="">{t('notifications.none')}</MenuItem>
                       {templates.filter(t => 'content' in t).map((template: any) => (
                         <MenuItem key={template.id} value={template.id}>
                           {template.name}
@@ -372,7 +378,7 @@ export const NotificationCenter = () => {
                     </Select>
                   </FormControl>
                   <TextField
-                    label="Recipients / प्रापकहरू"
+                    label={t('notifications.recipients')}
                     fullWidth
                     multiline
                     rows={2}
@@ -382,7 +388,7 @@ export const NotificationCenter = () => {
                     helperText="e.g., 9800000001, 9800000002"
                   />
                   <TextField
-                    label="Message / सन्देश"
+                    label={t('notifications.message')}
                     fullWidth
                     multiline
                     rows={4}
@@ -392,7 +398,7 @@ export const NotificationCenter = () => {
                     helperText={`${smsForm.message.length}/160 characters`}
                   />
                   <TextField
-                    label="Schedule Time (Optional)"
+                    label={t('notifications.scheduleTimeOptional')}
                     type="datetime-local"
                     fullWidth
                     value={smsForm.scheduleTime}
@@ -406,14 +412,14 @@ export const NotificationCenter = () => {
                       onClick={handleSendSMS}
                       disabled={loading || !smsForm.recipients || !smsForm.message}
                     >
-                      Send SMS
+                      {t('notifications.sendSms')}
                     </Button>
                     <Button
                       variant="outlined" sx={S.BTN_OUTLINE}
                       onClick={handleSendBulkSMS}
                       disabled={loading || !smsForm.message}
                     >
-                      Bulk Send to All
+                      {t('notifications.sendBulkToAll')}
                     </Button>
                   </Box>
                 </Box>
@@ -428,14 +434,14 @@ export const NotificationCenter = () => {
         <Card sx={{ ...S.GLASS }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Send Email / इमेल पठाउनुहोस्
+              {t('notifications.sendEmail')}
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <FormControl fullWidth>
-                <InputLabel>Template (Optional)</InputLabel>
+                <InputLabel>{t('notifications.templateOptional')}</InputLabel>
                 <Select
                   value={emailForm.templateId}
-                  label="Template (Optional)"
+                  label={t('notifications.templateOptional')}
                   onChange={(e) => {
                     const templateId = String(e.target.value);
                     const template = templates.find(t => String(t.id) === templateId) as EmailTemplate;
@@ -447,7 +453,7 @@ export const NotificationCenter = () => {
                     });
                   }}
                 >
-                  <MenuItem value="">None</MenuItem>
+                  <MenuItem value="">{t('notifications.none')}</MenuItem>
                   {templates.filter(t => 'subject' in t).map((template: any) => (
                     <MenuItem key={template.id} value={template.id}>
                       {template.name}
@@ -456,7 +462,7 @@ export const NotificationCenter = () => {
                 </Select>
               </FormControl>
               <TextField
-                label="Recipients / प्रापकहरू"
+                label={t('notifications.recipients')}
                 fullWidth
                 multiline
                 rows={2}
@@ -465,13 +471,13 @@ export const NotificationCenter = () => {
                 placeholder="Enter email addresses separated by commas"
               />
               <TextField
-                label="Subject / विषय"
+                label={t('notifications.subject')}
                 fullWidth
                 value={emailForm.subject}
                 onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
               />
               <TextField
-                label="Body / मुख्य सन्देश"
+                label={t('notifications.body')}
                 fullWidth
                 multiline
                 rows={8}
@@ -479,7 +485,7 @@ export const NotificationCenter = () => {
                 onChange={(e) => setEmailForm({ ...emailForm, body: e.target.value })}
               />
               <TextField
-                label="Schedule Time (Optional)"
+                label={t('notifications.scheduleTimeOptional')}
                 type="datetime-local"
                 fullWidth
                 value={emailForm.scheduleTime}
@@ -492,7 +498,7 @@ export const NotificationCenter = () => {
                 onClick={handleSendEmail}
                 disabled={loading || !emailForm.recipients || !emailForm.subject || !emailForm.body}
               >
-                Send Email
+                {t('notifications.sendEmail')}
               </Button>
             </Box>
           </CardContent>
@@ -504,17 +510,17 @@ export const NotificationCenter = () => {
         <Card sx={{ ...S.GLASS }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Send Push Notification / पुश सूचना पठाउनुहोस्
+              {t('notifications.sendPushNotification')}
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField
-                label="Title / शीर्षक"
+                label={t('calendar.eventTitle')}
                 fullWidth
                 value={pushForm.title}
                 onChange={(e) => setPushForm({ ...pushForm, title: e.target.value })}
               />
               <TextField
-                label="Message / सन्देश"
+                label={t('notifications.message')}
                 fullWidth
                 multiline
                 rows={4}
@@ -522,22 +528,22 @@ export const NotificationCenter = () => {
                 onChange={(e) => setPushForm({ ...pushForm, message: e.target.value })}
               />
               <FormControl fullWidth>
-                <InputLabel>Target Roles</InputLabel>
+                <InputLabel>{t('notifications.targetRoles')}</InputLabel>
                 <Select
                   multiple
                   value={pushForm.targetRoles}
-                  label="Target Roles"
+                  label={t('notifications.targetRoles')}
                   onChange={(e) => setPushForm({ ...pushForm, targetRoles: e.target.value as string[] })}
                 >
-                  <MenuItem value="student">Students</MenuItem>
-                  <MenuItem value="parent">Parents</MenuItem>
-                  <MenuItem value="teacher">Teachers</MenuItem>
-                  <MenuItem value="staff">Staff</MenuItem>
-                  <MenuItem value="admin">Admins</MenuItem>
+                  <MenuItem value="student">{t('notifications.students')}</MenuItem>
+                  <MenuItem value="parent">{t('notifications.parents')}</MenuItem>
+                  <MenuItem value="teacher">{t('notifications.teachers')}</MenuItem>
+                  <MenuItem value="staff">{t('notifications.staff')}</MenuItem>
+                  <MenuItem value="admin">{t('notifications.admins')}</MenuItem>
                 </Select>
               </FormControl>
               <TextField
-                label="Schedule Time (Optional)"
+                label={t('notifications.scheduleTimeOptional')}
                 type="datetime-local"
                 fullWidth
                 value={pushForm.scheduleTime}
@@ -550,7 +556,7 @@ export const NotificationCenter = () => {
                 onClick={handleSendPush}
                 disabled={loading || !pushForm.title || !pushForm.message || pushForm.targetRoles.length === 0}
               >
-                Send Push Notification
+                {t('notifications.sendPushNotification')}
               </Button>
             </Box>
           </CardContent>
@@ -563,12 +569,12 @@ export const NotificationCenter = () => {
           <Table>
             <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
-                <TableCell>Type</TableCell>
-                <TableCell>Recipient</TableCell>
-                <TableCell>Subject/Message</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Sent At</TableCell>
-                <TableCell align="right">Actions</TableCell>
+                <TableCell>{t('notifications.type')}</TableCell>
+                <TableCell>{t('notifications.recipient')}</TableCell>
+                <TableCell>{t('notifications.subjectMessage')}</TableCell>
+                <TableCell>{t('notifications.status')}</TableCell>
+                <TableCell>{t('notifications.sentAt')}</TableCell>
+                <TableCell align="right">{t('calendar.actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -581,7 +587,7 @@ export const NotificationCenter = () => {
               ) : history.length === 0 ? (
                 <TableRow sx={S.TR_HOVER}>
                   <TableCell colSpan={6} align="center" sx={S.TD}>
-                    No notification history
+                    {t('notifications.noHistory')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -646,7 +652,7 @@ export const NotificationCenter = () => {
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6">
-                    SMS Settings (Sparrow SMS)
+                    {t('notifications.smsSettings')}
                   </Typography>
                   <FormControlLabel
                     control={
@@ -655,19 +661,19 @@ export const NotificationCenter = () => {
                         onChange={(e) => setSmsSettings({ ...smsSettings, enabled: e.target.checked })}
                       />
                     }
-                    label="Enabled"
+                    label={t('notifications.enabled')}
                   />
                 </Box>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <TextField
-                    label="API Key"
+                    label={t('notifications.apiKey')}
                     fullWidth
                     type="password"
                     value={smsSettings.apiKey}
                     onChange={(e) => setSmsSettings({ ...smsSettings, apiKey: e.target.value })}
                   />
                   <TextField
-                    label="Sender ID"
+                    label={t('notifications.senderId')}
                     fullWidth
                     value={smsSettings.senderId}
                     onChange={(e) => setSmsSettings({ ...smsSettings, senderId: e.target.value })}
@@ -681,7 +687,7 @@ export const NotificationCenter = () => {
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6">
-                    Email Settings (SMTP)
+                    {t('notifications.emailSettings')}
                   </Typography>
                   <FormControlLabel
                     control={
@@ -690,45 +696,45 @@ export const NotificationCenter = () => {
                         onChange={(e) => setEmailSettings({ ...emailSettings, enabled: e.target.checked })}
                       />
                     }
-                    label="Enabled"
+                    label={t('notifications.enabled')}
                   />
                 </Box>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <TextField
-                    label="SMTP Host"
+                    label={t('notifications.smtpHost')}
                     fullWidth
                     value={emailSettings.host}
                     onChange={(e) => setEmailSettings({ ...emailSettings, host: e.target.value })}
                     placeholder="smtp.gmail.com"
                   />
                   <TextField
-                    label="Port"
+                    label={t('notifications.port')}
                     type="number"
                     fullWidth
                     value={emailSettings.port}
                     onChange={(e) => setEmailSettings({ ...emailSettings, port: parseInt(e.target.value) })}
                   />
                   <TextField
-                    label="Username"
+                    label={t('notifications.username')}
                     fullWidth
                     value={emailSettings.username}
                     onChange={(e) => setEmailSettings({ ...emailSettings, username: e.target.value })}
                   />
                   <TextField
-                    label="Password"
+                    label={t('notifications.password')}
                     type="password"
                     fullWidth
                     value={emailSettings.password}
                     onChange={(e) => setEmailSettings({ ...emailSettings, password: e.target.value })}
                   />
                   <TextField
-                    label="From Email"
+                    label={t('notifications.fromEmail')}
                     fullWidth
                     value={emailSettings.fromEmail}
                     onChange={(e) => setEmailSettings({ ...emailSettings, fromEmail: e.target.value })}
                   />
                   <TextField
-                    label="From Name"
+                    label={t('notifications.fromName')}
                     fullWidth
                     value={emailSettings.fromName}
                     onChange={(e) => setEmailSettings({ ...emailSettings, fromName: e.target.value })}
@@ -739,7 +745,7 @@ export const NotificationCenter = () => {
           </Grid>
           <Grid item xs={12}>
             <Button variant="contained" sx={S.BTN_PRIMARY} onClick={handleSaveSettings}>
-              Save Settings
+              {t('notifications.saveSettings')}
             </Button>
           </Grid>
         </Grid>

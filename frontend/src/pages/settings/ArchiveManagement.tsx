@@ -272,29 +272,35 @@ export const ArchiveManagement = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
-          Archive Management / अभिलेख व्यवस्थापन
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined" sx={S.BTN_OUTLINE}
-            startIcon={<CleanIcon />}
-            onClick={handleCleanupArchives}
-            disabled={cleaning}
-            color="error"
-          >
-            {cleaning ? <CircularProgress size={24} /> : 'Cleanup Expired / म्याद सकिएको सफा गर्नुहोस्'}
-          </Button>
-          <Button
-            variant="contained" sx={S.BTN_PRIMARY}
-            startIcon={<ArchiveIcon />}
-            onClick={() => setArchiveDialogOpen(true)}
-          >
-            Archive Year / वर्ष अभिलेख गर्नुहोस्
-          </Button>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <ArchiveIcon sx={{ fontSize: 32, color: C.primary }} />
+            <Box>
+              <Typography variant="h5" fontWeight={700}>{t('archive.title')}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('archive.subtitle')}</Typography>
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="outlined" sx={S.BTN_OUTLINE}
+              startIcon={<CleanIcon />}
+              onClick={handleCleanupArchives}
+              disabled={cleaning}
+              color="error"
+            >
+              {cleaning ? <CircularProgress size={24} /> : t('archive.cleanupButton')}
+            </Button>
+            <Button
+              variant="contained" sx={S.BTN_PRIMARY}
+              startIcon={<ArchiveIcon />}
+              onClick={() => setArchiveDialogOpen(true)}
+            >
+              {t('archive.archiveButton')}
+            </Button>
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
       {success && (
         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
@@ -317,7 +323,7 @@ export const ArchiveManagement = () => {
                 {archives.length}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Total Archives / कुल अभिलेख
+                {t('archive.totalArchives')}
               </Typography>
             </CardContent>
           </Card>
@@ -329,7 +335,7 @@ export const ArchiveManagement = () => {
                 {archives.filter(a => a.status === 'completed').length}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Completed / पूर्ण भएको
+                {t('archive.completed')}
               </Typography>
             </CardContent>
           </Card>
@@ -341,7 +347,7 @@ export const ArchiveManagement = () => {
                 {archives.filter(a => a.status === 'in_progress').length}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                In Progress / प्रगतिमा
+                {t('archive.inProgress')}
               </Typography>
             </CardContent>
           </Card>
@@ -353,7 +359,7 @@ export const ArchiveManagement = () => {
                 {archives.filter(a => a.status === 'failed').length}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Failed / असफल
+                {t('archive.failed')}
               </Typography>
             </CardContent>
           </Card>
@@ -364,17 +370,17 @@ export const ArchiveManagement = () => {
       <Paper sx={{ ...S.GLASS }}>
         <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6">
-            Archives / अभिलेखहरू
+            {t('archive.archivesList')}
           </Typography>
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
             <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>Status / स्थिति</InputLabel>
+              <InputLabel>{t('common.status')}</InputLabel>
               <Select
                 value={statusFilter}
-                label="Status / स्थिति"
+                label={t('common.status')}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
-                <MenuItem value="">All / सबै</MenuItem>
+                <MenuItem value="">{t('common.all')}</MenuItem>
                 <MenuItem value="completed">Completed</MenuItem>
                 <MenuItem value="in_progress">In Progress</MenuItem>
                 <MenuItem value="failed">Failed</MenuItem>
@@ -388,7 +394,7 @@ export const ArchiveManagement = () => {
               onClick={fetchArchives}
               disabled={loading}
             >
-              Refresh / ताजा गर्नुहोस्
+              {t('common.refresh')}
             </Button>
           </Box>
         </Box>
@@ -398,12 +404,12 @@ export const ArchiveManagement = () => {
             <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
                 <TableCell>ID</TableCell>
-                <TableCell>Academic Year / शैक्षिक वर्ष</TableCell>
-                <TableCell>Archived Date / अभिलेख मिति</TableCell>
-                <TableCell>Records / रेकर्डहरू</TableCell>
-                <TableCell>Status / स्थिति</TableCell>
-                <TableCell>Retention Until / अवधि सम्म</TableCell>
-                <TableCell align="right">Actions / कार्यहरू</TableCell>
+                <TableCell>{t('common.academicYear')}</TableCell>
+                <TableCell>{t('archive.archivedDate')}</TableCell>
+                <TableCell>{t('archive.records')}</TableCell>
+                <TableCell>{t('common.status')}</TableCell>
+                <TableCell>{t('archive.retentionUntil')}</TableCell>
+                <TableCell align="right">{t('common.actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -417,7 +423,7 @@ export const ArchiveManagement = () => {
                 <TableRow sx={S.TR_HOVER}>
                   <TableCell colSpan={7} align="center" sx={S.TD}>
                     <Typography color="text.secondary">
-                      No archives found / कुनै अभिलेख फेला परेन
+                      {t('archive.noArchives')}
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -479,17 +485,17 @@ export const ArchiveManagement = () => {
 
       {/* Archive Year Dialog */}
       <Dialog open={archiveDialogOpen} onClose={() => !archiving && setArchiveDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Archive Academic Year / शैक्षिक वर्ष अभिलेख गर्नुहोस्</DialogTitle>
+        <DialogTitle>{t('archive.archiveYearTitle')}</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
             <Alert severity="info" sx={{ mb: 2 }}>
               Archiving will move all data for the selected academic year to long-term storage. This includes students, attendance, grades, and all related records.
             </Alert>
             <FormControl fullWidth>
-              <InputLabel>Select Academic Year / शैक्षिक वर्ष छान्नुहोस्</InputLabel>
+              <InputLabel>{t('archive.selectAcademicYear')}</InputLabel>
               <Select
                 value={selectedYearId}
-                label="Select Academic Year / शैक्षिक वर्ष छान्नुहोस्"
+                label={t('archive.selectAcademicYear')}
                 onChange={(e) => setSelectedYearId(e.target.value as number)}
               >
                 {academicYears
@@ -505,7 +511,7 @@ export const ArchiveManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setArchiveDialogOpen(false)} disabled={archiving}>
-            Cancel / रद्द गर्नुहोस्
+            {t('common.cancel')}
           </Button>
           <Button
             variant="contained" sx={S.BTN_PRIMARY}
@@ -513,21 +519,21 @@ export const ArchiveManagement = () => {
             disabled={archiving || !selectedYearId}
             startIcon={archiving ? <CircularProgress size={20} /> : <ArchiveIcon />}
           >
-            {archiving ? 'Archiving...' : 'Archive / अभिलेख गर्नुहोस्'}
+            {archiving ? t('archive.archiving') : t('archive.archiveButton')}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Archive Details Dialog */}
       <Dialog open={detailsDialogOpen} onClose={() => setDetailsDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Archive Details / अभिलेख विवरण</DialogTitle>
+        <DialogTitle>{t('archive.archiveDetails')}</DialogTitle>
         <DialogContent>
           {selectedArchive && (
             <Box sx={{ pt: 2 }}>
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Academic Year / शैक्षिक वर्ष
+                    {t('common.academicYear')}
                   </Typography>
                   <Typography variant="body1" gutterBottom>
                     {selectedArchive.academicYearName}
@@ -535,7 +541,7 @@ export const ArchiveManagement = () => {
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Status / स्थिति
+                    {t('common.status')}
                   </Typography>
                   <Chip
                     icon={getStatusIcon(selectedArchive.status)}
@@ -546,7 +552,7 @@ export const ArchiveManagement = () => {
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Archived Date / अभिलेख मिति
+                    {t('archive.archivedDate')}
                   </Typography>
                   <Typography variant="body1" gutterBottom>
                     {formatDate(selectedArchive.archivedAt)}
@@ -554,7 +560,7 @@ export const ArchiveManagement = () => {
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Retention Until / अवधि सम्म
+                    {t('archive.retentionUntil')}
                   </Typography>
                   <Typography variant="body1" gutterBottom>
                     {formatDate(selectedArchive.retentionUntil)}
@@ -563,7 +569,7 @@ export const ArchiveManagement = () => {
                 {selectedArchive.size && (
                   <Grid item xs={12} md={6}>
                     <Typography variant="subtitle2" color="text.secondary">
-                      Archive Size / अभिलेख आकार
+                      {t('archive.archiveSize')}
                     </Typography>
                     <Typography variant="body1" gutterBottom>
                       {formatBytes(selectedArchive.size)}
@@ -576,7 +582,7 @@ export const ArchiveManagement = () => {
                 <>
                   <Divider sx={{ my: 2 }} />
                   <Typography variant="h6" gutterBottom>
-                    Record Counts / रेकर्ड गणना
+                    {t('archive.recordCounts')}
                   </Typography>
                   <List dense>
                     {Object.entries(selectedArchive.recordCounts).map(([table, count]) => (
@@ -598,7 +604,7 @@ export const ArchiveManagement = () => {
                 <>
                   <Divider sx={{ my: 2 }} />
                   <Typography variant="h6" gutterBottom>
-                    Archived Tables / अभिलेख गरिएका तालिकाहरू
+                    {t('archive.archivedTables')}
                   </Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                     {selectedArchive.tablesArchived.map((table) => (
@@ -612,7 +618,7 @@ export const ArchiveManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDetailsDialogOpen(false)}>
-            Close / बन्द गर्नुहोस्
+            {t('common.close')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -620,7 +626,7 @@ export const ArchiveManagement = () => {
       {/* Restore Confirmation Dialog */}
       <Dialog open={restoreDialogOpen} onClose={() => !restoring && setRestoreDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          Confirm Restore / पुनर्स्थापना पुष्टि गर्नुहोस्
+          {t('archive.confirmRestoreTitle')}
         </DialogTitle>
         <DialogContent>
           <Alert severity="warning" sx={{ mb: 2 }}>
@@ -644,7 +650,7 @@ export const ArchiveManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setRestoreDialogOpen(false)} disabled={restoring}>
-            Cancel / रद्द गर्नुहोस्
+            {t('common.cancel')}
           </Button>
           <Button
             variant="contained" sx={S.BTN_PRIMARY}
@@ -653,7 +659,7 @@ export const ArchiveManagement = () => {
             disabled={restoring}
             startIcon={restoring ? <CircularProgress size={20} /> : <RestoreIcon />}
           >
-            {restoring ? 'Restoring...' : 'Restore / पुनर्स्थापना गर्नुहोस्'}
+            {restoring ? t('backup.restoring') : t('archive.restore')}
           </Button>
         </DialogActions>
       </Dialog>

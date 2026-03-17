@@ -177,6 +177,7 @@ const formatFileSize = (bytes: number): string => {
 
 // Helper function to get file icon based on mime type
 const getFileIcon = (mimeType: string) => {
+  if (!mimeType) return <DocIcon color="action" />;
   if (mimeType.startsWith('image/')) return <ImageIcon color="primary" />;
   if (mimeType === 'application/pdf') return <PdfIcon color="error" />;
   return <DocIcon color="action" />;
@@ -280,7 +281,7 @@ export const DocumentManagement = () => {
         setTotalCount(response.data.meta?.total || response.data.data.length);
       }
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || t('Failed to load documents'));
+      setError(err.response?.data?.error?.message || t('documents.failedToLoadDocuments'));
     } finally {
       setLoading(false);
     }
@@ -308,7 +309,7 @@ export const DocumentManagement = () => {
     if (file) {
       // Check file size (10MB max)
       if (file.size > 10 * 1024 * 1024) {
-        setError(t('File size exceeds maximum limit of 10MB'));
+        setError(t('documents.fileSizeExceedsLimit'));
         return;
       }
       setUploadForm(prev => ({
@@ -321,7 +322,7 @@ export const DocumentManagement = () => {
 
   const handleUpload = async () => {
     if (!uploadForm.file) {
-      setError(t('Please select a file to upload'));
+      setError(t('documents.pleaseSelectFileToUpload'));
       return;
     }
 
@@ -352,13 +353,13 @@ export const DocumentManagement = () => {
       });
 
       if (response.data.success) {
-        setSuccess(t('Document uploaded successfully'));
+        setSuccess(t('documents.documentUploadedSuccessfully'));
         setUploadDialogOpen(false);
         resetUploadForm();
         fetchDocuments();
       }
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || t('Failed to upload document'));
+      setError(err.response?.data?.error?.message || t('documents.failedToUploadDocument'));
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -406,7 +407,7 @@ export const DocumentManagement = () => {
         setPreviewDialogOpen(true);
       }
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || t('Failed to preview document'));
+      setError(err.response?.data?.error?.message || t('documents.failedToPreviewDocument'));
     }
   };
 
@@ -424,7 +425,7 @@ export const DocumentManagement = () => {
       link.click();
       link.remove();
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || t('Failed to download document'));
+      setError(err.response?.data?.error?.message || t('documents.failedToDownloadDocument'));
     }
   };
 
@@ -438,7 +439,7 @@ export const DocumentManagement = () => {
         setVersionsDialogOpen(true);
       }
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || t('Failed to load versions'));
+      setError(err.response?.data?.error?.message || t('documents.failedToLoadVersions'));
     }
   };
 
@@ -447,17 +448,17 @@ export const DocumentManagement = () => {
       const response = await apiClient.post(`/documents/${document.documentId}/archive`);
       
       if (response.data.success) {
-        setSuccess(t('Document archived successfully'));
+        setSuccess(t('documents.documentArchivedSuccessfully'));
         fetchDocuments();
       }
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || t('Failed to archive document'));
+      setError(err.response?.data?.error?.message || t('documents.failedToArchiveDocument'));
     }
     setAnchorEl(null);
   };
 
   const handleDelete = async (document: Document) => {
-    if (!window.confirm(t('Are you sure you want to delete this document?'))) {
+    if (!window.confirm(t('documents.areYouSureDelete'))) {
       setAnchorEl(null);
       return;
     }
@@ -466,11 +467,11 @@ export const DocumentManagement = () => {
       const response = await apiClient.delete(`/documents/${document.documentId}`);
       
       if (response.data.success) {
-        setSuccess(t('Document deleted successfully'));
+        setSuccess(t('documents.documentDeletedSuccessfully'));
         fetchDocuments();
       }
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || t('Failed to delete document'));
+      setError(err.response?.data?.error?.message || t('documents.failedToDeleteDocument'));
     }
     setAnchorEl(null);
   };
@@ -498,16 +499,24 @@ export const DocumentManagement = () => {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5">{t('Document Management')}</Typography>
-        <Button
-          variant="contained" sx={S.BTN_PRIMARY}
-          startIcon={<UploadIcon />}
-          onClick={() => setUploadDialogOpen(true)}
-        >
-          {t('Upload Document')}
-        </Button>
-      </Box>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <DocIcon sx={{ fontSize: 32, color: C.primary }} />
+            <Box>
+              <Typography variant="h5" fontWeight={700}>{t('documents.title')}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('documents.subtitle')}</Typography>
+            </Box>
+          </Box>
+          <Button
+            variant="contained" sx={S.BTN_PRIMARY}
+            startIcon={<UploadIcon />}
+            onClick={() => setUploadDialogOpen(true)}
+          >
+            {t('documents.uploadDocument')}
+          </Button>
+        </Box>
+      </Paper>
 
       {/* Success/Error Messages */}
       {error && (
@@ -528,7 +537,7 @@ export const DocumentManagement = () => {
             <TextField
               fullWidth
               size="small"
-              placeholder={t('Search documents...')}
+              placeholder={t('documents.searchDocuments')}
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
               InputProps={{
@@ -549,16 +558,16 @@ export const DocumentManagement = () => {
           </Grid>
           <Grid item xs={12} md={2}>
             <FormControl fullWidth size="small">
-              <InputLabel>{t('Category')}</InputLabel>
+              <InputLabel>{t('documents.category')}</InputLabel>
               <Select
                 value={filters.category}
-                label={t('Category')}
+                label={t('documents.category')}
                 onChange={(e) => handleFilterChange('category', e.target.value)}
               >
-                <MenuItem value="">{t('All Categories')}</MenuItem>
+                <MenuItem value="">{t('documents.allCategories')}</MenuItem>
                 {DOCUMENT_CATEGORIES.map((cat) => (
                   <MenuItem key={cat.value} value={cat.value}>
-                    {t(cat.label)}
+                    {t(`documents.${cat.value}`, cat.label)}
                   </MenuItem>
                 ))}
               </Select>
@@ -566,15 +575,15 @@ export const DocumentManagement = () => {
           </Grid>
           <Grid item xs={12} md={2}>
             <FormControl fullWidth size="small">
-              <InputLabel>{t('Status')}</InputLabel>
+              <InputLabel>{t('documents.status')}</InputLabel>
               <Select
                 value={filters.status}
-                label={t('Status')}
+                label={t('documents.status')}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
               >
                 {DOCUMENT_STATUS.map((status) => (
                   <MenuItem key={status.value} value={status.value}>
-                    {t(status.label)}
+                    {t(`documents.${status.value}`, status.label)}
                   </MenuItem>
                 ))}
               </Select>
@@ -582,16 +591,16 @@ export const DocumentManagement = () => {
           </Grid>
           <Grid item xs={12} md={2}>
             <FormControl fullWidth size="small">
-              <InputLabel>{t('Access Level')}</InputLabel>
+              <InputLabel>{t('documents.accessLevel')}</InputLabel>
               <Select
                 value={filters.accessLevel}
-                label={t('Access Level')}
+                label={t('documents.accessLevel')}
                 onChange={(e) => handleFilterChange('accessLevel', e.target.value)}
               >
-                <MenuItem value="">{t('All Levels')}</MenuItem>
+                <MenuItem value="">{t('documents.allLevels')}</MenuItem>
                 {ACCESS_LEVELS.map((level) => (
                   <MenuItem key={level.value} value={level.value}>
-                    {t(level.label)}
+                    {t(`documents.${level.value}`, level.label)}
                   </MenuItem>
                 ))}
               </Select>
@@ -604,7 +613,7 @@ export const DocumentManagement = () => {
               startIcon={<ClearIcon />}
               onClick={handleClearFilters}
             >
-              {t('Clear Filters')}
+              {t('documents.clearFilters')}
             </Button>
           </Grid>
           <Grid item xs={12} md={1}>
@@ -622,13 +631,13 @@ export const DocumentManagement = () => {
           <Table>
             <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
-                <TableCell>{t('Name')}</TableCell>
-                <TableCell>{t('Category')}</TableCell>
-                <TableCell>{t('Size')}</TableCell>
-                <TableCell>{t('Access')}</TableCell>
-                <TableCell>{t('Uploaded By')}</TableCell>
-                <TableCell>{t('Date')}</TableCell>
-                <TableCell align="right">{t('Actions')}</TableCell>
+                <TableCell>{t('documents.name')}</TableCell>
+                <TableCell>{t('documents.category')}</TableCell>
+                <TableCell>{t('documents.size')}</TableCell>
+                <TableCell>{t('documents.accessLevel')}</TableCell>
+                <TableCell>{t('documents.uploadedBy')}</TableCell>
+                <TableCell>{t('documents.date')}</TableCell>
+                <TableCell align="right">{t('documents.actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -636,7 +645,7 @@ export const DocumentManagement = () => {
                 <TableRow sx={S.TR_HOVER}>
                   <TableCell colSpan={7} align="center" sx={S.TD}>
                     <Typography color="text.secondary" sx={{ py: 4 }}>
-                      {t('No documents found')}
+                      {t('documents.noDocumentsFound')}
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -663,7 +672,7 @@ export const DocumentManagement = () => {
                     </TableCell>
                     <TableCell sx={S.TD}>
                       <Chip
-                        label={t(DOCUMENT_CATEGORIES.find(c => c.value === doc.category)?.label || doc.category)}
+                        label={t(`documents.${DOCUMENT_CATEGORIES.find(c => c.value === doc.category)?.value || doc.category}`, DOCUMENT_CATEGORIES.find(c => c.value === doc.category)?.label || doc.category)}
                         size="small"
                         color={getCategoryColor(doc.category)}
                       />
@@ -671,7 +680,7 @@ export const DocumentManagement = () => {
                     <TableCell sx={S.TD}>{formatFileSize(doc.size)}</TableCell>
                     <TableCell sx={S.TD}>
                       <Chip
-                        label={t(doc.accessLevel)}
+                        label={t(`documents.${doc.accessLevel}`, doc.accessLevel)}
                         size="small"
                         variant="outlined"
                       />
@@ -681,7 +690,7 @@ export const DocumentManagement = () => {
                       {new Date(doc.createdAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell align="right" sx={S.TD}>
-                      <Tooltip title={t('Preview')}>
+                      <Tooltip title={t('documents.preview')}>
                         <IconButton
                           size="small"
                           onClick={(e) => {
@@ -692,7 +701,7 @@ export const DocumentManagement = () => {
                           <PreviewIcon />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title={t('Download')}>
+                      <Tooltip title={t('documents.download')}>
                         <IconButton
                           size="small"
                           onClick={(e) => {
@@ -744,7 +753,7 @@ export const DocumentManagement = () => {
               <ListItemIcon>
                 <HistoryIcon fontSize="small" />
               </ListItemIcon>
-              <ListItemText>{t('Version History')}</ListItemText>
+              <ListItemText>{t('documents.versionHistory')}</ListItemText>
             </MenuItem>
             <Divider />
             <MenuItem
@@ -757,7 +766,7 @@ export const DocumentManagement = () => {
               <ListItemIcon>
                 <EditIcon fontSize="small" />
               </ListItemIcon>
-              <ListItemText>{t('Edit')}</ListItemText>
+              <ListItemText>{t('documents.edit')}</ListItemText>
             </MenuItem>
             <MenuItem
               onClick={() => handleArchive(menuDocument)}
@@ -765,7 +774,7 @@ export const DocumentManagement = () => {
               <ListItemIcon>
                 <ArchiveIcon fontSize="small" />
               </ListItemIcon>
-              <ListItemText>{t('Archive')}</ListItemText>
+              <ListItemText>{t('documents.archive')}</ListItemText>
             </MenuItem>
             <Divider />
             <MenuItem
@@ -775,7 +784,7 @@ export const DocumentManagement = () => {
               <ListItemIcon>
                 <DeleteIcon fontSize="small" color="error" />
               </ListItemIcon>
-              <ListItemText>{t('Delete')}</ListItemText>
+              <ListItemText>{t('documents.delete')}</ListItemText>
             </MenuItem>
           </>
         )}
@@ -788,7 +797,7 @@ export const DocumentManagement = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>{t('Upload Document')}</DialogTitle>
+        <DialogTitle>{t('documents.uploadDocument')}</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 1 }}>
             {/* File Input */}
@@ -811,10 +820,10 @@ export const DocumentManagement = () => {
               />
               <UploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
               <Typography variant="body1" gutterBottom>
-                {uploadForm.file ? uploadForm.file.name : t('Click to select a file')}
+                {uploadForm.file ? uploadForm.file.name : t('documents.clickToSelectFile')}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {t('Maximum file size: 10MB')}
+                {t('documents.maximumFileSize')}
               </Typography>
             </Paper>
 
@@ -822,7 +831,7 @@ export const DocumentManagement = () => {
               <Box sx={{ mt: 2 }}>
                 <LinearProgress variant="determinate" value={uploadProgress} />
                 <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
-                  {t('Uploading...')} {uploadProgress}%
+                  {t('common.uploading')} {uploadProgress}%
                 </Typography>
               </Box>
             )}
@@ -830,7 +839,7 @@ export const DocumentManagement = () => {
             {/* Document Details */}
             <TextField
               fullWidth
-              label={t('Document Name')}
+              label={t('documents.documentName')}
               value={uploadForm.name}
               onChange={(e) => setUploadForm(prev => ({ ...prev, name: e.target.value }))}
               margin="normal"
@@ -839,7 +848,7 @@ export const DocumentManagement = () => {
 
             <TextField
               fullWidth
-              label={t('Description')}
+              label={t('documents.description')}
               value={uploadForm.description}
               onChange={(e) => setUploadForm(prev => ({ ...prev, description: e.target.value }))}
               margin="normal"
@@ -848,30 +857,30 @@ export const DocumentManagement = () => {
             />
 
             <FormControl fullWidth margin="normal" required>
-              <InputLabel>{t('Category')}</InputLabel>
+              <InputLabel>{t('documents.category')}</InputLabel>
               <Select
                 value={uploadForm.category}
-                label={t('Category')}
+                label={t('documents.category')}
                 onChange={(e) => setUploadForm(prev => ({ ...prev, category: e.target.value }))}
               >
                 {DOCUMENT_CATEGORIES.map((cat) => (
                   <MenuItem key={cat.value} value={cat.value}>
-                    {t(cat.label)}
+                    {t(`documents.${cat.value}`, cat.label)}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
 
             <FormControl fullWidth margin="normal" required>
-              <InputLabel>{t('Access Level')}</InputLabel>
+              <InputLabel>{t('documents.accessLevel')}</InputLabel>
               <Select
                 value={uploadForm.accessLevel}
-                label={t('Access Level')}
+                label={t('documents.accessLevel')}
                 onChange={(e) => setUploadForm(prev => ({ ...prev, accessLevel: e.target.value }))}
               >
                 {ACCESS_LEVELS.map((level) => (
                   <MenuItem key={level.value} value={level.value}>
-                    {t(level.label)}
+                    {t(`documents.${level.value}`, level.label)}
                   </MenuItem>
                 ))}
               </Select>
@@ -882,14 +891,14 @@ export const DocumentManagement = () => {
               <TextField
                 fullWidth
                 size="small"
-                label={t('Add Tags')}
+                label={t('documents.addTags')}
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
                 InputProps={{
                   endAdornment: (
                     <Button onClick={handleAddTag} disabled={!tagInput.trim()}>
-                      {t('Add')}
+                      {t('documents.add')}
                     </Button>
                   ),
                 }}

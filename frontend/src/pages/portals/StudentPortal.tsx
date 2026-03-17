@@ -124,7 +124,7 @@ const StudentPortal: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, mt: { xs: 7, sm: 8 } }}>
       {/* Header */}
       <Box sx={{ ...S.PAGE_HEADER, display: 'flex', alignItems: 'center', gap: 2 }}>
         <Box sx={S.ICON_BOX(C.primary, 48)}>

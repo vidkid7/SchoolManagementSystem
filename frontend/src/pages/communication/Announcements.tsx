@@ -29,11 +29,11 @@ import {
   DialogContent,
   DialogActions,
   IconButton,
-  Avatar,
   Divider,
   CircularProgress,
   Alert,
   InputAdornment,
+  Avatar,
   useTheme,
 } from '@mui/material';
 import {
@@ -198,18 +198,11 @@ export const Announcements: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       {/* Header */}
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        mb: 4 
-      }}>
+      <Paper elevation={0} sx={{ ...S.PAGE_HEADER, display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
-            <NotificationsIcon />
-          </Avatar>
+          <NotificationsIcon sx={{ fontSize: 32, color: C.primary }} />
           <Box>
-            <Typography variant="h4" fontWeight={600}>
+            <Typography variant="h5" fontWeight={700}>
               {t('communication.announcements')}
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -240,7 +233,7 @@ export const Announcements: React.FC = () => {
             {t('communication.createAnnouncement')}
           </Button>
         )}
-      </Box>
+      </Paper>
 
       {/* Filters */}
       <Paper 

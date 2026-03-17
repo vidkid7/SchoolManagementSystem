@@ -168,12 +168,16 @@ export function LibraryReports() {
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={600} gutterBottom>
-        {t('library.libraryReports')}
-      </Typography>
-      <Typography color="text.secondary" paragraph>
-        {t('library.generateComprehensiveReports')}
-      </Typography>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box>
+          <Typography variant="h5" fontWeight={700}>
+            {t('library.libraryReports')}
+          </Typography>
+          <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.5 }}>
+            {t('library.generateComprehensiveReports')}
+          </Typography>
+        </Box>
+      </Paper>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>

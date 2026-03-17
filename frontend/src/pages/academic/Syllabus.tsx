@@ -39,7 +39,6 @@ import {
 } from '@mui/icons-material';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import api from '../../config/api';
-
 import { useTranslation } from 'react-i18next';
 
 interface Class {
@@ -165,7 +164,7 @@ export const Syllabus = () => {
         setSyllabus(null);
       } else {
         console.error('Failed to fetch syllabus:', error);
-        setError('Failed to load syllabus');
+        setError(t('academic.failedToLoadSyllabus'));
       }
     } finally {
       setLoading(false);
@@ -184,7 +183,7 @@ export const Syllabus = () => {
       fetchSyllabus();
     } catch (error: any) {
       console.error('Failed to create syllabus:', error);
-      setError(error.response?.data?.message || 'Failed to create syllabus');
+      setError(error.response?.data?.message || t('academic.failedToCreateSyllabus'));
     }
   };
 
@@ -223,12 +222,12 @@ export const Syllabus = () => {
       
       // Validate input
       if (!topicForm.title.trim()) {
-        setError('Topic title is required');
+        setError(t('academic.topicTitleRequired'));
         return;
       }
       
       if (isNaN(estimatedHours) || estimatedHours < 1) {
-        setError('Estimated hours must be at least 1');
+        setError(t('academic.estimatedHoursMin'));
         return;
       }
 
@@ -252,7 +251,7 @@ export const Syllabus = () => {
     } catch (error: any) {
       console.error('Failed to save topic:', error);
       console.error('Error response:', error.response?.data);
-      setError(error.response?.data?.message || 'Failed to save topic');
+      setError(error.response?.data?.message || t('academic.failedToSaveTopic'));
     }
   };
 
@@ -268,7 +267,7 @@ export const Syllabus = () => {
       fetchSyllabus();
     } catch (error: any) {
       console.error('Failed to update progress:', error);
-      setError(error.response?.data?.message || 'Failed to update progress');
+      setError(error.response?.data?.message || t('academic.failedToUpdateProgress'));
     }
   };
 
@@ -289,11 +288,15 @@ export const Syllabus = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" fontWeight={600}>
-          Syllabus Management
-        </Typography>
-      </Box>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <BookIcon sx={{ fontSize: 32, color: C.primary }} />
+          <Box>
+            <Typography variant="h5" fontWeight={700}>{t('academic.syllabusManagement')}</Typography>
+            <Typography variant="body2" color="text.secondary">{t('academic.syllabusSubtitle')}</Typography>
+          </Box>
+        </Box>
+      </Paper>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
@@ -306,15 +309,15 @@ export const Syllabus = () => {
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
-              <InputLabel>Select Class</InputLabel>
+              <InputLabel>{t('academic.selectClass')}</InputLabel>
               <Select
                 value={selectedClass || ''}
-                label="Select Class"
+                label={t('academic.selectClass')}
                 onChange={(e) => setSelectedClass(Number(e.target.value))}
               >
                 {classes.map((cls) => (
                   <MenuItem key={cls.classId} value={cls.classId}>
-                    Class {cls.gradeLevel} - Section {cls.section}
+                    {t('academic.classSection', { grade: cls.gradeLevel, section: cls.section })}
                   </MenuItem>
                 ))}
               </Select>
@@ -322,10 +325,10 @@ export const Syllabus = () => {
           </Grid>
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
-              <InputLabel>Select Subject</InputLabel>
+              <InputLabel>{t('academic.selectSubject')}</InputLabel>
               <Select
                 value={selectedSubject || ''}
-                label="Select Subject"
+                label={t('academic.selectSubject')}
                 onChange={(e) => setSelectedSubject(Number(e.target.value))}
               >
                 {subjects.map((subject) => (
@@ -349,10 +352,10 @@ export const Syllabus = () => {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Box>
                     <Typography variant="h6" fontWeight={600}>
-                      {selectedSubjectInfo?.nameEn} - Class {selectedClassInfo?.gradeLevel}{selectedClassInfo?.section}
+                      {selectedSubjectInfo?.nameEn} - {t('academic.classSection', { grade: selectedClassInfo?.gradeLevel, section: selectedClassInfo?.section })}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {syllabus.topics?.length || 0} topics
+                      {t('academic.topicsCount', { count: syllabus.topics?.length || 0 })}
                     </Typography>
                   </Box>
                   <Button
@@ -360,7 +363,7 @@ export const Syllabus = () => {
                     startIcon={<AddIcon />}
                     onClick={handleOpenDialog}
                   >
-                    Add Topic
+                    {t('academic.addTopic')}
                   </Button>
                 </Box>
 
@@ -368,7 +371,7 @@ export const Syllabus = () => {
                 <Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                     <Typography variant="body2" fontWeight={600}>
-                      Overall Progress
+                      {t('academic.overallProgress')}
                     </Typography>
                     <Typography variant="body2" fontWeight={600}>
                       {progress.toFixed(1)}%
@@ -406,7 +409,7 @@ export const Syllabus = () => {
                               variant="outlined" sx={S.BTN_OUTLINE}
                               onClick={() => handleOpenProgressDialog(topic)}
                             >
-                              Update Progress
+                              {t('academic.updateProgress')}
                             </Button>
                           </Box>
                         }
@@ -446,20 +449,20 @@ export const Syllabus = () => {
                     );
                   })
                 ) : (
-                  <ListItem>
-                    <ListItemText
-                      primary="No topics added yet"
-                      secondary="Click 'Add Topic' to start building the syllabus"
-                    />
-                  </ListItem>
-                )}
+                   <ListItem>
+                     <ListItemText
+                       primary={t('academic.noTopicsAdded')}
+                       secondary={t('academic.addTopicHint')}
+                     />
+                   </ListItem>
+                 )}
               </List>
             </Paper>
           ) : (
             <Paper sx={{ ...S.GLASS, p: 5, textAlign: 'center' }}>
               <BookIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
               <Typography variant="h6" color="text.secondary" gutterBottom>
-                No syllabus found for this class-subject combination
+                {t('academic.noSyllabusFound')}
               </Typography>
               <Button
                 variant="contained"
@@ -467,7 +470,7 @@ export const Syllabus = () => {
                 onClick={handleCreateSyllabus}
                 sx={{ ...S.BTN_PRIMARY,  mt: 2 }}
               >
-                Create Syllabus
+                {t('academic.createSyllabus')}
               </Button>
             </Paper>
           )}
@@ -478,28 +481,28 @@ export const Syllabus = () => {
         <Paper sx={{ ...S.GLASS, p: 5, textAlign: 'center' }}>
           <BookIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h6" color="text.secondary">
-            Select a class and subject to manage syllabus
+            {t('academic.selectClassSubject')}
           </Typography>
         </Paper>
       ) : null}
 
       {/* Add Topic Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 600 }}>Add Topic</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 600 }}>{t('academic.addTopic')}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField
-                label="Topic Title"
+                label={t('academic.topicTitle')}
                 fullWidth
                 value={topicForm.title}
                 onChange={(e) => setTopicForm({ ...topicForm, title: e.target.value })}
-                placeholder="e.g., Introduction to Algebra"
+                placeholder={t('academic.topicTitlePlaceholder')}
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Description"
+                label={t('common.description')}
                 fullWidth
                 multiline
                 rows={3}
@@ -509,7 +512,7 @@ export const Syllabus = () => {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Estimated Hours"
+                label={t('academic.estimatedHours')}
                 type="number"
                 fullWidth
                 value={topicForm.estimatedHours}
@@ -519,26 +522,26 @@ export const Syllabus = () => {
           </Grid>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handleCloseDialog}>{t('common.cancel')}</Button>
           <Button variant="contained" sx={S.BTN_PRIMARY} onClick={handleSaveTopic}>
-            Add Topic
+            {t('academic.addTopic')}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Update Progress Dialog */}
       <Dialog open={progressDialogOpen} onClose={handleCloseProgressDialog} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight: 600 }}>Update Progress</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 600 }}>{t('academic.updateProgress')}</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2 }}>
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              Topic: {selectedTopic?.title}
+              {t('academic.topicLabel')}: {selectedTopic?.title}
             </Typography>
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              Estimated Hours: {selectedTopic?.estimatedHours}
+              {t('academic.estimatedHours')}: {selectedTopic?.estimatedHours}
             </Typography>
             <TextField
-              label="Completed Hours"
+              label={t('academic.completedHours')}
               type="number"
               fullWidth
               value={progressForm.completedHours}
@@ -549,9 +552,9 @@ export const Syllabus = () => {
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleCloseProgressDialog}>Cancel</Button>
+          <Button onClick={handleCloseProgressDialog}>{t('common.cancel')}</Button>
           <Button variant="contained" sx={S.BTN_PRIMARY} onClick={handleUpdateProgress}>
-            Update
+            {t('common.update')}
           </Button>
         </DialogActions>
       </Dialog>

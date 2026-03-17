@@ -97,8 +97,9 @@ export function BookCatalog() {
       if (categoryFilter) params.category = categoryFilter;
 
       const response = await apiClient.get('/library/books', { params });
-      setBooks(response.data?.data || []);
-      setTotal(response.data?.meta?.total || 0);
+      const respData = response.data?.data;
+      setBooks(Array.isArray(respData) ? respData : (respData?.books || []));
+      setTotal(respData?.total || response.data?.meta?.total || 0);
     } catch (err) {
       console.error('Failed to fetch books:', err);
       setBooks([]);
@@ -178,19 +179,21 @@ export function BookCatalog() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" fontWeight={600}>
-          {t('library.bookCatalog')}
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-          sx={S.BTN_PRIMARY}
-        >
-          {t('library.addBook')}
-        </Button>
-      </Box>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h5" fontWeight={700}>
+            {t('library.bookCatalog')}
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
+            sx={S.BTN_PRIMARY}
+          >
+            {t('library.addBook')}
+          </Button>
+        </Box>
+      </Paper>
 
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}

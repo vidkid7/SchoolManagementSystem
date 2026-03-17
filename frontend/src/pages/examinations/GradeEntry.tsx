@@ -343,24 +343,11 @@ export const GradeEntry = () => {
   const getPendingCount = () => students.filter(s => s.status === 'pending').length;
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-          <Box
-            sx={{
-              width: 48,
-              height: 48,
-              borderRadius: R.lg,
-              background: C.primaryBg,
-              border: `1px solid ${alpha(C.primary, 0.2)}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <AssessmentIcon sx={{ fontSize: 24, color: C.primary }} />
-          </Box>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <AssessmentIcon sx={{ fontSize: 32, color: C.primary }} />
           <Box sx={{ flex: 1 }}>
             <Typography variant="h5" fontWeight={700}>
               {t('examinations.gradeEntry')}
@@ -390,7 +377,7 @@ export const GradeEntry = () => {
             />
           </Box>
         </Box>
-      </Box>
+      </Paper>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3, ...S.GLASS }} onClose={() => setError('')}>

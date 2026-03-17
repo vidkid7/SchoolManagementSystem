@@ -150,7 +150,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
         setDocuments([]);
         // Don't show error for 500 - feature not implemented
       } else {
-        setError(err.response?.data?.message || 'Failed to load documents');
+      setError(err.response?.data?.message || t('staff.doc.failedToLoad'));
       }
     } finally {
       setLoading(false);
@@ -172,7 +172,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
 
   const handleUpload = async () => {
     if (!uploadForm.name || !uploadForm.file) {
-      setError('Please fill all fields');
+      setError(t('staff.doc.fillAllFields'));
       return;
     }
     
@@ -192,16 +192,16 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       
-      setSuccess('Document uploaded successfully');
+      setSuccess(t('staff.doc.uploadedSuccessfully'));
       setUploadDialog({ open: false });
       setUploadForm({ name: '', category: 'certificate', file: null, expiryDate: '' });
       fetchDocuments();
       fetchStats();
     } catch (err: any) {
       if (err.response?.status === 500) {
-        setError('Document upload feature is not yet implemented on the server');
+        setError(t('staff.doc.uploadFeatureNotImplemented'));
       } else {
-        setError(err.response?.data?.message || 'Failed to upload document');
+        setError(err.response?.data?.message || t('staff.doc.failedToUpload'));
       }
     } finally {
       setUploading(false);
@@ -210,12 +210,12 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
 
   const handleBulkUpload = async () => {
     if (bulkFiles.length === 0) {
-      setError('Please select at least one file');
+      setError(t('staff.doc.selectAtLeastOneFile'));
       return;
     }
     
     if (bulkFiles.length > 10) {
-      setError('Maximum 10 files allowed');
+      setError(t('staff.doc.maxFilesAllowed'));
       return;
     }
     
@@ -232,16 +232,16 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       
-      setSuccess(`${bulkFiles.length} documents uploaded successfully`);
+      setSuccess(t('staff.doc.bulkDocsUploadedSuccessfully', { count: bulkFiles.length }));
       setBulkUploadDialog({ open: false });
       setBulkFiles([]);
       fetchDocuments();
       fetchStats();
     } catch (err: any) {
       if (err.response?.status === 500) {
-        setError('Bulk upload feature is not yet implemented on the server');
+        setError(t('staff.doc.bulkUploadFeatureNotImplemented'));
       } else {
-        setError(err.response?.data?.message || 'Failed to upload documents');
+        setError(err.response?.data?.message || t('staff.doc.failedToBulkUpload'));
       }
     } finally {
       setUploading(false);
@@ -258,9 +258,9 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       setVersionsDialog({ open: true, documentId, documentName });
     } catch (err: any) {
       if (err.response?.status === 500) {
-        setError('Document versions feature is not yet implemented on the server');
+        setError(t('staff.doc.failedToLoadVersions'));
       } else {
-        setError(err.response?.data?.message || 'Failed to load versions');
+        setError(err.response?.data?.message || t('staff.doc.failedToLoadVersions'));
       }
     }
   };
@@ -278,15 +278,15 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
         expiryDate: expiryDate || null,
       });
       
-      setSuccess('Document updated successfully');
+      setSuccess(t('staff.doc.updatedSuccessfully'));
       setEditDialog({ open: false, document: null });
       fetchDocuments();
       fetchStats();
     } catch (err: any) {
       if (err.response?.status === 500) {
-        setError('Document edit feature is not yet implemented on the server');
+        setError(t('staff.doc.failedToUpdate'));
       } else {
-        setError(err.response?.data?.message || 'Failed to update document');
+        setError(err.response?.data?.message || t('staff.doc.failedToUpdate'));
       }
     }
   };
@@ -298,27 +298,27 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       setDetailDialog({ open: true, document: response.data.data });
     } catch (err: any) {
       if (err.response?.status === 500) {
-        setError('Document details feature is not yet implemented on the server');
+        setError(t('staff.doc.detailsFeatureNotImplemented'));
       } else {
-        setError(err.response?.data?.message || 'Failed to load document details');
+        setError(err.response?.data?.message || t('staff.doc.failedToLoadDetails'));
       }
     }
   };
 
   const handleDelete = async (documentId: number) => {
-    if (!window.confirm('Are you sure you want to delete this document?')) return;
+    if (!window.confirm(t('staff.doc.confirmDeleteDocument'))) return;
     
     try {
       setError('');
       await apiClient.delete(`/api/v1/staff/documents/${documentId}`);
-      setSuccess('Document deleted successfully');
+      setSuccess(t('staff.doc.deletedSuccessfully'));
       fetchDocuments();
       fetchStats();
     } catch (err: any) {
       if (err.response?.status === 500) {
-        setError('Document delete feature is not yet implemented on the server');
+        setError(t('staff.doc.deleteFeatureNotImplemented'));
       } else {
-        setError(err.response?.data?.message || 'Failed to delete document');
+        setError(err.response?.data?.message || t('staff.doc.failedToDelete'));
       }
     }
   };
@@ -333,7 +333,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
   const handleBulkFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 10) {
-      setError('Maximum 10 files allowed');
+      setError(t('staff.doc.maxFilesAllowed'));
       return;
     }
     setBulkFiles(files);
@@ -352,14 +352,14 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
   };
 
   const getCategoryLabel = (category: string) => {
-    const labels: Record<string, string> = {
-      certificate: 'Certificate',
-      contract: 'Contract',
-      qualification: 'Qualification',
-      identity: 'Identity Document',
-      other: 'Other',
+    const labelMap: Record<string, string> = {
+      certificate: t('staff.doc.certificate'),
+      contract: t('staff.doc.contract'),
+      qualification: t('staff.doc.qualification'),
+      identity: t('staff.doc.identity'),
+      other: t('staff.doc.other'),
     };
-    return labels[category] || category;
+    return labelMap[category] || category;
   };
 
   if (loading) {
@@ -398,7 +398,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
             onClick={() => setFilter('all')}
           >
             <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-              <Typography variant="body2" color="text.secondary">Total Documents</Typography>
+              <Typography variant="body2" color="text.secondary">{t('staff.doc.totalDocuments')}</Typography>
               <Typography variant="h5" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
                 {stats.total}
               </Typography>
@@ -418,7 +418,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
             onClick={() => setFilter('active')}
           >
             <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-              <Typography variant="body2" color="text.secondary">Active</Typography>
+              <Typography variant="body2" color="text.secondary">{t('staff.doc.active')}</Typography>
               <Typography variant="h5" sx={{ fontWeight: 600, color: C.success }}>
                 {stats.active}
               </Typography>
@@ -438,7 +438,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
             onClick={() => setFilter('expired')}
           >
             <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-              <Typography variant="body2" color="text.secondary">Expired</Typography>
+              <Typography variant="body2" color="text.secondary">{t('staff.doc.expired')}</Typography>
               <Typography variant="h5" sx={{ fontWeight: 600, color: theme.palette.error.main }}>
                 {stats.expired}
               </Typography>
@@ -458,7 +458,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
             onClick={() => setFilter('expiring-soon')}
           >
             <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-              <Typography variant="body2" color="text.secondary">Expiring Soon</Typography>
+              <Typography variant="body2" color="text.secondary">{t('staff.doc.expiringSoon')}</Typography>
               <Typography variant="h5" sx={{ fontWeight: 600, color: C.warning }}>
                 {stats.expiringSoon}
               </Typography>
@@ -474,14 +474,14 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
           startIcon={<CloudUploadIcon />}
           onClick={() => setBulkUploadDialog({ open: true })}
         >
-          Bulk Upload
+          {t('staff.doc.bulkUpload')}
         </Button>
         <Button
           sx={S.BTN_PRIMARY}
           startIcon={<CloudUploadIcon />}
           onClick={() => setUploadDialog({ open: true })}
         >
-          Upload Document
+          {t('staff.doc.uploadDocument')}
         </Button>
       </Box>
 
@@ -490,13 +490,13 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
         <Table>
           <TableHead>
             <TableRow sx={{ backgroundColor: S.TH_BG }}>
-              <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Category</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Size</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Expiry Date</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Version</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>Actions</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>{t('staff.doc.name')}</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>{t('staff.doc.category')}</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>{t('staff.doc.size')}</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>{t('staff.doc.expiryDate')}</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>{t('staff.doc.status')}</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>{t('staff.doc.version')}</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 600 }}>{t('common.actions')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -505,9 +505,9 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
                 <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                     <DocIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
-                    <Typography color="text.secondary">No documents found</Typography>
+                    <Typography color="text.secondary">{t('staff.doc.noDocumentsFound')}</Typography>
                     <Typography variant="caption" color="text.secondary">
-                      Upload documents to get started
+                      {t('staff.doc.uploadToGetStarted')}
                     </Typography>
                   </Box>
                 </TableCell>
@@ -530,11 +530,11 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
                   </TableCell>
                   <TableCell>
                     {doc.isExpired ? (
-                      <Chip icon={<WarningIcon />} label="Expired" size="small" color="error" />
+                      <Chip icon={<WarningIcon />} label={t('staff.doc.expired')} size="small" color="error" />
                     ) : doc.isExpiringSoon ? (
-                      <Chip icon={<WarningIcon />} label="Expiring Soon" size="small" color="warning" />
+                      <Chip icon={<WarningIcon />} label={t('staff.doc.expiringSoon')} size="small" color="warning" />
                     ) : (
-                      <Chip icon={<CheckCircleIcon />} label="Active" size="small" color="success" />
+                      <Chip icon={<CheckCircleIcon />} label={t('staff.doc.active')} size="small" color="success" />
                     )}
                   </TableCell>
                   <TableCell>v{doc.version}</TableCell>
@@ -542,35 +542,35 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
                     <IconButton
                       size="small"
                       onClick={() => handleViewDetails(doc.id)}
-                      title="View Details"
+                      title={t('staff.doc.viewDetails')}
                     >
                       <InfoIcon fontSize="small" />
                     </IconButton>
                     <IconButton
                       size="small"
                       onClick={() => handleViewVersions(doc.id, doc.name)}
-                      title="View Versions"
+                      title={t('staff.doc.viewVersions')}
                     >
                       <HistoryIcon fontSize="small" />
                     </IconButton>
                     <IconButton
                       size="small"
                       onClick={() => setEditDialog({ open: true, document: doc })}
-                      title="Edit"
+                      title={t('common.edit')}
                     >
                       <EditIcon fontSize="small" />
                     </IconButton>
                     <IconButton
                       size="small"
                       onClick={() => window.open(doc.fileUrl, '_blank')}
-                      title="View"
+                      title={t('common.view')}
                     >
                       <DocIcon fontSize="small" />
                     </IconButton>
                     <IconButton
                       size="small"
                       onClick={() => handleDelete(doc.id)}
-                      title="Delete"
+                      title={t('common.delete')}
                       color="error"
                     >
                       <DeleteIcon fontSize="small" />
@@ -585,12 +585,12 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
 
       {/* Upload Dialog */}
       <Dialog open={uploadDialog.open} onClose={() => setUploadDialog({ open: false })} maxWidth="sm" fullWidth>
-        <DialogTitle>Upload Document</DialogTitle>
+        <DialogTitle>{t('staff.doc.uploadDocument')}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField
-                label="Document Name"
+                label={t('staff.doc.documentName')}
                 fullWidth
                 value={uploadForm.name}
                 onChange={(e) => setUploadForm({ ...uploadForm, name: e.target.value })}
@@ -598,23 +598,23 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
             </Grid>
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>Category</InputLabel>
+                <InputLabel>{t('staff.doc.category')}</InputLabel>
                 <Select
                   value={uploadForm.category}
-                  label="Category"
+                  label={t('staff.doc.category')}
                   onChange={(e) => setUploadForm({ ...uploadForm, category: e.target.value })}
                 >
-                  <MenuItem value="certificate">Certificate</MenuItem>
-                  <MenuItem value="contract">Contract</MenuItem>
-                  <MenuItem value="qualification">Qualification</MenuItem>
-                  <MenuItem value="identity">Identity Document</MenuItem>
-                  <MenuItem value="other">Other</MenuItem>
+                  <MenuItem value="certificate">{t('staff.doc.certificate')}</MenuItem>
+                  <MenuItem value="contract">{t('staff.doc.contract')}</MenuItem>
+                  <MenuItem value="qualification">{t('staff.doc.qualification')}</MenuItem>
+                  <MenuItem value="identity">{t('staff.doc.identity')}</MenuItem>
+                  <MenuItem value="other">{t('staff.doc.other')}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Expiry Date (Optional)"
+                label={t('staff.doc.expiryDateOptional')}
                 type="date"
                 fullWidth
                 value={uploadForm.expiryDate}
@@ -630,7 +630,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
                 fullWidth
                 sx={{ ...S.BTN_OUTLINE,  py: 2 }}
               >
-                Select File
+                {t('staff.doc.selectFile')}
                 <input
                   type="file"
                   hidden
@@ -647,20 +647,20 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
           </Grid>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setUploadDialog({ open: false })}>Cancel</Button>
+          <Button onClick={() => setUploadDialog({ open: false })}>{t('common.cancel')}</Button>
           <Button
             sx={S.BTN_PRIMARY}
             onClick={handleUpload}
             disabled={uploading || !uploadForm.name || !uploadForm.file}
           >
-            {uploading ? 'Uploading...' : 'Upload'}
+            {uploading ? t('staff.doc.uploading') : t('staff.doc.upload')}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Bulk Upload Dialog */}
       <Dialog open={bulkUploadDialog.open} onClose={() => setBulkUploadDialog({ open: false })} maxWidth="sm" fullWidth>
-        <DialogTitle>Bulk Upload Documents (Max 10 files)</DialogTitle>
+        <DialogTitle>{t('staff.doc.bulkUploadTitle')}</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2 }}>
             <Button
@@ -670,7 +670,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
               fullWidth
               sx={{ ...S.BTN_OUTLINE,  py: 2 }}
             >
-              Select Files (Max 10)
+              {t('staff.doc.selectFilesMax10')}
               <input
                 type="file"
                 hidden
@@ -682,7 +682,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
             {bulkFiles.length > 0 && (
               <Box sx={{ mt: 2 }}>
                 <Typography variant="body2" sx={{ mb: 1, fontWeight: 600 }}>
-                  Selected Files ({bulkFiles.length}/10):
+                  {t('staff.doc.selectedFilesCount', { count: bulkFiles.length })}
                 </Typography>
                 {bulkFiles.map((file, index) => (
                   <Box key={index} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 1, borderBottom: '1px solid #eee' }}>
@@ -702,36 +702,36 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setBulkUploadDialog({ open: false })}>Cancel</Button>
+          <Button onClick={() => setBulkUploadDialog({ open: false })}>{t('common.cancel')}</Button>
           <Button
             sx={S.BTN_PRIMARY}
             onClick={handleBulkUpload}
             disabled={uploading || bulkFiles.length === 0}
           >
-            {uploading ? 'Uploading...' : `Upload ${bulkFiles.length} Files`}
+            {uploading ? t('staff.doc.uploading') : t('staff.doc.uploadNFiles', { count: bulkFiles.length })}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Versions Dialog */}
       <Dialog open={versionsDialog.open} onClose={() => setVersionsDialog({ open: false, documentId: 0, documentName: '' })} maxWidth="md" fullWidth>
-        <DialogTitle>Document Versions - {versionsDialog.documentName}</DialogTitle>
+        <DialogTitle>{t('staff.doc.documentVersions', { name: versionsDialog.documentName })}</DialogTitle>
         <DialogContent>
           <TableContainer sx={{ mt: 2 }}>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Version</TableCell>
-                  <TableCell>File Size</TableCell>
-                  <TableCell>Uploaded At</TableCell>
-                  <TableCell>Uploaded By</TableCell>
-                  <TableCell align="right">Actions</TableCell>
+                  <TableCell>{t('staff.doc.versionCol')}</TableCell>
+                  <TableCell>{t('staff.doc.fileSize')}</TableCell>
+                  <TableCell>{t('staff.doc.uploadedAt')}</TableCell>
+                  <TableCell>{t('staff.doc.uploadedBy')}</TableCell>
+                  <TableCell align="right">{t('common.actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {versions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center">No versions found</TableCell>
+                    <TableCell colSpan={5} align="center">{t('staff.doc.noVersionsFound')}</TableCell>
                   </TableRow>
                 ) : (
                   versions.map((version) => (
@@ -744,7 +744,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
                         <IconButton
                           size="small"
                           onClick={() => window.open(version.fileUrl, '_blank')}
-                          title="View"
+                          title={t('common.view')}
                         >
                           <DocIcon fontSize="small" />
                         </IconButton>
@@ -757,19 +757,19 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
           </TableContainer>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setVersionsDialog({ open: false, documentId: 0, documentName: '' })}>Close</Button>
+          <Button onClick={() => setVersionsDialog({ open: false, documentId: 0, documentName: '' })}>{t('common.close')}</Button>
         </DialogActions>
       </Dialog>
 
       {/* Edit Document Dialog */}
       <Dialog open={editDialog.open} onClose={() => setEditDialog({ open: false, document: null })} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit Document</DialogTitle>
+        <DialogTitle>{t('staff.doc.editDocument')}</DialogTitle>
         <DialogContent>
           {editDialog.document && (
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12}>
                 <TextField
-                  label="Document Name"
+                  label={t('staff.doc.documentName')}
                   fullWidth
                   value={editDialog.document.name}
                   onChange={(e) => setEditDialog({ 
@@ -780,26 +780,26 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
               </Grid>
               <Grid item xs={12}>
                 <FormControl fullWidth>
-                  <InputLabel>Category</InputLabel>
+                  <InputLabel>{t('staff.doc.category')}</InputLabel>
                   <Select
                     value={editDialog.document.category}
-                    label="Category"
+                    label={t('staff.doc.category')}
                     onChange={(e) => setEditDialog({ 
                       ...editDialog, 
                       document: { ...editDialog.document!, category: e.target.value } 
                     })}
                   >
-                    <MenuItem value="certificate">Certificate</MenuItem>
-                    <MenuItem value="contract">Contract</MenuItem>
-                    <MenuItem value="qualification">Qualification</MenuItem>
-                    <MenuItem value="identity">Identity Document</MenuItem>
-                    <MenuItem value="other">Other</MenuItem>
+                    <MenuItem value="certificate">{t('staff.doc.certificate')}</MenuItem>
+                    <MenuItem value="contract">{t('staff.doc.contract')}</MenuItem>
+                    <MenuItem value="qualification">{t('staff.doc.qualification')}</MenuItem>
+                    <MenuItem value="identity">{t('staff.doc.identity')}</MenuItem>
+                    <MenuItem value="other">{t('staff.doc.other')}</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
               <Grid item xs={12}>
                 <TextField
-                  label="Expiry Date (Optional)"
+                  label={t('staff.doc.expiryDateOptional')}
                   type="date"
                   fullWidth
                   value={editDialog.document.expiryDate ? editDialog.document.expiryDate.split('T')[0] : ''}
@@ -814,64 +814,64 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
           )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setEditDialog({ open: false, document: null })}>Cancel</Button>
+          <Button onClick={() => setEditDialog({ open: false, document: null })}>{t('common.cancel')}</Button>
           <Button sx={S.BTN_PRIMARY} onClick={handleEditDocument}>
-            Save Changes
+            {t('staff.doc.saveChanges')}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Document Detail Dialog */}
       <Dialog open={detailDialog.open} onClose={() => setDetailDialog({ open: false, document: null })} maxWidth="sm" fullWidth>
-        <DialogTitle>Document Details</DialogTitle>
+        <DialogTitle>{t('staff.doc.documentDetails')}</DialogTitle>
         <DialogContent>
           {detailDialog.document && (
             <Box sx={{ mt: 2 }}>
               <Grid container spacing={2}>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Name:</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('staff.doc.name')}:</Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>{detailDialog.document.name}</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Category:</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('staff.doc.category')}:</Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>{getCategoryLabel(detailDialog.document.category)}</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Type:</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('staff.doc.type')}:</Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>{detailDialog.document.type}</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">File Size:</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('staff.doc.fileSize')}:</Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>{formatFileSize(detailDialog.document.fileSize)}</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Version:</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('staff.doc.version')}:</Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>v{detailDialog.document.version}</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Status:</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('staff.doc.status')}:</Typography>
                   {detailDialog.document.isExpired ? (
-                    <Chip icon={<WarningIcon />} label="Expired" size="small" color="error" />
+                    <Chip icon={<WarningIcon />} label={t('staff.doc.expired')} size="small" color="error" />
                   ) : detailDialog.document.isExpiringSoon ? (
-                    <Chip icon={<WarningIcon />} label="Expiring Soon" size="small" color="warning" />
+                    <Chip icon={<WarningIcon />} label={t('staff.doc.expiringSoon')} size="small" color="warning" />
                   ) : (
-                    <Chip icon={<CheckCircleIcon />} label="Active" size="small" color="success" />
+                    <Chip icon={<CheckCircleIcon />} label={t('staff.doc.active')} size="small" color="success" />
                   )}
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Expiry Date:</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('staff.doc.expiryDate')}:</Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {detailDialog.document.expiryDate ? new Date(detailDialog.document.expiryDate).toLocaleDateString() : 'N/A'}
+                    {detailDialog.document.expiryDate ? new Date(detailDialog.document.expiryDate).toLocaleDateString() : t('common.na')}
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Created At:</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('staff.doc.createdAt')}:</Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
                     {new Date(detailDialog.document.createdAt).toLocaleDateString()}
                   </Typography>
                 </Grid>
                 <Grid item xs={12}>
-                  <Typography variant="body2" color="text.secondary">File URL:</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('staff.doc.fileUrl')}:</Typography>
                   <Typography 
                     variant="body2" 
                     sx={{ 
@@ -890,12 +890,12 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDetailDialog({ open: false, document: null })}>Close</Button>
+          <Button onClick={() => setDetailDialog({ open: false, document: null })}>{t('common.close')}</Button>
           <Button 
             variant="contained" sx={S.BTN_PRIMARY} 
             onClick={() => detailDialog.document && window.open(detailDialog.document.fileUrl, '_blank')}
           >
-            Open File
+            {t('staff.doc.openFile')}
           </Button>
         </DialogActions>
       </Dialog>

@@ -276,28 +276,30 @@ export function BookCirculation() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" fontWeight={600}>
-          {t('library.bookCirculation')}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant="outlined" sx={S.BTN_OUTLINE}
-            startIcon={<ReserveIcon />}
-            onClick={() => setReserveDialog(true)}
-          >
-            {t('library.reserveBook')}
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<IssueIcon />}
-            onClick={() => setIssueDialog(true)}
-            sx={S.BTN_PRIMARY}
-          >
-            {t('library.issueBook')}
-          </Button>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h5" fontWeight={700}>
+            {t('library.bookCirculation')}
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="outlined" sx={S.BTN_OUTLINE}
+              startIcon={<ReserveIcon />}
+              onClick={() => setReserveDialog(true)}
+            >
+              {t('library.reserveBook')}
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<IssueIcon />}
+              onClick={() => setIssueDialog(true)}
+              sx={S.BTN_PRIMARY}
+            >
+              {t('library.issueBook')}
+            </Button>
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}

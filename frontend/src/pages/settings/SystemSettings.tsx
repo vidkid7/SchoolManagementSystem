@@ -242,27 +242,19 @@ export const SystemSettings = () => {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-        <Box
-          sx={{
-            width: 48,
-            height: 48,
-            borderRadius: R.lg,
-            background: `linear-gradient(135deg, ${C.primary} 0%, ${C.purple} 100%)`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 14px rgba(0,0,0,0.1)',
-          }}
-        >
-          <SecurityIcon sx={{ color: '#fff', fontSize: 24 }} />
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <SecurityIcon sx={{ fontSize: 32, color: C.primary }} />
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+              {t('systemSettings.title')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('systemSettings.subtitle')}
+            </Typography>
+          </Box>
         </Box>
-        <Box>
-          <Typography variant="h4" sx={{ fontWeight: 600 }}>
-            {t('systemSettings.title')}
-          </Typography>
-        </Box>
-      </Box>
+      </Paper>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
@@ -618,7 +610,7 @@ const GradingSchemeDialog = ({ open, mode, data, onClose, onSave }: GradingSchem
           <Grid item xs={12}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
               <Typography variant="subtitle1">{t('systemSettings.grades')}</Typography>
-              <Button size="small" onClick={addGrade}>Add Grade</Button>
+              <Button size="small" onClick={addGrade}>{t('systemSettings.addGrade')}</Button>
             </Box>
             {formData.grades.map((grade, index) => (
               <Grid container spacing={1} key={index} sx={{ mb: 1 }}>

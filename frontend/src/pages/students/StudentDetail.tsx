@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -65,6 +65,7 @@ import { useNepaliNumbers } from '../../hooks/useNepaliNumbers';
 import StudentDocuments from './StudentDocuments';
 import StudentLibrary from './StudentLibrary';
 import { PromoteDialog, TransferDialog } from './PromoteTransferDialogs';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 
 const MotionCard = motion.create(Card);
 
@@ -225,8 +226,8 @@ const InfoRow = ({ icon, label, value }: { icon: React.ReactNode; label: string;
 
 export const StudentDetail = () => {
   const { t, i18n } = useTranslation();
-  const { id } = useParams();
-  const navigate = useNavigate();
+  const { municipalitySlug, id } = useParams<{ municipalitySlug: string; id: string }>();
+  const navigate = useSlugNavigate();
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const { formatNumber } = useNepaliNumbers();

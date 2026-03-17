@@ -218,7 +218,7 @@ export function CreateExam() {
 
   return (
     <Box>
-      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
+      <Paper sx={S.PAGE_HEADER}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
           <Button
             startIcon={<BackIcon />}
@@ -308,7 +308,7 @@ export function CreateExam() {
                 ) : (
                   classes.map((cls) => (
                     <MenuItem key={cls.classId} value={cls.classId}>
-                      Class {cls.gradeLevel}{cls.section}
+                      {t('common.class')} {cls.gradeLevel}{cls.section}
                     </MenuItem>
                   ))
                 )}

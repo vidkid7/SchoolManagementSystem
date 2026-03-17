@@ -369,7 +369,7 @@ const getStatusLabel = (status: string) => {
       {records.length > 0 && (
         <Box sx={{ mt: 2, p: 2, bgcolor: alpha(theme.palette.info.main, 0.05), borderRadius: 2 }}>
           <Typography variant="caption" color="text.secondary">
-            💡 Tip: Return books on time to avoid fines. Current fine rate: रू 5 per day for overdue books.
+            💡 {t('students.libraryFineTip')}
           </Typography>
         </Box>
       )}

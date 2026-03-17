@@ -100,7 +100,7 @@ export function FeeStructures() {
         name: fee.name,
         academicYearId: fee.academicYearId.toString(),
         classId: fee.classId?.toString() || '',
-        amount: fee.amount.toString(),
+        amount: (fee.amount ?? (fee as any).totalAmount ?? 0).toString(),
         dueDate: fee.dueDate.split('T')[0],
         description: fee.description || '',
       });
@@ -156,18 +156,20 @@ export function FeeStructures() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" fontWeight={600}>
-          {t('finance.feeStructures')}
-        </Typography>
-        <Button
-          variant="contained" sx={S.BTN_PRIMARY}
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-        >
-          {t('finance.createFeeStructure')}
-        </Button>
-      </Box>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h5" fontWeight={700}>
+            {t('finance.feeStructures')}
+          </Typography>
+          <Button
+            variant="contained" sx={S.BTN_PRIMARY}
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
+          >
+            {t('finance.createFeeStructure')}
+          </Button>
+        </Box>
+      </Paper>
 
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}

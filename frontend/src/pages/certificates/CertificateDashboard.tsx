@@ -14,6 +14,7 @@ import {
   CardContent,
   Typography,
   Button,
+  Paper,
   CircularProgress,
   Alert,
   useTheme,
@@ -103,17 +104,17 @@ export const CertificateDashboard = () => {
     return (
       <Box>
         <Typography variant="h4" gutterBottom>
-          Certificate Dashboard / प्रमाणपत्र ड्यासबोर्ड
+          {t('certificates.dashboardTitle')}
         </Typography>
         <Alert severity="error" sx={{ mt: 2 }}>
           {error}
           <br />
           <Typography variant="caption">
-            Please ensure the backend server is running and the API endpoints are accessible.
+            {t('certificates.errorHelp')}
           </Typography>
         </Alert>
         <Button variant="outlined" onClick={fetchStats} sx={{ ...S.BTN_OUTLINE,  mt: 2 }}>
-          Retry / पुन: प्रयास गर्नुहोस्
+          {t('common.retry')}
         </Button>
       </Box>
     );
@@ -121,43 +122,51 @@ export const CertificateDashboard = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
-          Certificate Dashboard / प्रमाणपत्र ड्यासबोर्ड
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined" sx={S.BTN_OUTLINE}
-            startIcon={<QrCodeIcon />}
-            onClick={() => navigate('/certificates/verify')}
-          >
-            Verify / प्रमाणित गर्नुहोस्
-          </Button>
-          <Button
-            sx={S.BTN_PRIMARY}
-            startIcon={<AddIcon />}
-            onClick={() => navigate('/certificates/manage')}
-          >
-            Manage Certificates / प्रमाणपत्र व्यवस्थापन
-          </Button>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <DescriptionIcon sx={{ fontSize: 32, color: C.primary }} />
+            <Box>
+              <Typography variant="h5" fontWeight={700}>{t('certificates.dashboardTitle')}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('certificates.subtitle')}</Typography>
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="outlined" sx={S.BTN_OUTLINE}
+              startIcon={<QrCodeIcon />}
+              onClick={() => navigate('/certificates/verify')}
+            >
+              {t('certificates.verify')}
+            </Button>
+            <Button
+              sx={S.BTN_PRIMARY}
+              startIcon={<AddIcon />}
+              onClick={() => navigate('/certificates/manage')}
+            >
+              {t('certificates.manageCertificates')}
+            </Button>
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
       <Grid container spacing={3}>
         {/* Statistics Cards */}
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ ...S.GLASS }}>
             <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box display="flex" alignItems="flex-start" justifyContent="space-between">
                 <Box>
-                  <Typography color="text.secondary" gutterBottom>
-                    Total Certificates
+                  <Typography color="text.secondary" variant="body2" gutterBottom>
+                    {t('certificates.totalCertificates')}
                   </Typography>
-                  <Typography variant="h4">
+                  <Typography variant="h4" fontWeight={600}>
                     {stats?.totalCertificates || 0}
                   </Typography>
                 </Box>
-                <DescriptionIcon sx={{ fontSize: 48, color: 'primary.main', opacity: 0.3 }} />
+                <Box sx={{ backgroundColor: C.primaryBg, color: C.primary, p: 1.5, borderRadius: 2, display: 'flex' }}>
+                  <DescriptionIcon sx={{ fontSize: 32 }} />
+                </Box>
               </Box>
             </CardContent>
           </Card>
@@ -166,16 +175,18 @@ export const CertificateDashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ ...S.GLASS }}>
             <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box display="flex" alignItems="flex-start" justifyContent="space-between">
                 <Box>
-                  <Typography color="text.secondary" gutterBottom>
-                    Active Certificates
+                  <Typography color="text.secondary" variant="body2" gutterBottom>
+                    {t('certificates.activeCertificates')}
                   </Typography>
-                  <Typography variant="h4" color="success.main">
+                  <Typography variant="h4" fontWeight={600}>
                     {stats?.activeCertificates || 0}
                   </Typography>
                 </Box>
-                <CheckCircleIcon sx={{ fontSize: 48, color: 'success.main', opacity: 0.3 }} />
+                <Box sx={{ backgroundColor: C.successBg, color: C.success, p: 1.5, borderRadius: 2, display: 'flex' }}>
+                  <CheckCircleIcon sx={{ fontSize: 32 }} />
+                </Box>
               </Box>
             </CardContent>
           </Card>
@@ -184,16 +195,18 @@ export const CertificateDashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ ...S.GLASS }}>
             <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box display="flex" alignItems="flex-start" justifyContent="space-between">
                 <Box>
-                  <Typography color="text.secondary" gutterBottom>
-                    Revoked Certificates
+                  <Typography color="text.secondary" variant="body2" gutterBottom>
+                    {t('certificates.revokedCertificates')}
                   </Typography>
-                  <Typography variant="h4" color="error.main">
+                  <Typography variant="h4" fontWeight={600}>
                     {stats?.revokedCertificates || 0}
                   </Typography>
                 </Box>
-                <CancelIcon sx={{ fontSize: 48, color: 'error.main', opacity: 0.3 }} />
+                <Box sx={{ backgroundColor: C.dangerBg, color: C.danger, p: 1.5, borderRadius: 2, display: 'flex' }}>
+                  <CancelIcon sx={{ fontSize: 32 }} />
+                </Box>
               </Box>
             </CardContent>
           </Card>
@@ -202,16 +215,18 @@ export const CertificateDashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ ...S.GLASS }}>
             <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box display="flex" alignItems="flex-start" justifyContent="space-between">
                 <Box>
-                  <Typography color="text.secondary" gutterBottom>
-                    This Month
+                  <Typography color="text.secondary" variant="body2" gutterBottom>
+                    {t('certificates.thisMonth')}
                   </Typography>
-                  <Typography variant="h4" color="info.main">
+                  <Typography variant="h4" fontWeight={600}>
                     {stats?.certificatesThisMonth || 0}
                   </Typography>
                 </Box>
-                <TrendingUpIcon sx={{ fontSize: 48, color: 'info.main', opacity: 0.3 }} />
+                <Box sx={{ backgroundColor: C.infoBg, color: C.info, p: 1.5, borderRadius: 2, display: 'flex' }}>
+                  <TrendingUpIcon sx={{ fontSize: 32 }} />
+                </Box>
               </Box>
             </CardContent>
           </Card>
@@ -222,7 +237,7 @@ export const CertificateDashboard = () => {
           <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Certificates by Type / प्रकार अनुसार
+                {t('certificates.byType')}
               </Typography>
               <Box sx={{ mt: 2 }}>
                 {stats?.certificatesByType && Object.entries(stats.certificatesByType).map(([type, count]) => (
@@ -249,7 +264,7 @@ export const CertificateDashboard = () => {
           <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Recent Certificates / हालैका प्रमाणपत्र
+                {t('certificates.recentCertificates')}
               </Typography>
               <Box sx={{ mt: 2 }}>
                 {stats?.recentCertificates && stats.recentCertificates.length > 0 ? (
@@ -273,7 +288,7 @@ export const CertificateDashboard = () => {
                     </Box>
                   ))
                 ) : (
-                  <Typography color="text.secondary">No recent certificates</Typography>
+                  <Typography color="text.secondary">{t('certificates.noRecentCertificates')}</Typography>
                 )}
               </Box>
             </CardContent>
@@ -285,33 +300,33 @@ export const CertificateDashboard = () => {
           <Card sx={{ ...S.GLASS }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Quick Actions / द्रुत कार्यहरू
+                {t('certificates.quickActions')}
               </Typography>
               <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
                 <Button
                   variant="outlined" sx={S.BTN_OUTLINE}
                   onClick={() => navigate('/certificates/manage?tab=0')}
                 >
-                  Manage Templates / टेम्पलेट व्यवस्थापन
+                  {t('certificates.manageTemplates')}
                 </Button>
                 <Button
                   variant="outlined" sx={S.BTN_OUTLINE}
                   onClick={() => navigate('/certificates/manage?tab=2')}
                 >
-                  Generate Certificate / प्रमाणपत्र उत्पन्न गर्नुहोस्
+                  {t('certificates.generateCertificate')}
                 </Button>
                 <Button
                   variant="outlined" sx={S.BTN_OUTLINE}
                   onClick={() => navigate('/certificates/manage?tab=1')}
                 >
-                  View All Certificates / सबै प्रमाणपत्र हेर्नुहोस्
+                  {t('certificates.viewAllCertificates')}
                 </Button>
                 <Button
                   variant="outlined" sx={S.BTN_OUTLINE}
                   startIcon={<QrCodeIcon />}
                   onClick={() => navigate('/certificates/verify')}
                 >
-                  Verify Certificate / प्रमाणपत्र प्रमाणित गर्नुहोस्
+                  {t('certificates.verify')}
                 </Button>
               </Box>
             </CardContent>

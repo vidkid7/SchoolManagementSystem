@@ -203,7 +203,7 @@ export const StaffList = () => {
   const hasFilters = search || departmentFilter || positionFilter || statusFilter;
 
   const handleDelete = async (staffId: number) => {
-    if (!window.confirm('Are you sure you want to delete this staff member?')) {
+    if (!window.confirm(t('staff.confirmDeleteStaff'))) {
       return;
     }
     try {

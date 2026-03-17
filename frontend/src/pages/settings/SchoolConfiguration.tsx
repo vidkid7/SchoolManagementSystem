@@ -178,7 +178,7 @@ export const SchoolConfiguration = () => {
         // Update existing config
         const response = await apiClient.put(`/api/v1/config/school/${config.id}`, formData);
         setConfig(response.data.data);
-        setSuccess('Configuration updated successfully');
+        setSuccess(t('settings.configUpdated'));
       }
       
       setEditMode(false);
@@ -199,7 +199,7 @@ export const SchoolConfiguration = () => {
       const response = await apiClient.post('/api/v1/config/school', formData);
       setConfig(response.data.data);
       setFormData(response.data.data);
-      setSuccess('Configuration created successfully');
+      setSuccess(t('settings.configCreated'));
       setCreateDialogOpen(false);
     } catch (err: any) {
       console.error('Failed to create config:', err);
@@ -230,7 +230,7 @@ export const SchoolConfiguration = () => {
       );
 
       setConfig(response.data.data);
-      setSuccess('Logo uploaded successfully');
+      setSuccess(t('settings.logoUploaded'));
     } catch (err: any) {
       console.error('Failed to upload logo:', err);
       setError(err.response?.data?.error?.message || 'Failed to upload logo');
@@ -242,7 +242,7 @@ export const SchoolConfiguration = () => {
   const handleDeactivate = async () => {
     if (!config) return;
 
-    if (!window.confirm('Are you sure you want to deactivate this configuration?')) {
+    if (!window.confirm(t('settings.confirmDeactivate'))) {
       return;
     }
 
@@ -252,7 +252,7 @@ export const SchoolConfiguration = () => {
       setSuccess('');
 
       await apiClient.post(`/api/v1/config/school/${config.id}/deactivate`);
-      setSuccess('Configuration deactivated successfully');
+      setSuccess(t('settings.configDeactivated'));
       fetchConfig();
     } catch (err: any) {
       console.error('Failed to deactivate config:', err);
@@ -279,29 +279,35 @@ export const SchoolConfiguration = () => {
   if (!config && !createDialogOpen) {
     return (
       <Box>
-        <Typography variant="h4" gutterBottom>
-          School Configuration / विद्यालय कन्फिगरेसन
-        </Typography>
+        <Paper sx={S.PAGE_HEADER}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <SchoolIcon sx={{ fontSize: 32, color: C.primary }} />
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 700 }}>{t('settings.schoolConfig')}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('settings.schoolConfigSubtitle')}</Typography>
+            </Box>
+          </Box>
+        </Paper>
         <Alert severity="info" sx={{ mt: 2, mb: 2 }}>
-          No school configuration found. Please create one to get started.
+          {t('settings.noConfigFound')}
         </Alert>
         <Button
           sx={S.BTN_PRIMARY}
           startIcon={<SchoolIcon />}
           onClick={() => setCreateDialogOpen(true)}
         >
-          Create Configuration / कन्फिगरेसन सिर्जना गर्नुहोस्
+          {t('settings.createConfig')}
         </Button>
 
         {/* Create Dialog */}
         <Dialog open={createDialogOpen} onClose={() => !saving && setCreateDialogOpen(false)} maxWidth="md" fullWidth>
-          <DialogTitle>Create School Configuration / विद्यालय कन्फिगरेसन सिर्जना गर्नुहोस्</DialogTitle>
+          <DialogTitle>{t('settings.createConfigTitle')}</DialogTitle>
           <DialogContent>
             <Box sx={{ pt: 2 }}>
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
                   <TextField
-                    label="School Name (English) *"
+                    label={`${t('settings.schoolNameEn')} *`}
                     fullWidth
                     value={formData.schoolNameEn || ''}
                     onChange={(e) => setFormData({ ...formData, schoolNameEn: e.target.value })}
@@ -309,7 +315,7 @@ export const SchoolConfiguration = () => {
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <TextField
-                    label="School Name (Nepali) *"
+                    label={`${t('settings.schoolNameNp')} *`}
                     fullWidth
                     value={formData.schoolNameNp || ''}
                     onChange={(e) => setFormData({ ...formData, schoolNameNp: e.target.value })}
@@ -317,7 +323,7 @@ export const SchoolConfiguration = () => {
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <TextField
-                    label="School Code *"
+                    label={`${t('settings.schoolCode')} *`}
                     fullWidth
                     value={formData.schoolCode || ''}
                     onChange={(e) => setFormData({ ...formData, schoolCode: e.target.value })}
@@ -325,7 +331,7 @@ export const SchoolConfiguration = () => {
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <TextField
-                    label="Email *"
+                    label={`${t('common.email')} *`}
                     type="email"
                     fullWidth
                     value={formData.email || ''}
@@ -334,7 +340,7 @@ export const SchoolConfiguration = () => {
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <TextField
-                    label="Phone *"
+                    label={`${t('common.phone')} *`}
                     fullWidth
                     value={formData.phone || ''}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -342,7 +348,7 @@ export const SchoolConfiguration = () => {
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <TextField
-                    label="Website"
+                    label={t('settings.website')}
                     fullWidth
                     value={formData.website || ''}
                     onChange={(e) => setFormData({ ...formData, website: e.target.value })}
@@ -350,7 +356,7 @@ export const SchoolConfiguration = () => {
                 </Grid>
                 <Grid item xs={12}>
                   <TextField
-                    label="Address (English) *"
+                    label={`${t('settings.addressEn')} *`}
                     fullWidth
                     value={formData.addressEn || ''}
                     onChange={(e) => setFormData({ ...formData, addressEn: e.target.value })}
@@ -358,7 +364,7 @@ export const SchoolConfiguration = () => {
                 </Grid>
                 <Grid item xs={12}>
                   <TextField
-                    label="Address (Nepali) *"
+                    label={`${t('settings.addressNp')} *`}
                     fullWidth
                     value={formData.addressNp || ''}
                     onChange={(e) => setFormData({ ...formData, addressNp: e.target.value })}
@@ -366,7 +372,7 @@ export const SchoolConfiguration = () => {
                 </Grid>
                 <Grid item xs={12} md={4}>
                   <TextField
-                    label="City *"
+                    label={`${t('settings.city')} *`}
                     fullWidth
                     value={formData.city || ''}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
@@ -374,7 +380,7 @@ export const SchoolConfiguration = () => {
                 </Grid>
                 <Grid item xs={12} md={4}>
                   <TextField
-                    label="District *"
+                    label={`${t('settings.district')} *`}
                     fullWidth
                     value={formData.district || ''}
                     onChange={(e) => setFormData({ ...formData, district: e.target.value })}
@@ -382,10 +388,10 @@ export const SchoolConfiguration = () => {
                 </Grid>
                 <Grid item xs={12} md={4}>
                   <FormControl fullWidth>
-                    <InputLabel>Province *</InputLabel>
+                    <InputLabel>{t('settings.province')} *</InputLabel>
                     <Select
                       value={formData.province || ''}
-                      label="Province *"
+                      label={`${t('settings.province')} *`}
                       onChange={(e) => setFormData({ ...formData, province: e.target.value })}
                     >
                       {PROVINCES.map((province) => (
@@ -401,7 +407,7 @@ export const SchoolConfiguration = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setCreateDialogOpen(false)} disabled={saving}>
-              Cancel / रद्द गर्नुहोस्
+              {t('common.cancel')}
             </Button>
             <Button
               sx={S.BTN_PRIMARY}
@@ -409,7 +415,7 @@ export const SchoolConfiguration = () => {
               disabled={saving}
               startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
             >
-              {saving ? 'Creating...' : 'Create / सिर्जना गर्नुहोस्'}
+              {saving ? t('common.saving') : t('settings.createConfig')}
             </Button>
           </DialogActions>
         </Dialog>
@@ -419,56 +425,62 @@ export const SchoolConfiguration = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
-          School Configuration / विद्यालय कन्फिगरेसन
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          {config && (
-            <Chip
-              icon={config.isActive ? <CheckCircleIcon /> : <CancelIcon />}
-              label={config.isActive ? 'Active' : 'Inactive'}
-              color={config.isActive ? 'success' : 'default'}
-            />
-          )}
-          {!editMode ? (
-            <>
-              <Button
-                variant="outlined" sx={S.BTN_OUTLINE}
-                startIcon={<RefreshIcon />}
-                onClick={fetchConfig}
-              >
-                Refresh / ताजा गर्नुहोस्
-              </Button>
-              <Button
-                sx={S.BTN_PRIMARY}
-                startIcon={<EditIcon />}
-                onClick={() => setEditMode(true)}
-              >
-                Edit / सम्पादन गर्नुहोस्
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="outlined" sx={S.BTN_OUTLINE}
-                onClick={handleCancel}
-                disabled={saving}
-              >
-                Cancel / रद्द गर्नुहोस्
-              </Button>
-              <Button
-                sx={S.BTN_PRIMARY}
-                startIcon={<SaveIcon />}
-                onClick={handleSave}
-                disabled={saving}
-              >
-                {saving ? <CircularProgress size={24} /> : 'Save / सुरक्षित गर्नुहोस्'}
-              </Button>
-            </>
-          )}
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <SchoolIcon sx={{ fontSize: 32, color: C.primary }} />
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 700 }}>{t('settings.schoolConfig')}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('settings.schoolConfigSubtitle')}</Typography>
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            {config && (
+              <Chip
+                icon={config.isActive ? <CheckCircleIcon /> : <CancelIcon />}
+                label={config.isActive ? t('common.active') : t('common.inactive')}
+                color={config.isActive ? 'success' : 'default'}
+              />
+            )}
+            {!editMode ? (
+              <>
+                <Button
+                  variant="outlined" sx={S.BTN_OUTLINE}
+                  startIcon={<RefreshIcon />}
+                  onClick={fetchConfig}
+                >
+                  {t('common.refresh')}
+                </Button>
+                <Button
+                  sx={S.BTN_PRIMARY}
+                  startIcon={<EditIcon />}
+                  onClick={() => setEditMode(true)}
+                >
+                  {t('common.edit')}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outlined" sx={S.BTN_OUTLINE}
+                  onClick={handleCancel}
+                  disabled={saving}
+                >
+                  {t('common.cancel')}
+                </Button>
+                <Button
+                  sx={S.BTN_PRIMARY}
+                  startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
+                  onClick={handleSave}
+                  disabled={saving}
+                >
+                  {saving ? t('common.saving') : t('common.save')}
+                </Button>
+              </>
+            )}
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
       {success && (
         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
@@ -484,9 +496,9 @@ export const SchoolConfiguration = () => {
 
       <Paper sx={{ ...S.GLASS, mb: 3 }}>
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
-          <Tab icon={<SchoolIcon />} label="Basic Information" />
-          <Tab icon={<PaletteIcon />} label="Branding" />
-          <Tab icon={<LanguageIcon />} label="Localization" />
+          <Tab icon={<SchoolIcon />} label={t('settings.basicInfo')} />
+          <Tab icon={<PaletteIcon />} label={t('settings.branding')} />
+          <Tab icon={<LanguageIcon />} label={t('settings.localization')} />
         </Tabs>
       </Paper>
 
@@ -498,7 +510,7 @@ export const SchoolConfiguration = () => {
             <Card sx={S.GLASS}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  School Logo / विद्यालय लोगो
+                  {t('settings.schoolLogo')}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                   <Avatar
@@ -524,11 +536,11 @@ export const SchoolConfiguration = () => {
                         startIcon={<UploadIcon />}
                         disabled={uploading || !editMode}
                       >
-                        {uploading ? <CircularProgress size={24} /> : 'Upload Logo / लोगो अपलोड गर्नुहोस्'}
+                        {uploading ? <CircularProgress size={24} /> : t('settings.uploadLogo')}
                       </Button>
                     </label>
                     <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                      Recommended: 500x500px, PNG or JPG
+                      {t('settings.logoRec')}
                     </Typography>
                   </Box>
                 </Box>
@@ -541,12 +553,12 @@ export const SchoolConfiguration = () => {
             <Card sx={S.GLASS}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  School Details / विद्यालय विवरण
+                  {t('settings.schoolDetails')}
                 </Typography>
                 <Grid container spacing={2} sx={{ mt: 1 }}>
                   <Grid item xs={12} md={6}>
                     <TextField
-                      label="School Name (English)"
+                      label={t('settings.schoolNameEn')}
                       fullWidth
                       value={formData.schoolNameEn || ''}
                       onChange={(e) => setFormData({ ...formData, schoolNameEn: e.target.value })}
@@ -555,7 +567,7 @@ export const SchoolConfiguration = () => {
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <TextField
-                      label="School Name (Nepali)"
+                      label={t('settings.schoolNameNp')}
                       fullWidth
                       value={formData.schoolNameNp || ''}
                       onChange={(e) => setFormData({ ...formData, schoolNameNp: e.target.value })}
@@ -564,7 +576,7 @@ export const SchoolConfiguration = () => {
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <TextField
-                      label="School Code"
+                      label={t('settings.schoolCode')}
                       fullWidth
                       value={formData.schoolCode || ''}
                       onChange={(e) => setFormData({ ...formData, schoolCode: e.target.value })}
@@ -573,7 +585,7 @@ export const SchoolConfiguration = () => {
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <TextField
-                      label="Established Year"
+                      label={t('settings.establishedYear')}
                       type="number"
                       fullWidth
                       value={formData.establishedYear || ''}
@@ -583,7 +595,7 @@ export const SchoolConfiguration = () => {
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <TextField
-                      label="Email"
+                      label={t('common.email')}
                       type="email"
                       fullWidth
                       value={formData.email || ''}
@@ -593,7 +605,7 @@ export const SchoolConfiguration = () => {
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <TextField
-                      label="Phone"
+                      label={t('common.phone')}
                       fullWidth
                       value={formData.phone || ''}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -602,7 +614,7 @@ export const SchoolConfiguration = () => {
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <TextField
-                      label="Website"
+                      label={t('settings.website')}
                       fullWidth
                       value={formData.website || ''}
                       onChange={(e) => setFormData({ ...formData, website: e.target.value })}
@@ -611,7 +623,7 @@ export const SchoolConfiguration = () => {
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <TextField
-                      label="Affiliation Number"
+                      label={t('settings.affiliationNumber')}
                       fullWidth
                       value={formData.affiliationNumber || ''}
                       onChange={(e) => setFormData({ ...formData, affiliationNumber: e.target.value })}
@@ -620,7 +632,7 @@ export const SchoolConfiguration = () => {
                   </Grid>
                   <Grid item xs={12}>
                     <TextField
-                      label="Address (English)"
+                      label={t('settings.addressEn')}
                       fullWidth
                       value={formData.addressEn || ''}
                       onChange={(e) => setFormData({ ...formData, addressEn: e.target.value })}
@@ -629,7 +641,7 @@ export const SchoolConfiguration = () => {
                   </Grid>
                   <Grid item xs={12}>
                     <TextField
-                      label="Address (Nepali)"
+                      label={t('settings.addressNp')}
                       fullWidth
                       value={formData.addressNp || ''}
                       onChange={(e) => setFormData({ ...formData, addressNp: e.target.value })}
@@ -638,7 +650,7 @@ export const SchoolConfiguration = () => {
                   </Grid>
                   <Grid item xs={12} md={4}>
                     <TextField
-                      label="City"
+                      label={t('settings.city')}
                       fullWidth
                       value={formData.city || ''}
                       onChange={(e) => setFormData({ ...formData, city: e.target.value })}
@@ -647,7 +659,7 @@ export const SchoolConfiguration = () => {
                   </Grid>
                   <Grid item xs={12} md={4}>
                     <TextField
-                      label="District"
+                      label={t('settings.district')}
                       fullWidth
                       value={formData.district || ''}
                       onChange={(e) => setFormData({ ...formData, district: e.target.value })}
@@ -656,10 +668,10 @@ export const SchoolConfiguration = () => {
                   </Grid>
                   <Grid item xs={12} md={4}>
                     <FormControl fullWidth>
-                      <InputLabel>Province</InputLabel>
+                      <InputLabel>{t('settings.province')}</InputLabel>
                       <Select
                         value={formData.province || ''}
-                        label="Province"
+                        label={t('settings.province')}
                         onChange={(e) => setFormData({ ...formData, province: e.target.value })}
                         disabled={!editMode}
                       >
@@ -673,7 +685,7 @@ export const SchoolConfiguration = () => {
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <TextField
-                      label="Principal Name (English)"
+                      label={t('settings.principalEn')}
                       fullWidth
                       value={formData.principalName || ''}
                       onChange={(e) => setFormData({ ...formData, principalName: e.target.value })}
@@ -682,7 +694,7 @@ export const SchoolConfiguration = () => {
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <TextField
-                      label="Principal Name (Nepali)"
+                      label={t('settings.principalNp')}
                       fullWidth
                       value={formData.principalNameNp || ''}
                       onChange={(e) => setFormData({ ...formData, principalNameNp: e.target.value })}
@@ -701,12 +713,12 @@ export const SchoolConfiguration = () => {
         <Card sx={S.GLASS}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Brand Colors / ब्रान्ड रंगहरू
+              {t('settings.brandColors')}
             </Typography>
             <Grid container spacing={3} sx={{ mt: 1 }}>
               <Grid item xs={12} md={4}>
                 <TextField
-                  label="Primary Color"
+                  label={t('settings.primaryColor')}
                   type="color"
                   fullWidth
                   value={formData.primaryColor || '#4a5568'}
@@ -717,7 +729,7 @@ export const SchoolConfiguration = () => {
               </Grid>
               <Grid item xs={12} md={4}>
                 <TextField
-                  label="Secondary Color"
+                  label={t('settings.secondaryColor')}
                   type="color"
                   fullWidth
                   value={formData.secondaryColor || '#dc004e'}
@@ -728,7 +740,7 @@ export const SchoolConfiguration = () => {
               </Grid>
               <Grid item xs={12} md={4}>
                 <TextField
-                  label="Accent Color"
+                  label={t('settings.accentColor')}
                   type="color"
                   fullWidth
                   value={formData.accentColor || '#f50057'}
@@ -747,15 +759,15 @@ export const SchoolConfiguration = () => {
         <Card sx={S.GLASS}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Localization Settings / स्थानीयकरण सेटिङ्हरू
+              {t('settings.localizationSettings')}
             </Typography>
             <Grid container spacing={3} sx={{ mt: 1 }}>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth>
-                  <InputLabel>Default Language</InputLabel>
+                  <InputLabel>{t('settings.defaultLanguage')}</InputLabel>
                   <Select
                     value={formData.defaultLanguage || 'en'}
-                    label="Default Language"
+                    label={t('settings.defaultLanguage')}
                     onChange={(e) => setFormData({ ...formData, defaultLanguage: e.target.value })}
                     disabled={!editMode}
                   >
@@ -769,10 +781,10 @@ export const SchoolConfiguration = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth>
-                  <InputLabel>Date Format</InputLabel>
+                  <InputLabel>{t('settings.dateFormat')}</InputLabel>
                   <Select
                     value={formData.dateFormat || 'YYYY-MM-DD'}
-                    label="Date Format"
+                    label={t('settings.dateFormat')}
                     onChange={(e) => setFormData({ ...formData, dateFormat: e.target.value })}
                     disabled={!editMode}
                   >
@@ -786,10 +798,10 @@ export const SchoolConfiguration = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth>
-                  <InputLabel>Fiscal Year Start Month</InputLabel>
+                  <InputLabel>{t('settings.fiscalYearStartMonth')}</InputLabel>
                   <Select
                     value={formData.fiscalYearStart || 7}
-                    label="Fiscal Year Start Month"
+                    label={t('settings.fiscalYearStartMonth')}
                     onChange={(e) => setFormData({ ...formData, fiscalYearStart: Number(e.target.value) })}
                     disabled={!editMode}
                   >
@@ -811,7 +823,7 @@ export const SchoolConfiguration = () => {
         <Box sx={{ mt: 3 }}>
           <Divider sx={{ mb: 2 }} />
           <Alert severity="warning" sx={{ mb: 2 }}>
-            Deactivating the configuration will disable it system-wide. This action can be reversed.
+            {t('settings.deactivateWarning')}
           </Alert>
           <Button
             variant="outlined" sx={S.BTN_OUTLINE}
@@ -819,7 +831,7 @@ export const SchoolConfiguration = () => {
             onClick={handleDeactivate}
             disabled={saving}
           >
-            Deactivate Configuration / कन्फिगरेसन निष्क्रिय गर्नुहोस्
+            {t('settings.deactivateConfig')}
           </Button>
         </Box>
       )}

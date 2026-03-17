@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -77,6 +78,7 @@ export const AssignmentManagement = () => {
   const { accessToken } = useSelector((state: RootState) => state.auth);
   const theme = useTheme();
   const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const [tabValue, setTabValue] = useState(0);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openGradeDialog, setOpenGradeDialog] = useState(false);
@@ -98,11 +100,11 @@ export const AssignmentManagement = () => {
         .catch(() => ({ data: { data: { assignments: [] } } }));
       setAssignments(res.data?.data?.assignments ?? res.data?.data ?? []);
     } catch {
-      setError('Failed to load assignments');
+      setError(t('portal.failedToLoadData'));
     } finally {
       setLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, t]);
 
   const loadSubmissions = useCallback(async (assignmentId: number | string) => {
     if (!accessToken) return;
@@ -113,9 +115,7 @@ export const AssignmentManagement = () => {
     } catch {
       setSubmissions([]);
     }
-  }, [accessToken]);
-
-  useEffect(() => { loadAssignments(); }, [loadAssignments]);
+  }, [accessToken, t]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -179,22 +179,22 @@ export const AssignmentManagement = () => {
       setOpenCreateDialog(false);
       loadAssignments();
     } catch {
-      setError('Failed to create assignment');
+      setError(t('portal.failedToLoadData'));
       setOpenCreateDialog(false);
     }
   };
 
-  const handleDeleteAssignment = async (assignmentId: number | string) => {
+  const handleDeleteAssignment= async (assignmentId: number | string) => {
     if (!accessToken) return;
     try {
       await apiClient.delete(`/api/v1/assignments/${assignmentId}`, authHdr(accessToken));
       setAssignments(prev => prev.filter((a: any) => a.id !== assignmentId));
     } catch {
-      setError('Failed to delete assignment');
+      setError(t('portal.failedToLoadData'));
     }
   };
 
-  const handleSaveGrade = async () => {
+  const handleSaveGrade= async () => {
     if (!accessToken || !selectedSubmission) return;
     try {
       await apiClient.put(
@@ -207,28 +207,34 @@ export const AssignmentManagement = () => {
       ));
       setOpenGradeDialog(false);
     } catch {
-      setError('Failed to save grade');
+      setError(t('portal.failedToLoadData'));
       setOpenGradeDialog(false);
     }
   };
 
-  if (loading) return <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh"><CircularProgress /></Box>;
+  if (loading)return <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh"><CircularProgress /></Box>;
 
   return (
-    <Box>
+    <Box sx={{ mt: { xs: 7, sm: 8 } }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
-          Assignment Management / असाइनमेन्ट व्यवस्थापन
-        </Typography>
-        <Button
-          sx={S.BTN_PRIMARY}
-          startIcon={<AddIcon />}
-          onClick={handleCreateAssignment}
-        >
-          Create Assignment / नयाँ असाइनमेन्ट
-        </Button>
-      </Box>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <GradeIcon sx={{ fontSize: 32, color: C.primary }} />
+            <Box>
+              <Typography variant="h5" fontWeight={700}>{t('teacher.assignmentManagement')}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('teacher.assignmentManagementSubtitle')}</Typography>
+            </Box>
+          </Box>
+          <Button
+            sx={S.BTN_PRIMARY}
+            startIcon={<AddIcon />}
+            onClick={handleCreateAssignment}
+          >
+            {t('teacher.createAssignment')}
+          </Button>
+        </Box>
+      </Paper>
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
 
@@ -243,7 +249,7 @@ export const AssignmentManagement = () => {
                 </Avatar>
                 <Box>
                   <Typography variant="h4">{assignments.filter((a: any) => a.status === 'active').length}</Typography>
-                  <Typography variant="caption">Active Assignments / सक्रिय</Typography>
+                  <Typography variant="caption">{t('teacher.activeAssignments')}</Typography>
                 </Box>
               </Box>
             </CardContent>
@@ -259,7 +265,7 @@ export const AssignmentManagement = () => {
                 </Avatar>
                 <Box>
                   <Typography variant="h4">{assignments.filter((a: any) => a.status === 'grading').length}</Typography>
-                  <Typography variant="caption">Pending Grading / ग्रेडिङ बाँकी</Typography>
+                  <Typography variant="caption">{t('teacher.pendingGrading')}</Typography>
                 </Box>
               </Box>
             </CardContent>
@@ -275,7 +281,7 @@ export const AssignmentManagement = () => {
                 </Avatar>
                 <Box>
                   <Typography variant="h4">{assignments.filter((a: any) => a.status === 'completed').length}</Typography>
-                  <Typography variant="caption">Graded / ग्रेड गरिएको</Typography>
+                  <Typography variant="caption">{t('teacher.graded')}</Typography>
                 </Box>
               </Box>
             </CardContent>
@@ -291,7 +297,7 @@ export const AssignmentManagement = () => {
                 </Avatar>
                 <Box>
                   <Typography variant="h4">{assignments.filter((a: any) => a.status === 'overdue').length}</Typography>
-                  <Typography variant="caption">Overdue / म्याद नाघेको</Typography>
+                  <Typography variant="caption">{t('teacher.overdue')}</Typography>
                 </Box>
               </Box>
             </CardContent>
@@ -302,11 +308,11 @@ export const AssignmentManagement = () => {
       {/* Tabs */}
       <Paper sx={S.GLASS}>
         <Tabs value={tabValue} onChange={(_e, newValue) => setTabValue(newValue)}>
-          <Tab label="All Assignments / सबै असाइनमेन्ट" />
+          <Tab label={t('teacher.allAssignments')} />
           <Tab
             label={
               <Badge badgeContent={submissions.length} color="error">
-                <span>Submissions / पेश गरिएको</span>
+                <span>{t('teacher.submissions')}</span>
               </Badge>
             }
           />
@@ -340,7 +346,7 @@ export const AssignmentManagement = () => {
                         <Grid container spacing={2} sx={{ mt: 2 }}>
                           <Grid item xs={12} sm={6} md={3}>
                             <Typography variant="caption" color="text.secondary">
-                              Due Date / म्याद
+                              {t('teacher.dueDate')}
                             </Typography>
                             <Typography variant="body2">
                               {assignment.dueDate}
@@ -349,7 +355,7 @@ export const AssignmentManagement = () => {
 
                           <Grid item xs={12} sm={6} md={3}>
                             <Typography variant="caption" color="text.secondary">
-                              Total Marks / कुल अंक
+                              {t('teacher.totalMarks')}
                             </Typography>
                             <Typography variant="body2">
                               {assignment.totalMarks}
@@ -358,7 +364,7 @@ export const AssignmentManagement = () => {
 
                           <Grid item xs={12} sm={6} md={3}>
                             <Typography variant="caption" color="text.secondary">
-                              Submissions / पेश
+                              {t('teacher.submissions')}
                             </Typography>
                             <Typography variant="body2">
                               {assignment.submissions}/{assignment.totalStudents}
@@ -372,7 +378,7 @@ export const AssignmentManagement = () => {
 
                           <Grid item xs={12} sm={6} md={3}>
                             <Typography variant="caption" color="text.secondary">
-                              Graded / ग्रेड गरिएको
+                              {t('teacher.graded')}
                             </Typography>
                             <Typography variant="body2">
                               {assignment.graded}/{assignment.submissions}
@@ -403,7 +409,7 @@ export const AssignmentManagement = () => {
                           startIcon={<GradeIcon />}
                           onClick={() => handleViewSubmissions(assignment)}
                         >
-                          View Submissions
+                          {t('teacher.viewSubmissions')}
                         </Button>
                       </Box>
                     </Box>
@@ -418,7 +424,7 @@ export const AssignmentManagement = () => {
         <TabPanel value={tabValue} index={1}>
           <Box sx={{ mb: 3 }}>
             <Typography variant="h6" gutterBottom>
-              {selectedAssignment?.title || 'Select an assignment to view submissions'}
+              {selectedAssignment?.title || t('teacher.selectAssignment')}
             </Typography>
             {selectedAssignment && (
               <Typography variant="body2" color="text.secondary">
@@ -431,12 +437,12 @@ export const AssignmentManagement = () => {
             <Table>
               <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow>
-                  <TableCell>Student ID / विद्यार्थी ID</TableCell>
-                  <TableCell>Student Name / नाम</TableCell>
-                  <TableCell>Submitted Date / पेश मिति</TableCell>
-                  <TableCell>Status / स्थिति</TableCell>
-                  <TableCell align="center">Marks / अंक</TableCell>
-                  <TableCell align="center">Actions / कार्य</TableCell>
+                  <TableCell>{t('teacher.studentId')}</TableCell>
+                  <TableCell>{t('teacher.studentName')}</TableCell>
+                  <TableCell>{t('teacher.submittedDate')}</TableCell>
+                  <TableCell>{t('common.status')}</TableCell>
+                  <TableCell align="center">{t('teacher.marks')}</TableCell>
+                  <TableCell align="center">{t('common.actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -484,24 +490,24 @@ export const AssignmentManagement = () => {
 
       {/* Create Assignment Dialog */}
       <Dialog open={openCreateDialog} onClose={() => setOpenCreateDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Create Assignment / नयाँ असाइनमेन्ट</DialogTitle>
+        <DialogTitle>{t('teacher.createAssignment')}</DialogTitle>
         <DialogContent>
           <Grid container spacing={3} sx={{ mt: 1 }}>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
-                <InputLabel>Subject / विषय</InputLabel>
-                <Select label="Subject / विषय" defaultValue="">
-                  <MenuItem value="Mathematics">Mathematics / गणित</MenuItem>
-                  <MenuItem value="Physics">Physics / भौतिक विज्ञान</MenuItem>
-                  <MenuItem value="Chemistry">Chemistry / रसायन विज्ञान</MenuItem>
+                <InputLabel>{t('common.subject')}</InputLabel>
+                <Select label={t('common.subject')} defaultValue="">
+                  <MenuItem value="Mathematics">Mathematics</MenuItem>
+                  <MenuItem value="Physics">Physics</MenuItem>
+                  <MenuItem value="Chemistry">Chemistry</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
 
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
-                <InputLabel>Class / कक्षा</InputLabel>
-                <Select label="Class / कक्षा" defaultValue="">
+                <InputLabel>{t('common.class')}</InputLabel>
+                <Select label={t('common.class')} defaultValue="">
                   <MenuItem value="Class 10 A">Class 10 A</MenuItem>
                   <MenuItem value="Class 10 B">Class 10 B</MenuItem>
                   <MenuItem value="Class 11 Science">Class 11 Science</MenuItem>
@@ -512,8 +518,8 @@ export const AssignmentManagement = () => {
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Assignment Title / शीर्षक"
-                placeholder="Enter assignment title"
+                label={t('teacher.assignmentTitle')}
+                placeholder={t('teacher.assignmentTitle')}
               />
             </Grid>
 
@@ -522,15 +528,15 @@ export const AssignmentManagement = () => {
                 fullWidth
                 multiline
                 rows={4}
-                label="Description / विवरण"
-                placeholder="Enter assignment description and instructions"
+                label={t('common.description')}
+                placeholder={t('common.description')}
               />
             </Grid>
 
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Due Date / म्याद"
+                label={t('teacher.dueDate')}
                 type="date"
                 InputLabelProps={{ shrink: true }}
               />
@@ -540,8 +546,8 @@ export const AssignmentManagement = () => {
               <TextField
                 fullWidth
                 type="number"
-                label="Total Marks / कुल अंक"
-                placeholder="Enter total marks"
+                label={t('teacher.totalMarks')}
+                placeholder={t('teacher.totalMarks')}
               />
             </Grid>
 
@@ -551,40 +557,40 @@ export const AssignmentManagement = () => {
                 startIcon={<AttachFileIcon />}
                 component="label"
               >
-                Attach Files / फाइल संलग्न गर्नुहोस्
+                {t('teacher.attachFiles')}
                 <input type="file" hidden multiple />
               </Button>
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenCreateDialog(false)}>Cancel / रद्द गर्नुहोस्</Button>
+          <Button onClick={() => setOpenCreateDialog(false)}>{t('common.cancel')}</Button>
           <Button sx={S.BTN_PRIMARY} onClick={handleSaveAssignment}>
-            Create Assignment / असाइनमेन्ट सिर्जना गर्नुहोस्
+            {t('teacher.createAssignment')}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Grade Submission Dialog */}
       <Dialog open={openGradeDialog} onClose={() => setOpenGradeDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Grade Submission / ग्रेड दिनुहोस्</DialogTitle>
+        <DialogTitle>{t('teacher.gradeSubmission')}</DialogTitle>
         <DialogContent>
           {selectedSubmission && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="body2" gutterBottom>
-                <strong>Student:</strong> {selectedSubmission.studentName}
+                <strong>{t('portal.student')}:</strong> {selectedSubmission.studentName}
               </Typography>
               <Typography variant="body2" gutterBottom>
-                <strong>Student ID:</strong> {selectedSubmission.studentId}
+                <strong>{t('teacher.studentId')}:</strong> {selectedSubmission.studentId}
               </Typography>
               <Typography variant="body2" gutterBottom>
-                <strong>Submitted:</strong> {selectedSubmission.submittedDate}
+                <strong>{t('teacher.submitted')}:</strong> {selectedSubmission.submittedDate}
               </Typography>
 
               <TextField
                 fullWidth
                 type="number"
-                label="Marks Obtained / प्राप्त अंक"
+                label={t('teacher.marksObtained')}
                 placeholder={`Out of ${selectedSubmission.totalMarks}`}
                 sx={{ mt: 3 }}
                 inputProps={{ min: 0, max: selectedSubmission.totalMarks }}
@@ -596,8 +602,8 @@ export const AssignmentManagement = () => {
                 fullWidth
                 multiline
                 rows={4}
-                label="Feedback / प्रतिक्रिया"
-                placeholder="Enter feedback for the student"
+                label={t('teacher.feedback')}
+                placeholder={t('teacher.feedback')}
                 sx={{ mt: 2 }}
                 value={gradeFeedback}
                 onChange={(e) => setGradeFeedback(e.target.value)}
@@ -606,9 +612,9 @@ export const AssignmentManagement = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenGradeDialog(false)}>Cancel / रद्द गर्नुहोस्</Button>
+          <Button onClick={() => setOpenGradeDialog(false)}>{t('common.cancel')}</Button>
           <Button sx={S.BTN_PRIMARY} onClick={handleSaveGrade}>
-            Save Grade / ग्रेड सुरक्षित गर्नुहोस्
+            {t('teacher.saveGrade')}
           </Button>
         </DialogActions>
       </Dialog>

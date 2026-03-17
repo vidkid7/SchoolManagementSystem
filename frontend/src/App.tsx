@@ -382,6 +382,7 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
                 <Route path="academic/timetable" element={<Timetable />} />
                 <Route path="academic/syllabus" element={<Syllabus />} />
                 <Route path="academic/class-subjects" element={<ClassSubjects />} />
+                <Route path="academic/subjects" element={<ClassSubjects />} />
                 <Route path="academic/classes/:classId/teacher" element={<ClassTeacherView />} />
                 <Route path="academic/classes/:classId/subjects/:subjectId/teachers" element={<SubjectTeachersView />} />
               </Route>
@@ -392,6 +393,7 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
               <Route element={<DashboardLayout />}>
                 <Route path="attendance" element={<AttendanceDashboard />} />
                 <Route path="attendance/student/mark" element={<AttendanceMarking />} />
+                <Route path="attendance/mark" element={<AttendanceMarking />} />
                 <Route path="attendance/reports" element={<AttendanceReports />} />
                 <Route path="attendance/leave" element={<LeaveManagement />} />
               </Route>
@@ -437,8 +439,9 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
               <Route element={<DashboardLayout />}>
                 <Route path="examinations" element={<ExaminationDashboard />} />
                 <Route path="examinations/list" element={<ExamList />} />
-                <Route path="examinations/:examId" element={<ExamDetails />} />
                 <Route path="examinations/grading-scheme" element={<GradingScheme />} />
+                <Route path="examinations/grading-schemes" element={<GradingScheme />} />
+                <Route path="examinations/:examId" element={<ExamDetails />} />
               </Route>
             </Route>
 
@@ -471,6 +474,7 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
             <Route element={<ProtectedRoute allowedRoles={[ADMIN, LIBRARIAN, CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD, STUDENT, PARENT]} />}>
               <Route element={<DashboardLayout />}>
                 <Route path="library/books" element={<BookCatalog />} />
+                <Route path="library/catalog" element={<BookCatalog />} />
                 <Route path="library/categories" element={<LibraryCategories />} />
               </Route>
             </Route>

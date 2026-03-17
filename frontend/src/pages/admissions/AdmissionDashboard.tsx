@@ -23,7 +23,7 @@ import {
   TrendingUp as TrendIcon,
 } from '@mui/icons-material';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
-import { useNavigate } from 'react-router-dom';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import api from '../../config/api';
 
 import { useTranslation } from 'react-i18next';
@@ -42,7 +42,7 @@ export function AdmissionDashboard() {
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<AdmissionStats>({
     totalInquiries: 0,
@@ -72,28 +72,28 @@ export function AdmissionDashboard() {
 
   const statCards = [
     {
-      title: 'Total Inquiries',
+      title: t('admissions.totalInquiries'),
       value: stats.totalInquiries,
       icon: <InquiryIcon sx={{ fontSize: 40 }} />,
       color: C.primary,
       bgColor: C.primaryBg,
     },
     {
-      title: 'Applications',
+      title: t('admissions.applications'),
       value: stats.totalApplications,
       icon: <ApplicationIcon sx={{ fontSize: 40 }} />,
       color: C.warning,
       bgColor: C.warningBg,
     },
     {
-      title: 'Admitted',
+      title: t('admissions.admitted'),
       value: stats.totalAdmitted,
       icon: <AdmittedIcon sx={{ fontSize: 40 }} />,
       color: C.success,
       bgColor: C.successBg,
     },
     {
-      title: 'Enrolled',
+      title: t('admissions.enrolled'),
       value: stats.totalEnrolled,
       icon: <EnrolledIcon sx={{ fontSize: 40 }} />,
       color: C.purple,
@@ -116,7 +116,7 @@ export function AdmissionDashboard() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <TrendIcon sx={{ fontSize: 32, color: 'primary.main' }} />
             <Typography variant="h5" fontWeight={600}>
-              Admission Management Dashboard
+              {t('admissions.dashboardTitle')}
             </Typography>
           </Box>
           <Button
@@ -124,7 +124,7 @@ export function AdmissionDashboard() {
             startIcon={<InquiryIcon />}
             onClick={() => navigate('/admissions/new')}
           >
-            New Inquiry
+            {t('admissions.newInquiry')}
           </Button>
         </Box>
       </Paper>
@@ -164,15 +164,15 @@ export function AdmissionDashboard() {
         <Grid item xs={12} md={6}>
           <Paper sx={{ ...S.GLASS, p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Pending Actions
+              {t('admissions.pendingActions')}
             </Typography>
             <Box sx={{ mt: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                <Typography>Pending Tests</Typography>
+                <Typography>{t('admissions.pendingTests')}</Typography>
                 <Typography fontWeight={600}>{stats.pendingTests}</Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                <Typography>Pending Interviews</Typography>
+                <Typography>{t('admissions.pendingInterviews')}</Typography>
                 <Typography fontWeight={600}>{stats.pendingInterviews}</Typography>
               </Box>
               <Button
@@ -181,7 +181,7 @@ export function AdmissionDashboard() {
                 onClick={() => navigate('/admissions/list')}
                 sx={{ ...S.BTN_OUTLINE,  mt: 2 }}
               >
-                View All Admissions
+                {t('admissions.viewAllAdmissions')}
               </Button>
             </Box>
           </Paper>
@@ -190,7 +190,7 @@ export function AdmissionDashboard() {
         <Grid item xs={12} md={6}>
           <Paper sx={{ ...S.GLASS, p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Quick Actions
+              {t('admissions.quickActions')}
             </Typography>
             <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Button
@@ -198,28 +198,28 @@ export function AdmissionDashboard() {
                 fullWidth
                 onClick={() => navigate('/admissions/new')}
               >
-                Create New Inquiry
+                {t('admissions.createNewInquiry')}
               </Button>
               <Button
                 variant="outlined" sx={S.BTN_OUTLINE}
                 fullWidth
                 onClick={() => navigate('/admissions/list?status=inquiry')}
               >
-                View Inquiries
+                {t('admissions.viewInquiries')}
               </Button>
               <Button
                 variant="outlined" sx={S.BTN_OUTLINE}
                 fullWidth
                 onClick={() => navigate('/admissions/list?status=applied')}
               >
-                View Applications
+                {t('admissions.viewApplications')}
               </Button>
               <Button
                 variant="outlined" sx={S.BTN_OUTLINE}
                 fullWidth
                 onClick={() => navigate('/admissions/list?status=admitted')}
               >
-                View Admitted Students
+                {t('admissions.viewAdmittedStudents')}
               </Button>
             </Box>
           </Paper>

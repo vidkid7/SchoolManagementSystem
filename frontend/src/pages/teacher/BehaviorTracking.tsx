@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -61,6 +62,7 @@ interface Student {
 export function BehaviorTracking() {
   const theme = useTheme();
   const S = useAdminStyles(theme);
+  const { t } = useTranslation();
   const [records, setRecords] = useState<BehaviorRecord[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,7 +102,7 @@ export function BehaviorTracking() {
   const handleSubmit = async () => {
     try {
       await apiClient.post('/teacher/behavior-records', formData);
-      setSuccess('Behavior record added successfully');
+      setSuccess(t('teacher.behaviorRecordAdded'));
       setOpenDialog(false);
       fetchData();
       setTimeout(() => setSuccess(''), 3000);
@@ -113,7 +115,7 @@ export function BehaviorTracking() {
         date: new Date().toISOString().split('T')[0],
       });
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to add record');
+      setError(t('portal.failedToLoadData'));
     }
   };
 
@@ -133,19 +135,25 @@ export function BehaviorTracking() {
   };
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" fontWeight={600}>
-          Behavior Tracking
-        </Typography>
-        <Button
-          variant="contained" sx={S.BTN_PRIMARY}
-          startIcon={<AddIcon />}
-          onClick={() => setOpenDialog(true)}
-        >
-          Record Behavior
-        </Button>
-      </Box>
+    <Box sx={{ mt: { xs: 7, sm: 8 } }}>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <TrendingUpIcon sx={{ fontSize: 32, color: C.primary }} />
+            <Box>
+              <Typography variant="h5" fontWeight={700}>{t('teacher.behaviorTracking')}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('teacher.behaviorTrackingSubtitle')}</Typography>
+            </Box>
+          </Box>
+          <Button
+            variant="contained" sx={S.BTN_PRIMARY}
+            startIcon={<AddIcon />}
+            onClick={() => setOpenDialog(true)}
+          >
+            {t('teacher.recordBehavior')}
+          </Button>
+        </Box>
+      </Paper>
 
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
@@ -155,7 +163,7 @@ export function BehaviorTracking() {
           <Card>
             <CardContent sx={{ textAlign: 'center' }}>
               <Typography variant="h4" fontWeight={700}>{stats.total}</Typography>
-              <Typography variant="body2" color="text.secondary">Total Records</Typography>
+              <Typography variant="body2" color="text.secondary">{t('teacher.totalRecords')}</Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -164,7 +172,7 @@ export function BehaviorTracking() {
             <CardContent sx={{ textAlign: 'center' }}>
               <TrendingUpIcon sx={{ fontSize: 32, color: 'success.main' }} />
               <Typography variant="h4" fontWeight={700} color="success.main">{stats.positive}</Typography>
-              <Typography variant="body2" color="text.secondary">Positive</Typography>
+              <Typography variant="body2" color="text.secondary">{t('teacher.positive')}</Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -173,7 +181,7 @@ export function BehaviorTracking() {
             <CardContent sx={{ textAlign: 'center' }}>
               <TrendingDownIcon sx={{ fontSize: 32, color: 'error.main' }} />
               <Typography variant="h4" fontWeight={700} color="error.main">{stats.negative}</Typography>
-              <Typography variant="body2" color="text.secondary">Negative</Typography>
+              <Typography variant="body2" color="text.secondary">{t('teacher.negative')}</Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -181,7 +189,7 @@ export function BehaviorTracking() {
           <Card>
             <CardContent sx={{ textAlign: 'center' }}>
               <Typography variant="h4" fontWeight={700}>{stats.neutral}</Typography>
-              <Typography variant="body2" color="text.secondary">Neutral</Typography>
+              <Typography variant="body2" color="text.secondary">{t('teacher.neutral')}</Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -191,24 +199,24 @@ export function BehaviorTracking() {
         <Table>
           <TableHead sx={{ bgcolor: S.TH_BG }}>
             <TableRow>
-              <TableCell>Date</TableCell>
-              <TableCell>Student</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Category</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Action Taken</TableCell>
-              <TableCell align="center">Actions</TableCell>
+              <TableCell>{t('common.date')}</TableCell>
+              <TableCell>{t('portal.student')}</TableCell>
+              <TableCell>{t('common.type')}</TableCell>
+              <TableCell>{t('portal.categoryLabel')}</TableCell>
+              <TableCell>{t('common.description')}</TableCell>
+              <TableCell>{t('teacher.actionTaken')}</TableCell>
+              <TableCell align="center">{t('common.actions')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow sx={S.TR_HOVER}>
-                <TableCell colSpan={7} align="center" sx={S.TD}>Loading...</TableCell>
+                <TableCell colSpan={7} align="center" sx={S.TD}>{t('common.loading')}</TableCell>
               </TableRow>
             ) : records.length === 0 ? (
               <TableRow sx={S.TR_HOVER}>
                 <TableCell colSpan={7} align="center" sx={S.TD}>
-                  No behavior records found
+                  {t('teacher.noBehaviorRecords')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -239,7 +247,7 @@ export function BehaviorTracking() {
       </TableContainer>
 
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Record Student Behavior</DialogTitle>
+        <DialogTitle>{t('teacher.recordStudentBehavior')}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <Autocomplete
@@ -247,63 +255,63 @@ export function BehaviorTracking() {
               getOptionLabel={(option) => `${option.rollNumber} - ${option.firstNameEn} ${option.lastNameEn}`}
               onChange={(_, value) => setFormData({ ...formData, studentId: value?.studentId || null })}
               renderInput={(params) => (
-                <TextField {...params} label="Student" required />
+                <TextField {...params} label={t('portal.student')} required />
               )}
             />
 
             <TextField
-              label="Type"
+              label={t('common.type')}
               select
               value={formData.type}
               onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
               required
               fullWidth
             >
-              <MenuItem value="positive">Positive</MenuItem>
-              <MenuItem value="negative">Negative</MenuItem>
-              <MenuItem value="neutral">Neutral</MenuItem>
+              <MenuItem value="positive">{t('teacher.positive')}</MenuItem>
+              <MenuItem value="negative">{t('teacher.negative')}</MenuItem>
+              <MenuItem value="neutral">{t('teacher.neutral')}</MenuItem>
             </TextField>
 
             <TextField
-              label="Category"
+              label={t('portal.categoryLabel')}
               select
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               required
               fullWidth
             >
-              <MenuItem value="discipline">Discipline</MenuItem>
-              <MenuItem value="participation">Participation</MenuItem>
-              <MenuItem value="homework">Homework</MenuItem>
-              <MenuItem value="attendance">Attendance</MenuItem>
-              <MenuItem value="conduct">Conduct</MenuItem>
-              <MenuItem value="achievement">Achievement</MenuItem>
-              <MenuItem value="other">Other</MenuItem>
+              <MenuItem value="discipline">{t('portal.discipline')}</MenuItem>
+              <MenuItem value="participation">{t('teacher.participation')}</MenuItem>
+              <MenuItem value="homework">{t('teacher.homework')}</MenuItem>
+              <MenuItem value="attendance">{t('portal.attendance')}</MenuItem>
+              <MenuItem value="conduct">{t('teacher.conduct')}</MenuItem>
+              <MenuItem value="achievement">{t('teacher.achievement')}</MenuItem>
+              <MenuItem value="other">{t('portal.other')}</MenuItem>
             </TextField>
 
             <TextField
-              label="Description"
+              label={t('common.description')}
               multiline
               rows={3}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               required
               fullWidth
-              helperText="Describe the behavior or incident"
+              helperText={t('teacher.describeIncident')}
             />
 
             <TextField
-              label="Action Taken"
+              label={t('teacher.actionTaken')}
               multiline
               rows={2}
               value={formData.actionTaken}
               onChange={(e) => setFormData({ ...formData, actionTaken: e.target.value })}
               fullWidth
-              helperText="What action was taken (if any)"
+              helperText={t('teacher.actionTakenHelper')}
             />
 
             <TextField
-              label="Date"
+              label={t('common.date')}
               type="date"
               value={formData.date}
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
@@ -315,13 +323,13 @@ export function BehaviorTracking() {
           {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+          <Button onClick={() => setOpenDialog(false)}>{t('common.cancel')}</Button>
           <Button
             onClick={handleSubmit}
             variant="contained" sx={S.BTN_PRIMARY}
             disabled={!formData.studentId || !formData.description}
           >
-            Record Behavior
+            {t('teacher.recordBehavior')}
           </Button>
         </DialogActions>
       </Dialog>

@@ -219,58 +219,33 @@ export function AttendanceReports() {
 
   return (
     <Box>
-      {/* Header Card with Blue Theme */}
-      <Paper 
-        sx={{ 
-          ...S.GLASS,
-          p: 3, 
-          mb: 3,
-          background: `linear-gradient(135deg, ${C.primary} 0%, ${C.primary} 100%)`,
-          color: 'white',
-          borderRadius: R.lg,
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-          <Box
-            sx={{
-              width: 56,
-              height: 56,
-              borderRadius: R.lg,
-              background: alpha('#ffffff', 0.2),
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <ReportIcon sx={{ fontSize: 32 }} />
-          </Box>
+      {/* Page Header */}
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+          <ReportIcon sx={{ fontSize: 32, color: 'primary.main' }} />
           <Box>
             <Typography variant="h5" fontWeight={700}>
               {t('attendance.attendanceReport')}
             </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+            <Typography variant="body2" color="text.secondary">
               {t('dashboard.attendanceSubtitle')}
             </Typography>
           </Box>
         </Box>
+      </Paper>
 
+      {/* Filters */}
+      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
         <Grid container spacing={2}>
           <Grid item xs={12} md={3}>
             <FormControl fullWidth>
-              <InputLabel sx={{ color: 'white', '&.Mui-focused': { color: 'white' } }}>
+              <InputLabel>
                 {t('common.reportType')}
               </InputLabel>
               <Select
                 value={reportType}
                 label={t('common.reportType')}
                 onChange={(e) => setReportType(e.target.value)}
-                sx={{
-                  color: 'white',
-                  '.MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.3) },
-                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.5) },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
-                  '.MuiSvgIcon-root': { color: 'white' },
-                }}
               >
                 <MenuItem value="student">{t('students.title')}</MenuItem>
                 <MenuItem value="staff">{t('staff.title')}</MenuItem>
@@ -284,18 +259,7 @@ export function AttendanceReports() {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              InputLabelProps={{ 
-                shrink: true,
-                sx: { color: 'white', '&.Mui-focused': { color: 'white' } }
-              }}
-              sx={{
-                '.MuiOutlinedInput-root': {
-                  color: 'white',
-                  '.MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.3) },
-                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.5) },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
-                },
-              }}
+              InputLabelProps={{ shrink: true }}
             />
           </Grid>
           <Grid item xs={12} md={2}>
@@ -305,38 +269,20 @@ export function AttendanceReports() {
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              InputLabelProps={{ 
-                shrink: true,
-                sx: { color: 'white', '&.Mui-focused': { color: 'white' } }
-              }}
-              sx={{
-                '.MuiOutlinedInput-root': {
-                  color: 'white',
-                  '.MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.3) },
-                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.5) },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
-                },
-              }}
+              InputLabelProps={{ shrink: true }}
             />
           </Grid>
           {reportType === 'student' && (
             <>
               <Grid item xs={12} md={2}>
                 <FormControl fullWidth>
-                  <InputLabel sx={{ color: 'white', '&.Mui-focused': { color: 'white' } }}>
+                  <InputLabel>
                     {t('common.class')} ({t('common.optional')})
                   </InputLabel>
                   <Select
                     value={selectedClass}
                     label={`${t('common.class')} (${t('common.optional')})`}
                     onChange={(e) => setSelectedClass(e.target.value)}
-                    sx={{
-                      color: 'white',
-                      '.MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.3) },
-                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.5) },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
-                      '.MuiSvgIcon-root': { color: 'white' },
-                    }}
                   >
                     <MenuItem value="">{t('common.allClasses')}</MenuItem>
                     {classes.length > 0 ? (
@@ -357,20 +303,13 @@ export function AttendanceReports() {
               </Grid>
               <Grid item xs={12} md={2}>
                 <FormControl fullWidth>
-                  <InputLabel sx={{ color: 'white', '&.Mui-focused': { color: 'white' } }}>
+                  <InputLabel>
                     {t('common.section')} ({t('common.optional')})
                   </InputLabel>
                   <Select
                     value={selectedSection}
                     label={`${t('common.section')} (${t('common.optional')})`}
                     onChange={(e) => setSelectedSection(e.target.value)}
-                    sx={{
-                      color: 'white',
-                      '.MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.3) },
-                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: alpha('#ffffff', 0.5) },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
-                      '.MuiSvgIcon-root': { color: 'white' },
-                    }}
                   >
                     <MenuItem value="">{t('common.allSections')}</MenuItem>
                     <MenuItem value="A">{t('common.section')} A</MenuItem>
@@ -388,15 +327,7 @@ export function AttendanceReports() {
               variant="contained"
               onClick={fetchReport}
               disabled={loading}
-              sx={{ ...S.BTN_PRIMARY,  
-                height: '56px',
-                bgcolor: 'white',
-                color: C.primary,
-                fontWeight: 600,
-                '&:hover': {
-                  bgcolor: alpha('#ffffff', 0.9),
-                },
-              }}
+              sx={{ ...S.BTN_PRIMARY, height: '56px' }}
             >
               {t('common.generate')}
             </Button>
@@ -409,14 +340,7 @@ export function AttendanceReports() {
               variant="outlined"
               startIcon={<DownloadIcon />}
               onClick={handleExport}
-              sx={{ ...S.BTN_OUTLINE, 
-                color: 'white',
-                borderColor: alpha('#ffffff', 0.3),
-                '&:hover': {
-                  borderColor: 'white',
-                  bgcolor: alpha('#ffffff', 0.1),
-                },
-              }}
+              sx={S.BTN_OUTLINE}
             >
               {t('common.exportCSV')}
             </Button>
@@ -424,14 +348,7 @@ export function AttendanceReports() {
               variant="outlined"
               startIcon={<PrintIcon />}
               onClick={handlePrint}
-              sx={{ ...S.BTN_OUTLINE, 
-                color: 'white',
-                borderColor: alpha('#ffffff', 0.3),
-                '&:hover': {
-                  borderColor: 'white',
-                  bgcolor: alpha('#ffffff', 0.1),
-                },
-              }}
+              sx={S.BTN_OUTLINE}
             >
               {t('common.print')}
             </Button>

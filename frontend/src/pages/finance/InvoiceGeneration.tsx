@@ -171,14 +171,16 @@ export function InvoiceGeneration() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" fontWeight={600}>
-          {t('finance.generateInvoices')}
-        </Typography>
-        <Button variant="outlined" sx={S.BTN_OUTLINE} onClick={() => navigate(`/finance/invoices`)}>
-          {t('finance.invoices')}
-        </Button>
-      </Box>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h5" fontWeight={700}>
+            {t('finance.generateInvoices')}
+          </Typography>
+          <Button variant="outlined" sx={S.BTN_OUTLINE} onClick={() => navigate(`/finance/invoices`)}>
+            {t('finance.invoices')}
+          </Button>
+        </Box>
+      </Paper>
 
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}

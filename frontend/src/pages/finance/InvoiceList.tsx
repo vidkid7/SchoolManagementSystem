@@ -151,8 +151,9 @@ export const InvoiceList = () => {
 
   const handleSendReminder = async (invoiceId: number) => {
     try {
-      await apiClient.post(`/api/v1/finance/invoices/${invoiceId}/send-reminder`);
-      alert(t('finance.success'));
+      await apiClient.post(`/finance/invoices/${invoiceId}/send-reminder`);
+      setSuccess(t('finance.reminderSentSuccess'));
+      setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Failed to send reminder:', error);
     }
@@ -160,26 +161,28 @@ export const InvoiceList = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
-          {t('finance.invoices')}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined" sx={S.BTN_OUTLINE}
-            onClick={() => navigate(`/finance/invoices/bulk-generate`)}
-          >
-            {t('finance.generateInvoices')}
-          </Button>
-          <Button
-            variant="contained" sx={S.BTN_PRIMARY}
-            startIcon={<AddIcon />}
-            onClick={() => navigate(`/finance/invoices/create`)}
-          >
-            {t('finance.createInvoice')}
-          </Button>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h5" fontWeight={700}>
+            {t('finance.invoices')}
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="outlined" sx={S.BTN_OUTLINE}
+              onClick={() => navigate(`/finance/invoices/bulk-generate`)}
+            >
+              {t('finance.generateInvoices')}
+            </Button>
+            <Button
+              variant="contained" sx={S.BTN_PRIMARY}
+              startIcon={<AddIcon />}
+              onClick={() => navigate(`/finance/invoices/create`)}
+            >
+              {t('finance.createInvoice')}
+            </Button>
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
       {/* Filters */}
       <Paper sx={{ ...S.GLASS, p: 2, mb: 3 }}>

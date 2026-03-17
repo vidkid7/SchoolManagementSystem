@@ -68,6 +68,7 @@ interface Backup {
   path: string;
   size: number;
   createdAt: string;
+  timestamp?: string;
   isValid?: boolean;
 }
 
@@ -124,7 +125,20 @@ export const BackupManagement = () => {
   const fetchConfig = async () => {
     try {
       const response = await apiClient.get('/api/v1/backup/config');
-      setConfig(response.data.data);
+      const raw = response.data.data;
+      if (raw) {
+        // Normalize API field names to match interface
+        setConfig({
+          ...raw,
+          path: raw.path || raw.backupPath,
+          compression: raw.compression ?? raw.compressionEnabled,
+          jobStatus: raw.jobStatus ? {
+            isRunning: raw.jobStatus.isRunning ?? raw.jobStatus.running,
+            lastRun: raw.jobStatus.lastRun,
+            nextRun: raw.jobStatus.nextRun,
+          } : undefined,
+        });
+      }
     } catch (err: any) {
       console.error('Failed to fetch config:', err);
     }
@@ -231,34 +245,44 @@ export const BackupManagement = () => {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleString();
+  const formatDate = (dateString: string | undefined): string => {
+    if (!dateString) return '—';
+    // Handle backup filename date format: 2026-03-11T20-15-00-033Z (hyphens instead of colons/dots)
+    const normalized = dateString.replace(/T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/, 'T$1:$2:$3.$4Z');
+    const d = new Date(normalized);
+    return isNaN(d.getTime()) ? dateString : d.toLocaleString();
   };
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
-          Backup & Restore Management / ब्याकअप र पुनर्स्थापना व्यवस्थापन
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined" sx={S.BTN_OUTLINE}
-            startIcon={<SettingsIcon />}
-            onClick={() => setConfigDialogOpen(true)}
-          >
-            Configuration / कन्फिगरेसन
-          </Button>
-          <Button
-            variant="contained" sx={S.BTN_PRIMARY}
-            startIcon={<BackupIcon />}
-            onClick={handleCreateBackup}
-            disabled={creating}
-          >
-            {creating ? <CircularProgress size={24} /> : 'Create Backup / ब्याकअप सिर्जना गर्नुहोस्'}
-          </Button>
+      <Paper sx={S.PAGE_HEADER}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <BackupIcon sx={{ fontSize: 32, color: C.primary }} />
+            <Box>
+              <Typography variant="h5" fontWeight={700}>{t('backup.title')}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('backup.subtitle')}</Typography>
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="outlined" sx={S.BTN_OUTLINE}
+              startIcon={<SettingsIcon />}
+              onClick={() => setConfigDialogOpen(true)}
+            >
+              {t('backup.config')}
+            </Button>
+            <Button
+              variant="contained" sx={S.BTN_PRIMARY}
+              startIcon={<BackupIcon />}
+              onClick={handleCreateBackup}
+              disabled={creating}
+            >
+              {creating ? <CircularProgress size={24} /> : t('backup.createBackup')}
+            </Button>
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
       {success && (
         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
@@ -344,7 +368,7 @@ export const BackupManagement = () => {
       <Paper sx={{ ...S.GLASS }}>
         <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6">
-            Available Backups / उपलब्ध ब्याकअपहरू ({backups.length})
+            {t('backup.availableBackups')} ({backups.length})
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
@@ -354,7 +378,7 @@ export const BackupManagement = () => {
               onClick={fetchBackups}
               disabled={loading}
             >
-              Refresh / ताजा गर्नुहोस्
+              {t('common.refresh')}
             </Button>
             <Button
               variant="outlined" sx={S.BTN_OUTLINE}
@@ -364,7 +388,7 @@ export const BackupManagement = () => {
               disabled={cleaning}
               color="error"
             >
-              {cleaning ? <CircularProgress size={20} /> : 'Cleanup Old / पुरानो सफा गर्नुहोस्'}
+              {cleaning ? <CircularProgress size={20} /> : t('backup.cleanupOld')}
             </Button>
           </Box>
         </Box>
@@ -373,11 +397,11 @@ export const BackupManagement = () => {
           <Table>
             <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
-                <TableCell>Filename / फाइलनाम</TableCell>
-                <TableCell>Size / आकार</TableCell>
-                <TableCell>Created / सिर्जित</TableCell>
-                <TableCell>Status / स्थिति</TableCell>
-                <TableCell align="right">Actions / कार्यहरू</TableCell>
+                <TableCell>{t('backup.filename')}</TableCell>
+                <TableCell>{t('backup.size')}</TableCell>
+                <TableCell>{t('common.created')}</TableCell>
+                <TableCell>{t('common.status')}</TableCell>
+                <TableCell align="right">{t('common.actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -391,7 +415,7 @@ export const BackupManagement = () => {
                 <TableRow sx={S.TR_HOVER}>
                   <TableCell colSpan={5} align="center" sx={S.TD}>
                     <Typography color="text.secondary">
-                      No backups found / कुनै ब्याकअप फेला परेन
+                      {t('backup.noBackups')}
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -404,7 +428,7 @@ export const BackupManagement = () => {
                       </Typography>
                     </TableCell>
                     <TableCell sx={S.TD}>{formatBytes(backup.size)}</TableCell>
-                    <TableCell sx={S.TD}>{formatDate(backup.createdAt)}</TableCell>
+                    <TableCell sx={S.TD}>{formatDate(backup.timestamp || backup.createdAt)}</TableCell>
                     <TableCell sx={S.TD}>
                       {backup.isValid === true && (
                         <Chip
@@ -465,7 +489,7 @@ export const BackupManagement = () => {
         <DialogTitle>
           <Box display="flex" alignItems="center" gap={1}>
             <WarningIcon color="warning" />
-            Confirm Restore / पुनर्स्थापना पुष्टि गर्नुहोस्
+            {t('backup.confirmRestoreTitle')}
           </Box>
         </DialogTitle>
         <DialogContent>
@@ -482,7 +506,7 @@ export const BackupManagement = () => {
                   {selectedBackup.filename}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Size: {formatBytes(selectedBackup.size)} | Created: {formatDate(selectedBackup.createdAt)}
+                  Size: {formatBytes(selectedBackup.size)} | Created: {formatDate(selectedBackup.timestamp || selectedBackup.createdAt)}
                 </Typography>
               </Paper>
               <Typography variant="body2" color="error" sx={{ mt: 2 }}>
@@ -493,7 +517,7 @@ export const BackupManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setRestoreDialogOpen(false)} disabled={restoring}>
-            Cancel / रद्द गर्नुहोस्
+            {t('common.cancel')}
           </Button>
           <Button
             variant="contained" sx={S.BTN_PRIMARY}
@@ -502,14 +526,14 @@ export const BackupManagement = () => {
             disabled={restoring}
             startIcon={restoring ? <CircularProgress size={20} /> : <RestoreIcon />}
           >
-            {restoring ? 'Restoring...' : 'Restore / पुनर्स्थापना गर्नुहोस्'}
+            {restoring ? t('backup.restoring') : t('backup.restore')}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Configuration Dialog */}
       <Dialog open={configDialogOpen} onClose={() => setConfigDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Backup Configuration / ब्याकअप कन्फिगरेसन</DialogTitle>
+        <DialogTitle>{t('backup.config')}</DialogTitle>
         <DialogContent>
           {config && (
             <Box sx={{ pt: 2 }}>
@@ -579,7 +603,7 @@ export const BackupManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfigDialogOpen(false)}>
-            Close / बन्द गर्नुहोस्
+            {t('common.close')}
           </Button>
         </DialogActions>
       </Dialog>
