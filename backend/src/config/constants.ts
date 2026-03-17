@@ -158,11 +158,11 @@ export const FILE_UPLOAD = {
 export const RATE_LIMITS = {
   LOGIN: {
     WINDOW_MS: 15 * 60 * 1000, // 15 minutes
-    MAX_REQUESTS: process.env.NODE_ENV === 'development' ? 200 : 5
+    MAX_REQUESTS: process.env.NODE_ENV === 'development' ? 200 : 50
   },
   API: {
     WINDOW_MS: 60 * 1000, // 1 minute
-    MAX_REQUESTS: process.env.NODE_ENV === 'development' ? 500 : 100
+    MAX_REQUESTS: process.env.NODE_ENV === 'development' ? 500 : 300
   },
   FILE_UPLOAD: {
     WINDOW_MS: 60 * 1000, // 1 minute

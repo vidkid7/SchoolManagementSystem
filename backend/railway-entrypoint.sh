@@ -41,26 +41,66 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
 
 async function fix() {
   try {
-    // Check if columns exist first
-    const [columns] = await sequelize.query(
+    // Fix users table columns
+    const [userCols] = await sequelize.query(
       \"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME IN ('password_reset_token', 'password_reset_expires')\"
     );
-    
-    const existingColumns = columns.map(c => c.COLUMN_NAME);
-    
-    if (!existingColumns.includes('password_reset_token')) {
+    const existingUserCols = userCols.map(c => c.COLUMN_NAME);
+    if (!existingUserCols.includes('password_reset_token')) {
       await sequelize.query('ALTER TABLE users ADD COLUMN password_reset_token VARCHAR(255) NULL');
-      console.log('✅ Added password_reset_token column');
+      console.log('Added password_reset_token column to users');
     }
-    
-    if (!existingColumns.includes('password_reset_expires')) {
+    if (!existingUserCols.includes('password_reset_expires')) {
       await sequelize.query('ALTER TABLE users ADD COLUMN password_reset_expires DATETIME NULL');
-      console.log('✅ Added password_reset_expires column');
+      console.log('Added password_reset_expires column to users');
     }
-    
-    if (existingColumns.length === 2) {
-      console.log('✅ All columns already exist');
+
+    // Fix tenant isolation columns (municipality_id & school_config_id) on ALL tenant tables
+    const tenantTables = [
+      'admissions', 'academic_years', 'terms', 'classes', 'subjects', 'class_subjects',
+      'students', 'staff', 'staff_assignments', 'staff_documents', 'staff_attendance',
+      'attendance', 'leave_applications', 'exams', 'exam_schedules', 'grades',
+      'fee_structures', 'fee_components', 'invoices', 'invoice_items', 'payments',
+      'installment_plans', 'refunds', 'fee_reminders', 'books', 'circulations',
+      'reservations', 'library_fines', 'sports', 'teams', 'tournaments',
+      'sports_enrollments', 'sports_achievements', 'ecas', 'eca_events',
+      'eca_enrollments', 'eca_achievements', 'events', 'certificates',
+      'grading_schemes', 'notification_templates', 'audit_logs', 'archive_metadata',
+      'certificate_templates', 'documents', 'document_access_logs', 'timetables',
+      'academic_history', 'assignments', 'assignment_submissions', 'lesson_plans',
+      'syllabus_progress', 'hostel_rooms', 'hostel_residents', 'hostel_incidents',
+      'hostel_visitors'
+    ];
+
+    for (const table of tenantTables) {
+      try {
+        const [existingTables] = await sequelize.query(
+          \"SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '\" + table + \"'\"
+        );
+        if (existingTables.length === 0) continue;
+
+        const [cols] = await sequelize.query(
+          \"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '\" + table + \"' AND COLUMN_NAME IN ('municipality_id', 'school_config_id')\"
+        );
+        const colNames = cols.map(c => c.COLUMN_NAME);
+        if (!colNames.includes('municipality_id')) {
+          await sequelize.query('ALTER TABLE \`' + table + '\` ADD COLUMN municipality_id CHAR(36) NULL');
+          console.log('Added municipality_id to ' + table);
+        }
+        if (!colNames.includes('school_config_id')) {
+          await sequelize.query('ALTER TABLE \`' + table + '\` ADD COLUMN school_config_id CHAR(36) NULL');
+          console.log('Added school_config_id to ' + table);
+        }
+      } catch (tableErr) {
+        console.log('Warning fixing ' + table + ': ' + tableErr.message);
+      }
     }
+
+    // Reset all account locks and failed login attempts
+    await sequelize.query('UPDATE users SET failed_login_attempts = 0, account_locked_until = NULL WHERE failed_login_attempts > 0 OR account_locked_until IS NOT NULL');
+    console.log('✅ Reset all account locks and failed login attempts');
+
+    console.log('✅ All column fixes completed');
   } catch (err) {
     console.log('⚠️  Column fix warning:', err.message);
   } finally {
