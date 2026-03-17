@@ -41,6 +41,13 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,ttf,eot}'],
         globIgnores: ['config.js'],
         
+        // Force new service worker to activate immediately
+        skipWaiting: true,
+        clientsClaim: true,
+        
+        // Never let SW handle config.js or auth API requests
+        navigateFallbackDenylist: [/^\/config\.js/],
+        
         // Maximum cache size
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
         
