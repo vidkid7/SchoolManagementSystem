@@ -295,6 +295,45 @@ class AuthService {
       if (municipality) {
         userJson.municipalityCode = municipality.code;
       }
+    } else if (user.role === 'Municipality_Admin') {
+      // Fallback: find any municipality and link the admin to it
+      try {
+        const municipality = await Municipality.findOne({ attributes: ['municipalityId', 'code'] });
+        if (municipality) {
+          userJson.municipalityCode = municipality.code;
+          // Also fix the user record for future logins
+          await user.update({ municipalityId: municipality.municipalityId });
+          logger.info('Auto-linked municipality admin to municipality', {
+            userId: user.userId, municipalityCode: municipality.code
+          });
+        } else {
+          // No municipality exists — use SchoolConfig's code as fallback
+          const SchoolConfig = (await import('@models/SchoolConfig.model')).default;
+          const school = await SchoolConfig.findOne({ attributes: ['municipalityCode'] });
+          if (school && (school as any).municipalityCode) {
+            userJson.municipalityCode = (school as any).municipalityCode;
+          } else {
+            userJson.municipalityCode = 'KMC';
+          }
+        }
+      } catch (err) {
+        userJson.municipalityCode = 'KMC';
+        logger.warn('Failed to auto-link municipality admin', err);
+      }
+    }
+
+    // Fallback: ensure all users have a municipalityCode for routing
+    if (!userJson.municipalityCode) {
+      try {
+        const municipality = await Municipality.findOne({ attributes: ['code'] });
+        if (municipality) {
+          userJson.municipalityCode = municipality.code;
+        } else {
+          userJson.municipalityCode = 'KMC';
+        }
+      } catch {
+        userJson.municipalityCode = 'KMC';
+      }
     }
 
     return {
@@ -538,10 +577,19 @@ class AuthService {
       if (municipality) {
         userJson.municipalityCode = municipality.code;
       }
+    } else if (user.role === 'Municipality_Admin') {
+      try {
+        const municipality = await Municipality.findOne({ attributes: ['municipalityId', 'code'] });
+        if (municipality) {
+          userJson.municipalityCode = municipality.code;
+          await user.update({ municipalityId: municipality.municipalityId });
+        } else {
+          userJson.municipalityCode = 'KMC';
+        }
+      } catch {
+        userJson.municipalityCode = 'KMC';
+      }
     }
-
-    return userJson;
-  }
 
   /**
    * Get account lockout status

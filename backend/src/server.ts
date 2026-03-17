@@ -189,42 +189,136 @@ const startServer = async (): Promise<void> => {
         }
 
         // Ensure municipalities table and default municipality
-        await sequelize.query(`CREATE TABLE IF NOT EXISTS municipalities (
-          municipality_id CHAR(36) PRIMARY KEY, name_en VARCHAR(255) NOT NULL,
-          name_ne VARCHAR(255), code VARCHAR(50) NOT NULL UNIQUE,
-          province VARCHAR(100), district VARCHAR(100), type VARCHAR(50),
-          total_wards INT DEFAULT 0, is_active TINYINT(1) DEFAULT 1,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          deleted_at DATETIME NULL
-        )`);
-        const [munis] = await sequelize.query('SELECT municipality_id, code FROM municipalities LIMIT 1');
-        let munId: string | null = null;
-        if ((munis as any[]).length > 0) {
-          munId = (munis as any[])[0].municipality_id;
-        } else {
-          const { randomUUID } = await import('crypto');
-          munId = randomUUID();
-          await sequelize.query(
-            `INSERT INTO municipalities (municipality_id, name_en, name_ne, code, province, district, type, total_wards) VALUES ('${munId}', 'Kathmandu Metropolitan City', 'काठमाडौं महानगरपालिका', 'KMC', 'Bagmati', 'Kathmandu', 'Metropolitan', 32)`
+        try {
+          // Check if municipalities table exists and what columns it has
+          const [existingMuniTable] = await sequelize.query(
+            "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'municipalities'"
           );
-          logger.info(`Created default municipality KMC (${munId})`);
-        }
-        if (munId) {
-          await sequelize.query(
-            `UPDATE users SET municipality_id = '${munId}' WHERE role = 'Municipality_Admin' AND (municipality_id IS NULL OR municipality_id = '')`
-          );
-          logger.info('✅ Municipality admin linked to municipality');
-        }
+          
+          if (existingMuniTable.length === 0) {
+            // Create table if it doesn't exist
+            await sequelize.query(`CREATE TABLE municipalities (
+              municipality_id CHAR(36) PRIMARY KEY, name_en VARCHAR(255) NOT NULL,
+              name_ne VARCHAR(255), code VARCHAR(50) NOT NULL UNIQUE,
+              province VARCHAR(100), district VARCHAR(100), type VARCHAR(50),
+              total_wards INT DEFAULT 0, is_active TINYINT(1) DEFAULT 1,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+              deleted_at DATETIME NULL
+            )`);
+          } else {
+            // Check and add missing columns if table exists
+            const [muniCols] = await sequelize.query(
+              "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'municipalities'"
+            );
+            const muniColNames = muniCols.map((c: any) => c.COLUMN_NAME);
+            
+            if (!muniColNames.includes('municipality_id')) {
+              // Check if there's already a primary key
+              const [pkInfo] = await sequelize.query(
+                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'municipalities' AND CONSTRAINT_NAME = 'PRIMARY'"
+              );
+              
+              if (pkInfo.length === 0) {
+                await sequelize.query('ALTER TABLE municipalities ADD COLUMN municipality_id CHAR(36) PRIMARY KEY FIRST');
+              } else {
+                await sequelize.query('ALTER TABLE municipalities ADD COLUMN municipality_id CHAR(36) NULL FIRST');
+              }
+            }
+            if (!muniColNames.includes('name_en')) {
+              await sequelize.query('ALTER TABLE municipalities ADD COLUMN name_en VARCHAR(255) NULL');
+            }
+            if (!muniColNames.includes('code')) {
+              await sequelize.query('ALTER TABLE municipalities ADD COLUMN code VARCHAR(50) NULL');
+            }
+          }
 
-        // Reset account locks
-        await sequelize.query(
-          'UPDATE users SET failed_login_attempts = 0, account_locked_until = NULL WHERE failed_login_attempts > 0 OR account_locked_until IS NOT NULL'
-        );
-        logger.info('✅ Production DB fixes applied');
-      } catch (error) {
-        logger.warn('⚠️ Production DB fix warning:', error);
-      }
+          // Check for existing municipality
+          const [munis] = await sequelize.query('SELECT * FROM municipalities WHERE municipality_id IS NOT NULL LIMIT 1');
+          let munId: string | null = null;
+          
+          if ((munis as any[]).length > 0) {
+            munId = (munis as any[])[0].municipality_id;
+          } else {
+            const { randomUUID } = await import('crypto');
+            munId = randomUUID();
+            
+            // Get current columns to build dynamic INSERT
+            const [finalMuniCols] = await sequelize.query(
+              "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'municipalities'"
+            );
+            const finalColNames = finalMuniCols.map((c: any) => c.COLUMN_NAME);
+            
+            let insertCols = ['municipality_id'];
+            let insertVals = [`'${munId}'`];
+            
+            if (finalColNames.includes('id')) {
+              insertCols.push('id');
+              insertVals.push('1');
+            }
+            if (finalColNames.includes('name_en')) {
+              insertCols.push('name_en');
+              insertVals.push("'Kathmandu Metropolitan City'");
+            }
+            if (finalColNames.includes('name_ne')) {
+              insertCols.push('name_ne');
+              insertVals.push("'काठमाडौं महानगरपालिका'");
+            }
+            if (finalColNames.includes('code')) {
+              insertCols.push('code');
+              insertVals.push("'KMC'");
+            }
+            if (finalColNames.includes('province')) {
+              insertCols.push('province');
+              insertVals.push("'Bagmati'");
+            }
+            if (finalColNames.includes('district')) {
+              insertCols.push('district');
+              insertVals.push("'Kathmandu'");
+            }
+            if (finalColNames.includes('type')) {
+              insertCols.push('type');
+              insertVals.push("'Metropolitan'");
+            }
+            if (finalColNames.includes('total_wards')) {
+              insertCols.push('total_wards');
+              insertVals.push('32');
+            }
+            
+            await sequelize.query(
+              `INSERT INTO municipalities (${insertCols.join(', ')}) VALUES (${insertVals.join(', ')})`
+            );
+            logger.info(`Created default municipality KMC (${munId})`);
+          }
+          
+          if (munId) {
+            // Check if users table has municipality_id column before updating
+            const [userCols] = await sequelize.query(
+              "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'municipality_id'"
+            );
+            
+            if (userCols.length > 0) {
+              await sequelize.query(
+                `UPDATE users SET municipality_id = '${munId}' WHERE role = 'Municipality_Admin' AND (municipality_id IS NULL OR municipality_id = '')`
+              );
+              logger.info('✅ Municipality admin linked to municipality');
+            }
+          }
+
+          // Reset account locks (only if columns exist)
+          const [lockCols] = await sequelize.query(
+            "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME IN ('failed_login_attempts', 'account_locked_until')"
+          );
+          if (lockCols.length > 0) {
+            await sequelize.query(
+              'UPDATE users SET failed_login_attempts = 0, account_locked_until = NULL WHERE failed_login_attempts > 0 OR account_locked_until IS NOT NULL'
+            );
+          }
+          
+          logger.info('✅ Production DB fixes applied');
+        } catch (error) {
+          logger.warn('⚠️ Production DB fix warning:', error);
+        }
     }
 
     // Connect to Redis
