@@ -1,15 +1,16 @@
 #!/bin/sh
 # inject-env.sh — Runs at container startup (via nginx docker-entrypoint.d)
-# Replaces the build-time config.js with runtime environment values.
+# Replaces the build-time config.js with runtime environment values
+# and generates nginx API proxy config.
 
 CONFIG_FILE="/usr/share/nginx/html/config.js"
+PROXY_CONF="/etc/nginx/api-proxy.conf"
 
-# Use VITE_API_BASE_URL if set, otherwise fall back to the internal Railway URL
-API_URL="${VITE_API_BASE_URL:-${RAILWAY_PUBLIC_DOMAIN:+https://$RAILWAY_PUBLIC_DOMAIN}/api/v1}"
+# Determine backend URL
+BACKEND="${BACKEND_URL:-https://schoolmanagementsystem-production-4bb7.up.railway.app}"
 
-if [ -z "$API_URL" ]; then
-  API_URL="/api/v1"
-fi
+# API base URL for the frontend - use relative /api/v1 so nginx proxies it
+API_URL="${VITE_API_BASE_URL:-/api/v1}"
 
 cat > "$CONFIG_FILE" <<EOF
 window.ENV = {
@@ -17,4 +18,18 @@ window.ENV = {
 };
 EOF
 
-echo "✅ Injected runtime config: API_BASE_URL=$API_URL"
+# Generate nginx proxy config for /api/ -> backend
+cat > "$PROXY_CONF" <<EOF
+location /api/ {
+    proxy_pass ${BACKEND}/api/;
+    proxy_http_version 1.1;
+    proxy_set_header Host \$proxy_host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+    proxy_connect_timeout 30s;
+    proxy_read_timeout 60s;
+}
+EOF
+
+echo "✅ Injected runtime config: API_BASE_URL=$API_URL, Backend=$BACKEND"
