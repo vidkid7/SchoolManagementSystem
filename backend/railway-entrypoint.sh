@@ -102,6 +102,23 @@ async function fix() {
 
     // Ensure municipality exists and link municipality admin
     try {
+      // Create municipalities table if it doesn't exist
+      await sequelize.query(\`CREATE TABLE IF NOT EXISTS municipalities (
+        municipality_id CHAR(36) PRIMARY KEY,
+        name_en VARCHAR(255) NOT NULL,
+        name_ne VARCHAR(255),
+        code VARCHAR(50) NOT NULL UNIQUE,
+        province VARCHAR(100),
+        district VARCHAR(100),
+        type VARCHAR(50),
+        total_wards INT DEFAULT 0,
+        is_active TINYINT(1) DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        deleted_at DATETIME NULL
+      )\`);
+      console.log('✅ municipalities table ensured');
+
       const [munis] = await sequelize.query(\"SELECT municipality_id, code FROM municipalities LIMIT 1\");
       let municipalityId = null;
       if (munis.length > 0) {
@@ -110,13 +127,13 @@ async function fix() {
       } else {
         // Create a default municipality
         const uuid = require('crypto').randomUUID();
-        await sequelize.query(\"INSERT INTO municipalities (municipality_id, name_en, name_ne, code, province, district, type, total_wards, created_at, updated_at) VALUES ('\" + uuid + \"', 'Kathmandu Metropolitan City', 'काठमाडौं महानगरपालिका', 'KMC', 'Bagmati', 'Kathmandu', 'Metropolitan', 32, NOW(), NOW()) ON DUPLICATE KEY UPDATE municipality_id=municipality_id\");
+        await sequelize.query(\"INSERT INTO municipalities (municipality_id, name_en, name_ne, code, province, district, type, total_wards, created_at, updated_at) VALUES ('\" + uuid + \"', 'Kathmandu Metropolitan City', 'काठमाडौं महानगरपालिका', 'KMC', 'Bagmati', 'Kathmandu', 'Metropolitan', 32, NOW(), NOW())\");
         municipalityId = uuid;
         console.log('Created default municipality: KMC (' + municipalityId + ')');
       }
       if (municipalityId) {
-        await sequelize.query(\"UPDATE users SET municipality_id = '\" + municipalityId + \"' WHERE role = 'Municipality_Admin' AND municipality_id IS NULL\");
-        console.log('✅ Linked municipality admin to municipality');
+        const [result] = await sequelize.query(\"UPDATE users SET municipality_id = '\" + municipalityId + \"' WHERE role = 'Municipality_Admin' AND (municipality_id IS NULL OR municipality_id = '')\");
+        console.log('✅ Linked municipality admin to municipality, affected: ' + JSON.stringify(result));
       }
     } catch (munErr) {
       console.log('⚠️  Municipality setup warning: ' + munErr.message);
