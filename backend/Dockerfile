@@ -40,8 +40,9 @@ RUN npm ci --only=production && \
 # Copy built application from builder
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 
-# Copy entrypoint script
+# Copy entrypoint and DB fix scripts
 COPY --chown=nodejs:nodejs railway-entrypoint.sh ./
+COPY --chown=nodejs:nodejs fix-db-columns.js ./
 RUN chmod +x railway-entrypoint.sh
 
 # Create necessary directories
