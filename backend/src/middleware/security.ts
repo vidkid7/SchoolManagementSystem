@@ -49,6 +49,9 @@ export const corsMiddleware = cors({
 
     if (env.ALLOWED_ORIGINS.includes(origin)) {
       callback(null, true);
+    } else if (origin.endsWith('.up.railway.app')) {
+      // Allow all Railway-deployed frontends
+      callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
