@@ -143,6 +143,8 @@ export const DuplicateWarningDialog = ({
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText
+                    primaryTypographyProps={{ component: 'div' }}
+                    secondaryTypographyProps={{ component: 'div' }}
                     primary={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography variant="body1" fontWeight={600}>
@@ -215,6 +217,8 @@ export const DuplicateWarningDialog = ({
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText
+                    primaryTypographyProps={{ component: 'div' }}
+                    secondaryTypographyProps={{ component: 'div' }}
                     primary={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography variant="body1" fontWeight={600}>

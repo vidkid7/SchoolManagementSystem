@@ -51,6 +51,12 @@ import HostelRoom from './HostelRoom.model';
 import HostelResident from './HostelResident.model';
 import HostelIncident from './HostelIncident.model';
 import HostelVisitor from './HostelVisitor.model';
+import HostelDisciplineRecord from './HostelDisciplineRecord.model';
+import HostelLeaveRequest from './HostelLeaveRequest.model';
+import HostelMessMenu from './HostelMessMenu.model';
+import HostelMealAttendance from './HostelMealAttendance.model';
+import HostelInventoryItem from './HostelInventoryItem.model';
+import BehaviorRecord from './BehaviorRecord.model';
 
 type TenantOptions = {
   where?: Record<string, unknown>;
@@ -61,6 +67,54 @@ type TenantOptions = {
 const NO_ACCESS_TENANT_ID = '00000000-0000-0000-0000-000000000000';
 const TENANT_HOOK_FLAG = Symbol.for('tenantHooksApplied');
 const TENANT_MODEL_FLAG = Symbol.for('tenantAttributeApplied');
+
+const SCHOOL_CONFIG_SCOPED_TABLES = new Set([
+  'admissions',
+  'academic_years',
+  'terms',
+  'classes',
+  'subjects',
+  'class_subjects',
+  'students',
+  'staff',
+  'staff_assignments',
+  'staff_documents',
+  'staff_attendance',
+  'attendance',
+  'leave_applications',
+  'exams',
+  'exam_schedules',
+  'grades',
+  'fee_structures',
+  'fee_components',
+  'invoices',
+  'invoice_items',
+  'payments',
+  'installment_plans',
+  'refunds',
+  'fee_reminders',
+  'books',
+  'circulations',
+  'reservations',
+  'library_fines',
+  'sports',
+  'teams',
+  'tournaments',
+  'sports_enrollments',
+  'sports_achievements',
+  'ecas',
+  'eca_events',
+  'eca_enrollments',
+  'eca_achievements',
+  'hostel_discipline_records',
+  'hostel_leave_requests',
+  'hostel_mess_menus',
+  'hostel_meal_attendance',
+  'hostel_inventory_items',
+  'events',
+  'certificates',
+  'behavior_records',
+]);
 
 const TENANT_MODELS: Array<ModelStatic<Model>> = [
   Admission,
@@ -119,6 +173,12 @@ const TENANT_MODELS: Array<ModelStatic<Model>> = [
   HostelResident,
   HostelIncident,
   HostelVisitor,
+  HostelDisciplineRecord,
+  HostelLeaveRequest,
+  HostelMessMenu,
+  HostelMealAttendance,
+  HostelInventoryItem,
+  BehaviorRecord,
 ];
 
 function getScopedSchoolIds(): string[] | null {
@@ -164,12 +224,52 @@ function getTenantCondition(): Record<string, unknown> | null {
   return Object.keys(conditions).length > 0 ? conditions : null;
 }
 
-function applyTenantFilter(options: TenantOptions): void {
+function normalizeModelTableName(model: ModelStatic<Model>): string {
+  const table = model.getTableName();
+  if (typeof table === 'string') {
+    return table;
+  }
+  return table.tableName;
+}
+
+function hasModelAttribute(model: ModelStatic<Model>, attribute: string): boolean {
+  return Object.prototype.hasOwnProperty.call(model.rawAttributes, attribute);
+}
+
+function shouldAutoAddSchoolConfig(model: ModelStatic<Model>): boolean {
+  return SCHOOL_CONFIG_SCOPED_TABLES.has(normalizeModelTableName(model));
+}
+
+function getTenantConditionForModel(model: ModelStatic<Model>): Record<string, unknown> | null {
+  const context = getTenantContext();
+  if (!context?.enforceIsolation) return null;
+
+  const conditions: Record<string, unknown> = {};
+
+  if (context.municipalityId && hasModelAttribute(model, 'municipalityId')) {
+    conditions.municipality_id = context.municipalityId;
+  }
+
+  if (hasModelAttribute(model, 'schoolConfigId')) {
+    const scopedIds = context.schoolConfigIds ?? [];
+    if (scopedIds.length === 1) {
+      conditions.school_config_id = scopedIds[0];
+    } else if (scopedIds.length > 1) {
+      conditions.school_config_id = { [Op.in]: scopedIds };
+    } else if (scopedIds.length === 0 && !context.municipalityId) {
+      conditions.school_config_id = NO_ACCESS_TENANT_ID;
+    }
+  }
+
+  return Object.keys(conditions).length > 0 ? conditions : null;
+}
+
+function applyTenantFilter(options: TenantOptions, model: ModelStatic<Model>): void {
   if (options?.skipTenantIsolation) {
     return;
   }
 
-  const tenantCondition = getTenantCondition();
+  const tenantCondition = getTenantConditionForModel(model);
   if (!tenantCondition) {
     return;
   }
@@ -194,9 +294,11 @@ function assertTenantWriteAccess(instance: Model, options?: TenantOptions): void
     return;
   }
 
+  const model = instance.constructor as ModelStatic<Model>;
+
   // Validate and assign municipalityId using camelCase attribute names so
   // Sequelize applies the field mapping when persisting to the DB.
-  if (context.municipalityId) {
+  if (context.municipalityId && hasModelAttribute(model, 'municipalityId')) {
     const existingMunicipalityId = instance.getDataValue('municipalityId') as string | undefined;
     if (existingMunicipalityId && existingMunicipalityId !== context.municipalityId) {
       throw new Error('Cross-municipality write blocked');
@@ -207,6 +309,10 @@ function assertTenantWriteAccess(instance: Model, options?: TenantOptions): void
   }
 
   // Validate and assign schoolConfigId
+  if (!hasModelAttribute(model, 'schoolConfigId')) {
+    return;
+  }
+
   const scopedIds = context.schoolConfigIds ?? [];
   if (scopedIds.length === 0) {
     // Municipality admin might not need schoolConfigId for some tables
@@ -230,11 +336,20 @@ function assertTenantWriteAccess(instance: Model, options?: TenantOptions): void
 }
 
 function assertTenantBulkWriteAccess(options: TenantOptions): void {
+  assertTenantBulkWriteAccessForModel(options, null);
+}
+
+function assertTenantBulkWriteAccessForModel(
+  options: TenantOptions,
+  model: ModelStatic<Model> | null
+): void {
   if (options?.skipTenantIsolation) {
     return;
   }
 
-  applyTenantFilter(options);
+  if (model) {
+    applyTenantFilter(options, model);
+  }
 
   const context = getTenantContext();
   if (!context?.enforceIsolation) {
@@ -253,6 +368,10 @@ function assertTenantBulkWriteAccess(options: TenantOptions): void {
   }
 
   // Validate schoolConfigId in bulk update attributes
+  if (model && !hasModelAttribute(model, 'schoolConfigId')) {
+    return;
+  }
+
   const scopedIds = context.schoolConfigIds ?? [];
   if (scopedIds.length === 0) {
     return;
@@ -294,8 +413,11 @@ function ensureTenantAttribute(model: ModelStatic<Model>): void {
     needsRefresh = true;
   }
 
-  // Add schoolConfigId if missing
-  if (!Object.prototype.hasOwnProperty.call(model.rawAttributes, 'schoolConfigId')) {
+  // Add schoolConfigId only for models backed by tables that actually have it.
+  if (
+    shouldAutoAddSchoolConfig(model) &&
+    !Object.prototype.hasOwnProperty.call(model.rawAttributes, 'schoolConfigId')
+  ) {
     model.rawAttributes.schoolConfigId = {
       type: DataTypes.UUID,
       allowNull: true,
@@ -321,19 +443,19 @@ function registerHooks(model: ModelStatic<Model>): void {
   }
 
   (model as any).addHook('beforeFind', 'tenant-isolation-before-find', (options: TenantOptions) => {
-    applyTenantFilter(options);
+    applyTenantFilter(options, model);
   });
 
   (model as any).addHook('beforeCount', 'tenant-isolation-before-count', (options: TenantOptions) => {
-    applyTenantFilter(options);
+    applyTenantFilter(options, model);
   });
 
   (model as any).addHook('beforeBulkUpdate', 'tenant-isolation-before-bulk-update', (options: TenantOptions) => {
-    assertTenantBulkWriteAccess(options);
+    assertTenantBulkWriteAccessForModel(options, model);
   });
 
   (model as any).addHook('beforeBulkDestroy', 'tenant-isolation-before-bulk-destroy', (options: TenantOptions) => {
-    applyTenantFilter(options);
+    applyTenantFilter(options, model);
   });
 
   (model as any).addHook(
@@ -384,7 +506,7 @@ function registerHooks(model: ModelStatic<Model>): void {
       }
 
       // Validate and assign municipalityId (camelCase attribute name)
-      if (context.municipalityId) {
+      if (context.municipalityId && hasModelAttribute(model, 'municipalityId')) {
         const municipalityId = values.municipalityId as string | undefined;
         if (municipalityId && municipalityId !== context.municipalityId) {
           throw new Error('Cross-municipality upsert blocked');
@@ -395,6 +517,10 @@ function registerHooks(model: ModelStatic<Model>): void {
       }
 
       // Validate and assign schoolConfigId (camelCase attribute name)
+      if (!hasModelAttribute(model, 'schoolConfigId')) {
+        return;
+      }
+
       const scopedIds = context.schoolConfigIds ?? [];
       if (scopedIds.length === 0) {
         return;

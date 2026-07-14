@@ -1176,7 +1176,18 @@ class StudentController {
       return;
     }
 
-    const student = await this.getStudentByUserId(userId);
+    const student = await Student.findOne({ where: { userId } });
+    if (!student) {
+      sendSuccess(res, {
+        present: 0,
+        total: 0,
+        percentage: 0,
+        absent: 0,
+        late: 0,
+      }, 'No linked student profile found');
+      return;
+    }
+
     const records = await AttendanceRecord.findAll({
       where: { studentId: student.studentId }
     });
@@ -1202,7 +1213,12 @@ class StudentController {
       return;
     }
 
-    const student = await this.getStudentByUserId(userId);
+    const student = await Student.findOne({ where: { userId } });
+    if (!student) {
+      sendSuccess(res, [], 'No linked student profile found');
+      return;
+    }
+
     const grades = await Grade.findAll({
       where: { studentId: student.studentId },
       include: [
@@ -1231,7 +1247,16 @@ class StudentController {
       return;
     }
 
-    const student = await this.getStudentByUserId(userId);
+    const student = await Student.findOne({ where: { userId } });
+    if (!student) {
+      sendSuccess(res, {
+        paid: 0,
+        pending: 0,
+        total: 0,
+      }, 'No linked student profile found');
+      return;
+    }
+
     const [invoices, payments] = await Promise.all([
       Invoice.findAll({ where: { studentId: student.studentId } }),
       Payment.findAll({

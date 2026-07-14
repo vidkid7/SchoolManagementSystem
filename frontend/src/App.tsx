@@ -19,6 +19,7 @@ import { Register } from './pages/auth/Register';
 import { ChangePassword } from './pages/auth/ChangePassword';
 import { DashboardLayout } from './components/Layout/DashboardLayout';
 import { RoleBasedRedirect } from './components/RoleBasedRedirect';
+import { RoleBasedDashboardRenderer } from './dashboards/DashboardRenderer';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import MunicipalityRouteGuard from './components/MunicipalityRouteGuard';
 import { useNetworkMonitor } from './hooks/useNetworkMonitor';
@@ -120,6 +121,7 @@ const AuditLogs = React.lazy(() => import('./pages/audit/AuditLogs'));
 const NotificationCenter = React.lazy(() => import('./pages/notifications/NotificationCenter').then(m => ({ default: m.NotificationCenter })));
 const UserNotifications = React.lazy(() => import('./pages/notifications/UserNotifications').then(m => ({ default: m.UserNotifications })));
 const UserManagement = React.lazy(() => import('./pages/users/UserManagement').then(m => ({ default: m.UserManagement })));
+const Profile = React.lazy(() => import('./pages/account/Profile'));
 
 const StudentPortal = React.lazy(() => import('./pages/portals/EnhancedStudentPortal'));
 const ParentPortal = React.lazy(() => import('./pages/portals/ParentPortal'));
@@ -192,6 +194,15 @@ function UnauthorizedPage() {
   );
 }
 
+function PortalDashboardStack({ configId, children }: { configId: string; children: React.ReactNode }) {
+  return (
+    <Box>
+      <RoleBasedDashboardRenderer configId={configId} />
+      <Box sx={{ mt: 3 }}>{children}</Box>
+    </Box>
+  );
+}
+
 function AppContent() {
   useNetworkMonitor();
 
@@ -251,6 +262,7 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
                 <Route path="communication/messages" element={<Messaging />} />
                 <Route path="communication/announcements" element={<Announcements />} />
                 <Route path="change-password" element={<ChangePassword />} />
+                <Route path="profile" element={<Profile />} />
               </Route>
             </Route>
 
@@ -283,81 +295,81 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
             {/* Student can view their own detail & CV */}
             <Route element={<ProtectedRoute allowedRoles={[STUDENT, PARENT]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="portal/student" element={<StudentPortal />} />
+                <Route path="portal/student" element={<PortalDashboardStack configId="student"><StudentPortal /></PortalDashboardStack>} />
                 <Route path="my-certificates" element={<StudentCertificates />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[PARENT]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="portal/parent" element={<ParentPortal />} />
+                <Route path="portal/parent" element={<PortalDashboardStack configId="parent"><ParentPortal /></PortalDashboardStack>} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="portal/teacher" element={<TeacherPortal />} />
+                <Route path="portal/teacher" element={<PortalDashboardStack configId="teacher"><TeacherPortal /></PortalDashboardStack>} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[MUNICIPALITY_ADMIN]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="municipality" element={<MunicipalityAdminPortal />} />
-                <Route path="admin/municipality/dashboard" element={<MunicipalityAdminPortal />} />
+                <Route path="municipality" element={<PortalDashboardStack configId="municipality-admin"><MunicipalityAdminPortal /></PortalDashboardStack>} />
+                <Route path="admin/municipality/dashboard" element={<PortalDashboardStack configId="municipality-admin"><MunicipalityAdminPortal /></PortalDashboardStack>} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[TRANSPORT]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="portal/transport" element={<TransportPortal />} />
+                <Route path="portal/transport" element={<PortalDashboardStack configId="transport"><TransportPortal /></PortalDashboardStack>} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[HOSTEL]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="portal/hostel" element={<HostelPortal />} />
+                <Route path="portal/hostel" element={<PortalDashboardStack configId="hostel"><HostelPortal /></PortalDashboardStack>} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[NON_TEACHING]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="portal/non-teaching-staff" element={<NonTeachingStaffPortal />} />
+                <Route path="portal/non-teaching-staff" element={<PortalDashboardStack configId="non-teaching-staff"><NonTeachingStaffPortal /></PortalDashboardStack>} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[ACCOUNTANT]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="portal/accountant" element={<AccountantPortal />} />
+                <Route path="portal/accountant" element={<PortalDashboardStack configId="accountant"><AccountantPortal /></PortalDashboardStack>} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[CLASS_TEACHER]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="portal/class-teacher" element={<ClassTeacherPortal />} />
+                <Route path="portal/class-teacher" element={<PortalDashboardStack configId="teacher"><ClassTeacherPortal /></PortalDashboardStack>} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[DEPT_HEAD]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="portal/department-head" element={<DepartmentHeadPortal />} />
+                <Route path="portal/department-head" element={<PortalDashboardStack configId="teacher"><DepartmentHeadPortal /></PortalDashboardStack>} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[SPORTS_COORD]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="portal/sports-coordinator" element={<SportsCoordinatorPortal />} />
+                <Route path="portal/sports-coordinator" element={<PortalDashboardStack configId="sports"><SportsCoordinatorPortal /></PortalDashboardStack>} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[ECA_COORD]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="portal/eca-coordinator" element={<ECACoordinatorPortal />} />
+                <Route path="portal/eca-coordinator" element={<PortalDashboardStack configId="eca"><ECACoordinatorPortal /></PortalDashboardStack>} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={[LIBRARIAN]} />}>
               <Route element={<DashboardLayout />}>
-                <Route path="portal/librarian" element={<LibrarianPortal />} />
+                <Route path="portal/librarian" element={<PortalDashboardStack configId="librarian"><LibrarianPortal /></PortalDashboardStack>} />
               </Route>
             </Route>
 

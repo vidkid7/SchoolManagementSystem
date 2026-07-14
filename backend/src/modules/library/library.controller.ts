@@ -7,7 +7,11 @@
  */
 
 import { Request, Response } from 'express';
+import { Op } from 'sequelize';
 import { LibraryFine } from '../../models/LibraryFine.model';
+import { Book } from '../../models/Book.model';
+import { Circulation } from '../../models/Circulation.model';
+import Student from '../../models/Student.model';
 import { libraryService } from './library.service';
 import { lateFeeService } from './lateFee.service';
 import { reservationService } from './reservation.service';
@@ -722,35 +726,60 @@ export class LibraryController {
    */
   async getStatistics(_req: Request, res: Response): Promise<void> {
     try {
-      const libraryStats = await libraryService.getLibraryStats();
-      const fineStats = await lateFeeService.getFineStats();
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+      sixMonthsAgo.setDate(1);
+      sixMonthsAgo.setHours(0, 0, 0, 0);
+
+      const [libraryStats, fineStats, categoryRows, circulations] = await Promise.all([
+        libraryService.getLibraryStats(),
+        lateFeeService.getFineStats(),
+        Book.findAll({
+          attributes: [
+            'category',
+            [Book.sequelize!.fn('COUNT', Book.sequelize!.col('book_id')), 'count'],
+          ],
+          group: ['category'],
+          raw: true,
+        }) as unknown as Promise<Array<{ category: string; count: string | number }>>,
+        Circulation.findAll({
+          where: { issueDate: { [Op.gte]: sixMonthsAgo } },
+          attributes: ['issueDate'],
+          raw: true,
+        }) as Promise<Array<{ issueDate: string | Date }>>,
+      ]);
+
+      const monthBuckets = new Map<string, number>();
+      for (let i = 5; i >= 0; i -= 1) {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        monthBuckets.set(date.toLocaleString('en-US', { month: 'short' }), 0);
+      }
+
+      circulations.forEach((circulation) => {
+        const date = new Date(circulation.issueDate);
+        if (Number.isNaN(date.getTime())) return;
+        const label = date.toLocaleString('en-US', { month: 'short' });
+        if (monthBuckets.has(label)) {
+          monthBuckets.set(label, (monthBuckets.get(label) || 0) + 1);
+        }
+      });
 
       const statistics = {
-        totalBooks: libraryStats?.totalBooks || 5000,
-        availableBooks: libraryStats?.availableBooks || 4200,
-        issuedBooks: libraryStats?.borrowedBooks || 650,
-        overdueBooks: libraryStats?.overdueBooks || 50,
-        totalMembers: libraryStats?.totalCirculations || 450,
-        activeMembers: libraryStats?.borrowedBooks || 380,
-        totalFines: fineStats?.totalFines || 15000,
-        collectedFines: fineStats?.totalPaid || 12000,
-        pendingFines: fineStats?.pendingFines || 3000,
-        booksByCategory: [
-          { category: 'Fiction', count: 1500 },
-          { category: 'Non-Fiction', count: 1200 },
-          { category: 'Science', count: 800 },
-          { category: 'Mathematics', count: 600 },
-          { category: 'Literature', count: 500 },
-          { category: 'History', count: 400 },
-        ],
-        monthlyIssuance: [
-          { month: 'Jan', count: 120 },
-          { month: 'Feb', count: 145 },
-          { month: 'Mar', count: 180 },
-          { month: 'Apr', count: 165 },
-          { month: 'May', count: 190 },
-          { month: 'Jun', count: 175 },
-        ],
+        totalBooks: libraryStats?.totalBooks ?? 0,
+        availableBooks: libraryStats?.availableBooks ?? 0,
+        issuedBooks: libraryStats?.borrowedBooks ?? 0,
+        overdueBooks: libraryStats?.overdueBooks ?? 0,
+        totalMembers: libraryStats?.totalCirculations ?? 0,
+        activeMembers: libraryStats?.borrowedBooks ?? 0,
+        totalFines: fineStats?.totalFines ?? 0,
+        collectedFines: fineStats?.totalPaid ?? 0,
+        pendingFines: fineStats?.pendingFines ?? 0,
+        booksByCategory: categoryRows.map((row) => ({
+          category: row.category || 'Uncategorized',
+          count: Number(row.count || 0),
+        })),
+        monthlyIssuance: Array.from(monthBuckets.entries()).map(([month, count]) => ({ month, count })),
       };
 
       res.status(200).json({
@@ -774,13 +803,61 @@ export class LibraryController {
     try {
       const limit = Number(req.query.limit) || 10;
 
+      const [circulations, fines] = await Promise.all([
+        Circulation.findAll({ order: [['createdAt', 'DESC']], limit, raw: true }) as Promise<any[]>,
+        LibraryFine.findAll({ order: [['createdAt', 'DESC']], limit, raw: true }) as Promise<any[]>,
+      ]);
+
+      const bookIds = circulations.map((item) => item.bookId).filter(Boolean);
+      const studentIds = [
+        ...circulations.map((item) => item.studentId),
+        ...fines.map((item) => item.studentId),
+      ].filter(Boolean);
+
+      const [books, students] = await Promise.all([
+        bookIds.length
+          ? Book.findAll({
+              where: { bookId: { [Op.in]: Array.from(new Set(bookIds)) } },
+              attributes: ['bookId', 'title'],
+              raw: true,
+            }) as Promise<Array<{ bookId: number; title: string }>>
+          : Promise.resolve([]),
+        studentIds.length
+          ? Student.findAll({
+              where: { studentId: { [Op.in]: Array.from(new Set(studentIds)) } },
+              attributes: ['studentId', 'firstNameEn', 'lastNameEn'],
+              raw: true,
+            }) as Promise<Array<{ studentId: number; firstNameEn?: string; lastNameEn?: string }>>
+          : Promise.resolve([]),
+      ]);
+
+      const bookTitleById = new Map(books.map((book) => [Number(book.bookId), book.title]));
+      const studentNameById = new Map(students.map((student) => [
+        Number(student.studentId),
+        `${student.firstNameEn || ''} ${student.lastNameEn || ''}`.trim() || `Student #${student.studentId}`,
+      ]));
+
       const activities = [
-        { id: 1, type: 'issue', book: 'Mathematics Grade 10', student: 'Ram Sharma', date: new Date(), status: 'completed' },
-        { id: 2, type: 'return', book: 'Science Grade 9', student: 'Sita Gupta', date: new Date(), status: 'completed' },
-        { id: 3, type: 'renew', book: 'English Literature', student: 'Hari Thapa', date: new Date(), status: 'completed' },
-        { id: 4, type: 'issue', book: 'Nepali Vyakaran', student: 'Gita Shrestha', date: new Date(), status: 'completed' },
-        { id: 5, type: 'fine', book: 'Social Studies', student: 'Binod KC', date: new Date(), amount: 50, status: 'paid' },
-      ].slice(0, limit);
+        ...circulations.map((item) => ({
+          id: `circulation-${item.circulationId}`,
+          type: item.returnDate ? 'return' : item.status === 'renewed' ? 'renew' : 'issue',
+          book: bookTitleById.get(Number(item.bookId)) || `Book #${item.bookId}`,
+          student: studentNameById.get(Number(item.studentId)) || `Student #${item.studentId}`,
+          date: item.returnDate || item.issueDate || item.createdAt,
+          status: item.status,
+        })),
+        ...fines.map((item) => ({
+          id: `fine-${item.fineId}`,
+          type: 'fine',
+          book: `Circulation #${item.circulationId}`,
+          student: studentNameById.get(Number(item.studentId)) || `Student #${item.studentId}`,
+          date: item.createdAt,
+          amount: Number(item.fineAmount || 0),
+          status: item.status,
+        })),
+      ]
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, limit);
 
       res.status(200).json({
         success: true,

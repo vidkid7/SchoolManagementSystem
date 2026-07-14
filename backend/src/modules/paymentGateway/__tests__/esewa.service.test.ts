@@ -15,10 +15,57 @@ import { PaymentMethod } from '@models/Payment.model';
  */
 
 // Mock dependencies
-jest.mock('../paymentGateway.repository');
-jest.mock('../../finance/payment.service');
-jest.mock('../../finance/invoice.repository');
-jest.mock('@config/database');
+jest.mock('../paymentGateway.repository', () => ({
+  __esModule: true,
+  default: {
+    create: jest.fn(),
+    findPendingByInvoiceId: jest.fn(),
+    findByUuid: jest.fn(),
+  },
+}));
+jest.mock('../../finance/payment.service', () => ({
+  __esModule: true,
+  default: {
+    processPayment: jest.fn(),
+  },
+}));
+jest.mock('../../finance/invoice.repository', () => ({
+  __esModule: true,
+  default: {
+    findById: jest.fn(),
+  },
+}));
+jest.mock('@models/PaymentGatewayTransaction.model', () => ({
+  __esModule: true,
+  default: jest.fn(),
+  PaymentGateway: {
+    ESEWA: 'esewa',
+    KHALTI: 'khalti',
+    IME_PAY: 'ime_pay',
+  },
+  GatewayTransactionStatus: {
+    PENDING: 'pending',
+    SUCCESS: 'success',
+    FAILED: 'failed',
+    EXPIRED: 'expired',
+  },
+}));
+jest.mock('@models/Payment.model', () => ({
+  __esModule: true,
+  PaymentMethod: {
+    CASH: 'cash',
+    BANK_TRANSFER: 'bank_transfer',
+    ESEWA: 'esewa',
+    KHALTI: 'khalti',
+    IME_PAY: 'ime_pay',
+  },
+}));
+jest.mock('@config/database', () => ({
+  __esModule: true,
+  default: {
+    transaction: jest.fn(),
+  },
+}));
 
 describe('EsewaService', () => {
   const mockTransaction = {

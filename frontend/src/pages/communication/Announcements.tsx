@@ -434,7 +434,7 @@ export const Announcements: React.FC = () => {
         }}
       >
         <DialogTitle sx={{ pb: 1 }}>
-          <Typography variant="h5" fontWeight={600}>
+          <Typography component="span" variant="h5" fontWeight={600}>
             {editingAnnouncement
               ? t('communication.editAnnouncement')
               : t('communication.createAnnouncement')}

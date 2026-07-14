@@ -53,6 +53,26 @@ interface Book {
   price?: number;
 }
 
+const toNumber = (value: unknown, fallback = 0) => {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : fallback;
+};
+
+const normalizeBook = (book: any): Book => ({
+  bookId: toNumber(book?.bookId ?? book?.id),
+  accessionNumber: book?.accessionNumber ?? book?.accession_number ?? '',
+  title: book?.title ?? '',
+  author: book?.author ?? '',
+  isbn: book?.isbn ?? '',
+  publisher: book?.publisher ?? '',
+  publicationYear: book?.publicationYear ?? book?.publication_year,
+  category: book?.category ?? '',
+  totalCopies: toNumber(book?.totalCopies ?? book?.total_copies ?? book?.copies, 1),
+  availableCopies: toNumber(book?.availableCopies ?? book?.available_copies),
+  location: book?.location ?? '',
+  price: book?.price,
+});
+
 export function BookCatalog() {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -98,8 +118,9 @@ export function BookCatalog() {
 
       const response = await apiClient.get('/library/books', { params });
       const respData = response.data?.data;
-      setBooks(Array.isArray(respData) ? respData : (respData?.books || []));
-      setTotal(respData?.total || response.data?.meta?.total || 0);
+      const list = Array.isArray(respData) ? respData : (respData?.books || []);
+      setBooks(list.map(normalizeBook));
+      setTotal(toNumber(respData?.total ?? response.data?.meta?.total, list.length));
     } catch (err) {
       console.error('Failed to fetch books:', err);
       setBooks([]);
@@ -149,11 +170,28 @@ export function BookCatalog() {
 
   const handleSubmit = async () => {
     try {
+      const copies = Number(formData.totalCopies);
+      const publicationYear = formData.publicationYear ? Number(formData.publicationYear) : undefined;
+      const price = formData.price ? Number(formData.price) : undefined;
+
+      const payload = {
+        accessionNumber: formData.accessionNumber.trim(),
+        title: formData.title.trim(),
+        author: formData.author.trim(),
+        isbn: formData.isbn.trim() || undefined,
+        publisher: formData.publisher.trim() || undefined,
+        publicationYear: Number.isFinite(publicationYear) ? publicationYear : undefined,
+        category: formData.category,
+        copies,
+        location: formData.location.trim() || undefined,
+        price: Number.isFinite(price) ? price : undefined,
+      };
+
       if (editingBook) {
-        await apiClient.put(`/library/books/${editingBook.bookId}`, formData);
+        await apiClient.put(`/library/books/${editingBook.bookId}`, payload);
         setSuccess(t('library.bookUpdatedSuccess'));
       } else {
-        await apiClient.post('/library/books', formData);
+        await apiClient.post('/library/books', payload);
         setSuccess(t('library.bookAddedSuccess'));
       }
       handleCloseDialog();

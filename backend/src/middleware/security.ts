@@ -42,12 +42,19 @@ export const helmetMiddleware = helmet({
 /**
  * CORS Configuration
  */
+const isDevelopmentLocalhostOrigin = (origin: string): boolean => {
+  if (env.NODE_ENV !== 'development') return false;
+  return /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/.test(origin);
+};
+
 export const corsMiddleware = cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
 
     if (env.ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else if (isDevelopmentLocalhostOrigin(origin)) {
       callback(null, true);
     } else if (origin.endsWith('.up.railway.app')) {
       // Allow all Railway-deployed frontends

@@ -32,7 +32,9 @@ const readRoles = [
   UserRole.CLASS_TEACHER,
   UserRole.SUBJECT_TEACHER,
   UserRole.DEPARTMENT_HEAD,
-  UserRole.ACCOUNTANT
+  UserRole.ACCOUNTANT,
+  UserRole.STUDENT,
+  UserRole.PARENT
 ];
 
 const manageRoles = [UserRole.SCHOOL_ADMIN];

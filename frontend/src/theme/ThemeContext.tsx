@@ -75,6 +75,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   // Save preferences to localStorage (Requirement 34.3)
   useEffect(() => {
     localStorage.setItem('sms_theme_mode', mode);
+    document.documentElement.dataset.theme = mode;
+    document.documentElement.dataset.muiColorScheme = mode;
+    document.body.dataset.theme = mode;
   }, [mode]);
 
   useEffect(() => {

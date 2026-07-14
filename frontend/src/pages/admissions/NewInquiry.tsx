@@ -67,9 +67,16 @@ export function NewInquiry() {
     try {
       setLoading(true);
       setError('');
+
+      const payload = Object.fromEntries(
+        Object.entries(formData).map(([key, value]) => [
+          key,
+          typeof value === 'string' ? value.trim() || undefined : value,
+        ])
+      );
       
       const response = await api.post('/admissions/inquiry', {
-        ...formData,
+        ...payload,
         applyingForClass: parseInt(formData.applyingForClass),
         previousClass: formData.previousClass ? parseInt(formData.previousClass) : undefined,
       });

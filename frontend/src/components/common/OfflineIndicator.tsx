@@ -3,7 +3,7 @@
  * Displays network status and sync information with detailed progress
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Snackbar,
@@ -41,20 +41,27 @@ export const OfflineIndicator: React.FC = () => {
   const [showOnlineAlert, setShowOnlineAlert] = useState(false);
   const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [syncProgress, setSyncProgress] = useState<string>('');
+  const wasOfflineRef = useRef(!pwaState.isOnline);
 
-  // Show alerts when network status changes
+  // Show reconnect feedback only after a real offline -> online transition.
   useEffect(() => {
     if (!pwaState.isOnline) {
+      wasOfflineRef.current = true;
       setShowOfflineAlert(true);
       setShowOnlineAlert(false);
       return undefined;
-    } else {
-      setShowOfflineAlert(false);
-      setShowOnlineAlert(true);
-      // Auto-hide online alert after 3 seconds
-      const timer = setTimeout(() => setShowOnlineAlert(false), 3000);
-      return () => clearTimeout(timer);
     }
+
+    setShowOfflineAlert(false);
+
+    if (!wasOfflineRef.current) {
+      return undefined;
+    }
+
+    wasOfflineRef.current = false;
+    setShowOnlineAlert(true);
+    const timer = setTimeout(() => setShowOnlineAlert(false), 3000);
+    return () => clearTimeout(timer);
   }, [pwaState.isOnline]);
 
   const handleSync = async () => {

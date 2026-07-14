@@ -69,6 +69,15 @@ function TabPanel(props: TabPanelProps) {
 
 const authHdr = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
 
+const toArray = (value: any): any[] => {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.lessonPlans)) return value.lessonPlans;
+  if (Array.isArray(value?.syllabusProgress)) return value.syllabusProgress;
+  if (Array.isArray(value?.progress)) return value.progress;
+  if (Array.isArray(value?.items)) return value.items;
+  return [];
+};
+
 export const LessonPlanning = () => {
   const theme = useTheme();
   const S = useAdminStyles(theme);
@@ -94,8 +103,8 @@ export const LessonPlanning = () => {
         apiClient.get('/api/v1/lesson-plans/syllabus-progress', { ...authHdr(accessToken), params: { limit: 50 } })
           .catch(() => ({ data: { data: { progress: [] } } })),
       ]);
-      setLessonPlans(plansRes.data?.data?.lessonPlans ?? plansRes.data?.data ?? []);
-      setSyllabusTopics(progressRes.data?.data?.progress ?? progressRes.data?.data ?? []);
+      setLessonPlans(toArray(plansRes.data?.data));
+      setSyllabusTopics(toArray(progressRes.data?.data));
     } catch {
       setError(t('portal.failedToLoadData'));
     } finally {
@@ -263,7 +272,11 @@ export const LessonPlanning = () => {
         {/* Lesson Plans Tab */}
         <TabPanel value={tabValue} index={0}>
           <Grid container spacing={3}>
-            {lessonPlans.map((plan) => (
+            {lessonPlans.length === 0 ? (
+              <Grid item xs={12}>
+                <Alert severity="info">{t('portal.noData')}</Alert>
+              </Grid>
+            ) : lessonPlans.map((plan) => (
               <Grid item xs={12} md={6} lg={4} key={plan.id}>
                 <Card>
                   <CardContent>
@@ -279,7 +292,7 @@ export const LessonPlanning = () => {
                     </Box>
 
                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                      {plan.subject} - {plan.class}
+                      {plan.subject} - {plan.className ?? plan.class}
                     </Typography>
 
                     <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, mb: 1 }}>
@@ -346,7 +359,11 @@ export const LessonPlanning = () => {
           </Box>
 
           <Grid container spacing={3}>
-            {syllabusTopics.map((topic) => (
+            {syllabusTopics.length === 0 ? (
+              <Grid item xs={12}>
+                <Alert severity="info">{t('portal.noData')}</Alert>
+              </Grid>
+            ) : syllabusTopics.map((topic) => (
               <Grid item xs={12} key={topic.id}>
                 <Card>
                   <CardContent>
@@ -368,13 +385,13 @@ export const LessonPlanning = () => {
                             />
                           </Box>
                           <Typography variant="body2" color="text.secondary">
-                            {topic.progress}%
+                            {topic.progress ?? 0}%
                           </Typography>
                         </Box>
                       </Box>
 
                       <Chip
-                        label={topic.status.replace('_', ' ')}
+                        label={String(topic.status ?? 'not_started').replace('_', ' ')}
                         size="small"
                         color={getSyllabusStatusColor(topic.status)}
                         sx={{ ml: 2 }}

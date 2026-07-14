@@ -35,10 +35,12 @@ router.delete('/routes/:routeId', authorize(UserRole.TRANSPORT_MANAGER, UserRole
 router.get('/vehicles', authorize(UserRole.TRANSPORT_MANAGER, UserRole.SCHOOL_ADMIN), transportController.getVehicles);
 router.post('/vehicles', authorize(UserRole.TRANSPORT_MANAGER, UserRole.SCHOOL_ADMIN), transportController.createVehicle);
 router.put('/vehicles/:vehicleId', authorize(UserRole.TRANSPORT_MANAGER, UserRole.SCHOOL_ADMIN), transportController.updateVehicle);
+router.delete('/vehicles/:vehicleId', authorize(UserRole.TRANSPORT_MANAGER, UserRole.SCHOOL_ADMIN), transportController.deleteVehicle);
 
 // Pickup points
 router.get('/pickup-points', authorize(UserRole.TRANSPORT_MANAGER, UserRole.SCHOOL_ADMIN), transportController.getPickupPoints);
 router.post('/pickup-points', authorize(UserRole.TRANSPORT_MANAGER, UserRole.SCHOOL_ADMIN), transportController.createPickupPoint);
+router.delete('/pickup-points/:pickupPointId', authorize(UserRole.TRANSPORT_MANAGER, UserRole.SCHOOL_ADMIN), transportController.deletePickupPoint);
 
 // Attendance
 router.post('/attendance', authorize(UserRole.TRANSPORT_MANAGER, UserRole.SCHOOL_ADMIN), transportController.markTransportAttendance);
@@ -54,5 +56,6 @@ router.delete('/drivers/:driverId', authorize(UserRole.TRANSPORT_MANAGER, UserRo
 router.get('/maintenance', authorize(UserRole.TRANSPORT_MANAGER, UserRole.SCHOOL_ADMIN), transportController.getMaintenanceRecords);
 router.post('/maintenance', authorize(UserRole.TRANSPORT_MANAGER, UserRole.SCHOOL_ADMIN), transportController.createMaintenanceRecord);
 router.put('/maintenance/:recordId', authorize(UserRole.TRANSPORT_MANAGER, UserRole.SCHOOL_ADMIN), transportController.updateMaintenanceRecord);
+router.delete('/maintenance/:recordId', authorize(UserRole.TRANSPORT_MANAGER, UserRole.SCHOOL_ADMIN), transportController.deleteMaintenanceRecord);
 
 export default router;

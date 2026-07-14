@@ -4,7 +4,7 @@
  * Allows admins to manage roles and permissions
  */
 
-import { useState, useEffect } from 'react';
+import { Fragment, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -302,7 +302,7 @@ export const RoleManagement = () => {
               </TableRow>
             ) : (
               roles.map((role) => (
-                <>
+                <Fragment key={role.id}>
                   <TableRow key={role.id} hover>
                     <TableCell>
                       <IconButton size="small" onClick={() => toggleRoleExpand(role.id)}>
@@ -386,7 +386,7 @@ export const RoleManagement = () => {
                       </Collapse>
                     </TableCell>
                   </TableRow>
-                </>
+                </Fragment>
               ))
             )}
           </TableBody>

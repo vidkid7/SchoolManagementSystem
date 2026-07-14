@@ -25,7 +25,9 @@ export const connectRedis = async (): Promise<RedisClientType | null> => {
       : {
           socket: {
             host: process.env.REDIS_HOST || 'localhost',
-            port: parseInt(process.env.REDIS_PORT || '6379')
+            port: parseInt(process.env.REDIS_PORT || '6379'),
+            connectTimeout: 1500,
+            reconnectStrategy: (): false => false,
           },
           password: process.env.REDIS_PASSWORD || undefined,
           database: 0
@@ -53,8 +55,16 @@ export const connectRedis = async (): Promise<RedisClientType | null> => {
     
     return redisClient;
   } catch (error) {
-    logger.error('❌ Failed to connect to Redis:', error);
-    throw error;
+    logger.warn('⚠️  Redis unavailable, continuing without Redis cache/rate-limit store', error);
+    if (redisClient) {
+      try {
+        await redisClient.disconnect();
+      } catch {
+        // Client may already be closed after a failed connect attempt.
+      }
+      redisClient = null;
+    }
+    return null;
   }
 };
 

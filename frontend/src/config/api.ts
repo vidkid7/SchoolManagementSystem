@@ -8,12 +8,20 @@ import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'ax
 
 // Get API URL from runtime config or fallback to build-time env var
 const getApiBaseUrl = () => {
+  const buildTimeApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
   // @ts-ignore - window.ENV is injected at runtime
   if (typeof window !== 'undefined' && window.ENV && window.ENV.API_BASE_URL) {
+    // The checked-in development config uses /api/v1 as a placeholder. Allow
+    // explicit Vite env overrides to win for isolated local QA/backends.
+    // @ts-ignore
+    if (window.ENV.API_BASE_URL === '/api/v1' && buildTimeApiBaseUrl) {
+      return buildTimeApiBaseUrl;
+    }
     // @ts-ignore
     return window.ENV.API_BASE_URL;
   }
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
+  return buildTimeApiBaseUrl || 'http://localhost:3000/api/v1';
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -62,9 +70,17 @@ api.interceptors.response.use(
   },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const requestUrl = originalRequest.url || '';
+    const isAuthRequest = [
+      '/auth/login',
+      '/auth/register',
+      '/auth/forgot-password',
+      '/auth/reset-password',
+      '/auth/refresh',
+    ].some((path) => requestUrl.includes(path));
 
     // If 401 and not already retried, try to refresh token
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRequest) {
       originalRequest._retry = true;
 
       try {

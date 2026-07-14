@@ -12,6 +12,7 @@ import * as createAttendanceExamTables from '../migrations/003-create-attendance
 import * as createTimetableTables from '../migrations/012-create-timetable-tables';
 import * as createGradingSchemes from '../migrations/20240206000001-create-grading-schemes';
 import * as createAttendanceRules from '../migrations/20240206000002-create-attendance-rules';
+import createNotificationTemplates from '../migrations/20240206000003-create-notification-templates';
 import * as createRolesPermissions from '../migrations/20240207000001-create-roles-permissions';
 import * as createMessagingTables from '../migrations/028-create-messaging-tables';
 import * as createGroupMessagingTables from '../migrations/029-create-group-messaging-tables';
@@ -22,13 +23,21 @@ import * as createSchoolConfigTable from '../migrations/032-create-school-config
 import * as addMunicipalityArchitecture from '../migrations/20260308000001-add-municipality-architecture';
 import * as addSchoolTenantIsolation from '../migrations/20260308000002-add-school-tenant-isolation';
 import * as addSchoolConfigFormatColumns from '../migrations/20260308000003-add-school-config-format-columns';
+import * as addMunicipalityTenantIsolation from '../migrations/20260311000001-add-municipality-id-to-all-tenant-tables';
 import * as createArchiveTables from '../migrations/033-create-archive-tables';
+import * as addMissingMunicipalityTenantColumns from '../migrations/20260519000001-add-missing-municipality-tenant-columns';
+import * as backfillGlobalTenantRows from '../migrations/20260519000002-backfill-global-tenant-rows';
+import * as createBehaviorRecords from '../migrations/20260519000003-create-behavior-records';
+import * as backfillNullSchoolTenants from '../migrations/20260519000004-backfill-null-school-tenants';
 import * as createLeaveApplicationsTable from '../migrations/014-create-leave-applications-table';
 import * as createFeeStructureTables from '../migrations/015-create-fee-structure-tables';
 import * as createInvoiceTables from '../migrations/016-create-invoice-tables';
 import * as createPaymentsTable from '../migrations/017-create-payments-table';
 import * as createLibraryTables from '../migrations/023-create-library-tables';
 import * as createHostelTables from '../migrations/20260315000005-create-hostel-tables';
+import * as createHostelOperationTables from '../migrations/20260608000001-create-hostel-operation-tables';
+import * as createTransportOperationTables from '../migrations/20260609000001-create-transport-operation-tables';
+import * as createStudentIdSequences from '../migrations/20260609000002-create-student-id-sequences';
 import * as createAssignmentsTable from '../migrations/20260315000001-create-assignments-table';
 import * as createAssignmentSubmissionsTable from '../migrations/20260315000002-create-assignment-submissions-table';
 import * as createLessonPlansTable from '../migrations/20260315000003-create-lesson-plans-table';
@@ -77,6 +86,11 @@ const migrations: Migration[] = [
     name: '20240206000002-create-attendance-rules',
     up: createAttendanceRules.up,
     down: createAttendanceRules.down
+  },
+  {
+    name: '20240206000003-create-notification-templates',
+    up: createNotificationTemplates.up,
+    down: createNotificationTemplates.down
   },
   {
     name: '20240207000001-create-roles-permissions',
@@ -129,9 +143,29 @@ const migrations: Migration[] = [
     down: addSchoolConfigFormatColumns.down
   },
   {
+    name: '20260311000001-add-municipality-id-to-all-tenant-tables',
+    up: addMunicipalityTenantIsolation.up,
+    down: addMunicipalityTenantIsolation.down
+  },
+  {
     name: '033-create-archive-tables',
     up: (createArchiveTables as any).default.up,
     down: (createArchiveTables as any).default.down
+  },
+  {
+    name: '20260519000001-add-missing-municipality-tenant-columns',
+    up: addMissingMunicipalityTenantColumns.up,
+    down: addMissingMunicipalityTenantColumns.down
+  },
+  {
+    name: '20260519000002-backfill-global-tenant-rows',
+    up: backfillGlobalTenantRows.up,
+    down: backfillGlobalTenantRows.down
+  },
+  {
+    name: '20260519000003-create-behavior-records',
+    up: createBehaviorRecords.up,
+    down: createBehaviorRecords.down
   },
   {
     name: '014-create-leave-applications-table',
@@ -164,6 +198,21 @@ const migrations: Migration[] = [
     down: createHostelTables.down
   },
   {
+    name: '20260608000001-create-hostel-operation-tables',
+    up: createHostelOperationTables.up,
+    down: createHostelOperationTables.down
+  },
+  {
+    name: '20260609000001-create-transport-operation-tables',
+    up: createTransportOperationTables.up,
+    down: createTransportOperationTables.down
+  },
+  {
+    name: '20260609000002-create-student-id-sequences',
+    up: createStudentIdSequences.up,
+    down: createStudentIdSequences.down
+  },
+  {
     name: '20260315000001-create-assignments-table',
     up: createAssignmentsTable.up,
     down: createAssignmentsTable.down
@@ -182,6 +231,11 @@ const migrations: Migration[] = [
     name: '20260315000004-create-syllabus-progress-table',
     up: createSyllabusProgressTable.up,
     down: createSyllabusProgressTable.down
+  },
+  {
+    name: '20260519000004-backfill-null-school-tenants',
+    up: backfillNullSchoolTenants.up,
+    down: backfillNullSchoolTenants.down
   }
 ];
 

@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const baseURL = process.env.E2E_BASE_URL || 'http://localhost:5173';
+const shouldStartWebServer = process.env.E2E_SKIP_WEBSERVER !== '1';
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -13,7 +16,7 @@ export default defineConfig({
   timeout: 60000,
   expect: { timeout: 15000 },
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -28,9 +31,11 @@ export default defineConfig({
     },
   ],
 
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: true,
-  },
+  webServer: shouldStartWebServer
+    ? {
+        command: process.env.E2E_WEB_COMMAND || 'npm run dev',
+        url: baseURL,
+        reuseExistingServer: true,
+      }
+    : undefined,
 });

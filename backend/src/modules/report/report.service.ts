@@ -806,20 +806,20 @@ class ReportService {
       }));
     } catch { classWiseEnrollment = []; }
 
-    // Staff distribution by role
+    // Staff distribution by category. Staff records do not own auth roles; roles live on users.
     let staffDistribution: { label: string; value: number }[] = [];
     try {
-      const staffByRole = await Staff.findAll({
+      const staffByCategory = await Staff.findAll({
         where: { status: 'active' },
         attributes: [
-          'role',
+          'category',
           [Staff.sequelize!.fn('COUNT', Staff.sequelize!.col('staff_id')), 'count'],
         ],
-        group: ['role'],
+        group: ['category'],
         raw: true,
       }) as any[];
-      staffDistribution = staffByRole.map((s: any) => ({
-        label: s.role || 'Other',
+      staffDistribution = staffByCategory.map((s: any) => ({
+        label: s.category || 'Other',
         value: parseInt(s.count),
       }));
     } catch {

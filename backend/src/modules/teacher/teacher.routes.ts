@@ -52,8 +52,20 @@ router.get(
 
 router.get(
   '/my-class',
-  authorize(UserRole.CLASS_TEACHER),
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.CLASS_TEACHER),
   teacherController.getMyClass
+);
+
+router.get(
+  '/behavior-records',
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.CLASS_TEACHER),
+  teacherController.getBehaviorRecords
+);
+
+router.post(
+  '/behavior-records',
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.CLASS_TEACHER),
+  teacherController.createBehaviorRecord
 );
 
 export default router;

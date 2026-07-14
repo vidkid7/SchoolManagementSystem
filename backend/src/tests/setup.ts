@@ -3,11 +3,7 @@
  * Runs before all tests
  */
 
-import { Request, Response } from 'express';
-import { initializeAssociations } from '@models/associations';
-
-// Initialize model associations
-initializeAssociations();
+import type { Request, Response } from 'express';
 
 // Set test environment
 process.env.NODE_ENV = 'test';
@@ -19,14 +15,19 @@ process.env.SESSION_SECRET = 'test_session_secret';
 // Set database environment variables for tests
 process.env.DB_HOST = 'localhost';
 process.env.DB_PORT = '3306';
-process.env.DB_NAME = 'school_management_system';
+process.env.DB_NAME = 'school_management_system_test';
 process.env.DB_USER = 'root';
 process.env.DB_PASSWORD = 'Dhire12345@@';
 process.env.DB_POOL_MIN = '2';
 process.env.DB_POOL_MAX = '10';
 
-// Increase timeout for integration tests
-jest.setTimeout(10000);
+// Initialize model associations after test env vars are set so database config
+// does not lock onto default root/no-password credentials during module import.
+const { initializeAssociations } = require('@models/associations');
+initializeAssociations();
+
+// Full MySQL schema sync in integration-style service tests can exceed 10s.
+jest.setTimeout(60000);
 
 // Mock console methods to reduce noise in tests
 global.console = {

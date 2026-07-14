@@ -171,107 +171,109 @@ const getBaseTheme = (): ThemeOptions => ({
   },
 });
 
-// Light mode palette - iOS-inspired with warm undertones
+// Light mode palette - aligned with the dashboard design system
 const getLightPalette = (): ThemeOptions => ({
   palette: {
     mode: 'light',
     primary: {
-      main: '#007AFF', // iOS Blue
-      light: '#5AC8FA',
-      dark: '#0051D5',
+      main: '#2563eb', // Brand blue (matches dashboard)
+      light: '#60a5fa',
+      dark: '#1d4ed8',
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#5856D6', // iOS Purple
-      light: '#AF52DE',
-      dark: '#3A38B1',
+      main: '#7c3aed', // Brand purple (matches dashboard)
+      light: '#a855f7',
+      dark: '#6d28d9',
+      contrastText: '#ffffff',
     },
     background: {
-      default: '#F2F2F7', // iOS System Gray 6
-      paper: 'rgba(255, 255, 255, 0.72)', // Liquid glass
+      default: '#f3f7fc', // Matches dashboard shell background
+      paper: '#ffffff',
     },
     text: {
-      primary: '#1C1C1E', // iOS Label
-      secondary: '#8E8E93', // iOS Secondary Label
+      primary: '#0f172a', // Slate 900
+      secondary: '#64748b', // Slate 500
     },
     success: {
-      main: '#34C759', // iOS Green
-      light: '#30D158',
-      dark: '#248A3D',
+      main: '#16a34a',
+      light: '#22c55e',
+      dark: '#15803d',
     },
     warning: {
-      main: '#FF9500', // iOS Orange
-      light: '#FFCC00',
-      dark: '#C93400',
+      main: '#f97316',
+      light: '#fb923c',
+      dark: '#c2410c',
     },
     error: {
-      main: '#FF3B30', // iOS Red
-      light: '#FF453A',
-      dark: '#D70015',
+      main: '#dc2626',
+      light: '#ef4444',
+      dark: '#b91c1c',
     },
     info: {
-      main: '#007AFF', // iOS Blue
-      light: '#5AC8FA',
-      dark: '#0051D5',
+      main: '#2563eb',
+      light: '#60a5fa',
+      dark: '#1d4ed8',
     },
-    divider: 'rgba(60, 60, 67, 0.12)',
+    divider: 'rgba(226, 232, 240, 0.92)',
     action: {
-      hover: 'rgba(0, 0, 0, 0.04)',
-      selected: 'rgba(0, 122, 255, 0.12)',
-      disabled: 'rgba(0, 0, 0, 0.26)',
+      hover: 'rgba(37, 99, 235, 0.05)',
+      selected: 'rgba(37, 99, 235, 0.12)',
+      disabled: 'rgba(15, 23, 42, 0.26)',
     },
   },
 });
 
-// Dark mode palette - iOS-inspired OLED-friendly
+// Dark mode palette - aligned with the dashboard design system
 const getDarkPalette = (): ThemeOptions => ({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#0A84FF', // iOS Blue (Dark)
-      light: '#64D2FF',
-      dark: '#0040DD',
+      main: '#3b82f6', // Brand blue (dark surfaces)
+      light: '#60a5fa',
+      dark: '#1d4ed8',
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#5E5CE6', // iOS Purple (Dark)
-      light: '#BF5AF2',
-      dark: '#4636C8',
+      main: '#8b5cf6', // Brand purple (dark surfaces)
+      light: '#a78bfa',
+      dark: '#6d28d9',
+      contrastText: '#ffffff',
     },
     background: {
-      default: '#000000', // True black for OLED
-      paper: 'rgba(28, 28, 30, 0.72)', // Liquid glass dark
+      default: '#030712', // Matches dashboard dark shell
+      paper: '#0f172a',
     },
     text: {
-      primary: '#FFFFFF', // iOS Label
-      secondary: '#8E8E93', // iOS Secondary Label
+      primary: '#f8fafc',
+      secondary: '#94a3b8',
     },
     success: {
-      main: '#30D158', // iOS Green (Dark)
-      light: '#32FF6A',
-      dark: '#1B7F3D',
+      main: '#22c55e',
+      light: '#4ade80',
+      dark: '#16a34a',
     },
     warning: {
-      main: '#FF9F0A', // iOS Orange (Dark)
-      light: '#FFD60A',
-      dark: '#A65D00',
+      main: '#f97316',
+      light: '#fb923c',
+      dark: '#c2410c',
     },
     error: {
-      main: '#FF453A', // iOS Red (Dark)
-      light: '#FF6961',
-      dark: '#C41C1C',
+      main: '#ef4444',
+      light: '#f87171',
+      dark: '#b91c1c',
     },
     info: {
-      main: '#64D2FF', // iOS Cyan (Dark)
-      light: '#70D7FF',
-      dark: '#0055B3',
+      main: '#3b82f6',
+      light: '#60a5fa',
+      dark: '#1d4ed8',
     },
     action: {
       hover: 'rgba(255, 255, 255, 0.08)',
-      selected: 'rgba(10, 132, 255, 0.24)',
+      selected: 'rgba(59, 130, 246, 0.24)',
       disabled: 'rgba(255, 255, 255, 0.3)',
     },
-    divider: 'rgba(255, 255, 255, 0.08)',
+    divider: 'rgba(148, 163, 184, 0.18)',
   },
 });
 
@@ -338,11 +340,11 @@ export const createAppTheme = (
             backdropFilter: 'blur(40px) saturate(180%)',
             WebkitBackdropFilter: 'blur(40px) saturate(180%)',
             backgroundColor: mode === 'dark' 
-              ? 'rgba(28, 28, 30, 0.72)' 
-              : 'rgba(255, 255, 255, 0.72)',
+              ? 'rgba(15, 23, 42, 0.78)' 
+              : 'rgba(255, 255, 255, 0.82)',
             border: mode === 'dark' 
-              ? '1px solid rgba(255, 255, 255, 0.08)' 
-              : '1px solid rgba(255, 255, 255, 0.5)',
+              ? '1px solid rgba(148, 163, 184, 0.18)' 
+              : '1px solid rgba(226, 232, 240, 0.9)',
             transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
             '&:hover': {
               boxShadow: shadows.elevated,
@@ -364,11 +366,11 @@ export const createAppTheme = (
             backdropFilter: 'blur(40px) saturate(180%)',
             WebkitBackdropFilter: 'blur(40px) saturate(180%)',
             backgroundColor: mode === 'dark' 
-              ? 'rgba(28, 28, 30, 0.72)' 
-              : 'rgba(255, 255, 255, 0.72)',
+              ? 'rgba(15, 23, 42, 0.78)' 
+              : 'rgba(255, 255, 255, 0.82)',
             border: mode === 'dark' 
-              ? '1px solid rgba(255, 255, 255, 0.08)' 
-              : '1px solid rgba(255, 255, 255, 0.5)',
+              ? '1px solid rgba(148, 163, 184, 0.18)' 
+              : '1px solid rgba(226, 232, 240, 0.9)',
           },
           elevation2: {
             boxShadow: shadows.elevated,
@@ -391,11 +393,11 @@ export const createAppTheme = (
             backdropFilter: 'blur(50px) saturate(200%)',
             WebkitBackdropFilter: 'blur(50px) saturate(200%)',
             backgroundColor: mode === 'dark' 
-              ? 'rgba(44, 44, 46, 0.85)' 
-              : 'rgba(255, 255, 255, 0.88)',
+              ? 'rgba(15, 23, 42, 0.92)' 
+              : 'rgba(255, 255, 255, 0.92)',
             border: mode === 'dark' 
-              ? '1px solid rgba(255, 255, 255, 0.12)' 
-              : '1px solid rgba(255, 255, 255, 0.6)',
+              ? '1px solid rgba(148, 163, 184, 0.2)' 
+              : '1px solid rgba(226, 232, 240, 0.9)',
             boxShadow: shadows.elevated,
           },
         },
@@ -428,11 +430,11 @@ export const createAppTheme = (
             backdropFilter: 'blur(50px) saturate(180%)',
             WebkitBackdropFilter: 'blur(50px) saturate(180%)',
             backgroundColor: mode === 'dark' 
-              ? 'rgba(28, 28, 30, 0.88)' 
+              ? 'rgba(8, 20, 39, 0.92)' 
               : 'rgba(255, 255, 255, 0.88)',
             borderRight: mode === 'dark' 
-              ? '1px solid rgba(255, 255, 255, 0.08)' 
-              : '1px solid rgba(255, 255, 255, 0.5)',
+              ? '1px solid rgba(148, 163, 184, 0.16)' 
+              : '1px solid rgba(226, 232, 240, 0.9)',
           },
         },
       },
@@ -464,11 +466,11 @@ export const createAppTheme = (
             backdropFilter: 'blur(40px) saturate(180%)',
             WebkitBackdropFilter: 'blur(40px) saturate(180%)',
             backgroundColor: mode === 'dark' 
-              ? 'rgba(28, 28, 30, 0.72)' 
-              : 'rgba(255, 255, 255, 0.72)',
+              ? 'rgba(8, 20, 39, 0.78)' 
+              : 'rgba(255, 255, 255, 0.78)',
             borderBottom: mode === 'dark' 
-              ? '1px solid rgba(255, 255, 255, 0.08)' 
-              : '1px solid rgba(255, 255, 255, 0.5)',
+              ? '1px solid rgba(148, 163, 184, 0.16)' 
+              : '1px solid rgba(226, 232, 240, 0.9)',
           },
         },
       },

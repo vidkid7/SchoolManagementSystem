@@ -19,27 +19,36 @@ class StaffService {
   async generateStaffCode(): Promise<string> {
     const year = new Date().getFullYear();
     const prefix = env.DEFAULT_SCHOOL_CODE || 'SCH';
+    const codePrefix = `${prefix}-STAFF-${year}-`;
     
     // Retry up to 5 times in case of concurrent conflicts
     const maxRetries = 5;
     
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        // Count existing staff codes for this year
-        const count = await Staff.count({
+        const existingCodes = await Staff.findAll({
           where: {
             staffCode: {
-              [Op.like]: `${prefix}-STAFF-${year}-%`
+              [Op.like]: `${codePrefix}%`
             }
-          }
+          },
+          attributes: ['staffCode'],
+          paranoid: false
         });
 
-        const seqNum = (count + 1).toString().padStart(4, '0');
+        const maxSequence = existingCodes.reduce((max, staff) => {
+          const suffix = staff.staffCode.slice(codePrefix.length);
+          const sequence = /^\d+$/.test(suffix) ? Number(suffix) : 0;
+          return Math.max(max, sequence);
+        }, 0);
+
+        const seqNum = (maxSequence + attempt + 1).toString().padStart(4, '0');
         const staffCode = `${prefix}-STAFF-${year}-${seqNum}`;
         
         // Check if this code already exists (race condition check)
         const existing = await Staff.findOne({
-          where: { staffCode }
+          where: { staffCode },
+          paranoid: false
         });
         
         if (!existing) {

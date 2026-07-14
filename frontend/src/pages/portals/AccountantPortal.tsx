@@ -371,7 +371,7 @@ const AccountantPortal: React.FC = () => {
           <AccountIcon sx={{ fontSize: 32, color: C.primary }} />
           <Box sx={{ flex: 1 }}>
             <Typography variant="h5" fontWeight={700}>{t('finance.portal') || 'Finance Portal'}</Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" component="div" color="text.secondary">
               {t('common.welcome')}, <strong>{user?.firstName || user?.username}</strong>
               <Chip label={t('roles.accountant') || 'Accountant'} size="small" sx={{
                 ml: 1, height: 18, fontSize: '0.68rem', fontWeight: 700,

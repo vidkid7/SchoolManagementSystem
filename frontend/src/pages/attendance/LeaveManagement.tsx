@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
+import { useSelector } from 'react-redux';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import {
   Box,
@@ -59,33 +60,37 @@ export function LeaveManagement() {
   const theme = useTheme();
   const { t } = useTranslation();
   const S = useAdminStyles(theme);
+  const userRole = useSelector((state: any) => state.auth.user?.role);
+  const canManageLeaves = userRole === 'School_Admin' || userRole === 'Class_Teacher';
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [leaves, setLeaves] = useState<LeaveApplication[]>([]);
   const [selectedLeave, setSelectedLeave] = useState<LeaveApplication | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [actionType, setActionType] = useState<'approve' | 'reject'>('approve');
+  const [viewOnly, setViewOnly] = useState(false);
   const [remarks, setRemarks] = useState('');
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
     fetchLeaves();
-  }, [activeTab]);
+  }, [activeTab, canManageLeaves]);
 
   const fetchLeaves = async () => {
     try {
       setLoading(true);
       setError('');
-      const status = activeTab === 0 ? 'pending' : activeTab === 1 ? 'approved' : 'rejected';
-      const response = await apiClient.get('/attendance/leave/pending', {
-        params: { status },
-      });
+      const response = canManageLeaves
+        ? await apiClient.get('/attendance/leave/pending', {
+            params: { status: activeTab === 0 ? 'pending' : activeTab === 1 ? 'approved' : 'rejected' },
+          })
+        : await apiClient.get('/attendance/leave/my');
       
-      const leavesData = response.data?.data || [];
+      const leavesPayload = response.data?.data || [];
+      const leavesData = Array.isArray(leavesPayload) ? leavesPayload : (leavesPayload.leaves || []);
       setLeaves(leavesData);
     } catch (error: any) {
-      console.error('Failed to fetch leaves:', error);
       setError(error.response?.data?.message || t('attendance.failedToProcessLeave'));
     } finally {
       setLoading(false);
@@ -95,6 +100,7 @@ export function LeaveManagement() {
   const handleOpenDialog = (leave: LeaveApplication, action: 'approve' | 'reject') => {
     setSelectedLeave(leave);
     setActionType(action);
+    setViewOnly(false);
     setRemarks('');
     setDialogOpen(true);
   };
@@ -102,6 +108,7 @@ export function LeaveManagement() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setSelectedLeave(null);
+    setViewOnly(false);
     setRemarks('');
   };
 
@@ -165,11 +172,13 @@ export function LeaveManagement() {
         {success && <Alert severity="success" sx={{ mb: 2, borderRadius: R.md }}>{success}</Alert>}
         {error && <Alert severity="error" sx={{ mb: 2, borderRadius: R.md }}>{error}</Alert>}
 
-        <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
-          <Tab label={t('common.pending')} sx={S.TAB_ACTIVE} />
-          <Tab label={t('attendance.approveLeave')} sx={S.TAB_ACTIVE} />
-          <Tab label={t('attendance.rejectLeave')} sx={S.TAB_ACTIVE} />
-        </Tabs>
+        {canManageLeaves && (
+          <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
+            <Tab label={t('common.pending')} sx={S.TAB_ACTIVE} />
+            <Tab label={t('attendance.approveLeave')} sx={S.TAB_ACTIVE} />
+            <Tab label={t('attendance.rejectLeave')} sx={S.TAB_ACTIVE} />
+          </Tabs>
+        )}
       </Paper>
 
       {loading ? (
@@ -234,13 +243,14 @@ export function LeaveManagement() {
                       color="info"
                       onClick={() => {
                         setSelectedLeave(leave);
+                        setViewOnly(true);
                         setDialogOpen(true);
                       }}
                       sx={S.BTN_ICON}
                     >
                       <ViewIcon />
                     </IconButton>
-                    {leave.status === 'pending' && (
+                    {canManageLeaves && leave.status === 'pending' && (
                       <>
                         <IconButton
                           size="small"
@@ -277,7 +287,9 @@ export function LeaveManagement() {
         PaperProps={{ sx: { borderRadius: `${R.lg * 8}px` } }}
       >
         <DialogTitle>
-          {t('attendance.leaveApproveReject', { action: actionType === 'approve' ? t('attendance.approveLeave') : t('attendance.rejectLeave') })}
+          {viewOnly
+            ? t('attendance.leaveDetails', 'Leave Details')
+            : t('attendance.leaveApproveReject', { action: actionType === 'approve' ? t('attendance.approveLeave') : t('attendance.rejectLeave') })}
         </DialogTitle>
         <DialogContent>
           {selectedLeave && (
@@ -306,25 +318,29 @@ export function LeaveManagement() {
             </Box>
           )}
 
-          <TextField
-            fullWidth
-            multiline
-            rows={3}
-            label={t('attendance.remarksOptional')}
-            value={remarks}
-            onChange={(e) => setRemarks(e.target.value)}
-            sx={{ ...S.TF, mt: 2 }}
-          />
+          {!viewOnly && canManageLeaves && (
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              label={t('attendance.remarksOptional')}
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              sx={{ ...S.TF, mt: 2 }}
+            />
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog} sx={S.BTN_GHOST}>{t('common.cancel')}</Button>
-          <Button
-            variant="contained"
-            onClick={handleSubmitAction}
-            sx={{ ...S.BTN_PRIMARY, ...actionType === 'approve' ? S.BTN_SUCCESS : S.BTN_DANGER }}
-          >
-            {actionType === 'approve' ? t('attendance.approveLeave') : t('attendance.rejectLeave')}
-          </Button>
+          {!viewOnly && canManageLeaves && (
+            <Button
+              variant="contained"
+              onClick={handleSubmitAction}
+              sx={{ ...S.BTN_PRIMARY, ...actionType === 'approve' ? S.BTN_SUCCESS : S.BTN_DANGER }}
+            >
+              {actionType === 'approve' ? t('attendance.approveLeave') : t('attendance.rejectLeave')}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </Box>

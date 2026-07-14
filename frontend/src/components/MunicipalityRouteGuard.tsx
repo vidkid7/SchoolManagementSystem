@@ -6,12 +6,13 @@
  */
 
 import React from 'react';
-import { Navigate, Outlet, useParams } from 'react-router-dom';
+import { Navigate, Outlet, useLocation, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 
 const MunicipalityRouteGuard: React.FC = () => {
   const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
+  const location = useLocation();
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
 
   if (!isAuthenticated || !user) {
@@ -24,7 +25,12 @@ const MunicipalityRouteGuard: React.FC = () => {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  if (municipalitySlug && municipalitySlug !== userSlug) {
+  if (municipalitySlug && municipalitySlug.toLowerCase() === userSlug.toLowerCase() && municipalitySlug !== userSlug) {
+    const suffix = location.pathname.replace(/^\/[^/]+/, '');
+    return <Navigate to={`/${userSlug}${suffix}${location.search}`} replace />;
+  }
+
+  if (municipalitySlug && municipalitySlug.toLowerCase() !== userSlug.toLowerCase()) {
     return <Navigate to={`/${userSlug}/dashboard`} replace />;
   }
 

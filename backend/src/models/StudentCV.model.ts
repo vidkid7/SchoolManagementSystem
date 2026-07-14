@@ -137,13 +137,13 @@ class StudentCV
 StudentCV.init(
   {
     cvId: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER.UNSIGNED,
       autoIncrement: true,
       primaryKey: true,
       allowNull: false
     },
     studentId: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
       references: {
         model: 'students',

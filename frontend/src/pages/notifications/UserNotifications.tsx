@@ -171,41 +171,46 @@ export function UserNotifications() {
           </Box>
         ) : (
           <List disablePadding>
-            {filtered.map((n, idx) => (
-              <Box key={n.notificationId}>
-                {idx > 0 && <Divider sx={{ opacity: 0.06 }} />}
-                <ListItem
-                  alignItems="flex-start"
-                  sx={{
-                    py: 2, px: 3,
-                    background: n.isRead ? 'transparent' : 'rgba(0,122,255,0.04)',
-                    cursor: n.isRead ? 'default' : 'pointer',
-                    transition: 'background 0.2s',
-                    '&:hover': { background: 'rgba(0,122,255,0.04)' },
-                    position: 'relative',
-                  }}
-                  onClick={() => !n.isRead && markRead(n.notificationId)}
-                  secondaryAction={
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      {!n.isRead && (
-                        <IconButton
-                          size="small"
-                          onClick={(e) => { e.stopPropagation(); markRead(n.notificationId); }}
-                          sx={{ opacity: 0.5, '&:hover': { opacity: 1, color: C.success } }}
-                        >
-                          <CheckAllIcon sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      )}
-                      <IconButton
-                        size="small"
-                        onClick={(e) => { e.stopPropagation(); deleteNotification(n.notificationId); }}
-                        sx={{ opacity: 0.4, '&:hover': { opacity: 1, color: C.danger } }}
-                      >
-                        <DeleteIcon sx={{ fontSize: 16 }} />
-                      </IconButton>
-                    </Box>
-                  }
-                >
+            {filtered.map((n, idx) => {
+              const persistedId = n.notificationId;
+
+              return (
+                <Box key={`${n.clientKey}-${idx}`}>
+                  {idx > 0 && <Divider sx={{ opacity: 0.06 }} />}
+                  <ListItem
+                    alignItems="flex-start"
+                    sx={{
+                      py: 2, px: 3,
+                      background: n.isRead ? 'transparent' : 'rgba(0,122,255,0.04)',
+                      cursor: n.isRead ? 'default' : 'pointer',
+                      transition: 'background 0.2s',
+                      '&:hover': { background: 'rgba(0,122,255,0.04)' },
+                      position: 'relative',
+                    }}
+                    onClick={() => !n.isRead && persistedId && markRead(persistedId)}
+                    secondaryAction={
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        {!n.isRead && persistedId && (
+                          <IconButton
+                            size="small"
+                            onClick={(e) => { e.stopPropagation(); markRead(persistedId); }}
+                            sx={{ opacity: 0.5, '&:hover': { opacity: 1, color: C.success } }}
+                          >
+                            <CheckAllIcon sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        )}
+                        {persistedId && (
+                          <IconButton
+                            size="small"
+                            onClick={(e) => { e.stopPropagation(); deleteNotification(persistedId); }}
+                            sx={{ opacity: 0.4, '&:hover': { opacity: 1, color: C.danger } }}
+                          >
+                            <DeleteIcon sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        )}
+                      </Box>
+                    }
+                  >
                   {!n.isRead && (
                     <Box sx={{
                       position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)',
@@ -218,6 +223,7 @@ export function UserNotifications() {
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText
+                    disableTypography
                     primary={
                       <Typography variant="body2" sx={{ fontWeight: n.isRead ? 400 : 700, fontSize: '0.88rem' }}>
                         {n.title}
@@ -246,9 +252,10 @@ export function UserNotifications() {
                       </Box>
                     }
                   />
-                </ListItem>
-              </Box>
-            ))}
+                  </ListItem>
+                </Box>
+              );
+            })}
           </List>
         )}
 

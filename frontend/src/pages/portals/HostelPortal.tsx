@@ -535,7 +535,10 @@ const HostelPortal: React.FC = () => {
                 <Typography variant="body2"><strong>{t('common.name')}:</strong> {profile?.firstName || user?.firstName} {profile?.lastName || user?.lastName}</Typography>
                 <Typography variant="body2" mt={1}><strong>{t('portal.email')}:</strong> {profile?.email || user?.email || '—'}</Typography>
                 <Typography variant="body2" mt={1}><strong>{t('portal.phone')}:</strong> {profile?.phoneNumber || '—'}</Typography>
-                <Typography variant="body2" mt={1}><strong>{t('common.status')}:</strong> <Chip label={profile?.status || 'active'} size="small" color="success" /></Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                  <Typography variant="body2" component="span"><strong>{t('common.status')}:</strong></Typography>
+                  <Chip label={profile?.status || 'active'} size="small" color="success" />
+                </Box>
             </Box>
           </Grid>
           <Grid item xs={12} md={6}>
@@ -570,7 +573,11 @@ const HostelPortal: React.FC = () => {
           <FormControl fullWidth>
             <InputLabel>{t('common.type')}</InputLabel>
             <Select label={t('common.type')} value={formData.type ?? ''}onChange={e => setFormData({ ...formData, type: e.target.value })}>
-              {['Single', 'Double', 'Triple', 'Dormitory'].map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+              {[
+                { value: 'single', label: t('hostel.single', 'Single') },
+                { value: 'double', label: t('hostel.double', 'Double') },
+                { value: 'dormitory', label: t('hostel.dormitory', 'Dormitory') },
+              ].map(option => <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>)}
             </Select>
           </FormControl>
           <TextField label={t('hostel.capacity')} type="number" value={formData.capacity ?? 2} onChange={e => setFormData({ ...formData, capacity: Number(e.target.value) })} fullWidth />

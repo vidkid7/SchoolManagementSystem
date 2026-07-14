@@ -16,7 +16,10 @@ export interface ArchiveMetadataAttributes {
 }
 
 export interface ArchiveMetadataCreationAttributes
-  extends Omit<ArchiveMetadataAttributes, 'id' | 'created_at' | 'updated_at'> {}
+  extends Omit<ArchiveMetadataAttributes, 'id' | 'created_at' | 'updated_at'> {
+  created_at?: Date;
+  updated_at?: Date;
+}
 
 class ArchiveMetadata
   extends Model<ArchiveMetadataAttributes, ArchiveMetadataCreationAttributes>

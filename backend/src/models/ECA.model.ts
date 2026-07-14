@@ -51,40 +51,29 @@ export class ECA
   public readonly deletedAt?: Date;
 
   public hasCapacity(): boolean {
-    if (!this.capacity) return true;
-    return this.currentEnrollment < this.capacity;
+    const capacity = Number(this.getDataValue('capacity') ?? 0);
+    if (!capacity) return true;
+    return Number(this.getDataValue('currentEnrollment') ?? 0) < capacity;
   }
 
   public async incrementEnrollment(): Promise<void> {
-    this.currentEnrollment += 1;
+    this.setDataValue('currentEnrollment', Number(this.getDataValue('currentEnrollment') ?? 0) + 1);
     await this.save();
   }
 
   public async decrementEnrollment(): Promise<void> {
-    if (this.currentEnrollment > 0) {
-      this.currentEnrollment -= 1;
+    const currentEnrollment = Number(this.getDataValue('currentEnrollment') ?? 0);
+    if (currentEnrollment > 0) {
+      this.setDataValue('currentEnrollment', currentEnrollment - 1);
       await this.save();
     }
   }
 
   public toJSON(): object {
+    const values = this.get({ plain: true }) as ECAAttributes;
     return {
-      ecaId: this.ecaId,
-      name: this.name,
-      nameNp: this.nameNp,
-      category: this.category,
-      subcategory: this.subcategory,
-      description: this.description,
-      descriptionNp: this.descriptionNp,
-      coordinatorId: this.coordinatorId,
-      schedule: this.schedule,
-      capacity: this.capacity,
-      currentEnrollment: this.currentEnrollment,
-      academicYearId: this.academicYearId,
-      status: this.status,
+      ...values,
       hasCapacity: this.hasCapacity(),
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
     };
   }
 }

@@ -214,8 +214,8 @@ const LibrarianPortal: React.FC = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {fines.filter(f => f.status === 'pending' || f.status === 'unpaid').slice(0, 10).map(f => (
-                    <TableRow key={f.id} hover>
+                  {fines.filter(f => f.status === 'pending' || f.status === 'unpaid').slice(0, 10).map((f, index) => (
+                    <TableRow key={f.id ?? `${f.studentId ?? 'student'}-${f.bookTitle ?? 'book'}-${index}`} hover>
                       <TableCell>{f.studentName || `Student #${f.studentId || '—'}`}</TableCell>
                       <TableCell>{f.bookTitle || '—'}</TableCell>
                       <TableCell><strong>{t('common.currency')} {Number(f.amount).toLocaleString()}</strong></TableCell>
@@ -249,8 +249,8 @@ const LibrarianPortal: React.FC = () => {
             <TableBody>
               {books.length === 0 ? (
                 <TableRow><TableCell colSpan={7} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('messages.noData')}</Typography></TableCell></TableRow>
-              ) : books.map(b => (
-                <TableRow key={b.id} hover>
+              ) : books.map((b, index) => (
+                <TableRow key={b.id ?? `${b.isbn ?? b.title ?? 'book'}-${index}`} hover>
                   <TableCell><strong>{b.title}</strong></TableCell>
                   <TableCell>{b.author || '—'}</TableCell>
                   <TableCell>{b.isbn || '—'}</TableCell>
@@ -319,8 +319,8 @@ const LibrarianPortal: React.FC = () => {
             <TableBody>
               {fines.length === 0 ? (
                 <TableRow><TableCell colSpan={6} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('messages.noData')}</Typography></TableCell></TableRow>
-              ) : fines.map(f => (
-                <TableRow key={f.id} hover>
+              ) : fines.map((f, index) => (
+                <TableRow key={f.id ?? `${f.studentId ?? 'student'}-${f.bookTitle ?? 'book'}-${index}`} hover>
                   <TableCell>{f.studentName || `Student #${f.studentId || '—'}`}</TableCell>
                   <TableCell>{f.bookTitle || '—'}</TableCell>
                   <TableCell><strong>{t('common.currency')} {Number(f.amount).toLocaleString()}</strong></TableCell>

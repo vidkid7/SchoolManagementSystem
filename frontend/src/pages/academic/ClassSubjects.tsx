@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
@@ -78,6 +79,8 @@ export const ClassSubjects = () => {
   const S = useAdminStyles(theme);
   const { t } = useTranslation();
   const navigate = useSlugNavigate();
+  const userRole = useSelector((state: any) => state.auth.user?.role);
+  const isSchoolAdmin = userRole === 'School_Admin';
   const { municipalitySlug } = useParams();
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -96,8 +99,10 @@ export const ClassSubjects = () => {
   useEffect(() => {
     fetchClasses();
     fetchSubjects();
-    fetchTeachers();
-  }, []);
+    if (isSchoolAdmin) {
+      fetchTeachers();
+    }
+  }, [isSchoolAdmin]);
 
   useEffect(() => {
     if (selectedClass) {
@@ -126,12 +131,17 @@ export const ClassSubjects = () => {
   };
 
   const fetchTeachers = async () => {
+    if (!isSchoolAdmin) {
+      setTeachers([]);
+      return;
+    }
+
     try {
       const response = await apiClient.get('/staff?role=subject_teacher');
       const teachersData = response.data?.data || response.data;
       setTeachers(Array.isArray(teachersData) ? teachersData : []);
     } catch (error) {
-      console.error('Failed to fetch teachers:', error);
+      setTeachers([]);
     }
   };
 
@@ -198,6 +208,7 @@ export const ClassSubjects = () => {
   };
 
   const selectedClassInfo = classes.find(c => c.classId === selectedClass);
+  const tableColSpan = isSchoolAdmin ? 6 : 5;
 
   return (
     <Box>
@@ -275,14 +286,16 @@ export const ClassSubjects = () => {
             <Typography variant="h6" fontWeight={600}>
               {t('classSubjects.assignedSubjects')}
             </Typography>
-            <Button
-              variant="contained" sx={S.BTN_PRIMARY}
-              startIcon={<AddIcon />}
-              onClick={handleOpenDialog}
-              disabled={getAvailableSubjects().length === 0}
-            >
-              {t('classSubjects.assignSubject')}
-            </Button>
+            {isSchoolAdmin && (
+              <Button
+                variant="contained" sx={S.BTN_PRIMARY}
+                startIcon={<AddIcon />}
+                onClick={handleOpenDialog}
+                disabled={getAvailableSubjects().length === 0}
+              >
+                {t('classSubjects.assignSubject')}
+              </Button>
+            )}
           </Box>
 
           <TableContainer>
@@ -294,19 +307,21 @@ export const ClassSubjects = () => {
                   <TableCell sx={{ fontWeight: 600 }}>{t('classSubjects.subjectNameNp')}</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>{t('classSubjects.type')}</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>{t('classSubjects.assignedTeacher')}</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600 }}>{t('common.actions')}</TableCell>
+                  {isSchoolAdmin && (
+                    <TableCell align="right" sx={{ fontWeight: 600 }}>{t('common.actions')}</TableCell>
+                  )}
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loading ? (
                   <TableRow sx={S.TR_HOVER}>
-                    <TableCell colSpan={6} align="center" sx={S.TD}>
+                    <TableCell colSpan={tableColSpan} align="center" sx={S.TD}>
                       {t('common.loading')}
                     </TableCell>
                   </TableRow>
                 ) : classSubjects.length === 0 ? (
                   <TableRow sx={S.TR_HOVER}>
-                    <TableCell colSpan={6} align="center" sx={S.TD}>
+                    <TableCell colSpan={tableColSpan} align="center" sx={S.TD}>
                       {t('classSubjects.noSubjectsAssigned')}
                     </TableCell>
                   </TableRow>
@@ -339,16 +354,18 @@ export const ClassSubjects = () => {
                           </Typography>
                         )}
                       </TableCell>
-                      <TableCell align="right" sx={S.TD}>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleRemoveSubject(cs.subjectId)}
-                          title={t('classSubjects.removeSubject')}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
+                      {isSchoolAdmin && (
+                        <TableCell align="right" sx={S.TD}>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleRemoveSubject(cs.subjectId)}
+                            title={t('classSubjects.removeSubject')}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 )}

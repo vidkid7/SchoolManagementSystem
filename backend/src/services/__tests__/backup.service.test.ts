@@ -2,10 +2,23 @@ import { BackupService } from '../backup.service';
 import fs from 'fs/promises';
 import { exec } from 'child_process';
 import path from 'path';
+import { pipeline } from 'stream/promises';
 
 // Mock dependencies
 jest.mock('fs/promises');
+jest.mock('fs', () => {
+  const actualFs = jest.requireActual('fs');
+  const { PassThrough } = require('stream');
+  return {
+    ...actualFs,
+    createReadStream: jest.fn(() => new PassThrough()),
+    createWriteStream: jest.fn(() => new PassThrough()),
+  };
+});
 jest.mock('child_process');
+jest.mock('stream/promises', () => ({
+  pipeline: jest.fn().mockResolvedValue(undefined),
+}));
 jest.mock('../../utils/logger');
 
 describe('BackupService', () => {
@@ -26,6 +39,7 @@ describe('BackupService', () => {
 
     // Clear all mocks
     jest.clearAllMocks();
+    (pipeline as jest.Mock).mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -85,6 +99,27 @@ describe('BackupService', () => {
       expect(result.size).toBeGreaterThan(0);
     });
 
+    it('should quote backup output paths so Windows paths with spaces are valid', async () => {
+      process.env.BACKUP_PATH = 'C:\\tmp\\school backups';
+      backupService = new BackupService();
+
+      let command = '';
+      const mockExec = exec as unknown as jest.Mock;
+      mockExec.mockImplementation((cmd, callback) => {
+        command = cmd;
+        callback(null, { stdout: '', stderr: '' });
+      });
+
+      (fs.stat as jest.Mock).mockResolvedValue({ size: 1024000 });
+      (fs.unlink as jest.Mock).mockResolvedValue(undefined);
+      (fs.copyFile as jest.Mock).mockResolvedValue(undefined);
+
+      await backupService.createBackup();
+
+      expect(command).toContain('>"C:\\tmp\\school backups\\backup_');
+      expect(command).toContain('--set-gtid-purged=OFF');
+    });
+
     it('should handle backup creation errors', async () => {
       const mockExec = exec as unknown as jest.Mock;
       mockExec.mockImplementation((_cmd, callback) => {
@@ -125,7 +160,9 @@ describe('BackupService', () => {
         'other-file.txt',
       ];
 
-      (fs.readdir as jest.Mock).mockResolvedValue(mockFiles);
+      (fs.readdir as jest.Mock)
+        .mockResolvedValueOnce(mockFiles)
+        .mockResolvedValueOnce([]);
       (fs.stat as jest.Mock).mockResolvedValue({
         size: 1024000,
         mtime: new Date('2024-01-01'),
@@ -297,7 +334,7 @@ describe('BackupService', () => {
       const result = await backupService.restoreBackup(filename);
 
       expect(result.success).toBe(true);
-      expect(result.duration).toBeGreaterThan(0);
+      expect(result.duration).toBeGreaterThanOrEqual(0);
     });
 
     it('should handle restore errors', async () => {

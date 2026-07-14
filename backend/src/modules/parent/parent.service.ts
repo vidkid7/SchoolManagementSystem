@@ -14,6 +14,7 @@ import SportsEnrollment from '@models/SportsEnrollment.model';
 import Sport from '@models/Sport.model';
 import Event from '@models/Event.model';
 import Certificate from '@models/Certificate.model';
+import BehaviorRecord from '@models/BehaviorRecord.model';
 
 interface ChildInfo {
   studentId: number;
@@ -312,9 +313,20 @@ class ParentService {
   async getChildBehavior(childId: number, parentUserId: number): Promise<any[]> {
     await this.verifyParentAccess(childId, parentUserId);
 
-    // Placeholder - behavior tracking would need a dedicated table
-    // For now, return empty array or mock data
-    return [];
+    const records = await BehaviorRecord.findAll({
+      where: { studentId: childId },
+      order: [['date', 'DESC'], ['createdAt', 'DESC']],
+      limit: 50,
+    });
+
+    return records.map((record: any) => ({
+      id: record.id,
+      type: record.type,
+      category: record.category,
+      description: record.description,
+      actionTaken: record.actionTaken,
+      date: record.date ? new Date(record.date).toISOString().split('T')[0] : '',
+    }));
   }
 
   async getSchoolCalendar(): Promise<any[]> {

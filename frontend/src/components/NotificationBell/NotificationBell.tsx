@@ -99,7 +99,7 @@ export function NotificationBell() {
   const handleClose = () => setOpen(false);
 
   const handleNotificationClick = async (n: Notification) => {
-    if (!n.isRead) await markRead(n.notificationId);
+    if (!n.isRead && n.notificationId) await markRead(n.notificationId);
   };
 
   const handleViewAll = () => {
@@ -228,40 +228,43 @@ export function NotificationBell() {
             </Box>
           ) : (
             <List disablePadding>
-              {notifications.slice(0, 15).map((n, idx) => (
-                <Box key={n.notificationId}>
-                  {idx > 0 && <Divider sx={{ opacity: 0.05, mx: 2 }} />}
-                  <ListItem
-                    alignItems="flex-start"
-                    sx={{
-                      py: 1.5,
-                      px: 2,
-                      background: n.isRead
-                        ? 'transparent'
-                        : theme.palette.mode === 'dark'
-                          ? 'rgba(0,122,255,0.06)'
-                          : 'rgba(0,122,255,0.04)',
-                      cursor: 'pointer',
-                      transition: 'background 0.2s',
-                      '&:hover': {
-                        background: theme.palette.mode === 'dark'
-                          ? 'rgba(255,255,255,0.05)'
-                          : 'rgba(0,122,255,0.06)',
-                      },
-                      position: 'relative',
-                    }}
-                    onClick={() => handleNotificationClick(n)}
-                    secondaryAction={
-                      <IconButton
-                        edge="end"
-                        size="small"
-                        onClick={(e) => { e.stopPropagation(); deleteNotification(n.notificationId); }}
-                        sx={{ opacity: 0.4, '&:hover': { opacity: 1, color: '#FF3B30' } }}
-                      >
-                        <DeleteIcon sx={{ fontSize: 14 }} />
-                      </IconButton>
-                    }
-                  >
+              {notifications.slice(0, 15).map((n, idx) => {
+                const persistedId = n.notificationId;
+
+                return (
+                  <Box key={`${n.clientKey}-${idx}`}>
+                    {idx > 0 && <Divider sx={{ opacity: 0.05, mx: 2 }} />}
+                    <ListItem
+                      alignItems="flex-start"
+                      sx={{
+                        py: 1.5,
+                        px: 2,
+                        background: n.isRead
+                          ? 'transparent'
+                          : theme.palette.mode === 'dark'
+                            ? 'rgba(0,122,255,0.06)'
+                            : 'rgba(0,122,255,0.04)',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s',
+                        '&:hover': {
+                          background: theme.palette.mode === 'dark'
+                            ? 'rgba(255,255,255,0.05)'
+                            : 'rgba(0,122,255,0.06)',
+                        },
+                        position: 'relative',
+                      }}
+                      onClick={() => handleNotificationClick(n)}
+                      secondaryAction={persistedId ? (
+                        <IconButton
+                          edge="end"
+                          size="small"
+                          onClick={(e) => { e.stopPropagation(); deleteNotification(persistedId); }}
+                          sx={{ opacity: 0.4, '&:hover': { opacity: 1, color: '#FF3B30' } }}
+                        >
+                          <DeleteIcon sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      ) : null}
+                    >
                     {/* Unread dot */}
                     {!n.isRead && (
                       <Box sx={{
@@ -288,6 +291,7 @@ export function NotificationBell() {
                     </ListItemAvatar>
 
                     <ListItemText
+                      disableTypography
                       primary={
                         <Typography
                           variant="body2"
@@ -315,9 +319,10 @@ export function NotificationBell() {
                         </Box>
                       }
                     />
-                  </ListItem>
-                </Box>
-              ))}
+                    </ListItem>
+                  </Box>
+                );
+              })}
             </List>
           )}
 

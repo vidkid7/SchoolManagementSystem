@@ -46,40 +46,29 @@ export class Notification
 
   // Instance methods
   public async markAsRead(): Promise<void> {
-    this.isRead = true;
-    this.readAt = new Date();
+    this.setDataValue('isRead', true);
+    this.setDataValue('readAt', new Date());
     await this.save();
   }
 
   public async markAsUnread(): Promise<void> {
-    this.isRead = false;
-    this.readAt = undefined;
+    this.setDataValue('isRead', false);
+    this.setDataValue('readAt', undefined);
     await this.save();
   }
 
   public isExpired(): boolean {
-    if (!this.expiresAt) return false;
-    return new Date() > this.expiresAt;
+    const expiresAt = this.getDataValue('expiresAt');
+    if (!expiresAt) return false;
+    return new Date() > expiresAt;
   }
 
   public isUnread(): boolean {
-    return !this.isRead && !this.isExpired();
+    return !this.getDataValue('isRead') && !this.isExpired();
   }
 
   public toJSON(): object {
-    return {
-      notificationId: this.notificationId,
-      userId: this.userId,
-      type: this.type,
-      category: this.category,
-      title: this.title,
-      message: this.message,
-      data: this.data,
-      isRead: this.isRead,
-      readAt: this.readAt,
-      expiresAt: this.expiresAt,
-      createdAt: this.createdAt,
-    };
+    return this.get({ plain: true });
   }
 }
 

@@ -72,58 +72,39 @@ export class Book
   public readonly updatedAt!: Date;
 
   public async decrementAvailableCopies(): Promise<void> {
-    if (this.availableCopies > 0) {
-      this.availableCopies -= 1;
-      if (this.availableCopies === 0) {
-        this.status = 'borrowed';
+    const availableCopies = Number(this.getDataValue('availableCopies') ?? 0);
+    if (availableCopies > 0) {
+      const nextAvailableCopies = availableCopies - 1;
+      this.setDataValue('availableCopies', nextAvailableCopies);
+      if (nextAvailableCopies === 0) {
+        this.setDataValue('status', 'borrowed');
       }
       await this.save();
     }
   }
 
   public async incrementAvailableCopies(): Promise<void> {
-    if (this.availableCopies < this.copies) {
-      this.availableCopies += 1;
-      if (this.availableCopies > 0) {
-        this.status = 'available';
+    const availableCopies = Number(this.getDataValue('availableCopies') ?? 0);
+    const copies = Number(this.getDataValue('copies') ?? 0);
+    if (availableCopies < copies) {
+      const nextAvailableCopies = availableCopies + 1;
+      this.setDataValue('availableCopies', nextAvailableCopies);
+      if (nextAvailableCopies > 0) {
+        this.setDataValue('status', 'available');
       }
       await this.save();
     }
   }
 
   public isAvailable(): boolean {
-    return this.availableCopies > 0 && this.status === 'available';
+    return Number(this.getDataValue('availableCopies') ?? 0) > 0 && this.getDataValue('status') === 'available';
   }
 
   public toJSON(): object {
+    const values = this.get({ plain: true }) as BookAttributes;
     return {
-      bookId: this.bookId,
-      accessionNumber: this.accessionNumber,
-      isbn: this.isbn,
-      title: this.title,
-      titleNp: this.titleNp,
-      author: this.author,
-      authorNp: this.authorNp,
-      publisher: this.publisher,
-      publicationYear: this.publicationYear,
-      category: this.category,
-      subcategory: this.subcategory,
-      language: this.language,
-      edition: this.edition,
-      pages: this.pages,
-      price: this.price,
-      copies: this.copies,
-      availableCopies: this.availableCopies,
-      location: this.location,
-      shelfNumber: this.shelfNumber,
-      barcode: this.barcode,
-      coverImage: this.coverImage,
-      description: this.description,
-      keywords: this.keywords,
-      status: this.status,
+      ...values,
       isAvailable: this.isAvailable(),
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
     };
   }
 }

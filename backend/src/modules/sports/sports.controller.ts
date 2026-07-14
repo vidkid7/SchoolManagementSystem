@@ -1,10 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationResult } from 'express-validator';
+import { Op } from 'sequelize';
 import sportsEnrollmentService from './sportsEnrollment.service';
 import tournamentService from './tournament.service';
 import sportsAchievementService from './sportsAchievement.service';
 import Sport from '@models/Sport.model';
 import Team from '@models/Team.model';
+import SportsEnrollment from '@models/SportsEnrollment.model';
+import SportsAchievement from '@models/SportsAchievement.model';
+import Tournament from '@models/Tournament.model';
 
 /**
  * Sports Controller
@@ -87,7 +91,7 @@ class SportsController {
         return;
       }
 
-      const sport = await Sport.create({
+      const createdSport = await Sport.create({
         name: req.body.name,
         nameNp: req.body.nameNp,
         category: req.body.category,
@@ -97,6 +101,18 @@ class SportsController {
         academicYearId: req.body.academicYearId,
         status: 'active'
       });
+      const createdSportId = Number(createdSport.getDataValue('sportId'));
+      const sport = Number.isFinite(createdSportId) && createdSportId > 0
+        ? createdSport
+        : await Sport.findOne({
+          where: {
+            name: req.body.name,
+            category: req.body.category,
+            coordinatorId: req.body.coordinatorId,
+            academicYearId: req.body.academicYearId,
+          },
+          order: [['createdAt', 'DESC']],
+        }) || createdSport;
 
       res.status(201).json({
         success: true,
@@ -263,12 +279,13 @@ class SportsController {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
       const offset = (page - 1) * limit;
 
-      const { rows: teams, count: total } = await Team.findAndCountAll({
+      const teams = await Team.findAll({
         where: filters,
         limit,
         offset,
         order: [['createdAt', 'DESC']]
       });
+      const total = teams.length;
 
       res.status(200).json({
         success: true,
@@ -724,6 +741,42 @@ class SportsController {
   }
 
   /**
+   * Get sports achievements
+   * GET /api/v1/sports/achievements
+   */
+  async getAchievements(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const page = req.query.page ? parseInt(req.query.page as string) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const offset = (page - 1) * limit;
+      const filters: any = {};
+
+      if (req.query.sportId) filters.sportId = parseInt(req.query.sportId as string);
+      if (req.query.teamId) filters.teamId = parseInt(req.query.teamId as string);
+      if (req.query.tournamentId) filters.tournamentId = parseInt(req.query.tournamentId as string);
+      if (req.query.studentId) filters.studentId = parseInt(req.query.studentId as string);
+      if (req.query.type) filters.type = req.query.type;
+      if (req.query.level) filters.level = req.query.level;
+
+      const achievements = await sportsAchievementService.getAchievements(filters);
+      const data = achievements.slice(offset, offset + limit);
+
+      res.status(200).json({
+        success: true,
+        data,
+        meta: {
+          page,
+          limit,
+          total: achievements.length,
+          totalPages: Math.ceil(achievements.length / limit),
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Get student sports history
    * GET /api/v1/sports/student/:studentId
    * 
@@ -778,35 +831,71 @@ class SportsController {
    */
   async getStatistics(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      let totalSports = 0;
-      let totalTeams = 0;
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+      sixMonthsAgo.setDate(1);
+      sixMonthsAgo.setHours(0, 0, 0, 0);
 
-      try {
-        totalSports = await Sport.count();
-        totalTeams = await Team.count();
-      } catch (dbError) {
-        // If database tables don't exist, use defaults
-        console.log('Database tables may not exist, using defaults');
+      const [
+        totalSports,
+        totalTeams,
+        totalPlayers,
+        upcomingMatches,
+        categoryRows,
+        tournaments,
+      ] = await Promise.all([
+        Sport.count(),
+        Team.count(),
+        SportsEnrollment.count({ distinct: true, col: 'studentId' }),
+        Tournament.count({
+          where: {
+            status: { [Op.in]: ['scheduled', 'ongoing'] },
+            startDate: { [Op.gte]: new Date() },
+          },
+        }),
+        Sport.findAll({
+          attributes: [
+            'category',
+            [Sport.sequelize!.fn('COUNT', Sport.sequelize!.col('sport_id')), 'count'],
+          ],
+          group: ['category'],
+          raw: true,
+        }) as unknown as Promise<Array<{ category: string; count: string | number }>>,
+        Tournament.findAll({
+          where: { startDate: { [Op.gte]: sixMonthsAgo } },
+          attributes: ['startDate', 'schedule'],
+          raw: true,
+        }) as Promise<Array<{ startDate: string | Date; schedule?: unknown[] }>>,
+      ]);
+
+      const monthBuckets = new Map<string, number>();
+      for (let i = 5; i >= 0; i -= 1) {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        monthBuckets.set(date.toLocaleString('en-US', { month: 'short' }), 0);
       }
 
+      tournaments.forEach((tournament) => {
+        const date = new Date(tournament.startDate);
+        if (Number.isNaN(date.getTime())) return;
+        const label = date.toLocaleString('en-US', { month: 'short' });
+        if (!monthBuckets.has(label)) return;
+        const matchCount = Array.isArray(tournament.schedule) && tournament.schedule.length
+          ? tournament.schedule.length
+          : 1;
+        monthBuckets.set(label, (monthBuckets.get(label) || 0) + matchCount);
+      });
+
       const stats = {
-        totalSports: totalSports || 12,
-        totalTeams: totalTeams || 18,
-        totalPlayers: 150,
-        upcomingMatches: 5,
-        sportsByCategory: [
-          { category: 'Team Sports', count: 6 },
-          { category: 'Individual Sports', count: 4 },
-          { category: 'Indoor Games', count: 2 },
-        ],
-        monthlyMatches: [
-          { month: 'Jan', count: 8 },
-          { month: 'Feb', count: 10 },
-          { month: 'Mar', count: 12 },
-          { month: 'Apr', count: 9 },
-          { month: 'May', count: 15 },
-          { month: 'Jun', count: 11 },
-        ],
+        totalSports,
+        totalTeams,
+        totalPlayers,
+        upcomingMatches,
+        sportsByCategory: categoryRows.map((row) => ({
+          category: row.category || 'Uncategorized',
+          count: Number(row.count || 0),
+        })),
+        monthlyMatches: Array.from(monthBuckets.entries()).map(([month, count]) => ({ month, count })),
       };
 
       res.status(200).json({
@@ -826,13 +915,76 @@ class SportsController {
     try {
       const limit = Number(req.query.limit) || 10;
 
-      const matches = [
-        { id: 1, sport: 'Football', teamA: 'School Team A', teamB: 'School Team B', score: '2-1', date: new Date(), status: 'completed', result: 'win' },
-        { id: 2, sport: 'Basketball', teamA: 'School Team', teamB: 'Opponent School', score: '45-42', date: new Date(), status: 'completed', result: 'win' },
-        { id: 3, sport: 'Cricket', teamA: 'School XI', teamB: 'City Club', score: '150/5', date: new Date(), status: 'completed', result: 'win' },
-        { id: 4, sport: 'Volleyball', teamA: 'School Team', teamB: 'District Team', score: '3-1', date: new Date(), status: 'completed', result: 'loss' },
-        { id: 5, sport: 'Table Tennis', playerA: 'Ram Sharma', playerB: 'Hari Thapa', score: '3-2', date: new Date(), status: 'completed', result: 'win' },
-      ].slice(0, limit);
+      const [tournaments, achievements] = await Promise.all([
+        Tournament.findAll({
+          order: [['startDate', 'DESC'], ['createdAt', 'DESC']],
+          limit,
+          raw: true,
+        }) as Promise<any[]>,
+        SportsAchievement.findAll({
+          order: [['achievementDate', 'DESC'], ['createdAt', 'DESC']],
+          limit,
+          raw: true,
+        }) as Promise<any[]>,
+      ]);
+
+      const sportIds = [
+        ...tournaments.map((item) => item.sportId),
+        ...achievements.map((item) => item.sportId),
+      ].filter(Boolean);
+      const sports = sportIds.length
+        ? await Sport.findAll({
+            where: { sportId: { [Op.in]: Array.from(new Set(sportIds)) } },
+            attributes: ['sportId', 'name'],
+            raw: true,
+          }) as Array<{ sportId: number; name: string }>
+        : [];
+      const sportNameById = new Map(sports.map((sport) => [Number(sport.sportId), sport.name]));
+
+      const tournamentRows = tournaments.flatMap((tournament) => {
+        const sportName = sportNameById.get(Number(tournament.sportId)) || 'Sport';
+        if (Array.isArray(tournament.schedule) && tournament.schedule.length) {
+          return tournament.schedule.map((match: any, index: number) => ({
+            id: match.matchId || `tournament-${tournament.tournamentId}-${index}`,
+            sport: sportName,
+            tournament: tournament.name,
+            teamA: match.team1Id ? `Team #${match.team1Id}` : match.participant1Id ? `Participant #${match.participant1Id}` : tournament.name,
+            teamB: match.team2Id ? `Team #${match.team2Id}` : match.participant2Id ? `Participant #${match.participant2Id}` : '',
+            score: [match.score1, match.score2].filter(Boolean).join('-'),
+            date: match.date || tournament.startDate,
+            status: tournament.status,
+            result: match.winnerId ? `Winner #${match.winnerId}` : tournament.status,
+          }));
+        }
+
+        return [{
+          id: `tournament-${tournament.tournamentId}`,
+          sport: sportName,
+          tournament: tournament.name,
+          teamA: tournament.name,
+          teamB: tournament.venue || '',
+          score: '',
+          date: tournament.startDate,
+          status: tournament.status,
+          result: tournament.status,
+        }];
+      });
+
+      const achievementRows = achievements.map((achievement) => ({
+        id: `achievement-${achievement.achievementId}`,
+        sport: sportNameById.get(Number(achievement.sportId)) || 'Sport',
+        tournament: achievement.title,
+        teamA: achievement.teamId ? `Team #${achievement.teamId}` : `Student #${achievement.studentId}`,
+        teamB: achievement.level,
+        score: achievement.medal || achievement.position || '',
+        date: achievement.achievementDate,
+        status: 'completed',
+        result: achievement.type,
+      }));
+
+      const matches = [...tournamentRows, ...achievementRows]
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, limit);
 
       res.status(200).json({
         success: true,

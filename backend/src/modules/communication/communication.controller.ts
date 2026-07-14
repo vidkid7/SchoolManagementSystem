@@ -1757,23 +1757,31 @@ export class CommunicationController {
       });
 
       const data = templates.map(template => {
+        const templateData = template.get({ plain: true }) as {
+          id: string;
+          name: string;
+          channel: 'sms' | 'email' | 'push' | 'in_app';
+          subject?: string | null;
+          templateEn: string;
+          variables?: string[];
+        };
         const base = {
-          id: template.id,
-          name: template.name,
-          variables: template.variables || [],
+          id: templateData.id,
+          name: templateData.name,
+          variables: templateData.variables || [],
         };
 
-        if (template.channel === 'sms') {
+        if (templateData.channel === 'sms') {
           return {
             ...base,
-            content: template.templateEn,
+            content: templateData.templateEn,
           };
         }
 
         return {
           ...base,
-          subject: template.subject || '',
-          body: template.templateEn,
+          subject: templateData.subject || '',
+          body: templateData.templateEn,
         };
       });
 

@@ -87,8 +87,8 @@ export function BehaviorTracking() {
     try {
       setLoading(true);
       const [recordsRes, studentsRes] = await Promise.all([
-        apiClient.get('/teacher/behavior-records'),
-        apiClient.get('/teacher/my-class'),
+        apiClient.get('/teachers/behavior-records'),
+        apiClient.get('/teachers/my-class'),
       ]);
       setRecords(recordsRes.data?.data || []);
       setStudents(studentsRes.data?.data?.students || []);
@@ -101,7 +101,7 @@ export function BehaviorTracking() {
 
   const handleSubmit = async () => {
     try {
-      await apiClient.post('/teacher/behavior-records', formData);
+      await apiClient.post('/teachers/behavior-records', formData);
       setSuccess(t('teacher.behaviorRecordAdded'));
       setOpenDialog(false);
       fetchData();

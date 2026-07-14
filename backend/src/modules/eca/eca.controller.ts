@@ -1,10 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationResult } from 'express-validator';
+import { Op } from 'sequelize';
 import ecaEnrollmentService from './ecaEnrollment.service';
 import ecaEventService from './ecaEvent.service';
 import ecaCertificateService from './ecaCertificate.service';
 import ECA from '@models/ECA.model';
 import ECAAchievement from '@models/ECAAchievement.model';
+import ECAEnrollment from '@models/ECAEnrollment.model';
+import ECAEvent from '@models/ECAEvent.model';
 
 /**
  * ECA Controller
@@ -87,7 +90,7 @@ class ECAController {
         return;
       }
 
-      const eca = await ECA.create({
+      const createdECA = await ECA.create({
         name: req.body.name,
         nameNp: req.body.nameNp,
         category: req.body.category,
@@ -101,6 +104,18 @@ class ECAController {
         currentEnrollment: 0,
         status: 'active'
       });
+      const createdECAId = Number(createdECA.getDataValue('ecaId'));
+      const eca = Number.isFinite(createdECAId) && createdECAId > 0
+        ? createdECA
+        : await ECA.findOne({
+          where: {
+            name: req.body.name,
+            category: req.body.category,
+            coordinatorId: req.body.coordinatorId,
+            academicYearId: req.body.academicYearId,
+          },
+          order: [['createdAt', 'DESC']],
+        }) || createdECA;
 
       res.status(201).json({
         success: true,
@@ -530,37 +545,69 @@ class ECAController {
    */
   async getStatistics(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      let totalECAs = 0;
-      let activeECAs = 0;
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+      sixMonthsAgo.setDate(1);
+      sixMonthsAgo.setHours(0, 0, 0, 0);
 
-      try {
-        totalECAs = await ECA.count();
-        activeECAs = await ECA.count({ where: { status: 'active' } });
-      } catch (dbError) {
-        // If database tables don't exist, use defaults
-        console.log('Database tables may not exist, using defaults');
+      const [
+        totalECAs,
+        activeECAs,
+        totalStudents,
+        upcomingEvents,
+        categoryRows,
+        enrollments,
+      ] = await Promise.all([
+        ECA.count(),
+        ECA.count({ where: { status: 'active' } }),
+        ECAEnrollment.count({ distinct: true, col: 'studentId' }),
+        ECAEvent.count({
+          where: {
+            status: { [Op.in]: ['scheduled', 'ongoing'] },
+            eventDate: { [Op.gte]: new Date() },
+          },
+        }),
+        ECA.findAll({
+          attributes: [
+            'category',
+            [ECA.sequelize!.fn('COUNT', ECA.sequelize!.col('eca_id')), 'count'],
+          ],
+          group: ['category'],
+          raw: true,
+        }) as unknown as Promise<Array<{ category: string; count: string | number }>>,
+        ECAEnrollment.findAll({
+          where: { enrollmentDate: { [Op.gte]: sixMonthsAgo } },
+          attributes: ['enrollmentDate'],
+          raw: true,
+        }) as Promise<Array<{ enrollmentDate: string | Date }>>,
+      ]);
+
+      const monthBuckets = new Map<string, number>();
+      for (let i = 5; i >= 0; i -= 1) {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        monthBuckets.set(date.toLocaleString('en-US', { month: 'short' }), 0);
       }
+
+      enrollments.forEach((enrollment) => {
+        const date = new Date(enrollment.enrollmentDate);
+        if (Number.isNaN(date.getTime())) return;
+        const label = date.toLocaleString('en-US', { month: 'short' });
+        if (monthBuckets.has(label)) {
+          monthBuckets.set(label, (monthBuckets.get(label) || 0) + 1);
+        }
+      });
 
       const stats = {
         totalECAs,
         activeECAs,
-        totalStudents: 150,
-        upcomingEvents: 5,
-        categoryBreakdown: [
-          { category: 'Sports', count: 8 },
-          { category: 'Arts', count: 6 },
-          { category: 'Music', count: 4 },
-          { category: 'Dance', count: 3 },
-          { category: 'Academic Clubs', count: 5 },
-        ],
-        monthlyEnrollments: [
-          { month: 'Jan', count: 25 },
-          { month: 'Feb', count: 30 },
-          { month: 'Mar', count: 35 },
-          { month: 'Apr', count: 28 },
-          { month: 'May', count: 40 },
-          { month: 'Jun', count: 32 },
-        ],
+        totalStudents,
+        upcomingEvents,
+        categoryBreakdown: categoryRows.map((row) => ({
+          category: row.category || 'Uncategorized',
+          count: Number(row.count || 0),
+        })),
+        monthlyEnrollments: Array.from(monthBuckets.entries()).map(([month, count]) => ({ month, count })),
       };
 
       res.status(200).json({
@@ -576,17 +623,69 @@ class ECAController {
    * Get recent ECA activities
    * GET /api/v1/eca/recent-activities
    */
-  getRecentActivities(req: Request, res: Response, next: NextFunction): void {
+  async getRecentActivities(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const limit = Number(req.query.limit) || 10;
 
+      const [enrollments, events, achievements] = await Promise.all([
+        ECAEnrollment.findAll({ order: [['createdAt', 'DESC']], limit, raw: true }) as Promise<any[]>,
+        ECAEvent.findAll({
+          attributes: ['eventId', 'ecaId', 'name', 'eventDate', 'status', 'createdAt'],
+          order: [['eventDate', 'DESC'], ['createdAt', 'DESC']],
+          limit,
+          raw: true,
+        }) as Promise<any[]>,
+        ECAAchievement.findAll({
+          attributes: ['achievementId', 'ecaId', 'studentId', 'title', 'achievementDate', 'createdAt'],
+          order: [['achievementDate', 'DESC'], ['createdAt', 'DESC']],
+          limit,
+          raw: true,
+        }) as Promise<any[]>,
+      ]);
+
+      const ecaIds = [
+        ...enrollments.map((item) => item.ecaId),
+        ...events.map((item) => item.ecaId),
+        ...achievements.map((item) => item.ecaId),
+      ].filter(Boolean);
+      const ecas = ecaIds.length
+        ? await ECA.findAll({
+            where: { ecaId: { [Op.in]: Array.from(new Set(ecaIds)) } },
+            attributes: ['ecaId', 'name'],
+            raw: true,
+          }) as Array<{ ecaId: number; name: string }>
+        : [];
+      const ecaNameById = new Map(ecas.map((eca) => [Number(eca.ecaId), eca.name]));
+
       const activities = [
-        { id: 1, type: 'enrollment', ecaName: 'Football Club', student: 'Ram Sharma', date: new Date(), status: 'completed' },
-        { id: 2, type: 'event', ecaName: 'Art Club', event: 'Painting Exhibition', date: new Date(), status: 'completed' },
-        { id: 3, type: 'achievement', ecaName: 'Music Club', student: 'Sita Gupta', achievement: 'First Prize in Solo Song', date: new Date(), status: 'completed' },
-        { id: 4, type: 'attendance', ecaName: 'Dance Club', studentsPresent: 15, date: new Date(), status: 'completed' },
-        { id: 5, type: 'enrollment', ecaName: 'Science Club', student: 'Hari Thapa', date: new Date(), status: 'completed' },
-      ].slice(0, limit);
+        ...enrollments.map((item) => ({
+          id: `enrollment-${item.enrollmentId}`,
+          type: 'enrollment',
+          ecaName: ecaNameById.get(Number(item.ecaId)) || 'ECA',
+          studentId: item.studentId,
+          date: item.createdAt || item.enrollmentDate,
+          status: item.status,
+        })),
+        ...events.map((item) => ({
+          id: `event-${item.eventId}`,
+          type: 'event',
+          ecaName: ecaNameById.get(Number(item.ecaId)) || 'ECA',
+          event: item.name,
+          date: item.eventDate || item.createdAt,
+          status: item.status,
+        })),
+        ...achievements.map((item) => ({
+          id: `achievement-${item.achievementId}`,
+          type: 'achievement',
+          ecaName: ecaNameById.get(Number(item.ecaId)) || 'ECA',
+          achievement: item.title,
+          studentId: item.studentId,
+          date: item.achievementDate || item.createdAt,
+          status: 'completed',
+        })),
+      ]
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, limit);
 
       res.status(200).json({
         success: true,

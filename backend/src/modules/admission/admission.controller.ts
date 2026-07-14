@@ -26,7 +26,11 @@ class AdmissionController {
       createdBy: userId
     });
 
-    sendSuccess(res, admission, 'Inquiry created successfully', HTTP_STATUS.CREATED);
+    sendSuccess(res, {
+      ...admission.toJSON(),
+      id: admission.admissionId,
+      admissionId: admission.admissionId
+    }, 'Inquiry created successfully', HTTP_STATUS.CREATED);
   });
 
   /**

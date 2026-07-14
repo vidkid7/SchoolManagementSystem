@@ -195,6 +195,17 @@ router.post(
 );
 
 /**
+ * @route   GET /api/v1/sports/achievements
+ * @desc    List sports achievements
+ * @access  Private (All authenticated sports readers)
+ */
+router.get(
+  '/achievements',
+  authorize(...readRoles),
+  sportsController.getAchievements
+);
+
+/**
  * @route   GET /api/v1/sports/student/:studentId
  * @desc    Get student sports history
  * @access  Private (All authenticated)

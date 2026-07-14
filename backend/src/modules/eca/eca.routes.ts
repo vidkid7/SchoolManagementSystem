@@ -26,13 +26,20 @@ const router = Router();
 router.use(authenticate);
 
 const readRoles = [
+  UserRole.MUNICIPALITY_ADMIN,
   UserRole.SCHOOL_ADMIN,
   UserRole.CLASS_TEACHER,
   UserRole.SUBJECT_TEACHER,
   UserRole.DEPARTMENT_HEAD,
   UserRole.ECA_COORDINATOR,
+  UserRole.SPORTS_COORDINATOR,
   UserRole.STUDENT,
-  UserRole.PARENT
+  UserRole.PARENT,
+  UserRole.LIBRARIAN,
+  UserRole.ACCOUNTANT,
+  UserRole.TRANSPORT_MANAGER,
+  UserRole.HOSTEL_WARDEN,
+  UserRole.NON_TEACHING_STAFF
 ];
 
 const manageRoles = [

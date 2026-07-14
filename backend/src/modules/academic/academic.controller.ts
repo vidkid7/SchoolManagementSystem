@@ -272,7 +272,8 @@ class AcademicController {
 
     const syllabus = await academicService.getSyllabus(subjectId, classId, academicYearId);
     if (!syllabus) {
-      throw new NotFoundError('Syllabus');
+      sendSuccess(res, null, 'No syllabus found for the selected class and subject');
+      return;
     }
 
     sendSuccess(res, syllabus, 'Syllabus retrieved successfully');
@@ -289,7 +290,8 @@ class AcademicController {
 
     const syllabus = await academicService.getSyllabus(subjectId, classId, academicYearId);
     if (!syllabus) {
-      throw new NotFoundError('Syllabus');
+      sendSuccess(res, null, 'No syllabus found for the selected class and subject');
+      return;
     }
 
     sendSuccess(res, syllabus, 'Syllabus retrieved successfully');

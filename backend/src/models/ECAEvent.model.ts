@@ -158,6 +158,7 @@ export function initECAEvent(sequelize: any): typeof ECAEvent {
       eventDateBS: {
         type: DataTypes.STRING(10),
         allowNull: true,
+        field: 'event_date_bs',
       },
       venue: {
         type: DataTypes.STRING(255),

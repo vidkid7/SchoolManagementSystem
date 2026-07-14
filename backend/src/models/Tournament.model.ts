@@ -236,6 +236,7 @@ export function initTournament(sequelize: any): typeof Tournament {
       startDateBS: {
         type: DataTypes.STRING(10),
         allowNull: true,
+        field: 'start_date_bs',
       },
       endDate: {
         type: DataTypes.DATEONLY,
@@ -244,6 +245,7 @@ export function initTournament(sequelize: any): typeof Tournament {
       endDateBS: {
         type: DataTypes.STRING(10),
         allowNull: true,
+        field: 'end_date_bs',
       },
       venue: {
         type: DataTypes.STRING(255),

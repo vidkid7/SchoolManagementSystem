@@ -72,7 +72,8 @@ const CERTIFICATE_TYPES = [
 ];
 
 interface CertificateTemplate {
-  id: number;
+  id?: number;
+  templateId?: number;
   name: string;
   type: string;
   isActive: boolean;
@@ -80,7 +81,8 @@ interface CertificateTemplate {
 }
 
 interface Certificate {
-  id: number;
+  id?: number;
+  certificateId?: number;
   certificateNumber: string;
   templateId: number;
   templateName: string;
@@ -346,6 +348,9 @@ const handleRevokeCertificate = async (certificateId: number) => {
     }
   };
 
+  const getTemplateId = (template: CertificateTemplate) => template.templateId ?? template.id ?? 0;
+  const getCertificateId = (certificate: Certificate) => certificate.certificateId ?? certificate.id ?? 0;
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -438,8 +443,8 @@ const handleRevokeCertificate = async (certificateId: number) => {
                 </TableRow>
               ) : (
                 templates.map((template) => (
-                  <TableRow key={template.id} hover sx={S.TR_HOVER}>
-                    <TableCell sx={S.TD}>{template.id}</TableCell>
+                  <TableRow key={getTemplateId(template) || template.name} hover sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{getTemplateId(template)}</TableCell>
                     <TableCell sx={S.TD}>{template.name}</TableCell>
                     <TableCell sx={S.TD}>{getTypeLabel(template.type)}</TableCell>
                     <TableCell sx={S.TD}>
@@ -557,7 +562,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
                 </TableRow>
               ) : (
                 certificates.map((cert) => (
-                  <TableRow key={cert.id} hover sx={S.TR_HOVER}>
+                  <TableRow key={getCertificateId(cert) || cert.certificateNumber} hover sx={S.TR_HOVER}>
                     <TableCell sx={S.TD}>
                       <Typography variant="body2" fontWeight="bold">
                         {cert.certificateNumber}
@@ -601,7 +606,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
                           size="small"
                           title="Revoke"
                           color="error"
-                          onClick={() => handleRevokeCertificate(cert.id)}
+                          onClick={() => handleRevokeCertificate(getCertificateId(cert))}
                         >
                           <DeleteIcon />
                         </IconButton>
@@ -802,7 +807,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
                     onChange={(e) => setGenerateForm({ ...generateForm, templateId: e.target.value })}
                   >
                     {availableTemplates.map((template) => (
-                      <MenuItem key={template.id} value={template.id}>
+                      <MenuItem key={getTemplateId(template) || template.name} value={getTemplateId(template)}>
                         {template.name} ({getTypeLabel(template.type)})
                       </MenuItem>
                     ))}
@@ -916,7 +921,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
                     onChange={(e) => setBulkForm({ ...bulkForm, templateId: e.target.value })}
                   >
                     {availableTemplates.map((template) => (
-                      <MenuItem key={template.id} value={template.id}>
+                      <MenuItem key={getTemplateId(template) || template.name} value={getTemplateId(template)}>
                         {template.name} ({getTypeLabel(template.type)})
                       </MenuItem>
                     ))}

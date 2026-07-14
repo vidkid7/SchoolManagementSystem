@@ -47,7 +47,12 @@ interface RecentActivity {
   id: number;
   type: 'issue' | 'return';
   bookTitle: string;
+  book_title?: string;
+  title?: string;
   memberName: string;
+  member_name?: string;
+  studentName?: string;
+  student_name?: string;
   date: string;
 }
 

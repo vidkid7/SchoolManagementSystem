@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
+const apiProxyTarget = process.env.VITE_PROXY_TARGET || 'http://localhost:3000';
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
@@ -198,11 +200,7 @@ export default defineConfig({
         ],
         
         // Clean up old caches
-        cleanupOutdatedCaches: true,
-        
-        // Skip waiting and claim clients immediately
-        skipWaiting: true,
-        clientsClaim: true
+        cleanupOutdatedCaches: true
       },
       
       // Development options
@@ -228,7 +226,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: apiProxyTarget,
         changeOrigin: true
       }
     },

@@ -87,11 +87,18 @@ export class LibraryService {
    * Create a new book
    */
   async createBook(data: BookCreationAttributes): Promise<Book> {
-    return Book.create({
+    const createdBook = await Book.create({
       ...data,
       availableCopies: data.copies || 1,
       status: 'available',
     });
+
+    const createdBookId = Number(createdBook.getDataValue('bookId'));
+    if (Number.isFinite(createdBookId) && createdBookId > 0) {
+      return createdBook;
+    }
+
+    return await Book.findOne({ where: { accessionNumber: data.accessionNumber } }) || createdBook;
   }
 
   /**

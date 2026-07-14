@@ -9,6 +9,7 @@ import Exam from './Exam.model';
 import ExamSchedule from './ExamSchedule.model';
 import ECA from './ECA.model';
 import ECAEnrollment from './ECAEnrollment.model';
+import ECAEvent from './ECAEvent.model';
 import ECAAchievement from './ECAAchievement.model';
 import Message from './Message.model';
 import Conversation from './Conversation.model';
@@ -24,6 +25,9 @@ import { Subject, ClassSubject } from './Subject.model';
 import Book from './Book.model';
 import Circulation from './Circulation.model';
 import Sport from './Sport.model';
+import Team from './Team.model';
+import Tournament from './Tournament.model';
+import SportsAchievement from './SportsAchievement.model';
 import SportsEnrollment from './SportsEnrollment.model';
 import Staff from './Staff.model';
 import StaffAssignment from './StaffAssignment.model';
@@ -37,6 +41,7 @@ import HostelRoom from './HostelRoom.model';
 import HostelResident from './HostelResident.model';
 import HostelIncident from './HostelIncident.model';
 import HostelVisitor from './HostelVisitor.model';
+import BehaviorRecord from './BehaviorRecord.model';
 import { initializeTenantIsolation } from './tenantIsolation';
 
 /**
@@ -92,6 +97,19 @@ export function setupECAAssociations(): void {
       foreignKey: 'studentId',
       as: 'ecaEnrollments'
     });
+
+    // Setup ECAEvent associations if available
+    if (ECAEvent && ECAEvent.sequelize) {
+      ECA.hasMany(ECAEvent, {
+        foreignKey: 'ecaId',
+        as: 'events'
+      });
+
+      ECAEvent.belongsTo(ECA, {
+        foreignKey: 'ecaId',
+        as: 'eca'
+      });
+    }
 
     // Setup ECAAchievement associations if available
     if (ECAAchievement && ECAAchievement.sequelize) {
@@ -185,6 +203,7 @@ export function initializeAssociations(): void {
   setupAssignmentAssociations();
   setupLessonPlanAssociations();
   setupHostelAssociations();
+  setupBehaviorRecordAssociations();
   initializeTenantIsolation();
   // Add other association setups here as needed
 }
@@ -474,6 +493,46 @@ export function setupSportsAssociations(): void {
       foreignKey: 'studentId',
       as: 'sportsEnrollments'
     });
+
+    Team.belongsTo(Sport, {
+      foreignKey: 'sportId',
+      as: 'sport',
+    });
+
+    Sport.hasMany(Team, {
+      foreignKey: 'sportId',
+      as: 'teams',
+    });
+
+    Tournament.belongsTo(Sport, {
+      foreignKey: 'sportId',
+      as: 'sport',
+    });
+
+    Sport.hasMany(Tournament, {
+      foreignKey: 'sportId',
+      as: 'tournaments',
+    });
+
+    SportsAchievement.belongsTo(Sport, {
+      foreignKey: 'sportId',
+      as: 'sport',
+    });
+
+    SportsAchievement.belongsTo(Tournament, {
+      foreignKey: 'tournamentId',
+      as: 'tournament',
+    });
+
+    SportsAchievement.belongsTo(Team, {
+      foreignKey: 'teamId',
+      as: 'team',
+    });
+
+    Sport.hasMany(SportsAchievement, {
+      foreignKey: 'sportId',
+      as: 'achievements',
+    });
   } catch (error) {
     // Silently skip if models aren't ready
     console.warn('Sports associations not set up:', error);
@@ -665,5 +724,39 @@ export function setupHostelAssociations(): void {
     });
   } catch (error) {
     console.warn('Hostel associations not set up:', error);
+  }
+}
+
+/**
+ * Set up student behavior record associations
+ */
+export function setupBehaviorRecordAssociations(): void {
+  try {
+    if (!BehaviorRecord || !Student) {
+      return;
+    }
+
+    if (!BehaviorRecord.sequelize || !Student.sequelize) {
+      return;
+    }
+
+    BehaviorRecord.belongsTo(Student, {
+      foreignKey: 'studentId',
+      as: 'student'
+    });
+
+    Student.hasMany(BehaviorRecord, {
+      foreignKey: 'studentId',
+      as: 'behaviorRecords'
+    });
+
+    if (User && User.sequelize) {
+      BehaviorRecord.belongsTo(User, {
+        foreignKey: 'recordedBy',
+        as: 'recorder'
+      });
+    }
+  } catch (error) {
+    console.warn('Behavior record associations not set up:', error);
   }
 }

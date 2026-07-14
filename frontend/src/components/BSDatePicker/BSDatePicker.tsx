@@ -67,7 +67,9 @@ const CalendarHeader = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(2)
 }));
 
-const DayButton = styled(Button)<{ selected?: boolean; today?: boolean }>(
+const DayButton = styled(Button, {
+  shouldForwardProp: (prop) => prop !== 'selected' && prop !== 'today',
+})<{ selected?: boolean; today?: boolean }>(
   ({ theme, selected, today }) => ({
     minWidth: 36,
     height: 36,

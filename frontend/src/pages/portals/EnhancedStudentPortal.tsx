@@ -63,6 +63,15 @@ function TabPanel({ children, value, index }: TabPanelProps) {
   );
 }
 
+const asArray = (value: any, keys: string[] = []): any[] => {
+  if (Array.isArray(value)) return value;
+  for (const key of keys) {
+    const nested = value?.[key];
+    if (Array.isArray(nested)) return nested;
+  }
+  return [];
+};
+
 export const EnhancedStudentPortal: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useSlugNavigate();
@@ -113,7 +122,7 @@ export const EnhancedStudentPortal: React.FC = () => {
         setAttendance(results[0].value.data.data);
       }
       if (results[1].status === 'fulfilled') {
-        setGrades(Array.isArray(results[1].value.data.data) ? results[1].value.data.data : []);
+        setGrades(asArray(results[1].value.data.data, ['grades', 'items', 'rows', 'data']));
       }
       if (results[2].status === 'fulfilled') {
         setFees(results[2].value.data.data);
@@ -130,7 +139,7 @@ export const EnhancedStudentPortal: React.FC = () => {
       }
       if (results[5].status === 'fulfilled') {
         const assignmentData = results[5].value.data.data;
-        setAssignments(Array.isArray(assignmentData) ? assignmentData : assignmentData?.assignments || []);
+        setAssignments(asArray(assignmentData, ['assignments', 'items', 'rows', 'data']));
       }
     } catch (err: any) {
       setError(err.response?.data?.message || t('portal.failedToLoadData'));
@@ -143,7 +152,7 @@ export const EnhancedStudentPortal: React.FC = () => {
     if (!studentId) return;
     try {
       const response = await apiClient.get(`/api/v1/students/${studentId}/certificates`);
-      setCertificates(response.data.data?.certificates || []);
+      setCertificates(asArray(response.data.data, ['certificates', 'items', 'rows', 'data']));
     } catch {
       setCertificates([]);
     }
@@ -153,7 +162,7 @@ export const EnhancedStudentPortal: React.FC = () => {
     if (!studentId) return;
     try {
       const response = await apiClient.get(`/api/v1/students/${studentId}/library`);
-      setLibrary(response.data.data || []);
+      setLibrary(asArray(response.data.data, ['library', 'books', 'items', 'rows', 'data']));
     } catch {
       setLibrary([]);
     }
@@ -163,7 +172,7 @@ export const EnhancedStudentPortal: React.FC = () => {
     if (!studentId) return;
     try {
       const response = await apiClient.get(`/api/v1/students/${studentId}/eca`);
-      setECA(response.data.data?.eca || []);
+      setECA(asArray(response.data.data, ['eca', 'activities', 'items', 'rows', 'data']));
     } catch {
       setECA([]);
     }
@@ -173,7 +182,7 @@ export const EnhancedStudentPortal: React.FC = () => {
     if (!studentId) return;
     try {
       const response = await apiClient.get(`/api/v1/students/${studentId}/history`);
-      setHistory(response.data.data || []);
+      setHistory(asArray(response.data.data, ['history', 'records', 'items', 'rows', 'data']));
     } catch {
       setHistory([]);
     }
@@ -183,7 +192,7 @@ export const EnhancedStudentPortal: React.FC = () => {
     if (!studentId) return;
     try {
       const response = await apiClient.get(`/api/v1/students/${studentId}/remarks`);
-      setRemarks(response.data.data?.remarks || []);
+      setRemarks(asArray(response.data.data, ['remarks', 'items', 'rows', 'data']));
     } catch {
       setRemarks([]);
     }
@@ -504,9 +513,7 @@ export const EnhancedStudentPortal: React.FC = () => {
           {/* Timetable Tab */}
           <TabPanel value={tabValue} index={3}>
             {(() => {
-              const entries = timetable?.entries || timetable?.periods ||
-                (Array.isArray(timetable?.timetable) ? timetable.timetable : null) ||
-                (Array.isArray(timetable) ? timetable : []);
+              const entries = asArray(timetable, ['entries', 'periods', 'timetable', 'schedule']);
               if (!timetable || entries.length === 0) {
                 return (
                   <Box sx={S.EMPTY_STATE}>

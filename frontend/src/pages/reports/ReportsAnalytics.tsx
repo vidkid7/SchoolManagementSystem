@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSelector } from 'react-redux';
 import {
   Box,
   Container,
@@ -68,6 +69,7 @@ import { motion } from 'framer-motion';
 import { apiClient } from '../../services/apiClient';
 import { useNepaliNumbers } from '../../hooks/useNepaliNumbers';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
+import type { RootState } from '../../store';
 
 const MotionCard = motion.create(Card);
 
@@ -86,8 +88,8 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-const COLORS = [C.neutral, C.neutral, C.neutral, C.danger, C.neutral, C.danger, C.neutral, C.neutral];
-const GRADIENT_COLORS = [C.neutral, C.purple, C.neutral, C.danger];
+const COLORS = [C.primary, C.purple, C.success, C.warning, C.danger, C.info, '#6f5f46', '#7c4d8a'];
+const GRADIENT_COLORS = [C.primary, C.warning, C.info, C.danger];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -117,13 +119,51 @@ const TAB_ICONS = [
 ];
 
 const GRADIENTS = {
-  enrollment: 'linear-gradient(135deg, #2c2c2c 0%, #5856D6 100%)',
-  attendance: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
-  fee: 'linear-gradient(135deg, #6b7280 0%, #8b5a5a 100%)',
-  exam: 'linear-gradient(135deg, #614385 0%, #516395 100%)',
-  library: 'linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%)',
-  sports: 'linear-gradient(135deg, #ff9966 0%, #ff5e62 100%)',
+  enrollment: 'linear-gradient(135deg, #0b7d69 0%, #3157a6 100%)',
+  attendance: 'linear-gradient(135deg, #16835f 0%, #1689a7 100%)',
+  fee: 'linear-gradient(135deg, #d89016 0%, #d85b45 100%)',
+  exam: 'linear-gradient(135deg, #3157a6 0%, #0b7d69 100%)',
+  library: 'linear-gradient(135deg, #1689a7 0%, #7c4d8a 100%)',
+  sports: 'linear-gradient(135deg, #d89016 0%, #d85b45 100%)',
 };
+
+const REPORT_TABS = [
+  { color: C.primary, gradient: GRADIENTS.enrollment },
+  { color: C.success, gradient: GRADIENTS.attendance },
+  { color: C.warning, gradient: GRADIENTS.fee },
+  { color: C.purple, gradient: GRADIENTS.exam },
+  { color: C.info, gradient: GRADIENTS.library },
+  { color: C.danger, gradient: GRADIENTS.sports },
+  { color: '#7c4d8a', gradient: 'linear-gradient(135deg, #7c4d8a 0%, #1689a7 100%)' },
+] as const;
+
+type ReportKey = 'enrollment' | 'attendance' | 'fee' | 'exam' | 'library' | 'eca' | 'sports' | 'teacher';
+
+const REPORT_ROLE_ACCESS: Record<ReportKey, string[]> = {
+  enrollment: ['school_admin', 'class_teacher', 'department_head', 'accountant'],
+  attendance: ['school_admin', 'class_teacher', 'subject_teacher', 'department_head', 'accountant'],
+  fee: ['school_admin', 'accountant'],
+  exam: ['school_admin', 'class_teacher', 'subject_teacher', 'department_head', 'accountant'],
+  library: ['school_admin', 'librarian', 'accountant'],
+  eca: ['school_admin', 'eca_coordinator', 'department_head', 'accountant'],
+  sports: ['school_admin', 'sports_coordinator', 'department_head', 'accountant'],
+  teacher: ['school_admin', 'department_head', 'accountant'],
+};
+
+const REPORT_TYPE_TO_KEY: Record<string, ReportKey> = {
+  enrollment: 'enrollment',
+  attendance: 'attendance',
+  'fee-collection': 'fee',
+  examination: 'exam',
+  library: 'library',
+  eca: 'eca',
+  sports: 'sports',
+  'teacher-performance': 'teacher',
+};
+
+function normalizeRole(role?: string): string {
+  return (role ?? '').replace(/([a-z])([A-Z])/g, '$1_$2').replace(/-/g, '_').toLowerCase();
+}
 
 interface EnrollmentData {
   totalStudents: number;
@@ -187,6 +227,7 @@ interface TeacherPerformanceData {
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const { formatNumber, formatWithSeparators, formatPercentage } = useNepaliNumbers();
+  const { user } = useSelector((state: RootState) => state.auth);
   const [tabValue, setTabValue] = useState(0);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState<string | null>(null);
@@ -207,6 +248,17 @@ interface TeacherPerformanceData {
   const [ecaData, setEcaData] = useState<ECAData | null>(null);
   const [sportsData, setSportsData] = useState<SportsData | null>(null);
   const [teacherPerformanceData, setTeacherPerformanceData] = useState<TeacherPerformanceData | null>(null);
+  const normalizedRole = normalizeRole(user?.role);
+  const canExportReports = ['school_admin', 'department_head', 'accountant'].includes(normalizedRole);
+  const allowedReports = useMemo(() => {
+    const allowed = new Set<ReportKey>();
+    (Object.entries(REPORT_ROLE_ACCESS) as Array<[ReportKey, string[]]>).forEach(([key, roles]) => {
+      if (roles.includes(normalizedRole)) {
+        allowed.add(key);
+      }
+    });
+    return allowed;
+  }, [normalizedRole]);
 
   // Print functionality
   const handlePrint = () => {
@@ -215,7 +267,7 @@ interface TeacherPerformanceData {
 
   useEffect(() => {
     fetchAllData();
-  }, []);
+  }, [allowedReports]);
 
   const getDateRangeParams = () => {
     if (filters.startDate && filters.endDate) {
@@ -234,41 +286,32 @@ interface TeacherPerformanceData {
       const dateRangeParams = getDateRangeParams();
       const teacherParams = filters.teacherId ? { teacherId: filters.teacherId } : {};
 
-      const [enrollmentRes, attendanceRes, feeRes, examRes, libraryRes, ecaRes, sportsRes, teacherPerfRes] = await Promise.allSettled([
-        apiClient.get('/api/v1/reports/enrollment'),
-        apiClient.get('/api/v1/reports/attendance', { params: dateRangeParams }),
-        apiClient.get('/api/v1/reports/fee-collection', { params: dateRangeParams }),
-        apiClient.get('/api/v1/reports/examination'),
-        apiClient.get('/api/v1/reports/library', { params: dateRangeParams }),
-        apiClient.get('/api/v1/reports/eca'),
-        apiClient.get('/api/v1/reports/sports'),
-        apiClient.get('/api/v1/reports/teacher-performance', { params: teacherParams }),
-      ]);
+      const fetchReport = async <T,>(
+        key: ReportKey,
+        request: () => Promise<{ data: { success?: boolean; data: T } }>,
+        setter: (data: T | null) => void
+      ) => {
+        if (!allowedReports.has(key)) {
+          setter(null);
+          return;
+        }
 
-      if (enrollmentRes.status === 'fulfilled' && enrollmentRes.value.data.success) {
-        setEnrollmentData(enrollmentRes.value.data.data);
-      }
-      if (attendanceRes.status === 'fulfilled' && attendanceRes.value.data.success) {
-        setAttendanceData(attendanceRes.value.data.data);
-      }
-      if (feeRes.status === 'fulfilled' && feeRes.value.data.success) {
-        setFeeData(feeRes.value.data.data);
-      }
-      if (examRes.status === 'fulfilled' && examRes.value.data.success) {
-        setExamData(examRes.value.data.data);
-      }
-      if (libraryRes.status === 'fulfilled' && libraryRes.value.data.success) {
-        setLibraryData(libraryRes.value.data.data);
-      }
-      if (ecaRes.status === 'fulfilled' && ecaRes.value.data.success) {
-        setEcaData(ecaRes.value.data.data);
-      }
-      if (sportsRes.status === 'fulfilled' && sportsRes.value.data.success) {
-        setSportsData(sportsRes.value.data.data);
-      }
-      if (teacherPerfRes.status === 'fulfilled' && teacherPerfRes.value.data.success) {
-        setTeacherPerformanceData(teacherPerfRes.value.data.data);
-      }
+        const response = await request();
+        if (response.data.success) {
+          setter(response.data.data);
+        }
+      };
+
+      await Promise.all([
+        fetchReport('enrollment', () => apiClient.get('/api/v1/reports/enrollment'), setEnrollmentData),
+        fetchReport('attendance', () => apiClient.get('/api/v1/reports/attendance', { params: dateRangeParams }), setAttendanceData),
+        fetchReport('fee', () => apiClient.get('/api/v1/reports/fee-collection', { params: dateRangeParams }), setFeeData),
+        fetchReport('exam', () => apiClient.get('/api/v1/reports/examination'), setExamData),
+        fetchReport('library', () => apiClient.get('/api/v1/reports/library', { params: dateRangeParams }), setLibraryData),
+        fetchReport('eca', () => apiClient.get('/api/v1/reports/eca'), setEcaData),
+        fetchReport('sports', () => apiClient.get('/api/v1/reports/sports'), setSportsData),
+        fetchReport('teacher', () => apiClient.get('/api/v1/reports/teacher-performance', { params: teacherParams }), setTeacherPerformanceData),
+      ]);
     } catch (error) {
       console.error('Error fetching reports:', error);
     } finally {
@@ -285,6 +328,12 @@ interface TeacherPerformanceData {
   };
 
   const handleExport = async (reportType: string, format: 'pdf' | 'excel') => {
+    const reportKey = REPORT_TYPE_TO_KEY[reportType];
+    if (!canExportReports || (reportKey && !allowedReports.has(reportKey))) {
+      setSnackbar({ open: true, message: t('reports.noPermission'), severity: 'error' });
+      return;
+    }
+
     setExporting(reportType);
     try {
       const response = await apiClient.get(`/api/v1/reports/export/${format}/${reportType}`, {
@@ -452,18 +501,38 @@ interface TeacherPerformanceData {
   const radialData = useMemo(() => {
     if (!feeData?.collectionRate) return [];
     return [
-      { name: t('reports.collected'), value: feeData.collectionRate, fill: C.neutral },
+      { name: t('reports.collected'), value: feeData.collectionRate, fill: C.warning },
       { name: t('reports.pending'), value: 100 - feeData.collectionRate, fill: '#e5e7eb' },
     ];
   }, [feeData, t, i18n.language]);
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const activeReportTone = REPORT_TABS[tabValue] ?? REPORT_TABS[0];
+  const reportHighlights = [
+    {
+      label: t('reports.enrollment'),
+      value: formatWithSeparators(enrollmentData?.totalStudents || 0),
+      helper: t('reports.totalStudentsCount'),
+      color: C.primary,
+    },
+    {
+      label: t('reports.attendance'),
+      value: formatPercentage(attendanceData?.averageAttendance || 0),
+      helper: t('reports.averageAttendance'),
+      color: C.success,
+    },
+    {
+      label: t('reports.feeCollection'),
+      value: formatPercentage(feeData?.collectionRate || 0),
+      helper: t('reports.collectionRate'),
+      color: C.warning,
+    },
+    {
+      label: t('reports.library'),
+      value: formatNumber(libraryData?.totalBooks || 0),
+      helper: t('reports.totalBooks'),
+      color: C.info,
+    },
+  ];
 
   if (loading) {
     return (
@@ -473,87 +542,233 @@ interface TeacherPerformanceData {
     );
   }
 
-  const tabGradients = [GRADIENTS.enrollment, GRADIENTS.attendance, GRADIENTS.fee, GRADIENTS.exam, GRADIENTS.library, GRADIENTS.sports];
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  const tabGradients = REPORT_TABS.map((tab) => tab.gradient);
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 2, mb: 4 }} key={i18n.language} className="print-container">
+    <Container
+      maxWidth="xl"
+      sx={{ mt: { xs: 1.5, md: 2 }, mb: 4 }}
+      key={i18n.language}
+      className="print-container reports-analytics-page"
+    >
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Box sx={{ mb: 3 }}>
-          <Breadcrumbs
-            separator={<NavigateNext fontSize="small" />}
-            sx={{ mb: 1, '& .MuiBreadcrumbs-separator': { color: 'text.secondary' } }}
-          >
-            <Link underline="hover" color="inherit" href="/dashboard" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <Analytics fontSize="small" />
-              {t('menu.dashboard')}
-            </Link>
-            <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <Assessment fontSize="small" />
-              {t('reports.title')}
-            </Typography>
-          </Breadcrumbs>
-          
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+        <Box
+          sx={{
+            mb: 2.5,
+            p: { xs: 2, md: 3 },
+            borderRadius: 2,
+            position: 'relative',
+            overflow: 'hidden',
+            background: theme.palette.mode === 'dark'
+              ? 'linear-gradient(135deg, rgba(10,18,17,0.9) 0%, rgba(18,30,28,0.78) 54%, rgba(49,87,166,0.2) 100%)'
+              : 'linear-gradient(135deg, rgba(255,255,255,0.86) 0%, rgba(238,245,243,0.78) 58%, rgba(49,87,166,0.12) 100%)',
+            border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.13)' : 'rgba(255,255,255,0.86)'}`,
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 24px 72px rgba(0,0,0,0.46), inset 0 1px 0 rgba(255,255,255,0.08)'
+              : '0 24px 72px rgba(30,69,63,0.13), inset 0 1px 0 rgba(255,255,255,0.88)',
+            backdropFilter: 'blur(36px) saturate(175%)',
+            WebkitBackdropFilter: 'blur(36px) saturate(175%)',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              inset: 0,
+              background: `linear-gradient(90deg, ${alpha(theme.palette.primary.main, 0.16)}, transparent 38%, ${alpha(C.warning, 0.12)})`,
+              pointerEvents: 'none',
+            },
+          }}
+        >
+          <Box sx={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.25fr) minmax(340px, 0.75fr)' }, gap: 3, alignItems: 'stretch' }}>
             <Box>
-              <Typography variant="h4" fontWeight={800} sx={{ letterSpacing: '-0.02em', background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`, backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              <Breadcrumbs
+                separator={<NavigateNext fontSize="small" />}
+                sx={{
+                  mb: 1.25,
+                  '& .MuiBreadcrumbs-separator': { color: 'text.secondary' },
+                  '& a, & p': { fontSize: '0.78rem', fontWeight: 700 },
+                }}
+              >
+                <Link underline="hover" color="inherit" href="/dashboard" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Analytics fontSize="small" />
+                  {t('menu.dashboard')}
+                </Link>
+                <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Assessment fontSize="small" />
+                  {t('reports.title')}
+                </Typography>
+              </Breadcrumbs>
+
+              <Chip
+                icon={<CalendarMonth sx={{ fontSize: 16 }} />}
+                label={`${new Date().getFullYear()} reporting workspace`}
+                size="small"
+                sx={{
+                  mb: 1.5,
+                  height: 28,
+                  borderRadius: 1,
+                  fontWeight: 800,
+                  color: theme.palette.primary.main,
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.22)}`,
+                }}
+              />
+              <Typography
+                variant="h3"
+                fontWeight={900}
+                sx={{
+                  maxWidth: 760,
+                  fontSize: { xs: '1.85rem', md: '2.45rem' },
+                  lineHeight: 1.08,
+                  color: 'text.primary',
+                }}
+              >
                 {t('reports.title')}
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              <Typography variant="body1" color="text.secondary" sx={{ mt: 1, maxWidth: 720, fontWeight: 500 }}>
                 {t('reports.comprehensiveAnalytics')}
               </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>
+                {[
+                  { label: t('reports.enrollment'), color: C.primary },
+                  { label: t('reports.attendance'), color: C.success },
+                  { label: t('reports.feeCollection'), color: C.warning },
+                  { label: t('reports.examination'), color: C.purple },
+                ].map((item) => (
+                  <Chip
+                    key={item.label}
+                    label={item.label}
+                    size="small"
+                    sx={{
+                      borderRadius: 1,
+                      fontWeight: 800,
+                      color: item.color,
+                      bgcolor: alpha(item.color, theme.palette.mode === 'dark' ? 0.16 : 0.11),
+                      border: `1px solid ${alpha(item.color, 0.22)}`,
+                    }}
+                  />
+                ))}
+              </Box>
             </Box>
-            <Box sx={{ display: 'flex', gap: 1.5 }}>
-              <Button 
-                variant="outlined" 
-                startIcon={<Print />}
-                onClick={handlePrint}
-                sx={{ ...S.BTN_OUTLINE,  
-                  borderRadius: R.lg,
-                  borderColor: alpha(theme.palette.primary.main, 0.3),
-                  '&:hover': { borderColor: theme.palette.primary.main, bgcolor: alpha(theme.palette.primary.main, 0.05) }
-                }}
-              >
-                {t('reports.print')}
-              </Button>
-              <Button 
-                variant="outlined" 
-                startIcon={loading ? <CircularProgress size={18} /> : <Refresh />}
-                onClick={fetchAllData}
-                disabled={loading}
-                sx={{ ...S.BTN_OUTLINE,  
-                  borderRadius: R.lg,
-                  borderColor: alpha(theme.palette.primary.main, 0.3),
-                  '&:hover': { borderColor: theme.palette.primary.main, bgcolor: alpha(theme.palette.primary.main, 0.05) }
-                }}
-              >
-                {t('reports.refresh')}
-              </Button>
+
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1.5,
+                p: { xs: 1.5, md: 2 },
+                borderRadius: 1.5,
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.58)',
+                border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.76)'}`,
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14)',
+              }}
+            >
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.25 }}>
+                {reportHighlights.map((item) => (
+                  <Box
+                    key={item.label}
+                    sx={{
+                      minWidth: 0,
+                      p: 1.35,
+                      borderRadius: 1.25,
+                      bgcolor: alpha(item.color, theme.palette.mode === 'dark' ? 0.13 : 0.08),
+                      border: `1px solid ${alpha(item.color, theme.palette.mode === 'dark' ? 0.24 : 0.18)}`,
+                    }}
+                  >
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 800 }}>
+                      {item.label}
+                    </Typography>
+                    <Typography variant="h5" sx={{ mt: 0.25, fontWeight: 900, color: item.color, lineHeight: 1.1 }}>
+                      {item.value}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
+                      {item.helper}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1, justifyContent: { xs: 'stretch', sm: 'flex-end' }, flexWrap: 'wrap' }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Print />}
+                  onClick={handlePrint}
+                  sx={{
+                    ...S.BTN_OUTLINE,
+                    borderRadius: 1,
+                    borderColor: alpha(theme.palette.primary.main, 0.32),
+                    bgcolor: alpha(theme.palette.background.paper, 0.32),
+                    '&:hover': { borderColor: theme.palette.primary.main, bgcolor: alpha(theme.palette.primary.main, 0.08) },
+                  }}
+                >
+                  {t('reports.print')}
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={loading ? <CircularProgress size={18} /> : <Refresh />}
+                  onClick={fetchAllData}
+                  disabled={loading}
+                  sx={{
+                    borderRadius: 1,
+                    fontWeight: 850,
+                    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                    boxShadow: `0 12px 26px ${alpha(theme.palette.primary.main, 0.24)}`,
+                  }}
+                >
+                  {t('reports.refresh')}
+                </Button>
+              </Box>
             </Box>
           </Box>
         </Box>
       </motion.div>
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
+        initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3, delay: 0.2 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
       >
-        <Paper 
+        <Paper
           elevation={0}
-          sx={{ ...S.GLASS, mb: 3, p: 2.5, borderRadius: R.lg }}
+          sx={{
+            ...S.GLASS,
+            mb: 2.5,
+            p: { xs: 1.5, md: 2 },
+            borderRadius: 1.5,
+            background: theme.palette.mode === 'dark'
+              ? 'linear-gradient(145deg, rgba(15,24,23,0.78), rgba(18,30,28,0.58))'
+              : 'linear-gradient(145deg, rgba(255,255,255,0.78), rgba(255,255,255,0.5))',
+          }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
             <FilterList sx={{ color: theme.palette.primary.main }} />
-            <Typography variant="subtitle1" fontWeight={600}>
+            <Typography variant="subtitle1" fontWeight={850}>
               {t('reports.filtersDateRange')}
             </Typography>
-            <Chip label={t('reports.active')} size="small" color="success" sx={{ height: 20, fontSize: '0.7rem', ml: 'auto' }} />
+            <Chip
+              label={t('reports.active')}
+              size="small"
+              sx={{
+                height: 22,
+                fontSize: '0.7rem',
+                ml: 'auto',
+                fontWeight: 800,
+                color: C.success,
+                bgcolor: alpha(C.success, 0.12),
+                border: `1px solid ${alpha(C.success, 0.22)}`,
+              }}
+            />
           </Box>
-          <Grid container spacing={2} alignItems="center">
+          <Grid container spacing={1.5} alignItems="center">
             <Grid item xs={12} sm={6} md={3}>
               <TextField
                 fullWidth
@@ -644,19 +859,24 @@ interface TeacherPerformanceData {
         </Paper>
       </motion.div>
 
-      <Paper 
+      <Paper
         elevation={0}
-        sx={{ ...S.GLASS, borderRadius: R.lg, overflow: 'hidden' }}
+        sx={{
+          ...S.GLASS,
+          borderRadius: 1.5,
+          overflow: 'hidden',
+          border: `1px solid ${alpha(activeReportTone.color, theme.palette.mode === 'dark' ? 0.22 : 0.18)}`,
+        }}
       >
-        <Box 
-          sx={{ 
-            px: 2,
-            pt: 2,
+        <Box
+          sx={{
+            px: { xs: 1, md: 1.5 },
+            pt: 1.25,
             pb: 0,
             background: theme.palette.mode === 'dark'
-              ? `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)} 0%, ${alpha(theme.palette.background.paper, 0.7)} 100%)`
-              : `linear-gradient(135deg, ${alpha('#fff', 0.9)} 0%, ${alpha('#f8f9fa', 0.9)} 100%)`,
-            backdropFilter: 'blur(10px)',
+              ? `linear-gradient(135deg, ${alpha(activeReportTone.color, 0.12)} 0%, rgba(15,24,23,0.72) 100%)`
+              : `linear-gradient(135deg, ${alpha(activeReportTone.color, 0.1)} 0%, rgba(255,255,255,0.7) 100%)`,
+            backdropFilter: 'blur(18px) saturate(150%)',
           }}
         >
           <Tabs 
@@ -666,25 +886,28 @@ interface TeacherPerformanceData {
             scrollButtons="auto"
             TabIndicatorProps={{
               sx: {
-                height: 3,
-                borderRadius: '3px 3px 0 0',
+                height: 4,
+                borderRadius: '4px 4px 0 0',
                 background: tabGradients[tabValue],
               }
             }}
             sx={{
               '& .MuiTab-root': {
-                minHeight: 52,
+                minHeight: 56,
                 textTransform: 'none',
-                fontWeight: 600,
+                fontWeight: 800,
                 fontSize: '0.85rem',
                 color: 'text.secondary',
+                borderRadius: 1.25,
+                mr: 0.5,
                 transition: 'all 0.3s ease',
                 '&:hover': {
-                  color: theme.palette.primary.main,
-                  bgcolor: alpha(theme.palette.primary.main, 0.05),
+                  color: activeReportTone.color,
+                  bgcolor: alpha(activeReportTone.color, theme.palette.mode === 'dark' ? 0.12 : 0.08),
                 },
                 '&.Mui-selected': {
-                  color: theme.palette.primary.main,
+                  color: activeReportTone.color,
+                  bgcolor: alpha(activeReportTone.color, theme.palette.mode === 'dark' ? 0.14 : 0.1),
                 }
               },
               '& .MuiTab-iconWrapper': {
@@ -699,7 +922,7 @@ interface TeacherPerformanceData {
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {t('reports.enrollment')}
-                  <Chip label={formatNumber(enrollmentData?.totalStudents || 0)} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(C.neutral, 0.15), color: C.neutral }} />
+                  <Chip label={formatNumber(enrollmentData?.totalStudents || 0)} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(REPORT_TABS[0].color, 0.14), color: REPORT_TABS[0].color, fontWeight: 800 }} />
                 </Box>
               } 
             />
@@ -709,7 +932,7 @@ interface TeacherPerformanceData {
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {t('reports.attendance')}
-                  <Chip label={`${formatPercentage(attendanceData?.averageAttendance || 0)}`} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(C.neutral, 0.15), color: C.neutral }} />
+                  <Chip label={`${formatPercentage(attendanceData?.averageAttendance || 0)}`} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(REPORT_TABS[1].color, 0.14), color: REPORT_TABS[1].color, fontWeight: 800 }} />
                 </Box>
               } 
             />
@@ -719,7 +942,7 @@ interface TeacherPerformanceData {
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {t('reports.feeCollection')}
-                  <Chip label={`${formatPercentage(feeData?.collectionRate || 0)}`} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(C.neutral, 0.15), color: C.neutral }} />
+                  <Chip label={`${formatPercentage(feeData?.collectionRate || 0)}`} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(REPORT_TABS[2].color, 0.14), color: REPORT_TABS[2].color, fontWeight: 800 }} />
                 </Box>
               } 
             />
@@ -729,7 +952,7 @@ interface TeacherPerformanceData {
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {t('reports.examination')}
-                  <Chip label={`${formatPercentage(examData?.passRate || 0)}`} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(C.neutral, 0.15), color: C.neutral }} />
+                  <Chip label={`${formatPercentage(examData?.passRate || 0)}`} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(REPORT_TABS[3].color, 0.14), color: REPORT_TABS[3].color, fontWeight: 800 }} />
                 </Box>
               } 
             />
@@ -739,7 +962,7 @@ interface TeacherPerformanceData {
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {t('reports.library')}
-                  <Chip label={formatNumber(libraryData?.totalBooks || 0)} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(C.neutral, 0.15), color: C.neutral }} />
+                  <Chip label={formatNumber(libraryData?.totalBooks || 0)} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(REPORT_TABS[4].color, 0.14), color: REPORT_TABS[4].color, fontWeight: 800 }} />
                 </Box>
               } 
             />
@@ -760,7 +983,7 @@ interface TeacherPerformanceData {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {t('reports.teacherPerformance') || 'Teacher performance'}
                   {teacherPerformanceData && (
-                    <Chip label={formatPercentage(teacherPerformanceData.attendanceRate || 0)} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(C.neutral, 0.15), color: C.neutral }} />
+                    <Chip label={formatPercentage(teacherPerformanceData.attendanceRate || 0)} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(REPORT_TABS[6].color, 0.14), color: REPORT_TABS[6].color, fontWeight: 800 }} />
                   )}
                 </Box>
               } 
@@ -773,7 +996,7 @@ interface TeacherPerformanceData {
           <motion.div variants={containerVariants} initial="hidden" animate="visible">
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
               <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <People sx={{ color: C.neutral }} />
+                <People sx={{ color: C.primary }} />
                 {t('reports.enrollment')} {t('reports.overview')}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
@@ -783,7 +1006,7 @@ interface TeacherPerformanceData {
                   startIcon={exporting === 'enrollment' ? <CircularProgress size={16} /> : <FileCopy />} 
                   onClick={() => handleExport('enrollment', 'pdf')}
                   disabled={exporting === 'enrollment'}
-                  sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}
+                  sx={{ ...S.BTN_OUTLINE,  borderRadius: 1, borderColor: alpha(C.primary, 0.34), color: C.primary, '&:hover': { borderColor: C.primary, bgcolor: alpha(C.primary, 0.08) } }}
                 >
                   {t('reports.pdf')}
                 </Button>
@@ -793,7 +1016,7 @@ interface TeacherPerformanceData {
                   startIcon={exporting === 'enrollment' ? <CircularProgress size={16} /> : <Download />} 
                   onClick={() => handleExport('enrollment', 'excel')}
                   disabled={exporting === 'enrollment'}
-                  sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}
+                  sx={{ ...S.BTN_OUTLINE,  borderRadius: 1, borderColor: alpha(C.primary, 0.34), color: C.primary, '&:hover': { borderColor: C.primary, bgcolor: alpha(C.primary, 0.08) } }}
                 >
                   {t('reports.excel')}
                 </Button>

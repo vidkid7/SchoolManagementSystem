@@ -6,7 +6,7 @@
 
 import { Page, expect } from '@playwright/test';
 
-const API_BASE = 'http://localhost:3000/api/v1';
+export const API_BASE = process.env.E2E_API_BASE || 'http://localhost:3000/api/v1';
 
 // ── Test user credentials ──────────────────────────────────────────────
 export interface TestUser {
@@ -17,7 +17,7 @@ export interface TestUser {
 }
 
 export const TEST_USERS: Record<string, TestUser> = {
-  school_admin:       { username: 'admin',           password: 'admin123',         role: 'school_admin',       expectedPath: '/dashboard' },
+  school_admin:       { username: 'admin',           password: 'Admin@123',        role: 'school_admin',       expectedPath: '/dashboard' },
   municipality_admin: { username: 'municipalityadmin',password: 'Municipality@123', role: 'municipality_admin', expectedPath: '/municipality' },
   subject_teacher:    { username: 'teacher1',        password: 'Teacher@123',      role: 'subject_teacher',    expectedPath: '/portal/teacher' },
   class_teacher:      { username: 'classteacher1',   password: 'ClassTeacher@123', role: 'class_teacher',      expectedPath: '/portal/class-teacher' },
@@ -58,7 +58,7 @@ async function getAuthTokens(page: Page, role: string): Promise<CachedAuth> {
   }
 
   const { accessToken, refreshToken, user: userData } = body.data;
-  const slug = (userData.municipalityCode || 'kmc').toLowerCase();
+  const slug = userData.municipalityCode || 'KMC';
   const cached = { accessToken, refreshToken, user: userData, slug };
   tokenCache.set(role, cached);
   return cached;
@@ -115,9 +115,13 @@ export async function gotoAsRole(
   await page.goto(fullPath);
   await page.waitForLoadState('domcontentloaded');
 
-  // Wait for React to mount — look for any visible content
+  // Wait for the routed content to mount, not just stale shell text.
   await page.waitForFunction(
-    () => document.body.innerText.length > 50,
+    () => {
+      const target = document.querySelector('main') || document.body;
+      const text = target.textContent || '';
+      return text.trim().length > 50 && !/loading/i.test(text);
+    },
     { timeout: 15000 }
   ).catch(() => {});
 

@@ -82,6 +82,49 @@ interface Circulation {
   fine_amount?: number;
 }
 
+const toNumber = (value: unknown, fallback = 0) => {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : fallback;
+};
+
+const normalizeBook = (book: any): Book => ({
+  id: toNumber(book?.id ?? book?.bookId),
+  accession_number: book?.accession_number ?? book?.accessionNumber ?? '',
+  title: book?.title ?? '',
+  author: book?.author ?? '',
+  isbn: book?.isbn ?? '',
+  category: book?.category ?? '',
+  total_copies: toNumber(book?.total_copies ?? book?.totalCopies ?? book?.copies),
+  available_copies: toNumber(book?.available_copies ?? book?.availableCopies),
+});
+
+const normalizeCirculation = (circulation: any): Circulation => {
+  const student = circulation?.student ?? circulation?.Student;
+  const book = circulation?.book ?? circulation?.Book;
+  const rawStatus = circulation?.status ?? 'issued';
+  const status: Circulation['status'] =
+    rawStatus === 'borrowed' || rawStatus === 'renewed'
+      ? 'issued'
+      : rawStatus === 'returned'
+        ? 'returned'
+        : 'overdue';
+
+  const studentName = circulation?.student_name
+    ?? [student?.firstNameEn, student?.middleNameEn, student?.lastNameEn].filter(Boolean).join(' ')
+    ?? (circulation?.studentId ? `Student #${circulation.studentId}` : '-');
+
+  return {
+    id: toNumber(circulation?.id ?? circulation?.circulationId),
+    student_name: studentName || '-',
+    book_title: circulation?.book_title ?? book?.title ?? (circulation?.bookId ? `Book #${circulation.bookId}` : '-'),
+    issue_date: circulation?.issue_date ?? circulation?.issueDate ?? '',
+    due_date: circulation?.due_date ?? circulation?.dueDate ?? '',
+    return_date: circulation?.return_date ?? circulation?.returnDate,
+    status,
+    fine_amount: toNumber(circulation?.fine_amount ?? circulation?.fine),
+  };
+};
+
 export const LibraryManagement = () => {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -122,8 +165,9 @@ export const LibraryManagement = () => {
 
       const response = await apiClient.get(`/library/books?${params}`);
       const result = response.data?.data;
-      setBooks(result?.books || []);
-      setTotal(result?.total || 0);
+      const list = Array.isArray(result) ? result : (result?.books || []);
+      setBooks(list.map(normalizeBook));
+      setTotal(toNumber(result?.total ?? response.data?.meta?.total, list.length));
     } catch (error) {
       // Silently handle error - set empty arrays as fallback
       setBooks([]);
@@ -143,8 +187,10 @@ export const LibraryManagement = () => {
       });
 
       const response = await apiClient.get(`/library/circulation?${params}`);
-      setCirculations(response.data?.data || []);
-      setTotal(response.data?.meta?.total || response.data?.total || 0);
+      const result = response.data?.data;
+      const list = Array.isArray(result) ? result : (result?.circulations || []);
+      setCirculations(list.map(normalizeCirculation));
+      setTotal(toNumber(response.data?.meta?.total ?? result?.total ?? response.data?.total, list.length));
     } catch (error) {
       // Silently handle error - set empty arrays as fallback
       setCirculations([]);

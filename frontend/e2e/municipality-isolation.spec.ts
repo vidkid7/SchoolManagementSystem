@@ -9,7 +9,7 @@ test.describe('Municipality Isolation', () => {
   test('authenticated user cannot access different municipality URL', async ({ page }) => {
     await page.goto('/login');
     await page.fill('input[name="username"]', 'admin');
-    await page.fill('input[name="password"]', 'admin123');
+    await page.fill('input[name="password"]', 'Admin@123');
     await page.click('button[type="submit"]');
 
     // Should be redirected to their municipality dashboard
@@ -35,7 +35,7 @@ test.describe('Municipality Isolation', () => {
   test('API requests include X-Municipality-Id header', async ({ page }) => {
     await page.goto('/login');
     await page.fill('input[name="username"]', 'admin');
-    await page.fill('input[name="password"]', 'admin123');
+    await page.fill('input[name="password"]', 'Admin@123');
 
     const apiRequests: Array<{ url: string; headers: Record<string, string> }> = [];
     page.on('request', request => {
@@ -56,7 +56,7 @@ test.describe('Municipality Isolation', () => {
   test('navigation stays within municipality scope', async ({ page }) => {
     await page.goto('/login');
     await page.fill('input[name="username"]', 'admin');
-    await page.fill('input[name="password"]', 'admin123');
+    await page.fill('input[name="password"]', 'Admin@123');
     await page.click('button[type="submit"]');
     await page.waitForURL(/dashboard/, { timeout: 10000 });
 
@@ -75,7 +75,7 @@ test.describe('Municipality Isolation', () => {
   test('direct URL manipulation to wrong municipality shows error', async ({ page }) => {
     await page.goto('/login');
     await page.fill('input[name="username"]', 'admin');
-    await page.fill('input[name="password"]', 'admin123');
+    await page.fill('input[name="password"]', 'Admin@123');
     await page.click('button[type="submit"]');
     await page.waitForURL(/dashboard/, { timeout: 10000 });
 

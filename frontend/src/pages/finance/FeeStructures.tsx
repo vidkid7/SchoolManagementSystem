@@ -44,6 +44,8 @@ interface FeeStructure {
   name: string;
   academicYearId: number;
   academicYearName?: string;
+  applicableClasses?: number[];
+  applicableShifts?: string[];
   classId?: number;
   className?: string;
   amount: number;
@@ -52,6 +54,9 @@ interface FeeStructure {
   description?: string;
   isActive: boolean;
 }
+
+const ALL_CLASSES = Array.from({ length: 12 }, (_, index) => index + 1);
+const ALL_SHIFTS = ['morning', 'day', 'evening'];
 
 export function FeeStructures() {
   const { t } = useTranslation();
@@ -99,9 +104,9 @@ export function FeeStructures() {
       setFormData({
         name: fee.name,
         academicYearId: fee.academicYearId.toString(),
-        classId: fee.classId?.toString() || '',
+        classId: fee.classId?.toString() || fee.applicableClasses?.[0]?.toString() || '',
         amount: (fee.amount ?? (fee as any).totalAmount ?? 0).toString(),
-        dueDate: fee.dueDate.split('T')[0],
+        dueDate: fee.dueDate ? fee.dueDate.split('T')[0] : '',
         description: fee.description || '',
       });
     } else {
@@ -126,11 +131,51 @@ export function FeeStructures() {
 
   const handleSubmit = async () => {
     try {
+      const name = formData.name.trim();
+      const academicYearId = Number(formData.academicYearId);
+      const amount = Number(formData.amount);
+      const applicableClass = formData.classId ? Number(formData.classId) : null;
+      const applicableClasses = applicableClass ? [applicableClass] : ALL_CLASSES;
+      const description = formData.description.trim() || undefined;
+
+      if (!name) {
+        throw new Error(t('finance.feeNameRequired', { defaultValue: 'Fee name is required' }));
+      }
+      if (!Number.isFinite(academicYearId) || academicYearId <= 0) {
+        throw new Error(t('finance.academicYearRequired', { defaultValue: 'Academic year is required' }));
+      }
+      if (!Number.isFinite(amount) || amount <= 0) {
+        throw new Error(t('finance.amountRequired', { defaultValue: 'Amount must be greater than zero' }));
+      }
+
+      const payload = {
+        name,
+        academicYearId,
+        applicableClasses,
+        applicableShifts: ALL_SHIFTS,
+        description,
+        feeComponents: [
+          {
+            name,
+            type: 'monthly',
+            amount,
+            frequency: 'monthly',
+            isMandatory: true,
+            description,
+          },
+        ],
+      };
+
       if (editingFee) {
-        await apiClient.put(`/finance/fee-structures/${editingFee.feeStructureId}`, formData);
+        await apiClient.put(`/finance/fee-structures/${editingFee.feeStructureId}`, {
+          name: payload.name,
+          applicableClasses: payload.applicableClasses,
+          applicableShifts: payload.applicableShifts,
+          description: payload.description,
+        });
         setSuccess(t('finance.savedSuccessfully'));
       } else {
-        await apiClient.post('/finance/fee-structures', formData);
+        await apiClient.post('/finance/fee-structures', payload);
         setSuccess(t('finance.savedSuccessfully'));
       }
       handleCloseDialog();

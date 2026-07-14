@@ -13,8 +13,13 @@ import { initCirculation } from '@models/Circulation.model';
 import { initLibraryFine } from '@models/LibraryFine.model';
 import { initECA } from '@models/ECA.model';
 import { initECAEnrollment } from '@models/ECAEnrollment.model';
+import { initECAEvent } from '@models/ECAEvent.model';
+import { initECAAchievement } from '@models/ECAAchievement.model';
 import { initSport } from '@models/Sport.model';
+import { initTeam } from '@models/Team.model';
+import { initTournament } from '@models/Tournament.model';
 import { initSportsEnrollment } from '@models/SportsEnrollment.model';
+import { initSportsAchievement } from '@models/SportsAchievement.model';
 import { initNotification } from '@models/Notification.model';
 import { initEvent } from '@models/Event.model';
 import { initStaffAttendance } from '@models/StaffAttendance.model';
@@ -128,8 +133,13 @@ const startServer = async (): Promise<void> => {
     initLibraryFine(sequelize);
     initECA(sequelize);
     initECAEnrollment(sequelize);
+    initECAEvent(sequelize);
+    initECAAchievement(sequelize);
     initSport(sequelize);
+    initTeam(sequelize);
+    initTournament(sequelize);
     initSportsEnrollment(sequelize);
+    initSportsAchievement(sequelize);
     initNotification(sequelize);
     initEvent(sequelize);
     initStaffAttendance(sequelize);
@@ -164,7 +174,10 @@ const startServer = async (): Promise<void> => {
           'certificate_templates', 'documents', 'document_access_logs', 'timetables',
           'academic_history', 'assignments', 'assignment_submissions', 'lesson_plans',
           'syllabus_progress', 'hostel_rooms', 'hostel_residents', 'hostel_incidents',
-          'hostel_visitors'
+          'hostel_visitors', 'hostel_discipline_records', 'hostel_leave_requests',
+          'hostel_mess_menus', 'hostel_meal_attendance', 'hostel_inventory_items',
+          'transport_routes', 'transport_vehicles', 'transport_pickup_points',
+          'transport_drivers', 'transport_maintenance_records', 'transport_attendance'
         ];
         for (const table of tenantTables) {
           try {

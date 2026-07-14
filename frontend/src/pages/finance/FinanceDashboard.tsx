@@ -138,9 +138,16 @@ if (statsRes.data?.data) {
   ];
 
   return (
-    <Box>
+    <Box sx={{ width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
       <Paper sx={S.PAGE_HEADER}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', sm: 'center' },
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 2,
+          minWidth: 0,
+        }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <BalanceIcon sx={{ fontSize: 32, color: C.primary }} />
             <Box>
@@ -148,18 +155,20 @@ if (statsRes.data?.data) {
               <Typography variant="body2" color="text.secondary">{t('finance.subtitle')}</Typography>
             </Box>
           </Box>
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
             <Button
-              variant="contained" sx={S.BTN_PRIMARY}
+              variant="contained" sx={{ ...S.BTN_PRIMARY, flex: { xs: '1 1 100%', sm: '0 0 auto' } }}
               startIcon={<AddIcon />}
               onClick={() => navigate(`/finance/fee-structures/new`)}
+              fullWidth={false}
             >
               {t('finance.newFeeStructure')}
             </Button>
             <Button
-              variant="outlined" sx={S.BTN_OUTLINE}
+              variant="outlined" sx={{ ...S.BTN_OUTLINE, flex: { xs: '1 1 100%', sm: '0 0 auto' } }}
               startIcon={<ReceiptIcon />}
               onClick={() => navigate(`/finance/invoices/generate`)}
+              fullWidth={false}
             >
               {t('finance.generateInvoice')}
             </Button>

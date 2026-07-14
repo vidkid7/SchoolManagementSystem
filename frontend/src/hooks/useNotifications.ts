@@ -10,8 +10,9 @@ import { api } from '../config/api';
 import { socketService } from '../services/socket';
 
 export interface Notification {
-  notificationId: number;
-  userId: number;
+  notificationId?: number;
+  clientKey: string;
+  userId?: number;
   type: 'info' | 'warning' | 'success' | 'error';
   category: 'attendance' | 'exam' | 'fee' | 'grade' | 'announcement' | 'leave' | 'library' | 'general';
   title: string;
@@ -37,6 +38,39 @@ interface UseNotificationsReturn {
 
 const PAGE_SIZE = 20;
 
+const toOptionalNumber = (value: unknown): number | undefined => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
+};
+
+const normalizeNotification = (notification: any): Notification => {
+  const notificationId = toOptionalNumber(
+    notification.notificationId ?? notification.notification_id ?? notification.id
+  );
+  const userId = toOptionalNumber(notification.userId ?? notification.user_id);
+  const createdAt =
+    notification.createdAt ?? notification.created_at ?? notification.createdOn ?? new Date().toISOString();
+  const title = notification.title ?? 'Notification';
+  const message = notification.message ?? '';
+
+  return {
+    notificationId,
+    clientKey: notificationId
+      ? `notification-${notificationId}`
+      : `notification-${userId ?? 'user'}-${createdAt}-${title}-${message}`,
+    userId,
+    type: notification.type ?? 'info',
+    category: notification.category ?? 'general',
+    title,
+    message,
+    data: notification.data,
+    isRead: notification.isRead ?? notification.is_read ?? false,
+    readAt: notification.readAt ?? notification.read_at,
+    expiresAt: notification.expiresAt ?? notification.expires_at,
+    createdAt,
+  };
+};
+
 export function useNotifications(): UseNotificationsReturn {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -60,7 +94,9 @@ export function useNotifications(): UseNotificationsReturn {
       const { data } = await api.get('/notifications', {
         params: { page: pageNum, limit: PAGE_SIZE },
       });
-      const fetched: Notification[] = Array.isArray(data.data?.notifications) ? data.data.notifications : [];
+      const fetched: Notification[] = Array.isArray(data.data?.notifications)
+        ? data.data.notifications.map(normalizeNotification)
+        : [];
       setNotifications((prev) => (replace ? fetched : [...prev, ...fetched]));
       setHasMore(pageNum < data.data.totalPages);
     } catch {
@@ -79,7 +115,7 @@ export function useNotifications(): UseNotificationsReturn {
 
     // Subscribe to real-time pushes
     const unsub = socketService.on('notification:new', (n: Notification) => {
-      setNotifications((prev) => [n, ...prev]);
+      setNotifications((prev) => [normalizeNotification(n), ...prev]);
       setUnreadCount((c) => c + 1);
     });
 

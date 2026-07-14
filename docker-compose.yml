@@ -38,6 +38,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: builder
     container_name: sms_backend
     restart: unless-stopped
     environment:
@@ -50,8 +51,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-sms_password}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_SECRET: ${JWT_SECRET:-local_development_jwt_secret_32_chars_minimum}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-local_development_refresh_secret_32_chars_minimum}
     ports:
       - "${PORT:-3000}:3000"
     volumes:

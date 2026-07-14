@@ -429,12 +429,11 @@ describe('Staff ID Generation (Requirement 4.2)', () => {
         status: StaffStatus.ACTIVE
       });
       
-      // Generate next code - should be 0006 (based on count, not filling gaps)
+      // Generate next code from the highest used suffix, including gaps.
       const nextCode = await staffService.generateStaffCode();
       const sequential = nextCode.split('-').pop();
       
-      // The service counts existing staff, so it should be 0003
-      expect(sequential).toBe('0003');
+      expect(sequential).toBe('0006');
     });
   });
 

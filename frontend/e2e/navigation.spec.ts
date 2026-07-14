@@ -53,6 +53,31 @@ test.describe('Navigation and Portal Tests', () => {
     // On mobile the sidebar is collapsed, so check the page body is loaded
     await expect(page.locator('body')).toBeVisible();
     await expect(page).toHaveURL(/\/kmc\/dashboard/i);
+    await expect.poll(async () => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+  });
+
+  test('should navigate through account menu actions', async ({ page }) => {
+    await gotoAsRole(page, 'school_admin', '/dashboard');
+
+    await page.getByRole('button', { name: 'Account menu' }).click();
+    await page.getByRole('menuitem', { name: /profile/i }).click();
+    await expect(page).toHaveURL(/\/profile/i);
+    await expect(page.getByText('MY ACCOUNT')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Account menu' }).click();
+    await page.getByRole('menuitem', { name: /^settings$/i }).click();
+    await expect(page).toHaveURL(/\/settings/i);
+    await expect(page.getByText(/settings/i).first()).toBeVisible();
+  });
+
+  test('dashboard primary action buttons work', async ({ page }) => {
+    await gotoAsRole(page, 'school_admin', '/dashboard');
+
+    await page.getByRole('button', { name: 'Refresh' }).click();
+    await expect(page.getByText(/good afternoon|good morning|good evening/i)).toBeVisible();
+
+    await page.getByRole('button', { name: /Students Search, admit/i }).click();
+    await expect(page).toHaveURL(/\/students/i);
   });
 });
 

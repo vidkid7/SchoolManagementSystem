@@ -41,6 +41,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { apiClient } from '../../services/apiClient';
 import { BSDatePicker } from '../../components/BSDatePicker/BSDatePicker';
 import { motion } from 'framer-motion';
+import NepaliDate from 'nepali-date-converter';
 import { useNepaliNumbers } from '../../hooks/useNepaliNumbers';
 import { C, useAdminStyles } from '../../theme/designTokens';
 import { DuplicateWarningDialog } from '../../components/students/DuplicateWarningDialog';
@@ -58,6 +59,33 @@ const parseDate = (value: string | undefined): Date | null => {
 const formatDate = (date: Date | null): string => {
   if (!date) return '';
   return date.toISOString().split('T')[0];
+};
+
+const parseBSDate = (value: string | undefined): Date | null => {
+  if (!value) return null;
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return parseDate(value);
+
+  const [, year, month, day] = match;
+  try {
+    return new NepaliDate(Number(year), Number(month) - 1, Number(day)).toJsDate();
+  } catch {
+    return null;
+  }
+};
+
+const formatBSDate = (date: Date | null): string => {
+  if (!date) return '';
+  try {
+    const nepaliDate = new NepaliDate(date);
+    return [
+      nepaliDate.getYear(),
+      String(nepaliDate.getMonth() + 1).padStart(2, '0'),
+      String(nepaliDate.getDate()).padStart(2, '0')
+    ].join('-');
+  } catch {
+    return '';
+  }
 };
 
 const formatDateForInput = (value: string | undefined): string => {
@@ -166,7 +194,7 @@ export const StudentForm = () => {
   const [siblingsLoading, setSiblingsLoading] = useState(false);
   const [checkingDuplicates, setCheckingDuplicates] = useState(false);
 
-  const { control, handleSubmit, reset, getValues, formState: { errors } } = useForm<StudentFormData>({
+  const { control, handleSubmit, reset, getValues, setValue, formState: { errors } } = useForm<StudentFormData>({
     defaultValues: {
       first_name: '',
       middle_name: '',
@@ -345,7 +373,7 @@ export const StudentForm = () => {
         middleNameNp: data.middle_name_np || null,
         lastNameNp: data.last_name_np || null,
         // Birth Dates
-        dateOfBirthBS: data.date_of_birth_bs,
+        dateOfBirthBS: formatBSDate(parseDate(data.date_of_birth_ad)) || data.date_of_birth_bs,
         dateOfBirthAD: data.date_of_birth_ad,
         // Personal Info
         gender: data.gender,
@@ -485,7 +513,7 @@ export const StudentForm = () => {
       middleNameNp: formData.middle_name_np || null,
       lastNameNp: formData.last_name_np || null,
       // Birth Dates
-      dateOfBirthBS: formData.date_of_birth_bs,
+      dateOfBirthBS: formatBSDate(parseDate(formData.date_of_birth_ad)) || formData.date_of_birth_bs,
       dateOfBirthAD: formData.date_of_birth_ad,
       // Personal Info
       gender: formData.gender,
@@ -832,8 +860,14 @@ export const StudentForm = () => {
                   render={({ field }) => (
                     <BSDatePicker
                       label={`${t('students.dateOfBirth')} (BS) *`}
-                      value={parseDate(field.value)}
-                      onChange={(date) => field.onChange(formatDate(date))}
+                      value={parseBSDate(field.value)}
+                      onChange={(date) => {
+                        field.onChange(formatBSDate(date));
+                        setValue('date_of_birth_ad', formatDate(date), {
+                          shouldDirty: true,
+                          shouldValidate: true
+                        });
+                      }}
                       error={!!errors.date_of_birth_bs}
                       helperText={errors.date_of_birth_bs?.message}
                     />

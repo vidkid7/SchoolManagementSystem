@@ -158,6 +158,7 @@ export function initECAAchievement(sequelize: any): typeof ECAAchievement {
       achievementDateBS: {
         type: DataTypes.STRING(10),
         allowNull: true,
+        field: 'achievement_date_bs',
       },
       certificateUrl: {
         type: DataTypes.STRING(500),

@@ -179,11 +179,17 @@ const ParentPortal: React.FC = () => {
         <FormControl sx={{ minWidth: 220 }}>
           <InputLabel>{t('portal.selectChild')}</InputLabel>
           <Select
-            value={selectedChildIndex}
+            value={children.length > 0 ? selectedChildIndex : ''}
             onChange={(e) => setSelectedChildIndex(Number(e.target.value))}
             label={t('portal.selectChild')}
+            disabled={children.length === 0}
             sx={S.SELECT}
           >
+            {children.length === 0 && (
+              <MenuItem value="">
+                {t('portal.noData')}
+              </MenuItem>
+            )}
             {children.map((child, idx) => (
               <MenuItem key={child.id} value={idx}>
                 {child.name} — {t('portal.classLabel')} {child.class}{child.section}
@@ -552,9 +558,9 @@ const ParentPortal: React.FC = () => {
 
           {/* Notifications */}
           <TabPanel value={tabValue} index={8}>
-            {notifications.length > 0 ? notifications.map((n) => (
+            {notifications.length > 0 ? notifications.map((n, index) => (
               <Alert
-                key={n.id}
+                key={n.id ?? `${n.title ?? 'notification'}-${index}`}
                 severity={n.type === 'warning' ? 'warning' : 'info'}
                 sx={{ mb: 1, borderRadius: R.md }}
               >

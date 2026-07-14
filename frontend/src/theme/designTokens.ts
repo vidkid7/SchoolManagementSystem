@@ -34,34 +34,34 @@ export const R = {
 
 // ─── Semantic Color Palette ──────────────────────────────────────────────────
 export const C = {
-  // Brand / Primary
-  primary:    '#007AFF',
-  purple:     '#5856D6',
+  // Brand / Primary (aligned with dashboard design system)
+  primary:    '#2563eb',
+  purple:     '#7c3aed',
 
   // Semantic
-  success:    '#34C759',
-  warning:    '#FF9500',
-  danger:     '#FF3B30',
-  neutral:    '#8E8E93',
-  info:       '#5AC8FA',
+  success:    '#16a34a',
+  warning:    '#f97316',
+  danger:     '#dc2626',
+  neutral:    '#64748b',
+  info:       '#0891b2',
 
   // Tinted backgrounds (12% opacity)
-  primaryBg:  'rgba(0,122,255,0.12)',
-  purpleBg:   'rgba(88,86,214,0.12)',
-  successBg:  'rgba(52,199,89,0.12)',
-  warningBg:  'rgba(255,149,0,0.12)',
-  dangerBg:   'rgba(255,59,48,0.12)',
-  neutralBg:  'rgba(142,142,147,0.12)',
-  infoBg:     'rgba(90,200,250,0.12)',
+  primaryBg:  'rgba(37,99,235,0.12)',
+  purpleBg:   'rgba(124,58,237,0.12)',
+  successBg:  'rgba(22,163,74,0.12)',
+  warningBg:  'rgba(249,115,22,0.12)',
+  dangerBg:   'rgba(220,38,38,0.12)',
+  neutralBg:  'rgba(100,116,139,0.12)',
+  infoBg:     'rgba(8,145,178,0.12)',
 
   // Tinted borders (25% opacity)
-  primaryBdr: 'rgba(0,122,255,0.25)',
-  purpleBdr:  'rgba(88,86,214,0.25)',
-  successBdr: 'rgba(52,199,89,0.25)',
-  warningBdr: 'rgba(255,149,0,0.25)',
-  dangerBdr:  'rgba(255,59,48,0.25)',
-  neutralBdr: 'rgba(142,142,147,0.25)',
-  infoBdr:    'rgba(90,200,250,0.25)',
+  primaryBdr: 'rgba(37,99,235,0.25)',
+  purpleBdr:  'rgba(124,58,237,0.25)',
+  successBdr: 'rgba(22,163,74,0.25)',
+  warningBdr: 'rgba(249,115,22,0.25)',
+  dangerBdr:  'rgba(220,38,38,0.25)',
+  neutralBdr: 'rgba(100,116,139,0.25)',
+  infoBdr:    'rgba(8,145,178,0.25)',
 };
 
 // ─── Status → semantic color mapper ────────────────────────────────────────
@@ -113,17 +113,19 @@ export function getStatusColor(status: string) {
 export const useAdminStyles = (theme: any) => {
   const dark = theme.palette.mode === 'dark';
 
-  // Core glassmorphic surface — rectangular with slight round corners
+  // Core dashboard-grade glass surface shared by module pages.
   const GLASS_BASE = {
-    background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.75)',
-    backdropFilter: 'blur(20px) saturate(180%)',
-    WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-    border: `1px solid ${dark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.9)'}`,
-    borderRadius: R.md,  // 12px — rectangular with slight rounding
+    background: dark
+      ? 'linear-gradient(180deg, rgba(15,23,42,0.84) 0%, rgba(15,23,42,0.64) 100%)'
+      : 'linear-gradient(180deg, var(--sms-glass-strong, rgba(255,255,255,0.82)) 0%, var(--sms-glass, rgba(255,255,255,0.68)) 100%)',
+    backdropFilter: 'blur(22px) saturate(175%)',
+    WebkitBackdropFilter: 'blur(22px) saturate(175%)',
+    border: `1px solid ${dark ? 'rgba(148,163,184,0.22)' : 'var(--sms-border, rgba(226,232,240,0.92))'}`,
+    borderRadius: RADIUS.md,
     boxShadow: dark
-      ? '0 4px 20px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.05) inset'
-      : '0 4px 20px rgba(0,0,0,0.06), 0 1px 0 rgba(255,255,255,0.8) inset',
-    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+      ? '0 18px 44px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.07)'
+      : '0 14px 34px rgba(15,23,42,0.085), inset 0 1px 0 rgba(255,255,255,0.44)',
+    transition: 'transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease',
   };
 
   return {
@@ -131,36 +133,40 @@ export const useAdminStyles = (theme: any) => {
     GLASS: GLASS_BASE,
     GLASS_ELEVATED: {
       ...GLASS_BASE,
-      background: dark ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.88)',
+      background: dark
+        ? 'linear-gradient(180deg, rgba(15,23,42,0.92) 0%, rgba(17,28,47,0.72) 100%)'
+        : 'linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(248,250,252,0.78) 100%)',
       boxShadow: dark
-        ? '0 8px 32px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.08) inset'
-        : '0 8px 32px rgba(0,0,0,0.08), 0 1px 0 rgba(255,255,255,0.9) inset',
+        ? '0 22px 54px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)'
+        : '0 18px 46px rgba(15,23,42,0.105), inset 0 1px 0 rgba(255,255,255,0.52)',
     },
     GLASS_HEADER: {
       ...GLASS_BASE,
       background: dark
-        ? 'linear-gradient(135deg, rgba(0,122,255,0.1) 0%, rgba(88,86,214,0.08) 100%)'
-        : 'linear-gradient(135deg, rgba(0,122,255,0.08) 0%, rgba(88,86,214,0.06) 100%)',
-      borderBottom: `1px solid ${dark ? 'rgba(0,122,255,0.15)' : 'rgba(0,122,255,0.12)'}`,
+        ? 'linear-gradient(135deg, rgba(8,20,39,0.95) 0%, rgba(15,45,83,0.72) 54%, rgba(23,37,84,0.72) 100%)'
+        : 'linear-gradient(135deg, rgba(239,246,255,0.96) 0%, rgba(248,250,252,0.88) 52%, rgba(238,242,255,0.88) 100%)',
+      border: `1px solid ${dark ? 'rgba(96,165,250,0.2)' : 'rgba(191,219,254,0.86)'}`,
     },
     // Subtle card variant — less prominent glass
     GLASS_SUBTLE: {
       ...GLASS_BASE,
-      background: dark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.55)',
+      background: dark
+        ? 'linear-gradient(180deg, rgba(17,28,47,0.58) 0%, rgba(15,23,42,0.48) 100%)'
+        : 'linear-gradient(180deg, rgba(255,255,255,0.72) 0%, rgba(248,250,252,0.56) 100%)',
       boxShadow: dark
-        ? '0 2px 8px rgba(0,0,0,0.2)'
-        : '0 2px 8px rgba(0,0,0,0.04)',
+        ? '0 10px 28px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.05)'
+        : '0 10px 26px rgba(15,23,42,0.055), inset 0 1px 0 rgba(255,255,255,0.4)',
     },
 
     // Table helpers
-    TH_BG: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,122,255,0.04)',
+    TH_BG: dark ? 'rgba(255,255,255,0.04)' : 'rgba(37,99,235,0.04)',
     TD: {
       color: theme.palette.text.primary,
       borderBottom: `1px solid ${dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
     },
     TR_HOVER: {
       '&:hover': {
-        background: dark ? 'rgba(0,122,255,0.06)' : 'rgba(0,122,255,0.04)',
+        background: dark ? 'rgba(37,99,235,0.08)' : 'rgba(37,99,235,0.04)',
       },
     },
 
@@ -170,14 +176,14 @@ export const useAdminStyles = (theme: any) => {
       color: '#fff',
       textTransform: 'none' as const,
       fontWeight: 600,
-      borderRadius: R.sm,  // 8px
+      borderRadius: RADIUS.sm,
       px: 2.5,
       py: 1,
-      boxShadow: `0 4px 14px rgba(0,122,255,0.35)`,
+      boxShadow: `0 4px 14px rgba(37,99,235,0.35)`,
       border: 'none',
       '&:hover': {
-        background: `linear-gradient(135deg, #0062CC 0%, #4845AB 100%)`,
-        boxShadow: `0 6px 20px rgba(0,122,255,0.45)`,
+        background: `linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%)`,
+        boxShadow: `0 6px 20px rgba(37,99,235,0.45)`,
         transform: 'translateY(-1px)',
       },
       '&:active': { transform: 'translateY(0)' },
@@ -188,50 +194,50 @@ export const useAdminStyles = (theme: any) => {
       },
     },
     BTN_SUCCESS: {
-      background: `linear-gradient(135deg, ${C.success} 0%, #28a745 100%)`,
+      background: `linear-gradient(135deg, ${C.success} 0%, #15803d 100%)`,
       color: '#fff',
       textTransform: 'none' as const,
       fontWeight: 600,
-      borderRadius: R.sm,
+      borderRadius: RADIUS.sm,
       px: 2.5,
       py: 1,
-      boxShadow: `0 4px 14px rgba(52,199,89,0.3)`,
+      boxShadow: `0 4px 14px rgba(22,163,74,0.3)`,
       border: 'none',
       '&:hover': {
-        background: `linear-gradient(135deg, #28a745 0%, #1e7e34 100%)`,
-        boxShadow: `0 6px 20px rgba(52,199,89,0.4)`,
+        background: `linear-gradient(135deg, #15803d 0%, #166534 100%)`,
+        boxShadow: `0 6px 20px rgba(22,163,74,0.4)`,
         transform: 'translateY(-1px)',
       },
     },
     BTN_DANGER: {
-      background: `linear-gradient(135deg, ${C.danger} 0%, #cc1f15 100%)`,
+      background: `linear-gradient(135deg, ${C.danger} 0%, #b91c1c 100%)`,
       color: '#fff',
       textTransform: 'none' as const,
       fontWeight: 600,
-      borderRadius: R.sm,
+      borderRadius: RADIUS.sm,
       px: 2.5,
       py: 1,
-      boxShadow: `0 4px 14px rgba(255,59,48,0.3)`,
+      boxShadow: `0 4px 14px rgba(220,38,38,0.3)`,
       border: 'none',
       '&:hover': {
-        background: `linear-gradient(135deg, #cc1f15 0%, #a8180e 100%)`,
-        boxShadow: `0 6px 20px rgba(255,59,48,0.4)`,
+        background: `linear-gradient(135deg, #b91c1c 0%, #991b1b 100%)`,
+        boxShadow: `0 6px 20px rgba(220,38,38,0.4)`,
         transform: 'translateY(-1px)',
       },
     },
     BTN_WARNING: {
-      background: `linear-gradient(135deg, ${C.warning} 0%, #e68600 100%)`,
+      background: `linear-gradient(135deg, ${C.warning} 0%, #c2410c 100%)`,
       color: '#fff',
       textTransform: 'none' as const,
       fontWeight: 600,
-      borderRadius: R.sm,
+      borderRadius: RADIUS.sm,
       px: 2.5,
       py: 1,
-      boxShadow: `0 4px 14px rgba(255,149,0,0.3)`,
+      boxShadow: `0 4px 14px rgba(249,115,22,0.3)`,
       border: 'none',
       '&:hover': {
-        background: `linear-gradient(135deg, #e68600 0%, #cc7700 100%)`,
-        boxShadow: `0 6px 20px rgba(255,149,0,0.4)`,
+        background: `linear-gradient(135deg, #c2410c 0%, #9a3412 100%)`,
+        boxShadow: `0 6px 20px rgba(249,115,22,0.4)`,
         transform: 'translateY(-1px)',
       },
     },
@@ -240,7 +246,7 @@ export const useAdminStyles = (theme: any) => {
       borderColor: C.primaryBdr,
       textTransform: 'none' as const,
       fontWeight: 600,
-      borderRadius: R.sm,
+      borderRadius: RADIUS.sm,
       border: `1px solid ${C.primaryBdr}`,
       '&:hover': { background: C.primaryBg, borderColor: C.primary },
     },
@@ -248,14 +254,14 @@ export const useAdminStyles = (theme: any) => {
       color: theme.palette.text.secondary,
       textTransform: 'none' as const,
       fontWeight: 500,
-      borderRadius: R.sm,
+      borderRadius: RADIUS.sm,
       '&:hover': { background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' },
     },
     BTN_ICON: {
-      borderRadius: R.sm,
+      borderRadius: RADIUS.sm,
       color: theme.palette.text.secondary,
       '&:hover': {
-        background: dark ? 'rgba(0,122,255,0.12)' : C.primaryBg,
+        background: dark ? 'rgba(37,99,235,0.16)' : C.primaryBg,
         color: C.primary,
       },
     },
@@ -264,7 +270,7 @@ export const useAdminStyles = (theme: any) => {
     TF: {
       '& .MuiOutlinedInput-root': {
         color: theme.palette.text.primary,
-        borderRadius: R.sm,  // 8px
+        borderRadius: RADIUS.sm,
         '& fieldset': { borderColor: dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)' },
         '&:hover fieldset': { borderColor: C.primary },
         '&.Mui-focused fieldset': { borderColor: C.primary },
@@ -277,7 +283,7 @@ export const useAdminStyles = (theme: any) => {
 
     // Select field — rectangular with slight rounding
     SELECT: {
-      borderRadius: R.sm,
+      borderRadius: RADIUS.sm,
       '& .MuiOutlinedInput-notchedOutline': {
         borderColor: dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)',
       },
@@ -308,7 +314,7 @@ export const useAdminStyles = (theme: any) => {
     ICON_BOX: (accent: string, size = 40) => ({
       width: size,
       height: size,
-      borderRadius: R.sm,  // 8px
+      borderRadius: RADIUS.sm,
       background: `rgba(${hexToRgb(accent)},0.12)`,
       border: `1px solid rgba(${hexToRgb(accent)},0.25)`,
       display: 'flex',
@@ -322,17 +328,17 @@ export const useAdminStyles = (theme: any) => {
     PAGE_HEADER: {
       ...GLASS_BASE,
       background: dark
-        ? 'linear-gradient(135deg, rgba(0,122,255,0.1) 0%, rgba(88,86,214,0.08) 100%)'
-        : 'linear-gradient(135deg, rgba(0,122,255,0.07) 0%, rgba(88,86,214,0.05) 100%)',
-      p: 3,
-      mb: 3,
+        ? 'linear-gradient(135deg, rgba(8,20,39,0.94) 0%, rgba(15,45,83,0.72) 58%, rgba(23,37,84,0.62) 100%)'
+        : 'linear-gradient(135deg, rgba(239,246,255,0.96) 0%, rgba(255,255,255,0.84) 56%, rgba(238,242,255,0.86) 100%)',
+      p: { xs: 1.5, md: 2 },
+      mb: 1.5,
     },
 
     // Section wrapper
     SECTION: {
       ...GLASS_BASE,
-      p: 3,
-      mb: 3,
+      p: { xs: 1.5, md: 2 },
+      mb: 1.5,
     },
 
     // Tab bar active indicator
@@ -347,7 +353,7 @@ export const useAdminStyles = (theme: any) => {
       background: `rgba(${hexToRgb(accent)},0.12)`,
       color: accent,
       border: `1px solid rgba(${hexToRgb(accent)},0.25)`,
-      borderRadius: R.xs,
+      borderRadius: RADIUS.xs,
       fontWeight: 600,
       fontSize: '0.75rem',
     }),

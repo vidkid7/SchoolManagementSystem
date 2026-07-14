@@ -64,6 +64,11 @@ describe('OfflineIndicator Component', () => {
     expect(screen.queryByText('Offline')).not.toBeInTheDocument();
   });
 
+  it('should not show online alert on initial online render', () => {
+    render(<OfflineIndicator />);
+    expect(screen.queryByText(/You are back online/i)).not.toBeInTheDocument();
+  });
+
   it('should show sync button when there are pending items', () => {
     (usePWAHook.usePWA as jest.Mock).mockReturnValue([
       {

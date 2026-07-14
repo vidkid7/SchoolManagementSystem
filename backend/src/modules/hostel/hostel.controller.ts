@@ -7,17 +7,48 @@ import HostelRoom from '@models/HostelRoom.model';
 import HostelResident from '@models/HostelResident.model';
 import HostelIncident from '@models/HostelIncident.model';
 import HostelVisitor from '@models/HostelVisitor.model';
+import HostelDisciplineRecord from '@models/HostelDisciplineRecord.model';
+import HostelLeaveRequest from '@models/HostelLeaveRequest.model';
+import HostelMessMenu from '@models/HostelMessMenu.model';
+import HostelMealAttendance from '@models/HostelMealAttendance.model';
+import HostelInventoryItem from '@models/HostelInventoryItem.model';
 
-// In-memory stores for hostel features not yet migrated to DB
-const disciplineRecords: Map<number, any> = new Map();
-const leaveRecords: Map<number, any> = new Map();
-const messMenus: Map<number, any> = new Map();
-const mealAttendance: Map<string, any> = new Map(); // `${date}_${studentId}` -> record
-const inventoryItems: Map<number, any> = new Map();
-let nextDisciplineId = 1;
-let nextLeaveId = 1;
-let nextMenuId = 1;
-let nextInventoryId = 1;
+const roomTypes = ['single', 'double', 'dormitory'] as const;
+const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
+
+function normalizeRoomType(type: unknown): 'single' | 'double' | 'dormitory' | null {
+  const value = String(type ?? '').toLowerCase();
+  if (roomTypes.includes(value as any)) return value as 'single' | 'double' | 'dormitory';
+  return null;
+}
+
+function normalizeMealType(mealType: unknown): 'breakfast' | 'lunch' | 'dinner' | 'snack' | null {
+  const value = String(mealType ?? '').toLowerCase();
+  if (mealTypes.includes(value as any)) return value as 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  return null;
+}
+
+function normalizeItems(items: unknown): string[] {
+  if (Array.isArray(items)) return items.map(String).map(item => item.trim()).filter(Boolean);
+  return String(items ?? '').split(',').map(item => item.trim()).filter(Boolean);
+}
+
+async function serializeRoom(room: HostelRoom): Promise<Record<string, unknown>> {
+  const plain = room.get({ plain: true }) as any;
+  const occupied = await HostelResident.count({ where: { roomId: plain.id, status: 'active' } });
+  return { ...plain, occupied };
+}
+
+function serializeVisitor(visitor: HostelVisitor): Record<string, unknown> {
+  const plain = visitor.get({ plain: true }) as any;
+  return {
+    ...plain,
+    studentId: plain.residentStudentId,
+    relation: plain.relationship,
+    checkInTime: plain.checkIn,
+    checkOutTime: plain.checkOut ?? null,
+  };
+}
 
 class HostelController {
   async getDashboard(req: Request, res: Response): Promise<void> {
@@ -122,7 +153,8 @@ class HostelController {
   async getRooms(req: Request, res: Response): Promise<void> {
     try {
       const rooms = await HostelRoom.findAll({ order: [['roomNumber', 'ASC']] });
-      res.status(200).json({ success: true, data: { rooms, total: rooms.length } });
+      const serialized = await Promise.all(rooms.map(serializeRoom));
+      res.status(200).json({ success: true, data: { rooms: serialized, total: serialized.length } });
     } catch (error: any) {
       logger.error('Get rooms error:', error);
       res.status(500).json({ success: false, error: { code: 'ROOM_LIST_ERROR', message: error.message } });
@@ -132,19 +164,20 @@ class HostelController {
   async createRoom(req: Request, res: Response): Promise<void> {
     try {
       const { roomNumber, floor, type, capacity, description } = req.body;
-      if (!roomNumber || !type) {
-        res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'roomNumber and type are required' } });
+      const normalizedType = normalizeRoomType(type);
+      if (!roomNumber || !normalizedType) {
+        res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'roomNumber and a valid type are required' } });
         return;
       }
       const room = await HostelRoom.create({
         roomNumber,
         floor: floor ?? 1,
-        type,
+        type: normalizedType,
         capacity: capacity ?? 2,
         description: description ?? '',
         status: 'available',
       });
-      res.status(201).json({ success: true, data: room });
+      res.status(201).json({ success: true, data: await serializeRoom(room) });
     } catch (error: any) {
       logger.error('Create room error:', error);
       res.status(500).json({ success: false, error: { code: 'ROOM_CREATE_ERROR', message: error.message } });
@@ -156,9 +189,17 @@ class HostelController {
       const id = Number(req.params.roomId);
       const room = await HostelRoom.findByPk(id);
       if (!room) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Room not found' } }); return; }
-      const { id: _id, ...updateData } = req.body;
+      const { id: _id, type, ...updateData } = req.body;
+      if (type !== undefined) {
+        const normalizedType = normalizeRoomType(type);
+        if (!normalizedType) {
+          res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'type must be single, double, or dormitory' } });
+          return;
+        }
+        updateData.type = normalizedType;
+      }
       await room.update(updateData);
-      res.status(200).json({ success: true, data: room });
+      res.status(200).json({ success: true, data: await serializeRoom(room) });
     } catch (error: any) {
       logger.error('Update room error:', error);
       res.status(500).json({ success: false, error: { code: 'ROOM_UPDATE_ERROR', message: error.message } });
@@ -244,8 +285,9 @@ class HostelController {
   async getDisciplineRecords(req: Request, res: Response): Promise<void> {
     try {
       const { studentId } = req.query;
-      let records = Array.from(disciplineRecords.values());
-      if (studentId) records = records.filter(r => String(r.studentId) === String(studentId));
+      const where: any = {};
+      if (studentId) where.studentId = Number(studentId);
+      const records = await HostelDisciplineRecord.findAll({ where, order: [['date', 'DESC'], ['id', 'DESC']] });
       res.status(200).json({ success: true, data: { records, total: records.length } });
     } catch (error: any) {
       res.status(500).json({ success: false, error: { code: 'DISCIPLINE_LIST_ERROR', message: error.message } });
@@ -256,8 +298,16 @@ class HostelController {
     try {
       const { studentId, violation, description, action, severity, date } = req.body;
       if (!studentId || !violation) { res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'studentId and violation are required' } }); return; }
-      const record = { id: nextDisciplineId++, studentId, violation, description: description ?? '', action: action ?? 'Warning', severity: severity ?? 'minor', date: date ?? new Date().toISOString(), status: 'open', recordedBy: req.user?.userId, createdAt: new Date().toISOString() };
-      disciplineRecords.set(record.id, record);
+      const record = await HostelDisciplineRecord.create({
+        studentId,
+        violation,
+        description: description ?? '',
+        action: action ?? 'Warning',
+        severity: severity ?? 'minor',
+        date: date ?? new Date().toISOString().slice(0, 10),
+        status: 'open',
+        recordedBy: req.user?.userId,
+      });
       res.status(201).json({ success: true, data: record });
     } catch (error: any) {
       res.status(500).json({ success: false, error: { code: 'DISCIPLINE_CREATE_ERROR', message: error.message } });
@@ -267,13 +317,24 @@ class HostelController {
   async updateDisciplineRecord(req: Request, res: Response): Promise<void> {
     try {
       const id = Number(req.params.recordId);
-      const record = disciplineRecords.get(id);
+      const record = await HostelDisciplineRecord.findByPk(id);
       if (!record) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Record not found' } }); return; }
-      const updated = { ...record, ...req.body, id };
-      disciplineRecords.set(id, updated);
-      res.status(200).json({ success: true, data: updated });
+      const { id: _id, ...updateData } = req.body;
+      await record.update(updateData);
+      res.status(200).json({ success: true, data: record });
     } catch (error: any) {
       res.status(500).json({ success: false, error: { code: 'DISCIPLINE_UPDATE_ERROR', message: error.message } });
+    }
+  }
+
+  async deleteDisciplineRecord(req: Request, res: Response): Promise<void> {
+    try {
+      const id = Number(req.params.recordId);
+      const deleted = await HostelDisciplineRecord.destroy({ where: { id } });
+      if (!deleted) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Record not found' } }); return; }
+      res.status(200).json({ success: true, message: 'Record deleted' });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: { code: 'DISCIPLINE_DELETE_ERROR', message: error.message } });
     }
   }
 
@@ -290,7 +351,8 @@ class HostelController {
         where.visitDate = { [Op.gte]: d, [Op.lt]: next };
       }
       const visitors = await HostelVisitor.findAll({ where, order: [['checkIn', 'DESC']] });
-      res.status(200).json({ success: true, data: { visitors, total: visitors.length } });
+      const serialized = visitors.map(serializeVisitor);
+      res.status(200).json({ success: true, data: { visitors: serialized, total: serialized.length } });
     } catch (error: any) {
       res.status(500).json({ success: false, error: { code: 'VISITOR_LIST_ERROR', message: error.message } });
     }
@@ -311,7 +373,7 @@ class HostelController {
         status: 'checked-in',
         registeredBy: req.user?.userId,
       });
-      res.status(201).json({ success: true, data: visitor });
+      res.status(201).json({ success: true, data: serializeVisitor(visitor) });
     } catch (error: any) {
       res.status(500).json({ success: false, error: { code: 'VISITOR_CREATE_ERROR', message: error.message } });
     }
@@ -323,9 +385,20 @@ class HostelController {
       const visitor = await HostelVisitor.findByPk(id);
       if (!visitor) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Visitor not found' } }); return; }
       await visitor.update({ checkOut: new Date(), status: 'checked-out' });
-      res.status(200).json({ success: true, data: visitor });
+      res.status(200).json({ success: true, data: serializeVisitor(visitor) });
     } catch (error: any) {
       res.status(500).json({ success: false, error: { code: 'VISITOR_CHECKOUT_ERROR', message: error.message } });
+    }
+  }
+
+  async deleteVisitor(req: Request, res: Response): Promise<void> {
+    try {
+      const id = Number(req.params.visitorId);
+      const deleted = await HostelVisitor.destroy({ where: { id } });
+      if (!deleted) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Visitor not found' } }); return; }
+      res.status(200).json({ success: true, message: 'Visitor deleted' });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: { code: 'VISITOR_DELETE_ERROR', message: error.message } });
     }
   }
 
@@ -334,12 +407,33 @@ class HostelController {
   async getLeaveRequests(req: Request, res: Response): Promise<void> {
     try {
       const { status, studentId } = req.query;
-      let leaves = Array.from(leaveRecords.values());
-      if (status) leaves = leaves.filter(l => l.status === String(status));
-      if (studentId) leaves = leaves.filter(l => String(l.studentId) === String(studentId));
+      const where: any = {};
+      if (status) where.status = String(status);
+      if (studentId) where.studentId = Number(studentId);
+      const leaves = await HostelLeaveRequest.findAll({ where, order: [['createdAt', 'DESC']] });
       res.status(200).json({ success: true, data: { leaves, total: leaves.length } });
     } catch (error: any) {
       res.status(500).json({ success: false, error: { code: 'LEAVE_LIST_ERROR', message: error.message } });
+    }
+  }
+
+  async createLeaveRequest(req: Request, res: Response): Promise<void> {
+    try {
+      const { studentId, reason, fromDate, toDate } = req.body;
+      if (!studentId || !reason || !fromDate || !toDate) {
+        res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'studentId, reason, fromDate, and toDate are required' } });
+        return;
+      }
+      const leave = await HostelLeaveRequest.create({
+        studentId,
+        reason,
+        fromDate,
+        toDate,
+        status: 'pending',
+      });
+      res.status(201).json({ success: true, data: leave });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: { code: 'LEAVE_CREATE_ERROR', message: error.message } });
     }
   }
 
@@ -348,16 +442,28 @@ class HostelController {
       const id = Number(req.params.leaveId);
       const { action, remarks } = req.body; // action: 'approve' | 'reject'
       if (!['approve', 'reject'].includes(action)) { res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'action must be approve or reject' } }); return; }
-      const leave = leaveRecords.get(id);
+      const leave = await HostelLeaveRequest.findByPk(id);
       if (!leave) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Leave not found' } }); return; }
-      leave.status = action === 'approve' ? 'approved' : 'rejected';
-      leave.remarks = remarks ?? '';
-      leave.processedBy = req.user?.userId;
-      leave.processedAt = new Date().toISOString();
-      leaveRecords.set(id, leave);
+      await leave.update({
+        status: action === 'approve' ? 'approved' : 'rejected',
+        remarks: remarks ?? '',
+        processedBy: req.user?.userId,
+        processedAt: new Date(),
+      });
       res.status(200).json({ success: true, data: leave });
     } catch (error: any) {
       res.status(500).json({ success: false, error: { code: 'LEAVE_PROCESS_ERROR', message: error.message } });
+    }
+  }
+
+  async deleteLeaveRequest(req: Request, res: Response): Promise<void> {
+    try {
+      const id = Number(req.params.leaveId);
+      const deleted = await HostelLeaveRequest.destroy({ where: { id } });
+      if (!deleted) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Leave not found' } }); return; }
+      res.status(200).json({ success: true, message: 'Leave deleted' });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: { code: 'LEAVE_DELETE_ERROR', message: error.message } });
     }
   }
 
@@ -405,13 +511,25 @@ class HostelController {
     }
   }
 
+  async deleteIncident(req: Request, res: Response): Promise<void> {
+    try {
+      const id = Number(req.params.incidentId);
+      const deleted = await HostelIncident.destroy({ where: { id } });
+      if (!deleted) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Incident not found' } }); return; }
+      res.status(200).json({ success: true, message: 'Incident deleted' });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: { code: 'INCIDENT_DELETE_ERROR', message: error.message } });
+    }
+  }
+
   // ─────────────────── MESS MANAGEMENT ───────────────────
 
   async getMessMenu(req: Request, res: Response): Promise<void> {
     try {
       const { day } = req.query;
-      let menus = Array.from(messMenus.values());
-      if (day) menus = menus.filter(m => m.day === String(day));
+      const where: any = {};
+      if (day) where.day = String(day);
+      const menus = await HostelMessMenu.findAll({ where, order: [['day', 'ASC'], ['mealType', 'ASC']] });
       res.status(200).json({ success: true, data: { menus, total: menus.length } });
     } catch (error: any) {
       logger.error('Get mess menu error:', error);
@@ -426,8 +544,17 @@ class HostelController {
         res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'day, mealType, and items are required' } });
         return;
       }
-      const menu = { id: nextMenuId++, day, mealType, items, specialNotes: specialNotes ?? '', createdAt: new Date().toISOString() };
-      messMenus.set(menu.id, menu);
+      const normalizedMealType = normalizeMealType(mealType);
+      if (!normalizedMealType) {
+        res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'mealType must be breakfast, lunch, dinner, or snack' } });
+        return;
+      }
+      const menu = await HostelMessMenu.create({
+        day,
+        mealType: normalizedMealType,
+        items: normalizeItems(items),
+        specialNotes: specialNotes ?? '',
+      });
       res.status(201).json({ success: true, data: menu });
     } catch (error: any) {
       logger.error('Create mess menu error:', error);
@@ -438,11 +565,22 @@ class HostelController {
   async updateMessMenu(req: Request, res: Response): Promise<void> {
     try {
       const id = Number(req.params.menuId);
-      const menu = messMenus.get(id);
+      const menu = await HostelMessMenu.findByPk(id);
       if (!menu) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Menu not found' } }); return; }
-      const updated = { ...menu, ...req.body, id };
-      messMenus.set(id, updated);
-      res.status(200).json({ success: true, data: updated });
+      const { id: _id, mealType, items, ...updateData } = req.body;
+      if (mealType !== undefined) {
+        const normalizedMealType = normalizeMealType(mealType);
+        if (!normalizedMealType) {
+          res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'mealType must be breakfast, lunch, dinner, or snack' } });
+          return;
+        }
+        updateData.mealType = normalizedMealType;
+      }
+      if (items !== undefined) {
+        updateData.items = normalizeItems(items);
+      }
+      await menu.update(updateData);
+      res.status(200).json({ success: true, data: menu });
     } catch (error: any) {
       logger.error('Update mess menu error:', error);
       res.status(500).json({ success: false, error: { code: 'MESS_MENU_UPDATE_ERROR', message: error.message } });
@@ -452,8 +590,8 @@ class HostelController {
   async deleteMessMenu(req: Request, res: Response): Promise<void> {
     try {
       const id = Number(req.params.menuId);
-      if (!messMenus.has(id)) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Menu not found' } }); return; }
-      messMenus.delete(id);
+      const deleted = await HostelMessMenu.destroy({ where: { id } });
+      if (!deleted) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Menu not found' } }); return; }
       res.status(200).json({ success: true, message: 'Menu deleted' });
     } catch (error: any) {
       logger.error('Delete mess menu error:', error);
@@ -463,9 +601,11 @@ class HostelController {
 
   async getMealAttendance(req: Request, res: Response): Promise<void> {
     try {
-      const { date } = req.query;
-      let records = Array.from(mealAttendance.values());
-      if (date) records = records.filter(r => r.date === String(date));
+      const { date, mealType } = req.query;
+      const where: any = {};
+      if (date) where.date = String(date);
+      if (mealType) where.mealType = String(mealType);
+      const records = await HostelMealAttendance.findAll({ where, order: [['date', 'DESC'], ['mealType', 'ASC']] });
       res.status(200).json({ success: true, data: { records, total: records.length } });
     } catch (error: any) {
       logger.error('Get meal attendance error:', error);
@@ -480,12 +620,30 @@ class HostelController {
         res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'date, mealType, and records array are required' } });
         return;
       }
+      const normalizedMealType = normalizeMealType(mealType);
+      if (!normalizedMealType) {
+        res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'mealType must be breakfast, lunch, dinner, or snack' } });
+        return;
+      }
       const saved: any[] = [];
       for (const r of records) {
-        const key = `${date}_${r.studentId}`;
-        const entry = { date, mealType, studentId: r.studentId, status: r.status ?? 'present', markedBy: req.user?.userId, markedAt: new Date().toISOString() };
-        mealAttendance.set(key, entry);
-        saved.push(entry);
+        const existing = await HostelMealAttendance.findOne({
+          where: { date, mealType: normalizedMealType, studentId: r.studentId },
+        });
+        const payload = {
+          date,
+          mealType: normalizedMealType,
+          studentId: r.studentId,
+          status: r.status === 'absent' ? 'absent' : 'present',
+          markedBy: req.user?.userId,
+          markedAt: new Date(),
+        } as const;
+        if (existing) {
+          await existing.update(payload);
+          saved.push(existing);
+        } else {
+          saved.push(await HostelMealAttendance.create(payload));
+        }
       }
       res.status(200).json({ success: true, data: { marked: saved.length, records: saved } });
     } catch (error: any) {
@@ -499,8 +657,9 @@ class HostelController {
   async getInventory(req: Request, res: Response): Promise<void> {
     try {
       const { category } = req.query;
-      let items = Array.from(inventoryItems.values());
-      if (category) items = items.filter(i => i.category === String(category));
+      const where: any = {};
+      if (category) where.category = String(category);
+      const items = await HostelInventoryItem.findAll({ where, order: [['name', 'ASC']] });
       res.status(200).json({ success: true, data: { items, total: items.length } });
     } catch (error: any) {
       logger.error('Get inventory error:', error);
@@ -515,8 +674,14 @@ class HostelController {
         res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'name and category are required' } });
         return;
       }
-      const item = { id: nextInventoryId++, name, category, quantity: quantity ?? 0, unit: unit ?? 'pcs', minStock: minStock ?? 0, location: location ?? '', createdAt: new Date().toISOString() };
-      inventoryItems.set(item.id, item);
+      const item = await HostelInventoryItem.create({
+        name,
+        category,
+        quantity: quantity ?? 0,
+        unit: unit ?? 'pcs',
+        minStock: minStock ?? 0,
+        location: location ?? '',
+      });
       res.status(201).json({ success: true, data: item });
     } catch (error: any) {
       logger.error('Create inventory item error:', error);
@@ -527,11 +692,11 @@ class HostelController {
   async updateInventoryItem(req: Request, res: Response): Promise<void> {
     try {
       const id = Number(req.params.itemId);
-      const item = inventoryItems.get(id);
+      const item = await HostelInventoryItem.findByPk(id);
       if (!item) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Item not found' } }); return; }
-      const updated = { ...item, ...req.body, id };
-      inventoryItems.set(id, updated);
-      res.status(200).json({ success: true, data: updated });
+      const { id: _id, ...updateData } = req.body;
+      await item.update(updateData);
+      res.status(200).json({ success: true, data: item });
     } catch (error: any) {
       logger.error('Update inventory item error:', error);
       res.status(500).json({ success: false, error: { code: 'INVENTORY_UPDATE_ERROR', message: error.message } });
@@ -541,12 +706,24 @@ class HostelController {
   async deleteInventoryItem(req: Request, res: Response): Promise<void> {
     try {
       const id = Number(req.params.itemId);
-      if (!inventoryItems.has(id)) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Item not found' } }); return; }
-      inventoryItems.delete(id);
+      const deleted = await HostelInventoryItem.destroy({ where: { id } });
+      if (!deleted) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Item not found' } }); return; }
       res.status(200).json({ success: true, message: 'Item deleted' });
     } catch (error: any) {
       logger.error('Delete inventory item error:', error);
       res.status(500).json({ success: false, error: { code: 'INVENTORY_DELETE_ERROR', message: error.message } });
+    }
+  }
+
+  async deleteMealAttendance(req: Request, res: Response): Promise<void> {
+    try {
+      const id = Number(req.params.recordId);
+      const deleted = await HostelMealAttendance.destroy({ where: { id } });
+      if (!deleted) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Meal attendance not found' } }); return; }
+      res.status(200).json({ success: true, message: 'Meal attendance deleted' });
+    } catch (error: any) {
+      logger.error('Delete meal attendance error:', error);
+      res.status(500).json({ success: false, error: { code: 'MEAL_ATTENDANCE_DELETE_ERROR', message: error.message } });
     }
   }
 }

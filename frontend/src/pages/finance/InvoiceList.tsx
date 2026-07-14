@@ -32,6 +32,7 @@ import {
   DialogContent,
   DialogActions,
   Grid,
+  Alert,
   useTheme,
 } from '@mui/material';
 import {
@@ -66,6 +67,7 @@ export const InvoiceList = () => {
   const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [success, setSuccess] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [total, setTotal] = useState(0);
@@ -183,6 +185,12 @@ export const InvoiceList = () => {
           </Box>
         </Box>
       </Paper>
+
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
 
       {/* Filters */}
       <Paper sx={{ ...S.GLASS, p: 2, mb: 3 }}>

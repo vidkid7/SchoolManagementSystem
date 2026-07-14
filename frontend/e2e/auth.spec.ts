@@ -31,7 +31,7 @@ test.describe('Authentication Flow', () => {
   test('should redirect to dashboard after successful login', async ({ page }) => {
     await page.goto('/login');
     await page.locator('input[name="username"]').fill('admin');
-    await page.locator('input[name="password"]').fill('admin123');
+    await page.locator('input[name="password"]').fill('Admin@123');
     await page.getByRole('button', { name: /sign in/i }).click();
     await expect(page).toHaveURL(/dashboard/, { timeout: 10000 });
   });

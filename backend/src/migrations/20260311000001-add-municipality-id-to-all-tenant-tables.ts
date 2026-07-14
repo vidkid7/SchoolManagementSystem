@@ -175,12 +175,6 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
     await queryInterface.addColumn(tableName, 'municipality_id', {
       type: DataTypes.UUID,
       allowNull: true,
-      references: {
-        model: 'municipalities',
-        key: 'id',
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'CASCADE',
     });
 
     console.log(`[migration] added municipality_id to "${tableName}"`);

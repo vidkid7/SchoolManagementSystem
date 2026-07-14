@@ -83,7 +83,7 @@ export function ClassRoster() {
     try {
       setLoading(true);
       // Get teacher's assigned class
-      const response = await apiClient.get('/teacher/my-class');
+      const response = await apiClient.get('/teachers/my-class');
       setClassInfo(response.data?.data?.classInfo || null);
       setStudents(response.data?.data?.students || []);
     } catch (err: any) {

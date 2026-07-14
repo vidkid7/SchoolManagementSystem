@@ -5,7 +5,7 @@ import os from 'os';
 import path from 'path';
 import { env } from '../config/env';
 import logger from '../utils/logger';
-import { createGzip } from 'zlib';
+import { createGzip, createGunzip } from 'zlib';
 import { createReadStream, createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 
@@ -53,14 +53,38 @@ export class BackupService {
   private config: BackupConfig;
 
   constructor() {
-    this.config = {
-      enabled: env.BACKUP_ENABLED,
-      schedule: env.BACKUP_SCHEDULE,
-      retentionDays: env.BACKUP_RETENTION_DAYS,
-      backupPath: env.BACKUP_PATH,
-      externalStoragePath: env.BACKUP_EXTERNAL_PATH,
-      compressionEnabled: env.BACKUP_COMPRESSION,
+    this.config = this.loadConfig();
+  }
+
+  private loadConfig(): BackupConfig {
+    return {
+      enabled: this.parseBoolean(process.env.BACKUP_ENABLED, env.BACKUP_ENABLED),
+      schedule: process.env.BACKUP_SCHEDULE || env.BACKUP_SCHEDULE,
+      retentionDays: this.parseNumber(process.env.BACKUP_RETENTION_DAYS, env.BACKUP_RETENTION_DAYS),
+      backupPath: process.env.BACKUP_PATH || env.BACKUP_PATH,
+      externalStoragePath: process.env.BACKUP_EXTERNAL_PATH || env.BACKUP_EXTERNAL_PATH,
+      compressionEnabled: this.parseBoolean(process.env.BACKUP_COMPRESSION, env.BACKUP_COMPRESSION),
     };
+  }
+
+  private parseBoolean(value: string | undefined, defaultValue: boolean): boolean {
+    if (value === undefined) return defaultValue;
+    return value.toLowerCase() === 'true';
+  }
+
+  private parseNumber(value: string | undefined, defaultValue: number): number {
+    if (value === undefined) return defaultValue;
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : defaultValue;
+  }
+
+  private shellQuote(value: string | number): string {
+    const text = String(value);
+    if (process.platform === 'win32') {
+      return `"${text.replace(/"/g, '\\"')}"`;
+    }
+
+    return `'${text.replace(/'/g, `'\\''`)}'`;
   }
 
   private isPermissionError(error: unknown): error is NodeJS.ErrnoException {
@@ -199,13 +223,13 @@ export class BackupService {
     // Build command with proper escaping
     const parts = [
       'mysqldump',
-      '--host=' + DB_HOST,
-      '--port=' + DB_PORT,
-      '--user=' + DB_USER,
+      '--host=' + this.shellQuote(DB_HOST),
+      '--port=' + this.shellQuote(DB_PORT),
+      '--user=' + this.shellQuote(DB_USER),
     ];
 
     if (DB_PASSWORD) {
-      parts.push('--password=' + DB_PASSWORD);
+      parts.push('--password=' + this.shellQuote(DB_PASSWORD));
     }
 
     parts.push(
@@ -216,10 +240,11 @@ export class BackupService {
       '--add-drop-table', // Add DROP TABLE before CREATE
       '--complete-insert', // Use complete INSERT statements
       '--extended-insert', // Use multi-row INSERT
+      '--set-gtid-purged=OFF', // Keep restores portable across GTID-enabled MySQL servers
       '--quick', // Retrieve rows one at a time
       '--lock-tables=false', // Don't lock tables
-      DB_NAME,
-      '>' + outputPath
+      this.shellQuote(DB_NAME),
+      '>' + this.shellQuote(outputPath)
     );
 
     return parts.join(' ');
@@ -354,7 +379,7 @@ export class BackupService {
    */
   private async decompressBackup(compressedPath: string): Promise<string> {
     const decompressedPath = compressedPath.replace(/\.gz$/, '');
-    const gunzip = createGzip();
+    const gunzip = createGunzip();
 
     await pipeline(
       createReadStream(compressedPath),
@@ -373,18 +398,18 @@ export class BackupService {
 
     const parts = [
       'mysql',
-      '--host=' + DB_HOST,
-      '--port=' + DB_PORT,
-      '--user=' + DB_USER,
+      '--host=' + this.shellQuote(DB_HOST),
+      '--port=' + this.shellQuote(DB_PORT),
+      '--user=' + this.shellQuote(DB_USER),
     ];
 
     if (DB_PASSWORD) {
-      parts.push('--password=' + DB_PASSWORD);
+      parts.push('--password=' + this.shellQuote(DB_PASSWORD));
     }
 
     parts.push(
-      DB_NAME,
-      '<' + sqlFilePath
+      this.shellQuote(DB_NAME),
+      '<' + this.shellQuote(sqlFilePath)
     );
 
     return parts.join(' ');

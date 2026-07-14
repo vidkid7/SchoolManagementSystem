@@ -13,6 +13,7 @@ describe('StudentIdService', () => {
   });
 
   beforeEach(async () => {
+    await studentIdService.resetSequencesForTesting();
     await Student.destroy({ where: {}, force: true });
   });
 
@@ -60,6 +61,34 @@ describe('StudentIdService', () => {
       const studentId = await studentIdService.generateStudentId(admissionDate);
 
       expect(studentId).toBe(`${env.DEFAULT_SCHOOL_CODE}-2024-0002`);
+    });
+
+    it('should not reuse a soft-deleted student code for the same year', async () => {
+      const admissionDate = new Date('2024-01-15');
+
+      const deletedStudent = await Student.create({
+        studentCode: `${env.DEFAULT_SCHOOL_CODE}-2024-0005`,
+        firstNameEn: 'Deleted',
+        lastNameEn: 'Student',
+        dateOfBirthBS: '2080-10-15',
+        dateOfBirthAD: new Date('2024-01-28'),
+        gender: Gender.MALE,
+        addressEn: 'Kathmandu',
+        fatherName: 'Father Name',
+        fatherPhone: '9841234567',
+        motherName: 'Mother Name',
+        motherPhone: '9841234568',
+        admissionDate: admissionDate,
+        admissionClass: 1,
+        emergencyContact: '9841234567',
+        status: StudentStatus.ACTIVE
+      });
+
+      await deletedStudent.destroy();
+
+      const studentId = await studentIdService.generateStudentId(admissionDate);
+
+      expect(studentId).toBe(`${env.DEFAULT_SCHOOL_CODE}-2024-0006`);
     });
 
     it('should handle different admission years separately', async () => {

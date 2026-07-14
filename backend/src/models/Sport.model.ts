@@ -43,33 +43,24 @@ export class Sport
   public readonly deletedAt?: Date;
 
   public isTeamSport(): boolean {
-    return this.category === 'team';
+    return this.getDataValue('category') === 'team';
   }
 
   public isIndividualSport(): boolean {
-    return this.category === 'individual';
+    return this.getDataValue('category') === 'individual';
   }
 
   public isTraditionalSport(): boolean {
-    return this.category === 'traditional';
+    return this.getDataValue('category') === 'traditional';
   }
 
   public toJSON(): object {
+    const values = this.get({ plain: true }) as SportAttributes;
     return {
-      sportId: this.sportId,
-      name: this.name,
-      nameNp: this.nameNp,
-      category: this.category,
-      description: this.description,
-      descriptionNp: this.descriptionNp,
-      coordinatorId: this.coordinatorId,
-      academicYearId: this.academicYearId,
-      status: this.status,
+      ...values,
       isTeamSport: this.isTeamSport(),
       isIndividualSport: this.isIndividualSport(),
       isTraditionalSport: this.isTraditionalSport(),
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
     };
   }
 }

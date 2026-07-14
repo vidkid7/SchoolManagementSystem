@@ -10,12 +10,12 @@ const router = Router();
 /**
  * @route   GET /api/v1/staff
  * @desc    Get all staff
- * @access  Private (School_Admin)
+ * @access  Private (School_Admin, ECA_Coordinator, Sports_Coordinator)
  */
 router.get(
   '/',
   authenticate,
-  authorize(UserRole.SCHOOL_ADMIN),
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.ECA_COORDINATOR, UserRole.SPORTS_COORDINATOR),
   staffController.getAll
 );
 
