@@ -18,13 +18,19 @@ import { getRedisClient } from '@config/redis';
  */
 const getRedisStore = (): RedisStore | undefined => {
   try {
-    const redisClient = getRedisClient();
-    if (!redisClient) {
+    if (!process.env.REDIS_URL && !process.env.REDIS_HOST) {
       logger.info('Redis not available for rate limiting, using memory store');
       return undefined;
     }
+
     return new RedisStore({
-      sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+      sendCommand: (...args: string[]) => {
+        const redisClient = getRedisClient();
+        if (!redisClient) {
+          return Promise.reject(new Error('Redis client is not connected'));
+        }
+        return redisClient.sendCommand(args);
+      },
       prefix: 'rl:' // Rate limit prefix for Redis keys
     });
   } catch (error) {
