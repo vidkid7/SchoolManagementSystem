@@ -135,11 +135,6 @@ import assignmentRoutes from '@modules/assignment/assignment.routes';
 import departmentRoutes from '@modules/department/department.routes';
 import lessonPlanRoutes from '@modules/lessonPlan/lessonPlan.routes';
 import notificationRoutes from '@modules/notifications/notification.routes';
-import setupRoutes from './routes/setup.routes';
-
-// Setup route (for initial Railway deployment)
-app.use('/api/v1/setup', setupRoutes);
-
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/students', studentRoutes);
 app.use('/api/v1/admissions', admissionRoutes);

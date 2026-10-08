@@ -79,54 +79,8 @@ const startServer = async (): Promise<void> => {
       logger.debug('Column fix check:', fixError);
     }
 
-    // Ensure admin user exists with correct password
-    try {
-      const [adminUsers] = await sequelize.query("SELECT user_id FROM users WHERE username = 'admin' LIMIT 1");
-      if (!adminUsers || adminUsers.length === 0) {
-        logger.info('⚠️  Admin user not found, will be created during seeding');
-      }
-    } catch (adminCheckError) {
-      logger.debug('Admin check skipped (table may not exist yet)');
-    }
-
-    // Auto-setup: Run migrations and seeding if database is empty
-    try {
-      const [tables] = await sequelize.query("SHOW TABLES LIKE 'users'");
-      if (!tables || tables.length === 0) {
-        logger.info('🔧 Database is empty. Running auto-setup...');
-        
-        // Run migrations
-        logger.info('📦 Running migrations...');
-        const { exec } = require('child_process');
-        const { promisify } = require('util');
-        const execAsync = promisify(exec);
-        
-        try {
-          await execAsync('node dist/scripts/run-migrations.js up', { cwd: __dirname + '/..' });
-          logger.info('✅ Migrations completed');
-        } catch (migError: any) {
-          logger.warn('Migration warning:', migError.stderr || migError.message);
-        }
-        
-        // Seed database
-        logger.info('🌱 Seeding database...');
-        try {
-          await execAsync('node dist/scripts/seed-database.js', { cwd: __dirname + '/..' });
-          logger.info('✅ Database seeded');
-          logger.info('');
-          logger.info('📝 Default Login Credentials:');
-          logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          logger.info('Admin: admin / Admin@123');
-          logger.info('Teacher: teacher1 / Teacher@123');
-          logger.info('Student: student1 / Student@123');
-          logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        } catch (seedError: any) {
-          logger.warn('Seeding warning:', seedError.message);
-        }
-      }
-    } catch (setupError) {
-      logger.warn('Auto-setup check failed, continuing...', setupError);
-    }
+    // Schema changes run as a release command. Never seed demo accounts or
+    // mutate the production schema from a public web request/startup.
 
     // Initialize models that need explicit initialization
     initCirculation(sequelize);

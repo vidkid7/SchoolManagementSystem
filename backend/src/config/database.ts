@@ -32,6 +32,7 @@ const dbConfig: Options = {
   username: parsedUrl?.username || process.env.DB_USER || 'root',
   password: parsedUrl?.password || process.env.DB_PASSWORD || '',
   dialect: 'mysql',
+  ...(process.env.DB_SSL === 'true' ? { dialectOptions: { ssl: {} } } : {}),
   
   // Connection Pool Configuration
   pool: {
