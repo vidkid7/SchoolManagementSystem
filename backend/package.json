@@ -17,6 +17,7 @@
     "typecheck": "tsc --noEmit",
     "migrate:up": "ts-node src/scripts/run-migrations.ts up",
     "migrate:down": "ts-node src/scripts/run-migrations.ts down",
+    "bootstrap:admin": "node dist/scripts/bootstrap-admin.js",
     "seed": "ts-node -r tsconfig-paths/register src/scripts/seed-database.ts",
     "seed:staff": "ts-node -r tsconfig-paths/register src/scripts/seed-staff.ts",
     "seed:holidays": "ts-node -r tsconfig-paths/register src/scripts/seed-nepal-holidays.ts",
