@@ -124,14 +124,6 @@ class AcademicService {
     }
     return Class.findAll({
       where,
-      include: [
-        {
-          model: Staff,
-          as: 'classTeacher',
-          attributes: ['staffId', 'firstNameEn', 'lastNameEn'],
-          required: false
-        }
-      ],
       order: [['gradeLevel', 'ASC'], ['section', 'ASC']]
     });
   }
@@ -145,17 +137,9 @@ class AcademicService {
     if (academicYearId) {
       where.academicYearId = academicYearId;
     }
-    return Class.findAll({ 
+    return Class.findAll({
       where,
-      include: [
-        {
-          model: Staff,
-          as: 'classTeacher',
-          attributes: ['staffId', 'firstNameEn', 'lastNameEn'],
-          required: false
-        }
-      ],
-      order: [['section', 'ASC']] 
+      order: [['section', 'ASC']]
     });
   }
 

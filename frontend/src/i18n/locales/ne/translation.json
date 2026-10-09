@@ -484,6 +484,8 @@
     "admissionClass": "भर्ना कक्षा",
     "currentClass": "हालको कक्षा",
     "sameAsAdmission": "भर्ना जस्तै",
+    "unassigned": "कक्षा नतोकिएको",
+    "noClassesConfigured": "कक्षा सेटअप गरिएको छैन। विद्यार्थीलाई हालको कक्षा नतोकिकन सुरक्षित गरेर पछि कक्षा तोक्न सक्नुहुन्छ।",
     "previousSchool": "अघिल्लो विद्यालय",
     "symbolNumber": "प्रतीक नम्बर",
     "nebRegistrationNumber": "NEB दर्ता नम्बर",

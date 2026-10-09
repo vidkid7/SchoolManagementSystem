@@ -135,11 +135,6 @@ import assignmentRoutes from '@modules/assignment/assignment.routes';
 import departmentRoutes from '@modules/department/department.routes';
 import lessonPlanRoutes from '@modules/lessonPlan/lessonPlan.routes';
 import notificationRoutes from '@modules/notifications/notification.routes';
-import setupRoutes from './routes/setup.routes';
-
-// Setup route (for initial Railway deployment)
-app.use('/api/v1/setup', setupRoutes);
-
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/students', studentRoutes);
 app.use('/api/v1/admissions', admissionRoutes);
@@ -180,8 +175,23 @@ app.use('/api/v1/lesson-plans', lessonPlanRoutes);
 app.use('/api/v1/department', departmentRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 
-// Serve uploaded files statically
-app.use('/uploads', express.static('uploads'));
+// Student and staff documents contain private records and must never be served
+// from the unauthenticated static file handler. Other public assets remain static.
+app.use('/uploads', (req, res, next) => {
+  let uploadPath = req.path;
+  try {
+    uploadPath = decodeURIComponent(uploadPath);
+  } catch {
+    res.sendStatus(400);
+    return;
+  }
+  uploadPath = uploadPath.replace(/\\/g, '/');
+  if (uploadPath === '/documents' || uploadPath.startsWith('/documents/')) {
+    res.sendStatus(404);
+    return;
+  }
+  next();
+}, express.static('uploads'));
 
 // 404 Handler
 app.use(notFoundHandler);

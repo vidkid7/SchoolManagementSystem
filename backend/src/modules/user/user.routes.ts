@@ -6,11 +6,15 @@
 
 import { Router } from 'express';
 import userController from './user.controller';
-import { authenticate } from '../../middleware/auth';
+import { authenticate, authorize } from '../../middleware/auth';
+import { UserRole } from '../../models/User.model';
 
 const router = Router();
 
-router.use(authenticate);
+router.use(
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN)
+);
 
 /**
  * @route   GET /api/v1/users/stats

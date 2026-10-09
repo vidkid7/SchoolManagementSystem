@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import authController from './auth.controller';
-import { authenticate } from '@middleware/auth';
+import { authenticate, authorize } from '@middleware/auth';
+import { UserRole } from '@models/User.model';
 import { validate } from '@middleware/validation';
 import { loginRateLimiter } from '@middleware/rateLimiter';
 import {
@@ -17,10 +18,12 @@ const router = Router();
 /**
  * @route   POST /api/v1/auth/register
  * @desc    Register new user
- * @access  Public
+ * @access  Private (School Admin)
  */
 router.post(
   '/register',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN),
   validate(registerSchema, 'body'),
   authController.register
 );

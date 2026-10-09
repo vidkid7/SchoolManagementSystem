@@ -11,6 +11,17 @@ import {
   CertificateTemplateFilters,
 } from './certificateTemplate.repository';
 import { CertificateTemplate, CertificateTemplateCreationAttributes } from '../../models/CertificateTemplate.model';
+import sanitizeHtml = require('sanitize-html');
+
+const cleanTemplateHtml = (html: string): string => sanitizeHtml(html, {
+  allowedTags: ['address', 'article', 'b', 'blockquote', 'br', 'caption', 'center', 'cite', 'code', 'dd', 'del', 'div', 'dl', 'dt', 'em', 'figcaption', 'figure', 'footer', 'h1', 'h2', 'h3', 'h4', 'hr', 'i', 'img', 'li', 'ol', 'p', 'pre', 'section', 'small', 'span', 'strong', 'sub', 'sup', 'table', 'tbody', 'td', 'th', 'thead', 'tr', 'u', 'ul'],
+  allowedAttributes: { '*': ['align', 'class'], img: ['src', 'alt', 'width', 'height'], td: ['colspan', 'rowspan'], th: ['colspan', 'rowspan'] },
+  allowedSchemes: ['http', 'https'],
+});
+
+const escapeHtmlValue = (value: unknown): string => String(value ?? '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 export interface CreateTemplateDTO {
   name: string;
@@ -31,6 +42,16 @@ export interface UpdateTemplateDTO {
 export class CertificateTemplateService {
   constructor(private repository: CertificateTemplateRepository) {}
 
+  private sanitizeTemplate(template: CertificateTemplate): CertificateTemplate {
+    const sanitizedHtml = cleanTemplateHtml(template.templateHtml);
+    if (typeof template.setDataValue === 'function') {
+      template.setDataValue('templateHtml', sanitizedHtml);
+    } else {
+      template.templateHtml = sanitizedHtml;
+    }
+    return template;
+  }
+
   /**
    * Create a new certificate template
    */
@@ -50,7 +71,7 @@ export class CertificateTemplateService {
     const templateData: CertificateTemplateCreationAttributes = {
       name: data.name,
       type: data.type,
-      templateHtml: data.templateHtml,
+      templateHtml: cleanTemplateHtml(data.templateHtml),
       variables: data.variables,
       isActive: data.isActive !== undefined ? data.isActive : true,
     };
@@ -66,21 +87,21 @@ export class CertificateTemplateService {
     if (!template) {
       throw new Error(`Template with ID ${templateId} not found`);
     }
-    return template;
+    return this.sanitizeTemplate(template);
   }
 
   /**
    * Get all templates with filters
    */
   async getAllTemplates(filters: CertificateTemplateFilters = {}): Promise<CertificateTemplate[]> {
-    return await this.repository.findAll(filters);
+    return (await this.repository.findAll(filters)).map(template => this.sanitizeTemplate(template));
   }
 
   /**
    * Get active templates by type
    */
   async getActiveTemplatesByType(type: string): Promise<CertificateTemplate[]> {
-    return await this.repository.findActiveByType(type);
+    return (await this.repository.findActiveByType(type)).map(template => this.sanitizeTemplate(template));
   }
 
   /**
@@ -109,7 +130,10 @@ export class CertificateTemplateService {
       this.validateTemplateHtml(html, vars);
     }
 
-    const updated = await this.repository.update(templateId, data);
+    const updated = await this.repository.update(templateId, {
+      ...data,
+      ...(data.templateHtml ? { templateHtml: cleanTemplateHtml(data.templateHtml) } : {}),
+    });
     if (!updated) {
       throw new Error(`Failed to update template with ID ${templateId}`);
     }
@@ -207,7 +231,10 @@ export class CertificateTemplateService {
       throw new Error(`Missing required variables: ${missingVars.join(', ')}`);
     }
 
-    return template.renderTemplate(data);
+    const escapedData = Object.fromEntries(
+      Object.entries(data).map(([key, value]) => [key, escapeHtmlValue(value)])
+    );
+    return cleanTemplateHtml(template.renderTemplate(escapedData));
   }
 
   /**

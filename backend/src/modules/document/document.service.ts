@@ -155,12 +155,15 @@ export class DocumentService {
    */
   async uploadVersion(
     parentDocumentId: number,
-    dto: Omit<UploadDocumentDTO, 'category' | 'uploadedBy'>
+    dto: Omit<UploadDocumentDTO, 'category' | 'uploadedBy'>,
+    userId?: number,
+    userRoles: string[] = []
   ): Promise<Document> {
     const parentDocument = await this.repository.findById(parentDocumentId);
     if (!parentDocument) {
       throw new Error(`Document with ID ${parentDocumentId} not found`);
     }
+    this.assertCanManage(parentDocument, userId, userRoles);
 
     // Get the latest version number
     const latestVersion = await this.repository.getLatestVersion(parentDocument.documentNumber);
@@ -371,7 +374,8 @@ export class DocumentService {
   async updateDocument(
     documentId: number,
     dto: UpdateDocumentDTO,
-    userId: number
+    userId: number,
+    userRoles: string[] = []
   ): Promise<Document> {
     const document = await this.repository.findById(documentId);
     if (!document) {
@@ -381,6 +385,7 @@ export class DocumentService {
     if (document.status === 'deleted') {
       throw new Error('Cannot update deleted document');
     }
+    this.assertCanManage(document, userId, userRoles);
 
     const updatedDocument = await this.repository.update(
       documentId,
@@ -402,11 +407,12 @@ export class DocumentService {
   /**
    * Delete document (soft delete)
    */
-  async deleteDocument(documentId: number, userId: number): Promise<Document> {
+  async deleteDocument(documentId: number, userId: number, userRoles: string[] = []): Promise<Document> {
     const document = await this.repository.findById(documentId);
     if (!document) {
       throw new Error(`Document with ID ${documentId} not found`);
     }
+    this.assertCanManage(document, userId, userRoles);
 
     const deletedDocument = await this.repository.softDelete(documentId);
 
@@ -424,11 +430,12 @@ export class DocumentService {
   /**
    * Archive document
    */
-  async archiveDocument(documentId: number, userId: number): Promise<Document> {
+  async archiveDocument(documentId: number, userId: number, userRoles: string[] = []): Promise<Document> {
     const document = await this.repository.findById(documentId);
     if (!document) {
       throw new Error(`Document with ID ${documentId} not found`);
     }
+    this.assertCanManage(document, userId, userRoles);
 
     const archivedDocument = await this.repository.archive(documentId);
 
@@ -534,6 +541,12 @@ export class DocumentService {
       allowed: false,
       reason: 'You do not have permission to access this document',
     };
+  }
+
+  private assertCanManage(document: Document, userId?: number, userRoles: string[] = []): void {
+    if (!userId || (document.uploadedBy !== userId && !userRoles.some(role => role.toLowerCase() === 'school_admin'))) {
+      throw new Error('You do not have permission to modify this document');
+    }
   }
 
   /**

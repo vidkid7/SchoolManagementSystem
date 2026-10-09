@@ -21,6 +21,7 @@ import Refund from '@models/Refund.model';
 import { ReminderType } from '@models/FeeReminder.model';
 import Student from '@models/Student.model';
 import Class from '@models/Class.model';
+import { assertStudentAccess, getPortalStudentIds } from '@modules/security/studentAccess';
 
 type StudentLookupRecord = Student & {
   class?: Pick<Class, 'gradeLevel' | 'section'>;
@@ -185,7 +186,11 @@ class FinanceController {
     const offset = (pageNum - 1) * limitNum;
 
     const filters: any = {};
-    if (studentId) filters.studentId = Number(studentId);
+    const portalStudentIds = await getPortalStudentIds(req);
+    if (portalStudentIds) {
+      if (studentId) await assertStudentAccess(req, Number(studentId));
+      filters.studentId = studentId ? Number(studentId) : { [Op.in]: portalStudentIds };
+    } else if (studentId) filters.studentId = Number(studentId);
     if (academicYearId) filters.academicYearId = Number(academicYearId);
     if (status) filters.status = status as string;
 
@@ -212,6 +217,7 @@ class FinanceController {
     const id = Number(req.params.id);
 
     const invoice = await invoiceService.getInvoiceById(id);
+    await assertStudentAccess(req, invoice.studentId);
 
     sendSuccess(res, invoice, 'Invoice retrieved successfully');
   });
@@ -343,6 +349,7 @@ class FinanceController {
     if (!payment) {
       throw new NotFoundError('Payment');
     }
+    await assertStudentAccess(req, payment.studentId);
 
     sendSuccess(res, payment, 'Payment retrieved successfully');
   });
@@ -353,6 +360,7 @@ class FinanceController {
    */
   getStudentPaymentHistory = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const studentId = Number(req.params.studentId);
+    await assertStudentAccess(req, studentId);
 
     const payments = await paymentService.getPaymentsByStudentId(studentId);
 

@@ -41,62 +41,14 @@ import { useForm, Controller } from 'react-hook-form';
 import { apiClient } from '../../services/apiClient';
 import { BSDatePicker } from '../../components/BSDatePicker/BSDatePicker';
 import { motion } from 'framer-motion';
-import NepaliDate from 'nepali-date-converter';
 import { useNepaliNumbers } from '../../hooks/useNepaliNumbers';
 import { C, useAdminStyles } from '../../theme/designTokens';
 import { DuplicateWarningDialog } from '../../components/students/DuplicateWarningDialog';
 import { ValidationWarnings } from '../../components/students/ValidationWarnings';
 import { SiblingsList } from '../../components/students/SiblingsList';
+import { formatBSDate, formatDate, formatDateForInput, parseBSDate, parseDate } from './studentDateUtils';
 
 const MotionCard = motion.create(Card);
-
-const parseDate = (value: string | undefined): Date | null => {
-  if (!value) return null;
-  const date = new Date(value);
-  return isNaN(date.getTime()) ? null : date;
-};
-
-const formatDate = (date: Date | null): string => {
-  if (!date) return '';
-  return date.toISOString().split('T')[0];
-};
-
-const parseBSDate = (value: string | undefined): Date | null => {
-  if (!value) return null;
-  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return parseDate(value);
-
-  const [, year, month, day] = match;
-  try {
-    return new NepaliDate(Number(year), Number(month) - 1, Number(day)).toJsDate();
-  } catch {
-    return null;
-  }
-};
-
-const formatBSDate = (date: Date | null): string => {
-  if (!date) return '';
-  try {
-    const nepaliDate = new NepaliDate(date);
-    return [
-      nepaliDate.getYear(),
-      String(nepaliDate.getMonth() + 1).padStart(2, '0'),
-      String(nepaliDate.getDate()).padStart(2, '0')
-    ].join('-');
-  } catch {
-    return '';
-  }
-};
-
-const formatDateForInput = (value: string | undefined): string => {
-  if (!value) return '';
-  // If it's already in yyyy-MM-dd format, return as is
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
-  // If it's an ISO timestamp, extract the date part
-  const date = new Date(value);
-  if (isNaN(date.getTime())) return '';
-  return date.toISOString().split('T')[0];
-};
 
 interface StudentFormData {
   // English Names
@@ -125,8 +77,7 @@ interface StudentFormData {
   // Academic
   admission_date: string;
   admission_class: number;
-  current_class?: number;
-  section: string;
+  current_class?: number | '';
   roll_number?: number;
   previous_school?: string;
   symbol_number?: string;
@@ -159,8 +110,6 @@ const GENDER_OPTIONS = [
 
 const BLOOD_GROUP_OPTIONS = ['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
-const SECTION_OPTIONS = ['A', 'B', 'C', 'D', 'E', 'F'];
-
 const RELATION_OPTIONS = [
   { value: 'father', labelKey: 'students.father' },
   { value: 'mother', labelKey: 'students.mother' },
@@ -171,6 +120,12 @@ const STATUS_OPTIONS = [
   { value: 'active', labelKey: 'students.active' },
   { value: 'inactive', labelKey: 'students.inactive' },
 ];
+
+interface AcademicClassOption {
+  classId: number;
+  gradeLevel: number;
+  section: string;
+}
 
 export const StudentForm = () => {
   const { t, i18n } = useTranslation();
@@ -185,6 +140,7 @@ export const StudentForm = () => {
   const [error, setError] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string>('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [academicClasses, setAcademicClasses] = useState<AcademicClassOption[]>([]);
   
   // Enhanced features
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
@@ -215,8 +171,7 @@ export const StudentForm = () => {
       emergency_contact: '',
       admission_date: '',
       admission_class: 1,
-      current_class: 1,
-      section: 'A',
+      current_class: '',
       roll_number: 0,
       previous_school: '',
       symbol_number: '',
@@ -236,6 +191,29 @@ export const StudentForm = () => {
       status: 'active',
     },
   });
+
+  useEffect(() => {
+    let mounted = true;
+    apiClient.get('/academic/classes')
+      .then((response) => {
+        const classRows = response.data?.data || response.data;
+        if (!mounted || !Array.isArray(classRows)) return;
+
+        setAcademicClasses(classRows.flatMap((row: any) => {
+          const classId = Number(row.classId ?? row.class_id);
+          const gradeLevel = Number(row.gradeLevel ?? row.grade_level);
+          if (!Number.isInteger(classId) || !Number.isInteger(gradeLevel)) return [];
+          return [{ classId, gradeLevel, section: String(row.section || '') }];
+        }));
+      })
+      .catch((classError) => {
+        console.error('Failed to load academic classes:', classError);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (isEdit) {
@@ -286,15 +264,7 @@ export const StudentForm = () => {
           }
           return 1;
         })(),
-        current_class: (() => {
-          const classValue = student.class?.classLevel || student.currentClassId;
-          // Only set if it's a valid class (1-12), otherwise set to empty string
-          if (classValue && classValue >= 1 && classValue <= 12) {
-            return classValue;
-          }
-          return '';
-        })(),
-        section: student.class?.section || student.section || 'A',
+        current_class: student.currentClassId || student.class?.classId || '',
         roll_number: student.rollNumber || 0,
         previous_school: student.previousSchool || '',
         symbol_number: student.symbolNumber || '',
@@ -390,7 +360,7 @@ export const StudentForm = () => {
         // Academic
         admissionDate: data.admission_date,
         admissionClass: data.admission_class,
-        currentClassId: data.current_class || data.admission_class,
+        currentClassId: data.current_class ? Number(data.current_class) : null,
         rollNumber: data.roll_number || null,
         previousSchool: data.previous_school || null,
         symbolNumber: data.symbol_number || null,
@@ -530,7 +500,7 @@ export const StudentForm = () => {
       // Academic
       admissionDate: formData.admission_date,
       admissionClass: formData.admission_class,
-      currentClassId: formData.current_class || formData.admission_class,
+      currentClassId: formData.current_class ? Number(formData.current_class) : null,
       rollNumber: formData.roll_number || null,
       previousSchool: formData.previous_school || null,
       symbolNumber: formData.symbol_number || null,
@@ -989,10 +959,10 @@ export const StudentForm = () => {
                     <FormControl fullWidth error={!!errors.current_class}>
                       <InputLabel>{t('students.currentClass')}</InputLabel>
                       <Select {...field} label={t('students.currentClass')} value={field.value || ''}>
-                        <MenuItem value="">{t('students.sameAsAdmission')}</MenuItem>
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((cls) => (
-                          <MenuItem key={cls} value={cls}>
-                            {t('students.class')} {formatNumber(cls)}
+                        <MenuItem value="">{t('students.unassigned')}</MenuItem>
+                        {academicClasses.map((cls) => (
+                          <MenuItem key={cls.classId} value={cls.classId}>
+                            {t('students.class')} {formatNumber(cls.gradeLevel)} — {t('students.section')} {cls.section}
                           </MenuItem>
                         ))}
                       </Select>
@@ -1001,23 +971,11 @@ export const StudentForm = () => {
                 />
               </Grid>
 
-              <Grid item xs={12} md={3}>
-                <Controller
-                  name="section"
-                  control={control}
-                  rules={{ required: t('validation.required') }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label={`${t('students.section')} *`}
-                      fullWidth
-                      error={!!errors.section}
-                      helperText={errors.section?.message}
-                      placeholder="A, B, C, etc."
-                    />
-                  )}
-                />
-              </Grid>
+              {academicClasses.length === 0 && (
+                <Grid item xs={12}>
+                  <Alert severity="info">{t('students.noClassesConfigured')}</Alert>
+                </Grid>
+              )}
 
               <Grid item xs={12} md={3}>
                 <Controller
@@ -1152,7 +1110,6 @@ export const StudentForm = () => {
                 <Controller
                   name="city"
                   control={control}
-                  rules={{ required: t('validation.required') }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1169,7 +1126,6 @@ export const StudentForm = () => {
                 <Controller
                   name="district"
                   control={control}
-                  rules={{ required: t('validation.required') }}
                   render={({ field }) => (
                     <TextField
                       {...field}

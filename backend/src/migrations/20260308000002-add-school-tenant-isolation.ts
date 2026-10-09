@@ -75,6 +75,25 @@ async function hasColumn(
   }
 }
 
+async function hasForeignKey(
+  queryInterface: QueryInterface,
+  tableName: string,
+  columnName: string
+): Promise<boolean> {
+  const [rows] = await queryInterface.sequelize.query(
+    `SELECT CONSTRAINT_NAME
+     FROM information_schema.KEY_COLUMN_USAGE
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = :tableName
+       AND COLUMN_NAME = :columnName
+       AND REFERENCED_TABLE_NAME IS NOT NULL
+     LIMIT 1`,
+    { replacements: { tableName, columnName } }
+  );
+
+  return (rows as Array<{ CONSTRAINT_NAME: string }>).length > 0;
+}
+
 async function addIndexIfMissing(
   queryInterface: QueryInterface,
   tableName: string,
@@ -131,10 +150,15 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
       await queryInterface.addColumn(tableName, 'school_config_id', {
         type: DataTypes.UUID,
         allowNull: true,
-        references: {
-          model: 'school_config',
-          key: 'id',
-        },
+      });
+    }
+
+    if (!(await hasForeignKey(queryInterface, tableName, 'school_config_id'))) {
+      await queryInterface.addConstraint(tableName, {
+        fields: ['school_config_id'],
+        type: 'foreign key',
+        name: `fk_${tableName}_school_config_id`,
+        references: { table: 'school_config', field: 'id' },
         onUpdate: 'CASCADE',
         onDelete: 'SET NULL',
       });

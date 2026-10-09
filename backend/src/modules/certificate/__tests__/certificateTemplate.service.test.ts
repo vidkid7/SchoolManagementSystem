@@ -23,6 +23,22 @@ describe('CertificateTemplateService', () => {
   });
 
   describe('createTemplate', () => {
+    it('strips executable markup before saving template HTML', async () => {
+      mockRepository.existsByName.mockResolvedValue(false);
+      mockRepository.create.mockImplementation(async data => data as any);
+
+      await service.createTemplate({
+        name: 'Safe Template',
+        type: 'character',
+        templateHtml: '<div>{{name}}</div><img src=x onerror="alert(1)"><script>alert(2)</script>',
+        variables: ['name'],
+      });
+
+      const savedHtml = mockRepository.create.mock.calls[0][0].templateHtml;
+      expect(savedHtml).toContain('<div>{{name}}</div>');
+      expect(savedHtml).not.toMatch(/onerror|<script/i);
+    });
+
     it('should create a valid template', async () => {
       const mockTemplate = {
         templateId: 1,

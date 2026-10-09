@@ -484,6 +484,8 @@
     "admissionClass": "Admission Class",
     "currentClass": "Current Class",
     "sameAsAdmission": "Same as Admission",
+    "unassigned": "Unassigned",
+    "noClassesConfigured": "No classes are configured. You can save this student without a current class and assign one later.",
     "previousSchool": "Previous School",
     "symbolNumber": "Symbol Number",
     "nebRegistrationNumber": "NEB Registration Number",

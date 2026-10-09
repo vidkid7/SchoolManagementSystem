@@ -51,6 +51,25 @@ async function hasColumn(
   }
 }
 
+async function hasForeignKey(
+  queryInterface: QueryInterface,
+  tableName: string,
+  columnName: string
+): Promise<boolean> {
+  const [rows] = await queryInterface.sequelize.query(
+    `SELECT CONSTRAINT_NAME
+     FROM information_schema.KEY_COLUMN_USAGE
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = :tableName
+       AND COLUMN_NAME = :columnName
+       AND REFERENCED_TABLE_NAME IS NOT NULL
+     LIMIT 1`,
+    { replacements: { tableName, columnName } }
+  );
+
+  return (rows as Array<{ CONSTRAINT_NAME: string }>).length > 0;
+}
+
 async function addIndexIfMissing(
   queryInterface: QueryInterface,
   tableName: string,
@@ -142,10 +161,19 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
     await queryInterface.addColumn('users', 'municipality_id', {
       type: DataTypes.UUID,
       allowNull: true,
-      references: {
-        model: 'municipalities',
-        key: 'id',
-      },
+    });
+  }
+
+  if (
+    (await hasTable(queryInterface, 'users')) &&
+    (await hasColumn(queryInterface, 'users', 'municipality_id')) &&
+    !(await hasForeignKey(queryInterface, 'users', 'municipality_id'))
+  ) {
+    await queryInterface.addConstraint('users', {
+      fields: ['municipality_id'],
+      type: 'foreign key',
+      name: 'fk_users_municipality_id',
+      references: { table: 'municipalities', field: 'id' },
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL',
     });
@@ -159,10 +187,20 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
     await queryInterface.addColumn('users', 'school_config_id', {
       type: DataTypes.UUID,
       allowNull: true,
-      references: {
-        model: 'school_config',
-        key: 'id',
-      },
+    });
+  }
+
+  if (
+    (await hasTable(queryInterface, 'users')) &&
+    (await hasColumn(queryInterface, 'users', 'school_config_id')) &&
+    (await hasTable(queryInterface, 'school_config')) &&
+    !(await hasForeignKey(queryInterface, 'users', 'school_config_id'))
+  ) {
+    await queryInterface.addConstraint('users', {
+      fields: ['school_config_id'],
+      type: 'foreign key',
+      name: 'fk_users_school_config_id',
+      references: { table: 'school_config', field: 'id' },
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL',
     });
@@ -175,10 +213,20 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
     await queryInterface.addColumn('school_config', 'municipality_id', {
       type: DataTypes.UUID,
       allowNull: true,
-      references: {
-        model: 'municipalities',
-        key: 'id',
-      },
+    });
+  }
+
+  if (
+    (await hasTable(queryInterface, 'school_config')) &&
+    (await hasColumn(queryInterface, 'school_config', 'municipality_id')) &&
+    (await hasTable(queryInterface, 'municipalities')) &&
+    !(await hasForeignKey(queryInterface, 'school_config', 'municipality_id'))
+  ) {
+    await queryInterface.addConstraint('school_config', {
+      fields: ['municipality_id'],
+      type: 'foreign key',
+      name: 'fk_school_config_municipality_id',
+      references: { table: 'municipalities', field: 'id' },
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL',
     });

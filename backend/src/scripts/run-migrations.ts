@@ -9,6 +9,7 @@ import { DataTypes } from 'sequelize';
 import * as createUsersTable from '../migrations/001-create-users-table';
 import * as createCoreTables from '../migrations/002-create-core-tables';
 import * as createAttendanceExamTables from '../migrations/003-create-attendance-exam-tables';
+import * as createAuditLogsTable from '../migrations/005-create-audit-logs-table';
 import * as createTimetableTables from '../migrations/012-create-timetable-tables';
 import * as createGradingSchemes from '../migrations/20240206000001-create-grading-schemes';
 import * as createAttendanceRules from '../migrations/20240206000002-create-attendance-rules';
@@ -71,6 +72,11 @@ const migrations: Migration[] = [
     name: '003-create-attendance-exam-tables',
     up: createAttendanceExamTables.up,
     down: createAttendanceExamTables.down
+  },
+  {
+    name: '005-create-audit-logs-table',
+    up: createAuditLogsTable.up,
+    down: createAuditLogsTable.down
   },
   {
     name: '012-create-timetable-tables',
@@ -239,7 +245,7 @@ const migrations: Migration[] = [
   }
 ];
 
-async function runMigrations(): Promise<void> {
+async function runMigrations(targetMigration?: string): Promise<void> {
   try {
     logger.info('Starting database migrations...');
 
@@ -262,7 +268,14 @@ async function runMigrations(): Promise<void> {
     const [results] = await sequelize.query('SELECT name FROM migrations');
     const ranMigrations = new Set((results as { name: string }[]).map((r) => r.name));
 
-    for (const migration of migrations) {
+    const selectedMigrations = targetMigration
+      ? migrations.filter(migration => migration.name === targetMigration)
+      : migrations;
+    if (targetMigration && selectedMigrations.length === 0) {
+      throw new Error(`Unknown migration: ${targetMigration}`);
+    }
+
+    for (const migration of selectedMigrations) {
       if (ranMigrations.has(migration.name)) {
         logger.info(`Skipping already run migration: ${migration.name}`);
         continue;
@@ -324,7 +337,7 @@ async function rollbackMigrations(): Promise<void> {
 const command = process.argv[2];
 
 if (command === 'up') {
-  runMigrations();
+  runMigrations(process.argv[3]);
 } else if (command === 'down') {
   rollbackMigrations();
 } else {
