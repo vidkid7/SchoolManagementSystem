@@ -109,6 +109,61 @@ const GENDER_OPTIONS = [
 ];
 
 const BLOOD_GROUP_OPTIONS = ['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+const NEPAL_PHONE_PATTERN = /^(\+977)?[0-9]{7,10}$/;
+
+const isValidNepalPhone = (value?: string) => {
+  const trimmed = value?.trim() || '';
+  return !trimmed || NEPAL_PHONE_PATTERN.test(trimmed);
+};
+
+const isValidEmail = (value?: string) => {
+  const trimmed = value?.trim() || '';
+  return !trimmed || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+};
+
+const API_FIELD_LABELS: Record<string, string> = {
+  firstNameEn: 'First Name',
+  middleNameEn: 'Middle Name',
+  lastNameEn: 'Last Name',
+  firstNameNp: 'First Name (Nepali)',
+  middleNameNp: 'Middle Name (Nepali)',
+  lastNameNp: 'Last Name (Nepali)',
+  dateOfBirthBS: 'Date of Birth (BS)',
+  dateOfBirthAD: 'Date of Birth (AD)',
+  addressEn: 'Address (English)',
+  phone: 'Contact Number',
+  email: 'Email',
+  emergencyContact: 'Emergency Contact',
+  fatherName: "Father's Name",
+  fatherPhone: "Father's Phone",
+  motherName: "Mother's Name",
+  motherPhone: "Mother's Phone",
+  localGuardianPhone: 'Local Guardian Phone',
+  admissionDate: 'Admission Date',
+  admissionClass: 'Admission Class',
+};
+
+const API_FIELD_TO_FORM_FIELD: Record<string, keyof StudentFormData> = {
+  firstNameEn: 'first_name',
+  middleNameEn: 'middle_name',
+  lastNameEn: 'last_name',
+  firstNameNp: 'first_name_np',
+  middleNameNp: 'middle_name_np',
+  lastNameNp: 'last_name_np',
+  dateOfBirthBS: 'date_of_birth_bs',
+  dateOfBirthAD: 'date_of_birth_ad',
+  addressEn: 'address',
+  phone: 'contact_number',
+  email: 'email',
+  emergencyContact: 'emergency_contact',
+  fatherName: 'father_name',
+  fatherPhone: 'father_phone',
+  motherName: 'mother_name',
+  motherPhone: 'mother_phone',
+  localGuardianPhone: 'local_guardian_phone',
+  admissionDate: 'admission_date',
+  admissionClass: 'admission_class',
+};
 
 const RELATION_OPTIONS = [
   { value: 'father', labelKey: 'students.father' },
@@ -150,7 +205,7 @@ export const StudentForm = () => {
   const [siblingsLoading, setSiblingsLoading] = useState(false);
   const [checkingDuplicates, setCheckingDuplicates] = useState(false);
 
-  const { control, handleSubmit, reset, getValues, setValue, formState: { errors } } = useForm<StudentFormData>({
+  const { control, handleSubmit, reset, getValues, setValue, setError: setFieldError, formState: { errors } } = useForm<StudentFormData>({
     defaultValues: {
       first_name: '',
       middle_name: '',
@@ -395,7 +450,7 @@ export const StudentForm = () => {
       await validateAndSave(studentData);
     } catch (error: any) {
       console.error('Failed to save student:', error);
-      setError(error.response?.data?.message || t('messages.error'));
+      setError(getStudentErrorMessage(error));
       setLoading(false);
     }
   };
@@ -463,9 +518,35 @@ export const StudentForm = () => {
       navigate(`/students`);
     } catch (error: any) {
       console.error('Failed to save student:', error);
-      setError(error.response?.data?.message || t('messages.error'));
+      setError(getStudentErrorMessage(error));
       setLoading(false);
     }
+  };
+
+  const getStudentErrorMessage = (error: any) => {
+    const apiErrors = error.response?.data?.errors;
+    if (!Array.isArray(apiErrors) || apiErrors.length === 0) {
+      return error.response?.data?.message || t('messages.error');
+    }
+
+    const fields = new Set<string>();
+    apiErrors.forEach(({ field }: { field?: string }) => {
+      if (!field) return;
+      fields.add(API_FIELD_LABELS[field] || field);
+      const formField = API_FIELD_TO_FORM_FIELD[field];
+      if (!formField) return;
+
+      const message = field.toLowerCase().includes('phone') || field === 'emergencyContact'
+        ? t('validation.invalidPhone')
+        : field === 'email'
+          ? t('validation.invalidEmail')
+          : t('validation.errors');
+      setFieldError(formField, { type: 'server', message });
+    });
+
+    return fields.size
+      ? `${t('validation.errors')}: ${Array.from(fields).join(', ')}`
+      : error.response?.data?.message || t('messages.error');
   };
 
   const handleProceedWithDuplicate = async () => {
@@ -1058,11 +1139,14 @@ export const StudentForm = () => {
                 <Controller
                   name="contact_number"
                   control={control}
+                  rules={{ validate: (value) => isValidNepalPhone(value) || t('validation.invalidPhone') }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       label={t('students.contactNumber')}
                       fullWidth
+                      error={!!errors.contact_number}
+                      helperText={errors.contact_number?.message}
                     />
                   )}
                 />
@@ -1072,12 +1156,15 @@ export const StudentForm = () => {
                 <Controller
                   name="email"
                   control={control}
+                  rules={{ validate: (value) => isValidEmail(value) || t('validation.invalidEmail') }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       label={t('students.email')}
                       type="email"
                       fullWidth
+                      error={!!errors.email}
+                      helperText={errors.email?.message}
                     />
                   )}
                 />
@@ -1150,7 +1237,10 @@ export const StudentForm = () => {
                 <Controller
                   name="emergency_contact"
                   control={control}
-                  rules={{ required: t('validation.required') }}
+                  rules={{
+                    required: t('validation.required'),
+                    validate: (value) => isValidNepalPhone(value) || t('validation.invalidPhone'),
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1201,7 +1291,10 @@ export const StudentForm = () => {
                 <Controller
                   name="father_phone"
                   control={control}
-                  rules={{ required: t('validation.required') }}
+                  rules={{
+                    required: t('validation.required'),
+                    validate: (value) => isValidNepalPhone(value) || t('validation.invalidPhone'),
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1256,7 +1349,10 @@ export const StudentForm = () => {
                 <Controller
                   name="mother_phone"
                   control={control}
-                  rules={{ required: t('validation.required') }}
+                  rules={{
+                    required: t('validation.required'),
+                    validate: (value) => isValidNepalPhone(value) || t('validation.invalidPhone'),
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1308,11 +1404,14 @@ export const StudentForm = () => {
                 <Controller
                   name="local_guardian_phone"
                   control={control}
+                  rules={{ validate: (value) => isValidNepalPhone(value) || t('validation.invalidPhone') }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       label={t('students.localGuardianPhone')}
                       fullWidth
+                      error={!!errors.local_guardian_phone}
+                      helperText={errors.local_guardian_phone?.message}
                     />
                   )}
                 />
