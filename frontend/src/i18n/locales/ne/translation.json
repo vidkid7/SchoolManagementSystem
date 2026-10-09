@@ -2409,7 +2409,7 @@
   "validation": {
     "required": "यो फिल्ड आवश्यक छ",
     "invalidEmail": "अमान्य इमेल ठेगाना",
-    "invalidPhone": "अमान्य फोन नम्बर",
+    "invalidPhone": "+९७७ उपसर्ग वैकल्पिक राखेर ७–१० अंक लेख्नुहोस्",
     "minLength": "न्यूनतम लम्बाइ {{min}} अक्षर हो",
     "maxLength": "अधिकतम लम्बाइ {{max}} अक्षर हो",
     "passwordMismatch": "पासवर्ड मेल खाँदैन",
