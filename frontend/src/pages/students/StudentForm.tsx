@@ -1311,11 +1311,15 @@ export const StudentForm = () => {
                 <Controller
                   name="father_citizenship_no"
                   control={control}
+                  rules={{ maxLength: { value: 50, message: t('validation.maxLength', { max: 50 }) } }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       label={t('students.fatherCitizenshipNo')}
                       fullWidth
+                      inputProps={{ maxLength: 50 }}
+                      error={!!errors.father_citizenship_no}
+                      helperText={errors.father_citizenship_no?.message}
                     />
                   )}
                 />
@@ -1369,11 +1373,15 @@ export const StudentForm = () => {
                 <Controller
                   name="mother_citizenship_no"
                   control={control}
+                  rules={{ maxLength: { value: 50, message: t('validation.maxLength', { max: 50 }) } }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       label={t('students.motherCitizenshipNo')}
                       fullWidth
+                      inputProps={{ maxLength: 50 }}
+                      error={!!errors.mother_citizenship_no}
+                      helperText={errors.mother_citizenship_no?.message}
                     />
                   )}
                 />
