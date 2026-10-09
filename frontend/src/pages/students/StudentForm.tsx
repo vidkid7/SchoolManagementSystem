@@ -1110,7 +1110,6 @@ export const StudentForm = () => {
                 <Controller
                   name="city"
                   control={control}
-                  rules={{ required: t('validation.required') }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1127,7 +1126,6 @@ export const StudentForm = () => {
                 <Controller
                   name="district"
                   control={control}
-                  rules={{ required: t('validation.required') }}
                   render={({ field }) => (
                     <TextField
                       {...field}
