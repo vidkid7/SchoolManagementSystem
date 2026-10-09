@@ -857,6 +857,14 @@ export const StudentForm = () => {
                       label={`${t('students.dateOfBirth')} (AD) *`}
                       fullWidth
                       InputLabelProps={{ shrink: true }}
+                      onChange={(event) => {
+                        field.onChange(event);
+                        const date = parseDate(event.target.value);
+                        setValue('date_of_birth_bs', date ? formatBSDate(date) : '', {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        });
+                      }}
                       error={!!errors.date_of_birth_ad}
                       helperText={errors.date_of_birth_ad?.message}
                     />
@@ -1252,7 +1260,7 @@ export const StudentForm = () => {
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label={`${t('students.fatherPhone')} *`}
+                      label={`${t('students.motherPhone')} *`}
                       fullWidth
                       error={!!errors.mother_phone}
                       helperText={errors.mother_phone?.message}
