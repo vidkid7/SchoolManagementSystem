@@ -175,8 +175,23 @@ app.use('/api/v1/lesson-plans', lessonPlanRoutes);
 app.use('/api/v1/department', departmentRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 
-// Serve uploaded files statically
-app.use('/uploads', express.static('uploads'));
+// Student and staff documents contain private records and must never be served
+// from the unauthenticated static file handler. Other public assets remain static.
+app.use('/uploads', (req, res, next) => {
+  let uploadPath = req.path;
+  try {
+    uploadPath = decodeURIComponent(uploadPath);
+  } catch {
+    res.sendStatus(400);
+    return;
+  }
+  uploadPath = uploadPath.replace(/\\/g, '/');
+  if (uploadPath === '/documents' || uploadPath.startsWith('/documents/')) {
+    res.sendStatus(404);
+    return;
+  }
+  next();
+}, express.static('uploads'));
 
 // 404 Handler
 app.use(notFoundHandler);

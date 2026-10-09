@@ -124,7 +124,7 @@ export class DocumentController {
         buffer: req.file.buffer,
         tags: bodyValue.tags,
         metadata: bodyValue.metadata,
-      });
+      }, req.user.userId, [req.user.role]);
 
       logger.info('Document version uploaded', {
         documentId: document.documentId,
@@ -367,7 +367,8 @@ export class DocumentController {
       const document = await this.service.updateDocument(
         paramsValue.documentId,
         bodyValue,
-        req.user.userId
+        req.user.userId,
+        [req.user.role]
       );
 
       logger.info('Document updated', {
@@ -403,7 +404,8 @@ export class DocumentController {
 
       const document = await this.service.deleteDocument(
         paramsValue.documentId,
-        req.user.userId
+        req.user.userId,
+        [req.user.role]
       );
 
       logger.info('Document deleted', {
@@ -439,7 +441,8 @@ export class DocumentController {
 
       const document = await this.service.archiveDocument(
         paramsValue.documentId,
-        req.user.userId
+        req.user.userId,
+        [req.user.role]
       );
 
       logger.info('Document archived', {

@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { authenticate, authorize } from '@middleware/auth';
+import { UserRole } from '@models/User.model';
 import eventController from './event.controller';
 import {
   createEventValidation,
@@ -30,6 +32,9 @@ import {
  */
 
 const router = Router();
+router.use(authenticate);
+const eventReaders = [UserRole.SCHOOL_ADMIN, UserRole.CLASS_TEACHER, UserRole.SUBJECT_TEACHER, UserRole.STUDENT, UserRole.PARENT];
+const eventEditors = [UserRole.SCHOOL_ADMIN, UserRole.ECA_COORDINATOR, UserRole.SPORTS_COORDINATOR];
 
 /**
  * @route   GET /api/v1/calendar/events
@@ -40,6 +45,7 @@ const router = Router();
  */
 router.get(
   '/events',
+  authorize(...eventReaders),
   getEventsValidation,
   eventController.getEvents
 );
@@ -51,6 +57,7 @@ router.get(
  */
 router.post(
   '/events',
+  authorize(...eventEditors),
   createEventValidation,
   eventController.createEvent
 );
@@ -63,6 +70,7 @@ router.post(
  */
 router.get(
   '/events/range',
+  authorize(...eventReaders),
   getEventsByDateRangeValidation,
   eventController.getEventsByDateRange
 );
@@ -75,6 +83,7 @@ router.get(
  */
 router.get(
   '/events/upcoming',
+  authorize(...eventReaders),
   getUpcomingEventsValidation,
   eventController.getUpcomingEvents
 );
@@ -87,6 +96,7 @@ router.get(
  */
 router.get(
   '/events/recurring',
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.CLASS_TEACHER),
   getRecurringEventsValidation,
   eventController.getRecurringEvents
 );
@@ -99,6 +109,7 @@ router.get(
  */
 router.get(
   '/events/stats',
+  authorize(UserRole.SCHOOL_ADMIN),
   getEventStatsValidation,
   eventController.getEventStats
 );
@@ -110,6 +121,7 @@ router.get(
  */
 router.get(
   '/events/:eventId',
+  authorize(...eventReaders),
   getEventByIdValidation,
   eventController.getEventById
 );
@@ -121,6 +133,7 @@ router.get(
  */
 router.put(
   '/events/:eventId',
+  authorize(...eventEditors),
   updateEventValidation,
   eventController.updateEvent
 );
@@ -132,6 +145,7 @@ router.put(
  */
 router.patch(
   '/events/:eventId/status',
+  authorize(UserRole.SCHOOL_ADMIN),
   updateEventStatusValidation,
   eventController.updateEventStatus
 );
@@ -143,6 +157,7 @@ router.patch(
  */
 router.delete(
   '/events/:eventId',
+  authorize(UserRole.SCHOOL_ADMIN),
   deleteEventValidation,
   eventController.deleteEvent
 );
@@ -154,6 +169,7 @@ router.delete(
  */
 router.get(
   '/events/:eventId/export',
+  authorize(...eventReaders),
   exportEventToICalValidation,
   eventController.exportEventToICal
 );
@@ -166,6 +182,7 @@ router.get(
  */
 router.get(
   '/holidays',
+  authorize(...eventReaders),
   getNepalGovernmentHolidaysValidation,
   eventController.getNepalGovernmentHolidays
 );
@@ -178,6 +195,7 @@ router.get(
  */
 router.get(
   '/export',
+  authorize(...eventReaders),
   exportPersonalCalendarValidation,
   eventController.exportPersonalCalendar
 );

@@ -692,6 +692,8 @@ class StudentController {
     const documentId = Number(req.params.documentId);
     const entry = documentRegistry.get(documentId);
     if (!entry) throw new NotFoundError('Document');
+    const student = await Student.findByPk(entry.studentId);
+    if (!student) throw new NotFoundError('Document');
     const url = `/uploads/documents/students/${entry.studentId}/${entry.category}/${entry.filename}`;
     sendSuccess(res, { id: documentId, filename: entry.filename, url, category: entry.category }, 'Document retrieved');
   });
@@ -704,6 +706,8 @@ class StudentController {
     const documentId = Number(req.params.documentId);
     const entry = documentRegistry.get(documentId);
     if (!entry) throw new NotFoundError('Document');
+    const student = await Student.findByPk(entry.studentId);
+    if (!student) throw new NotFoundError('Document');
     const url = `/uploads/documents/students/${entry.studentId}/${entry.category}/${entry.filename}`;
     await photoService.deleteStudentDocument(url);
     documentRegistry.delete(documentId);

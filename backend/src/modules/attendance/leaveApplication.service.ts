@@ -10,6 +10,7 @@ import User from '@models/User.model';
 import { logger } from '@utils/logger';
 import { Request } from 'express';
 import smsService from '@services/sms.service';
+import { assertStudentAccess } from '@modules/security/studentAccess';
 
 /**
  * Leave Application Service
@@ -50,6 +51,7 @@ class LeaveApplicationService {
     req?: Request
   ): Promise<LeaveApplication> {
     try {
+      if (req) await assertStudentAccess(req, leaveData.studentId);
       // Validate dates
       if (leaveData.endDate < leaveData.startDate) {
         throw new Error('End date must be after or equal to start date');

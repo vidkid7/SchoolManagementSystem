@@ -72,7 +72,9 @@ export const registerSchema = Joi.object({
       'any.only': 'Passwords do not match'
     }),
   role: Joi.string()
-    .valid(...Object.values(UserRole))
+    .valid(...Object.values(UserRole).filter(
+      role => role !== UserRole.SCHOOL_ADMIN && role !== UserRole.MUNICIPALITY_ADMIN
+    ))
     .required()
     .messages({
       'any.only': 'Invalid role specified'

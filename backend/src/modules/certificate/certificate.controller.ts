@@ -10,6 +10,7 @@ import { Request, Response } from 'express';
 import { CertificateService } from './certificate.service';
 import { CertificateRepository } from './certificate.repository';
 import { CertificateTemplateRepository } from './certificateTemplate.repository';
+import { assertStudentAccess } from '@modules/security/studentAccess';
 
 export class CertificateController {
   private service: CertificateService;
@@ -154,6 +155,7 @@ const certificates = await this.service.getAllCertificates(filters);
 getCertificatesByStudentId = async (req: Request, res: Response): Promise<void> => {
     try {
       const studentId = parseInt(req.params.studentId);
+      await assertStudentAccess(req, studentId);
       const certificates = await this.service.getCertificatesByStudentId(studentId);
 
       res.status(200).json({
@@ -164,7 +166,10 @@ getCertificatesByStudentId = async (req: Request, res: Response): Promise<void> 
         },
       });
     } catch (error) {
-      res.status(500).json({
+      const status = typeof error === 'object' && error && 'statusCode' in error
+        ? Number((error as { statusCode: number }).statusCode)
+        : 500;
+      res.status(status).json({
         success: false,
         error: {
           code: 'FETCH_FAILED',

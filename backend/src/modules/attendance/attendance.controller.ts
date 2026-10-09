@@ -10,6 +10,8 @@ import attendanceService from './attendance.service';
 import leaveApplicationService from './leaveApplication.service';
 import attendanceRepository from './attendance.repository';
 import Student from '@models/Student.model';
+import { Op } from 'sequelize';
+import { assertStudentAccess, getPortalStudentIds } from '@modules/security/studentAccess';
 
 /**
  * Attendance Controller
@@ -158,7 +160,11 @@ class AttendanceController {
     const offset = (pageNum - 1) * limitNum;
 
     const filters: any = {};
-    if (studentId) filters.studentId = Number(studentId);
+    const portalStudentIds = await getPortalStudentIds(req);
+    if (portalStudentIds) {
+      if (studentId) await assertStudentAccess(req, Number(studentId));
+      filters.studentId = studentId ? Number(studentId) : { [Op.in]: portalStudentIds };
+    } else if (studentId) filters.studentId = Number(studentId);
     if (classId) filters.classId = Number(classId);
     if (status) filters.status = status as string;
     if (dateFrom) filters.dateFrom = new Date(dateFrom as string);

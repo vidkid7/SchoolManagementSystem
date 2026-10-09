@@ -7,6 +7,8 @@
  */
 
 import { Router } from 'express';
+import { authenticate, authorize } from '@middleware/auth';
+import { UserRole } from '@models/User.model';
 import certificateTemplateController from './certificateTemplate.controller';
 import { validate } from '../../middleware/validation';
 import {
@@ -18,6 +20,8 @@ import {
 } from './certificateTemplate.validation';
 
 const router = Router();
+router.use(authenticate);
+const templateManagers = [UserRole.SCHOOL_ADMIN, UserRole.ECA_COORDINATOR, UserRole.SPORTS_COORDINATOR];
 
 /**
  * @route   GET /api/v1/certificates/templates/stats
@@ -26,6 +30,7 @@ const router = Router();
  */
 router.get(
   '/stats',
+  authorize(...templateManagers),
   certificateTemplateController.getTemplateStats.bind(certificateTemplateController)
 );
 
@@ -46,6 +51,7 @@ router.get(
  */
 router.post(
   '/',
+  authorize(...templateManagers),
   validate(createTemplateSchema, 'body'),
   certificateTemplateController.createTemplate.bind(certificateTemplateController)
 );
@@ -79,6 +85,7 @@ router.get(
  */
 router.put(
   '/:id',
+  authorize(...templateManagers),
   validate(templateIdParamSchema, 'params'),
   validate(updateTemplateSchema, 'body'),
   certificateTemplateController.updateTemplate.bind(certificateTemplateController)
@@ -91,6 +98,7 @@ router.put(
  */
 router.patch(
   '/:id',
+  authorize(...templateManagers),
   validate(templateIdParamSchema, 'params'),
   validate(updateTemplateSchema, 'body'),
   certificateTemplateController.updateTemplate.bind(certificateTemplateController)
@@ -103,6 +111,7 @@ router.patch(
  */
 router.delete(
   '/:id',
+  authorize(UserRole.SCHOOL_ADMIN),
   validate(templateIdParamSchema, 'params'),
   certificateTemplateController.deleteTemplate.bind(certificateTemplateController)
 );

@@ -40,6 +40,19 @@ export interface UpdateUserData {
 }
 
 export class UserService {
+  private assertAssignableRole(roleId: string | undefined): void {
+    if (!roleId) return;
+
+    const isKnownRole = Object.values(UserRole).includes(roleId as UserRole);
+    if (
+      !isKnownRole ||
+      roleId === UserRole.SCHOOL_ADMIN ||
+      roleId === UserRole.MUNICIPALITY_ADMIN
+    ) {
+      throw new Error('This role cannot be assigned through school user management');
+    }
+  }
+
   /**
    * Get all users with filters
    */
@@ -95,6 +108,8 @@ export class UserService {
    * Create new user
    */
   async createUser(data: CreateUserData): Promise<any> {
+    this.assertAssignableRole(data.roleId);
+
     const existingUser = await User.findOne({
       where: {
         [Op.or]: [{ username: data.username }, { email: data.email }],
@@ -122,6 +137,8 @@ export class UserService {
    * Update user
    */
   async updateUser(userId: number, data: UpdateUserData): Promise<any> {
+    this.assertAssignableRole(data.roleId);
+
     const user = await User.findByPk(userId);
 
     if (!user) {

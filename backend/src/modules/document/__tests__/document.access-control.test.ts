@@ -504,6 +504,15 @@ describe('Document Access Control', () => {
       );
     });
 
+    it('rejects metadata edits by a user who does not own the document', async () => {
+      mockRepository.findById = jest.fn().mockResolvedValue({ documentId: 1, uploadedBy: 5, status: 'active' });
+      mockRepository.update = jest.fn();
+
+      await expect(service.updateDocument(1, { name: 'Attacker edit' }, 8, ['Class_Teacher']))
+        .rejects.toThrow('You do not have permission to modify this document');
+      expect(mockRepository.update).not.toHaveBeenCalled();
+    });
+
     it('should log document delete', async () => {
       const mockDocument: Partial<Document> = {
         documentId: 1,

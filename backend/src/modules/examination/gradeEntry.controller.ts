@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationResult } from 'express-validator';
+import { assertStudentAccess } from '@modules/security/studentAccess';
 import gradeEntryService from './gradeEntry.service';
 import { GradeEntryInput, BulkGradeEntryInput, WeightedGradeInput } from './gradeEntry.service';
 
@@ -280,6 +281,7 @@ class GradeEntryController {
         });
         return;
       }
+      await assertStudentAccess(req, grade.studentId);
 
       res.status(200).json({
         success: true,
@@ -346,6 +348,7 @@ class GradeEntryController {
       }
 
       const studentId = parseInt(req.params.studentId);
+      await assertStudentAccess(req, studentId);
       const grades = await gradeEntryService.getGradesByStudent(studentId);
 
       res.status(200).json({
@@ -382,6 +385,7 @@ class GradeEntryController {
 
       const studentId = parseInt(req.query.studentId as string);
       const examId = parseInt(req.query.examId as string);
+      await assertStudentAccess(req, studentId);
       const grade = await gradeEntryService.getGradeByStudentAndExam(studentId, examId);
 
       if (!grade) {

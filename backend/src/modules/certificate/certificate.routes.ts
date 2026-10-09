@@ -7,6 +7,8 @@
  */
 
 import { Router } from 'express';
+import { authenticate, authorize } from '@middleware/auth';
+import { UserRole } from '@models/User.model';
 import certificateController from './certificate.controller';
 import {
   validate,
@@ -21,12 +23,22 @@ import {
 
 const router = Router();
 
+const certificateManagers = [UserRole.SCHOOL_ADMIN, UserRole.ECA_COORDINATOR, UserRole.SPORTS_COORDINATOR];
+// Public by design for QR-code certificate checks; keep this before authentication.
+router.get(
+  '/verify/:certificateNumber',
+  validateParams(certificateNumberSchema),
+  certificateController.verifyCertificate
+);
+router.use(authenticate);
+
 /**
  * POST /api/v1/certificates/generate
  * Generate a certificate
  */
 router.post(
   '/generate',
+  authorize(...certificateManagers),
   validate(generateCertificateSchema),
   certificateController.generateCertificate
 );
@@ -37,6 +49,7 @@ router.post(
  */
 router.post(
   '/bulk-generate',
+  authorize(...certificateManagers),
   validate(bulkGenerateCertificatesSchema),
   certificateController.bulkGenerateCertificates
 );
@@ -47,6 +60,7 @@ router.post(
  */
 router.get(
   '/',
+  authorize(...certificateManagers),
   validateQuery(certificateFiltersSchema),
   certificateController.getAllCertificates
 );
@@ -57,19 +71,8 @@ router.get(
  */
 router.get(
   '/stats',
+  authorize(...certificateManagers),
   certificateController.getCertificateStats
-);
-
-/**
- * GET /api/v1/certificates/verify/:certificateNumber
- * Verify certificate by certificate number
- * Public endpoint - supports QR code scanning and direct lookup
- * Requirements: 25.7
- */
-router.get(
-  '/verify/:certificateNumber',
-  validateParams(certificateNumberSchema),
-  certificateController.verifyCertificate
 );
 
 /**
@@ -78,6 +81,7 @@ router.get(
  */
 router.get(
   '/student/:studentId',
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.ECA_COORDINATOR, UserRole.SPORTS_COORDINATOR, UserRole.STUDENT, UserRole.PARENT),
   certificateController.getCertificatesByStudentId
 );
 
@@ -87,6 +91,7 @@ router.get(
  */
 router.get(
   '/:id',
+  authorize(...certificateManagers),
   certificateController.getCertificateById
 );
 
@@ -96,6 +101,7 @@ router.get(
  */
 router.put(
   '/:id/revoke',
+  authorize(...certificateManagers),
   validate(revokeCertificateSchema),
   certificateController.revokeCertificate
 );

@@ -65,12 +65,14 @@ router.get(
 router.put(
   '/attendance-rules/:id',
   authenticate,
+  authorize(UserRole.SCHOOL_ADMIN),
   configController.updateAttendanceRules
 );
 
 router.post(
   '/attendance-rules',
   authenticate,
+  authorize(UserRole.SCHOOL_ADMIN),
   configController.createAttendanceRules
 );
 
