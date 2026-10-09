@@ -30,6 +30,7 @@ import * as addMissingMunicipalityTenantColumns from '../migrations/202605190000
 import * as backfillGlobalTenantRows from '../migrations/20260519000002-backfill-global-tenant-rows';
 import * as createBehaviorRecords from '../migrations/20260519000003-create-behavior-records';
 import * as backfillNullSchoolTenants from '../migrations/20260519000004-backfill-null-school-tenants';
+import * as widenStudentCitizenshipNumbers from '../migrations/034-widen-student-citizenship-numbers';
 import * as createLeaveApplicationsTable from '../migrations/014-create-leave-applications-table';
 import * as createFeeStructureTables from '../migrations/015-create-fee-structure-tables';
 import * as createInvoiceTables from '../migrations/016-create-invoice-tables';
@@ -242,6 +243,11 @@ const migrations: Migration[] = [
     name: '20260519000004-backfill-null-school-tenants',
     up: backfillNullSchoolTenants.up,
     down: backfillNullSchoolTenants.down
+  },
+  {
+    name: '034-widen-student-citizenship-numbers',
+    up: widenStudentCitizenshipNumbers.up,
+    down: widenStudentCitizenshipNumbers.down
   }
 ];
 
