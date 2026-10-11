@@ -1,5 +1,4 @@
 import { createServer } from 'http';
-import app from './app';
 import { env, validateEnv } from '@config/env';
 import { sequelize, testConnection, closeConnection } from '@config/database';
 import { connectRedis, closeRedis } from '@config/redis';
@@ -229,6 +228,10 @@ const startServer = async (): Promise<void> => {
     } catch (error) {
       logger.warn('⚠️  Redis connection failed. Continuing without Redis...', error);
     }
+
+    // Import the app only after Redis connects so rate-limit stores can select
+    // the distributed Redis store instead of falling back during module load.
+    const { default: app } = await import('./app');
 
     // Start Express server
     const httpServer = createServer(app);
