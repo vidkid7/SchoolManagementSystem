@@ -32,6 +32,8 @@ import { Op } from 'sequelize';
 /** In-memory document registry for global documentId (studentId + category + filename). Cleared on restart. */
 let documentIdNext = 1;
 const documentRegistry = new Map<number, { studentId: number; category: string; filename: string }>();
+const isSafeDocumentCategory = (category: unknown): category is string =>
+  typeof category === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(category);
 
 /**
  * Student Controller
@@ -565,7 +567,12 @@ class StudentController {
   uploadDocuments = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const studentId = Number(req.params.id);
     const userId = req.user?.userId;
-    const category = req.body.category || 'general';
+    const category = req.body.category ?? 'general';
+    if (!isSafeDocumentCategory(category)) {
+      throw new ValidationError('Invalid document category', [
+        { field: 'category', message: 'Use letters, numbers, underscores, or hyphens only' }
+      ]);
+    }
 
     if (!req.files || (Array.isArray(req.files) && req.files.length === 0)) {
       throw new ValidationError('At least one document file is required', [
@@ -603,7 +610,13 @@ class StudentController {
    */
   listDocuments = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const studentId = Number(req.params.id);
-    const category = req.query.category as string | undefined;
+    const queryCategory = req.query.category;
+    const category = typeof queryCategory === 'string' ? queryCategory : undefined;
+    if (queryCategory !== undefined && (category === undefined || !isSafeDocumentCategory(category))) {
+      throw new ValidationError('Invalid document category', [
+        { field: 'category', message: 'Use letters, numbers, underscores, or hyphens only' }
+      ]);
+    }
 
     const student = await StudentRepository.findById(studentId);
     if (!student) throw new NotFoundError('Student');
@@ -665,7 +678,12 @@ class StudentController {
   uploadDocumentsBulk = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const studentId = Number(req.params.id);
     const userId = req.user?.userId;
-    const category = req.body.category || 'general';
+    const category = req.body.category ?? 'general';
+    if (!isSafeDocumentCategory(category)) {
+      throw new ValidationError('Invalid document category', [
+        { field: 'category', message: 'Use letters, numbers, underscores, or hyphens only' }
+      ]);
+    }
 
     const student = await StudentRepository.findById(studentId);
     if (!student) throw new NotFoundError('Student');

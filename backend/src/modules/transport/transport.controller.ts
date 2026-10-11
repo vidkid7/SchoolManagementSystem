@@ -4,6 +4,8 @@ import sequelize from '@config/database';
 import User, { UserRole } from '@models/User.model';
 import Student from '@models/Student.model';
 import { logger } from '@utils/logger';
+import { getTenantContext } from '@middleware/tenantContext';
+import { scopeTransportSql } from './tenantSql';
 
 type DbRow = Record<string, any>;
 
@@ -50,7 +52,13 @@ function normalizeStops(stops: unknown): unknown[] {
 }
 
 async function selectRows(sql: string, replacements: Record<string, unknown> = {}): Promise<DbRow[]> {
-  return sequelize.query<DbRow>(sql, { replacements, type: QueryTypes.SELECT });
+  const scoped = scopeTransportSql(sql, replacements, getTenantContext() ?? { enforceIsolation: true });
+  return sequelize.query<DbRow>(scoped.sql, { replacements: scoped.replacements, type: QueryTypes.SELECT });
+}
+
+async function executeTransportQuery(sql: string, replacements: Record<string, unknown> = {}) {
+  const scoped = scopeTransportSql(sql, replacements, getTenantContext() ?? { enforceIsolation: true });
+  return sequelize.query(scoped.sql, { replacements: scoped.replacements });
 }
 
 async function selectOne(sql: string, replacements: Record<string, unknown> = {}): Promise<DbRow | null> {
@@ -59,7 +67,7 @@ async function selectOne(sql: string, replacements: Record<string, unknown> = {}
 }
 
 async function insertRow(sql: string, replacements: Record<string, unknown>): Promise<number> {
-  const [result, metadata] = await sequelize.query(sql, { replacements });
+  const [result, metadata] = await executeTransportQuery(sql, replacements);
   return Number(
     (typeof result === 'number' ? result : undefined) ??
     (result as { insertId?: number })?.insertId ??
@@ -71,7 +79,7 @@ async function insertRow(sql: string, replacements: Record<string, unknown>): Pr
 async function deleteById(tableName: string, id: number): Promise<boolean> {
   const existing = await selectOne(`SELECT id FROM ${tableName} WHERE id = :id LIMIT 1`, { id });
   if (!existing) return false;
-  await sequelize.query(`DELETE FROM ${tableName} WHERE id = :id`, { replacements: { id } });
+  await executeTransportQuery(`DELETE FROM ${tableName} WHERE id = :id`, { id });
   return true;
 }
 
@@ -327,7 +335,7 @@ class TransportController {
 
       const current = mapRoute(existing);
       const updated = { ...current, ...req.body };
-      await sequelize.query(
+      await executeTransportQuery(
         `UPDATE transport_routes SET
           route_name = :routeName, origin = :origin, destination = :destination, stops = :stops,
           vehicle_id = :vehicleId, driver_name = :driverName, driver_phone = :driverPhone,
@@ -335,7 +343,6 @@ class TransportController {
           updated_at = NOW()
          WHERE id = :id`,
         {
-          replacements: {
             id,
             routeName: updated.routeName,
             origin: updated.origin,
@@ -348,7 +355,6 @@ class TransportController {
             arrivalTime: updated.arrivalTime ?? '',
             status: updated.status ?? 'active',
           }
-        }
       );
 
       const row = await selectOne('SELECT * FROM transport_routes WHERE id = :id', { id });
@@ -422,7 +428,7 @@ class TransportController {
       }
 
       const updated = { ...mapVehicle(existing), ...req.body };
-      await sequelize.query(
+      await executeTransportQuery(
         `UPDATE transport_vehicles SET
           vehicle_number = :vehicleNumber, type = :type, capacity = :capacity,
           driver_name = :driverName, driver_phone = :driverPhone,
@@ -430,7 +436,6 @@ class TransportController {
           status = :status, updated_at = NOW()
          WHERE id = :id`,
         {
-          replacements: {
             id,
             vehicleNumber: updated.vehicleNumber,
             type: updated.type,
@@ -441,7 +446,6 @@ class TransportController {
             registrationExpiry: asNullableString(updated.registrationExpiry),
             status: updated.status ?? 'active',
           }
-        }
       );
 
       const row = await selectOne('SELECT * FROM transport_vehicles WHERE id = :id', { id });
@@ -527,7 +531,7 @@ class TransportController {
 
       const saved = [];
       for (const record of records) {
-        await sequelize.query(
+        await executeTransportQuery(
           `INSERT INTO transport_attendance
             (date, route_id, student_id, status, marked_by, marked_at, created_at, updated_at)
            VALUES
@@ -536,14 +540,12 @@ class TransportController {
             route_id = VALUES(route_id), status = VALUES(status), marked_by = VALUES(marked_by),
             marked_at = NOW(), updated_at = NOW()`,
           {
-            replacements: {
               date,
               routeId: asNullableNumber(routeId),
               studentId: asNumber(record.studentId),
               status: record.status ?? 'present',
               markedBy: req.user?.userId ?? null,
             }
-          }
         );
         saved.push({ date, routeId: routeId ?? null, studentId: record.studentId, status: record.status ?? 'present', markedBy: req.user?.userId });
       }
@@ -626,14 +628,13 @@ class TransportController {
       }
 
       const updated = { ...mapDriver(existing), ...req.body };
-      await sequelize.query(
+      await executeTransportQuery(
         `UPDATE transport_drivers SET
           name = :name, license_number = :licenseNumber, license_expiry = :licenseExpiry,
           phone = :phone, address = :address, assigned_vehicle_id = :assignedVehicleId,
           status = :status, updated_at = NOW()
          WHERE id = :id`,
         {
-          replacements: {
             id,
             name: updated.name,
             licenseNumber: updated.licenseNumber,
@@ -643,7 +644,6 @@ class TransportController {
             assignedVehicleId: asNullableNumber(updated.assignedVehicleId),
             status: updated.status ?? 'active',
           }
-        }
       );
 
       const row = await selectOne('SELECT * FROM transport_drivers WHERE id = :id', { id });
@@ -724,13 +724,12 @@ class TransportController {
       }
 
       const updated = { ...mapMaintenanceRecord(existing), ...req.body };
-      await sequelize.query(
+      await executeTransportQuery(
         `UPDATE transport_maintenance_records SET
           vehicle_id = :vehicleId, type = :type, description = :description, cost = :cost,
           date = :date, next_due_date = :nextDueDate, status = :status, updated_at = NOW()
          WHERE id = :id`,
         {
-          replacements: {
             id,
             vehicleId: asNumber(updated.vehicleId),
             type: updated.type,
@@ -740,7 +739,6 @@ class TransportController {
             nextDueDate: asNullableString(updated.nextDueDate),
             status: updated.status ?? 'scheduled',
           }
-        }
       );
 
       const row = await selectOne('SELECT * FROM transport_maintenance_records WHERE id = :id', { id });

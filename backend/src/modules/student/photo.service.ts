@@ -27,6 +27,21 @@ const THUMBNAIL_WIDTH = 150;
 const THUMBNAIL_HEIGHT = 150;
 const PHOTO_MAX_WIDTH = 800;
 const PHOTO_MAX_HEIGHT = 800;
+const DOCUMENT_CATEGORY_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
+
+function assertSafeDocumentCategory(category: string): void {
+  if (!DOCUMENT_CATEGORY_PATTERN.test(category)) {
+    throw new Error('Invalid document category');
+  }
+}
+
+function assertPathIsWithin(parentPath: string, childPath: string): void {
+  const resolvedParent = path.resolve(parentPath);
+  const resolvedChild = path.resolve(childPath);
+  if (!resolvedChild.startsWith(`${resolvedParent}${path.sep}`)) {
+    throw new Error('Document path is outside the allowed directory');
+  }
+}
 
 /**
  * Ensure directory exists, create if not
@@ -269,7 +284,16 @@ class PhotoService {
     category: string = 'general'
   ): Promise<{ documentUrl: string; originalName: string; size: number; mimeType: string }> {
     try {
-      const docDir = path.join(STUDENT_DOCUMENTS_DIR, String(studentId), category);
+      assertSafeDocumentCategory(category);
+      const normalizedStudentId = String(studentId);
+      if (!/^[1-9]\d*$/.test(normalizedStudentId)) {
+        throw new Error('Invalid student id');
+      }
+
+      const studentDir = path.resolve(STUDENT_DOCUMENTS_DIR, normalizedStudentId);
+      assertPathIsWithin(STUDENT_DOCUMENTS_DIR, studentDir);
+      const docDir = path.resolve(studentDir, category);
+      assertPathIsWithin(studentDir, docDir);
       ensureDirectoryExists(docDir);
 
       const filename = generateUniqueFilename(file.originalname, `${category}-`);
@@ -337,7 +361,14 @@ class PhotoService {
     category?: string
   ): Promise<Array<{ filename: string; url: string; category: string }>> {
     try {
-      const baseDir = path.join(STUDENT_DOCUMENTS_DIR, String(studentId));
+      const normalizedStudentId = String(studentId);
+      if (!/^[1-9]\d*$/.test(normalizedStudentId)) {
+        throw new Error('Invalid student id');
+      }
+      if (category !== undefined) assertSafeDocumentCategory(category);
+
+      const baseDir = path.resolve(STUDENT_DOCUMENTS_DIR, normalizedStudentId);
+      assertPathIsWithin(STUDENT_DOCUMENTS_DIR, baseDir);
       
       if (!fs.existsSync(baseDir)) {
         return [];
@@ -350,7 +381,9 @@ class PhotoService {
         : await fs.promises.readdir(baseDir);
 
       for (const cat of categories) {
-        const catDir = path.join(baseDir, cat);
+        assertSafeDocumentCategory(cat);
+        const catDir = path.resolve(baseDir, cat);
+        assertPathIsWithin(baseDir, catDir);
         
         if (!fs.existsSync(catDir) || !(await fs.promises.stat(catDir)).isDirectory()) {
           continue;

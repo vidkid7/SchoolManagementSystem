@@ -250,6 +250,20 @@ describe('PhotoService', () => {
       const docPath = path.join(process.cwd(), result.documentUrl);
       if (fs.existsSync(docPath)) fs.unlinkSync(docPath);
     });
+
+    it('should reject path traversal in the document category', async () => {
+      const docBuffer = Buffer.from('Test document content');
+      const mockFile = createMockFile({
+        originalname: 'test-document.pdf',
+        mimetype: 'application/pdf',
+        size: docBuffer.length,
+        buffer: docBuffer
+      });
+
+      await expect(
+        photoService.saveStudentDocument(mockFile, TEST_STUDENT_ID, '../../outside')
+      ).rejects.toThrow('Failed to save student document');
+    });
   });
 
   describe('listStudentDocuments', () => {
@@ -283,6 +297,12 @@ describe('PhotoService', () => {
     it('should return empty array for non-existent student', async () => {
       const documents = await photoService.listStudentDocuments(999998);
       expect(documents).toEqual([]);
+    });
+
+    it('should reject path traversal in the document category filter', async () => {
+      await expect(
+        photoService.listStudentDocuments(TEST_STUDENT_ID, '../../outside')
+      ).rejects.toThrow('Failed to list student documents');
     });
   });
 

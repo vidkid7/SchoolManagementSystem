@@ -226,6 +226,14 @@ function generateStaffCode(index: number): string {
 
 async function seedStaff(): Promise<void> {
   try {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Staff demo seeding is disabled in production');
+    }
+
+    const seedPassword = process.env.SEED_PASSWORD;
+    if (!seedPassword || seedPassword.length < 16) {
+      throw new Error('Set SEED_PASSWORD to at least 16 characters to seed local demo staff');
+    }
     await sequelize.authenticate();
     logger.info('Database connection established');
 
@@ -297,12 +305,7 @@ async function seedStaff(): Promise<void> {
     logger.info(`Skipped: ${skippedCount} (already exists)`);
     logger.info(`\nLogin credentials for all staff:`);
     logger.info(`Username: <username>`);
-    logger.info(`Password: Password@123`);
     logger.info(`\nSample accounts:`);
-    logger.info(`- Principal: principal / Password@123`);
-    logger.info(`- Teacher: teacher1 / Password@123`);
-    logger.info(`- Accountant: accountant / Password@123`);
-    logger.info(`- Librarian: librarian / Password@123`);
 
     process.exit(0);
   } catch (error) {
