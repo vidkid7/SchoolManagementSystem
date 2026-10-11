@@ -205,7 +205,7 @@ export const StudentForm = () => {
   const [siblingsLoading, setSiblingsLoading] = useState(false);
   const [checkingDuplicates, setCheckingDuplicates] = useState(false);
 
-  const { control, handleSubmit, reset, getValues, setValue, setError: setFieldError, formState: { errors } } = useForm<StudentFormData>({
+  const { control, handleSubmit, reset, getValues, setValue, watch, setError: setFieldError, formState: { errors } } = useForm<StudentFormData>({
     defaultValues: {
       first_name: '',
       middle_name: '',
@@ -246,6 +246,19 @@ export const StudentForm = () => {
       status: 'active',
     },
   });
+
+  const dateOfBirthAD = watch('date_of_birth_ad');
+
+  useEffect(() => {
+    const date = parseDate(dateOfBirthAD);
+    const dateOfBirthBS = formatBSDate(date);
+    if (dateOfBirthBS !== getValues('date_of_birth_bs')) {
+      setValue('date_of_birth_bs', dateOfBirthBS, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [dateOfBirthAD, getValues, setValue]);
 
   useEffect(() => {
     let mounted = true;
