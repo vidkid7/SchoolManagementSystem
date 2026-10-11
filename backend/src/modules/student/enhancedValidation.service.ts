@@ -228,10 +228,16 @@ class EnhancedValidationService {
 
     try {
       // Validate age for grade
-      if (studentData.dateOfBirthAD && studentData.admissionClass) {
+      const admissionClass = Number(studentData.admissionClass);
+      if (
+        studentData.dateOfBirthAD &&
+        Number.isInteger(admissionClass) &&
+        admissionClass >= 1 &&
+        admissionClass <= 12
+      ) {
         const ageValidation = this.validateAgeForGrade(
           new Date(studentData.dateOfBirthAD),
-          studentData.admissionClass
+          admissionClass
         );
         allErrors.push(...ageValidation.errors);
         allWarnings.push(...ageValidation.warnings);

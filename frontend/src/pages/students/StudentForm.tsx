@@ -414,7 +414,7 @@ export const StudentForm = () => {
         emergencyContact: data.emergency_contact,
         // Academic
         admissionDate: data.admission_date,
-        admissionClass: data.admission_class,
+        admissionClass: Number(data.admission_class),
         currentClassId: data.current_class ? Number(data.current_class) : null,
         rollNumber: data.roll_number || null,
         previousSchool: data.previous_school || null,
@@ -580,7 +580,7 @@ export const StudentForm = () => {
       emergencyContact: formData.emergency_contact,
       // Academic
       admissionDate: formData.admission_date,
-      admissionClass: formData.admission_class,
+      admissionClass: Number(formData.admission_class),
       currentClassId: formData.current_class ? Number(formData.current_class) : null,
       rollNumber: formData.roll_number || null,
       previousSchool: formData.previous_school || null,

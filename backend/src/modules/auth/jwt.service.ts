@@ -36,11 +36,11 @@ export interface TokenPair {
  * Requirements: 1.2, 1.3
  */
 class JWTService {
-  private readonly ACCESS_TOKEN_EXPIRY = '7d'; // 7 days (for development)
-  private readonly REFRESH_TOKEN_EXPIRY = '30d'; // 30 days
-  private readonly REFRESH_TOKEN_EXPIRY_SECONDS = 30 * 24 * 60 * 60; // 30 days in seconds
-  private readonly EXTENDED_REFRESH_TOKEN_EXPIRY = '90d'; // 90 days for "Remember Me"
-  private readonly EXTENDED_REFRESH_TOKEN_EXPIRY_SECONDS = 90 * 24 * 60 * 60; // 90 days in seconds
+  private readonly ACCESS_TOKEN_EXPIRY = '30m';
+  private readonly REFRESH_TOKEN_EXPIRY = '7d';
+  private readonly REFRESH_TOKEN_EXPIRY_SECONDS = 7 * 24 * 60 * 60;
+  private readonly EXTENDED_REFRESH_TOKEN_EXPIRY = '30d';
+  private readonly EXTENDED_REFRESH_TOKEN_EXPIRY_SECONDS = 30 * 24 * 60 * 60;
 
   /**
    * Generate JWT access token with 30 minute expiry
