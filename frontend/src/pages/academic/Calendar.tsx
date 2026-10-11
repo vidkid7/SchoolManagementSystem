@@ -224,7 +224,7 @@ export const Calendar = () => {
                 label="Year"
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
               >
-                {[2023, 2024, 2025, 2026, 2027].map((year) => (
+                {Array.from({ length: 101 }, (_, index) => new Date().getFullYear() - 50 + index).map((year) => (
                   <MenuItem key={year} value={year}>
                     {year}
                   </MenuItem>

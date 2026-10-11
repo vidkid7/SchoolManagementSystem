@@ -413,6 +413,8 @@ const AuditLogs: React.FC = () => {
                     label={t('audit.startDate')}
                     value={filters.startDate}
                     onChange={(date) => handleFilterChange('startDate', date)}
+                    views={['year', 'month', 'day']}
+                    openTo="year"
                     slotProps={{ textField: { fullWidth: true, sx: S.TF } }}
                   />
                 </Grid>
@@ -421,6 +423,8 @@ const AuditLogs: React.FC = () => {
                     label={t('audit.endDate')}
                     value={filters.endDate}
                     onChange={(date) => handleFilterChange('endDate', date)}
+                    views={['year', 'month', 'day']}
+                    openTo="year"
                     slotProps={{ textField: { fullWidth: true, sx: S.TF } }}
                   />
                 </Grid>

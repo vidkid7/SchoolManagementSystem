@@ -10,6 +10,8 @@ import {
   Button,
   ToggleButtonGroup,
   ToggleButton,
+  Select,
+  MenuItem,
   styled
 } from '@mui/material';
 import {
@@ -273,6 +275,11 @@ const BSCalendarView: React.FC<BSCalendarViewProps> = ({
     onViewDateChange(newDate.toJsDate());
   }, [currentYear, currentMonth, onViewDateChange]);
 
+  const handleYearChange = useCallback((year: number) => {
+    const newDate = new NepaliDate(year, currentMonth, 1);
+    onViewDateChange(newDate.toJsDate());
+  }, [currentMonth, onViewDateChange]);
+
   const handleToday = useCallback(() => {
     const today = new Date();
     onViewDateChange(today);
@@ -389,9 +396,24 @@ const BSCalendarView: React.FC<BSCalendarViewProps> = ({
         <IconButton size="small" onClick={handlePreviousMonth}>
           <ChevronLeft />
         </IconButton>
-        <Typography variant="subtitle1" fontWeight={600}>
-          {monthName} {currentYear}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant="subtitle1" fontWeight={600}>
+            {monthName}
+          </Typography>
+          <Select
+            value={currentYear}
+            size="small"
+            inputProps={{ 'aria-label': 'Select year' }}
+            onChange={(event) => handleYearChange(Number(event.target.value))}
+            sx={{ minWidth: 92, '& .MuiSelect-select': { py: 0.75 } }}
+          >
+            {Array.from({ length: 91 }, (_, index) => 2000 + index).map((year) => (
+              <MenuItem key={year} value={year}>
+                {year}
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
         <IconButton size="small" onClick={handleNextMonth}>
           <ChevronRight />
         </IconButton>

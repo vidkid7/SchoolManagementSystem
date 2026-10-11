@@ -339,6 +339,23 @@ describe('BSDatePicker', () => {
   });
 
   describe('Month Navigation', () => {
+    it('allows selecting a year directly', async () => {
+      const handleChange = jest.fn();
+      const testDate = new Date('2023-04-14'); // 2080-01-01 BS
+
+      render(
+        <BSDatePicker label="Birth Date" value={testDate} onChange={handleChange} />
+      );
+
+      fireEvent.click(screen.getByLabelText('Birth Date'));
+      const yearSelector = await screen.findByRole('combobox', { name: 'Select year' });
+      fireEvent.mouseDown(yearSelector);
+      fireEvent.click(await screen.findByRole('option', { name: '2085' }));
+
+      expect(yearSelector).toHaveTextContent('2085');
+      expect(screen.getByText(/बैशाख/)).toBeInTheDocument();
+    });
+
     it('should navigate to previous month', async () => {
       const handleChange = jest.fn();
       const testDate = new Date('2023-05-15'); // 2080-02-01 BS (Jestha)
