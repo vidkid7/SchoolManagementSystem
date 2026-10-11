@@ -362,7 +362,8 @@ Student.init(
       }
     },
     fatherCitizenshipNo: {
-      type: DataTypes.STRING(50),
+      // Values are encrypted before persistence, so storage must fit ciphertext.
+      type: DataTypes.STRING(255),
       allowNull: true,
       field: 'father_citizenship_no',
       validate: {
@@ -388,7 +389,8 @@ Student.init(
       }
     },
     motherCitizenshipNo: {
-      type: DataTypes.STRING(50),
+      // Values are encrypted before persistence, so storage must fit ciphertext.
+      type: DataTypes.STRING(255),
       allowNull: true,
       field: 'mother_citizenship_no',
       validate: {
