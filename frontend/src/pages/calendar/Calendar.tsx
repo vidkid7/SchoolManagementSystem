@@ -292,6 +292,19 @@ const Calendar = () => {
     setCurrentNepaliDate(new NepaliDate(today));
   };
 
+  const handleCalendarYearChange = (year: number) => {
+    if (calendarSystem === 'BS') {
+      const newNepaliDate = new NepaliDate(year, currentNepaliDate.getMonth(), 1);
+      setCurrentNepaliDate(newNepaliDate);
+      setCurrentDate(newNepaliDate.toJsDate());
+      return;
+    }
+
+    const newDate = new Date(year, currentDate.getMonth(), 1);
+    setCurrentDate(newDate);
+    setCurrentNepaliDate(new NepaliDate(newDate));
+  };
+
   // Handle event form changes
   const handleEventFormChange = (field: string, value: any) => {
     setEventForm(prev => ({ ...prev, [field]: value }));
@@ -849,6 +862,20 @@ const Calendar = () => {
                 )}
               </Typography>
             </Box>
+            <Select
+              value={calendarSystem === 'BS' ? currentNepaliDate.getYear() : currentDate.getFullYear()}
+              size="small"
+              inputProps={{ 'aria-label': 'Select year' }}
+              onChange={(event) => handleCalendarYearChange(Number(event.target.value))}
+              sx={{ minWidth: 100 }}
+            >
+              {Array.from(
+                { length: 91 },
+                (_, index) => (calendarSystem === 'BS' ? 2000 : 1943) + index
+              ).map((year) => (
+                <MenuItem key={year} value={year}>{year}</MenuItem>
+              ))}
+            </Select>
           </Box>
 
           <Box display="flex" gap={2} alignItems="center">

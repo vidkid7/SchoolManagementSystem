@@ -262,23 +262,39 @@ const BSCalendarView: React.FC<BSCalendarViewProps> = ({
     [viewDate]
   );
 
-  const currentYear = nepaliViewDate.getYear();
-  const currentMonth = nepaliViewDate.getMonth();
+  const currentYear = calendarView === 'BS'
+    ? nepaliViewDate.getYear()
+    : viewDate.getFullYear();
+  const currentMonth = calendarView === 'BS'
+    ? nepaliViewDate.getMonth()
+    : viewDate.getMonth();
 
   const handlePreviousMonth = useCallback(() => {
-    const newDate = new NepaliDate(currentYear, currentMonth - 1, 1);
-    onViewDateChange(newDate.toJsDate());
-  }, [currentYear, currentMonth, onViewDateChange]);
+    if (calendarView === 'BS') {
+      const newDate = new NepaliDate(currentYear, currentMonth - 1, 1);
+      onViewDateChange(newDate.toJsDate());
+    } else {
+      onViewDateChange(new Date(currentYear, currentMonth - 1, 1));
+    }
+  }, [calendarView, currentYear, currentMonth, onViewDateChange]);
 
   const handleNextMonth = useCallback(() => {
-    const newDate = new NepaliDate(currentYear, currentMonth + 1, 1);
-    onViewDateChange(newDate.toJsDate());
-  }, [currentYear, currentMonth, onViewDateChange]);
+    if (calendarView === 'BS') {
+      const newDate = new NepaliDate(currentYear, currentMonth + 1, 1);
+      onViewDateChange(newDate.toJsDate());
+    } else {
+      onViewDateChange(new Date(currentYear, currentMonth + 1, 1));
+    }
+  }, [calendarView, currentYear, currentMonth, onViewDateChange]);
 
   const handleYearChange = useCallback((year: number) => {
-    const newDate = new NepaliDate(year, currentMonth, 1);
-    onViewDateChange(newDate.toJsDate());
-  }, [currentMonth, onViewDateChange]);
+    if (calendarView === 'BS') {
+      const newDate = new NepaliDate(year, currentMonth, 1);
+      onViewDateChange(newDate.toJsDate());
+    } else {
+      onViewDateChange(new Date(year, currentMonth, 1));
+    }
+  }, [calendarView, currentMonth, onViewDateChange]);
 
   const handleToday = useCallback(() => {
     const today = new Date();
@@ -289,32 +305,36 @@ const BSCalendarView: React.FC<BSCalendarViewProps> = ({
   // Generate calendar days
   const calendarDays = useMemo(() => {
     const days: (Date | null)[] = [];
-    const firstDayOfMonth = new NepaliDate(currentYear, currentMonth, 1);
-    
-    // Get days in month by checking when the next month starts
-    let daysInMonth = 30; // Default
-    try {
-      // Try to create the next month's first day to determine current month's length
-      const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
-      const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
-      const nextMonthFirst = new NepaliDate(nextYear, nextMonth, 1);
-      const currentMonthLast = new Date(nextMonthFirst.toJsDate().getTime() - 24 * 60 * 60 * 1000);
-      const lastDayNepali = new NepaliDate(currentMonthLast);
-      daysInMonth = lastDayNepali.getDate();
-    } catch (error) {
-      // Fallback: try days 29-32 to find the last valid day
-      for (let testDay = 32; testDay >= 29; testDay--) {
-        try {
-          new NepaliDate(currentYear, currentMonth, testDay);
-          daysInMonth = testDay;
-          break;
-        } catch {
-          continue;
+    let daysInMonth: number;
+    let firstDayOfWeek: number;
+
+    if (calendarView === 'BS') {
+      const firstDayOfMonth = new NepaliDate(currentYear, currentMonth, 1);
+      // Get days in month by checking when the next month starts.
+      daysInMonth = 30;
+      try {
+        const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
+        const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+        const nextMonthFirst = new NepaliDate(nextYear, nextMonth, 1);
+        const currentMonthLast = new Date(nextMonthFirst.toJsDate().getTime() - 24 * 60 * 60 * 1000);
+        daysInMonth = new NepaliDate(currentMonthLast).getDate();
+      } catch {
+        for (let testDay = 32; testDay >= 29; testDay--) {
+          try {
+            new NepaliDate(currentYear, currentMonth, testDay);
+            daysInMonth = testDay;
+            break;
+          } catch {
+            continue;
+          }
         }
       }
+      firstDayOfWeek = firstDayOfMonth.toJsDate().getDay();
+    } else {
+      const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+      daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      firstDayOfWeek = firstDayOfMonth.getDay();
     }
-    
-    const firstDayOfWeek = firstDayOfMonth.toJsDate().getDay();
 
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDayOfWeek; i++) {
@@ -324,8 +344,11 @@ const BSCalendarView: React.FC<BSCalendarViewProps> = ({
     // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       try {
-        const date = new NepaliDate(currentYear, currentMonth, day);
-        days.push(date.toJsDate());
+        if (calendarView === 'BS') {
+          days.push(new NepaliDate(currentYear, currentMonth, day).toJsDate());
+        } else {
+          days.push(new Date(currentYear, currentMonth, day));
+        }
       } catch (error) {
         // Skip invalid days
         break;
@@ -333,7 +356,7 @@ const BSCalendarView: React.FC<BSCalendarViewProps> = ({
     }
 
     return days;
-  }, [currentYear, currentMonth]);
+  }, [calendarView, currentYear, currentMonth]);
 
   const isDateSelected = useCallback(
     (date: Date | null): boolean => {
@@ -367,10 +390,9 @@ const BSCalendarView: React.FC<BSCalendarViewProps> = ({
     [minDate, maxDate]
   );
 
-  const monthName =
-    calendarView === 'BS'
-      ? NEPALI_MONTHS[currentMonth].np
-      : NEPALI_MONTHS[currentMonth].en;
+  const monthName = calendarView === 'BS'
+    ? NEPALI_MONTHS[currentMonth].np
+    : new Intl.DateTimeFormat('en', { month: 'long' }).format(new Date(currentYear, currentMonth, 1));
 
   return (
     <Box>
@@ -407,7 +429,10 @@ const BSCalendarView: React.FC<BSCalendarViewProps> = ({
             onChange={(event) => handleYearChange(Number(event.target.value))}
             sx={{ minWidth: 92, '& .MuiSelect-select': { py: 0.75 } }}
           >
-            {Array.from({ length: 91 }, (_, index) => 2000 + index).map((year) => (
+            {Array.from(
+              { length: 91 },
+              (_, index) => (calendarView === 'BS' ? 2000 : 1943) + index
+            ).map((year) => (
               <MenuItem key={year} value={year}>
                 {year}
               </MenuItem>
@@ -440,7 +465,7 @@ const BSCalendarView: React.FC<BSCalendarViewProps> = ({
                 disabled={isDateDisabled(date)}
                 onClick={() => !isDateDisabled(date) && onDateSelect(date)}
               >
-                {date.getDate()}
+                {calendarView === 'BS' ? new NepaliDate(date).getDate() : date.getDate()}
               </DayButton>
             ) : (
               <Box sx={{ minWidth: 36, height: 36 }} />

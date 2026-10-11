@@ -233,9 +233,9 @@ describe('BSDatePicker', () => {
       });
     });
 
-    it('should display English month names in AD view', async () => {
+    it('should display Gregorian month names in AD view', async () => {
       const handleChange = jest.fn();
-      const testDate = new Date('2023-04-14'); // Baisakh in BS
+      const testDate = new Date('2023-04-14'); // April in AD
 
       render(
         <BSDatePicker
@@ -256,8 +256,7 @@ describe('BSDatePicker', () => {
       });
 
       await waitFor(() => {
-        // Should display English month name
-        expect(screen.getByText(/Baisakh/)).toBeInTheDocument();
+        expect(screen.getByText('April')).toBeInTheDocument();
       });
     });
   });
@@ -354,6 +353,25 @@ describe('BSDatePicker', () => {
 
       expect(yearSelector).toHaveTextContent('2085');
       expect(screen.getByText(/बैशाख/)).toBeInTheDocument();
+    });
+
+    it('allows selecting a Gregorian year in the AD calendar view', async () => {
+      const handleChange = jest.fn();
+      const testDate = new Date('2023-04-14');
+
+      render(
+        <BSDatePicker label="Birth Date" value={testDate} onChange={handleChange} />
+      );
+
+      fireEvent.click(screen.getByLabelText('Birth Date'));
+      fireEvent.click(screen.getByRole('button', { name: 'AD' }));
+
+      const yearSelector = await screen.findByRole('combobox', { name: 'Select year' });
+      fireEvent.mouseDown(yearSelector);
+      fireEvent.click(await screen.findByRole('option', { name: '2030' }));
+
+      expect(yearSelector).toHaveTextContent('2030');
+      expect(screen.getByText('April')).toBeInTheDocument();
     });
 
     it('should navigate to previous month', async () => {
