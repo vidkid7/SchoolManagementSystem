@@ -4,6 +4,11 @@ import App from './App';
 import './index.css';
 import './styles/accessibility.css';
 import { registerServiceWorker } from './utils/serviceWorker';
+import { registerVitePreloadErrorRecovery } from './utils/preloadErrorRecovery';
+
+// Open tabs can outlive a deployment and retain JS that requests chunks from
+// the previous build. Reload once when Vite reports a missing dynamic chunk.
+registerVitePreloadErrorRecovery(window);
 
 // Suppress browser extension errors and aria-hidden warnings in development
 if (import.meta.env.DEV) {
