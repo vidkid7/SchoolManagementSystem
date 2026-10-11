@@ -46,6 +46,7 @@ import * as createAssignmentSubmissionsTable from '../migrations/20260315000002-
 import * as createLessonPlansTable from '../migrations/20260315000003-create-lesson-plans-table';
 import * as createSyllabusProgressTable from '../migrations/20260315000004-create-syllabus-progress-table';
 import * as ensureCalendarNotificationTables from '../migrations/20261011000001-ensure-calendar-notification-tables';
+import * as ensureAdmissionsTable from '../migrations/20261011000002-ensure-admissions-table';
 
 /**
  * Migration Runner
@@ -260,6 +261,11 @@ const migrations: Migration[] = [
     name: '20261011000001-ensure-calendar-notification-tables',
     up: ensureCalendarNotificationTables.up,
     down: ensureCalendarNotificationTables.down
+  },
+  {
+    name: '20261011000002-ensure-admissions-table',
+    up: ensureAdmissionsTable.up,
+    down: ensureAdmissionsTable.down
   }
 ];
 
