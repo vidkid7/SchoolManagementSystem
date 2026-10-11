@@ -459,7 +459,7 @@ export const StudentDetail = () => {
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                   <Chip 
-                    label={`${t('students.class')} ${formatNumber(student.currentClassId)}`}
+                    label={`${t('students.class')} ${student.currentClassId != null ? formatNumber(student.currentClassId) : '-'}`}
                     sx={{ 
                       bgcolor: 'rgba(255,255,255,0.2)', 
                       color: 'white',
@@ -517,7 +517,7 @@ export const StudentDetail = () => {
                       }
                     }}
                   >
-                    {t('promote.transfer')}
+                    {t('promote.transfer.title')}
                   </Button>
                   <Button
                     variant="outlined"
@@ -533,7 +533,7 @@ export const StudentDetail = () => {
                       }
                     }}
                   >
-                    {t('promote.promote')}
+                    {t('promote.promote.title')}
                   </Button>
                 </>
               )}
@@ -655,7 +655,7 @@ export const StudentDetail = () => {
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <InfoCard icon={<SchoolIcon sx={{ color: theme.palette.primary.main }} />} title={t('students.academicInfo')}>
-                <InfoRow icon={<SchoolIcon fontSize="small" />} label={t('students.class')} value={formatNumber(student.currentClassId)} />
+                <InfoRow icon={<SchoolIcon fontSize="small" />} label={t('students.class')} value={student.currentClassId != null ? formatNumber(student.currentClassId) : '-'} />
                 <InfoRow icon={<BadgeIcon fontSize="small" />} label={t('students.section')} value={student.section} />
                 <InfoRow icon={<BadgeIcon fontSize="small" />} label={t('students.rollNumber')} value={student.rollNumber} />
                 <InfoRow icon={<CalendarIcon fontSize="small" />} label={t('students.admissionDate')} value={student.admissionDate} />
