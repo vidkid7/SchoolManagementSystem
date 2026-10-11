@@ -4,6 +4,34 @@ import { logger } from '@utils/logger';
 import auditLogger from '@utils/auditLogger';
 import { Request } from 'express';
 
+export function buildStudentSearchConditions(searchInput: string): Record<PropertyKey, unknown>[] {
+  const search = searchInput.trim();
+  const conditions: Record<PropertyKey, unknown>[] = [
+    { firstNameEn: { [Op.like]: `%${search}%` } },
+    { lastNameEn: { [Op.like]: `%${search}%` } },
+    { studentCode: { [Op.like]: `%${search}%` } },
+    { email: { [Op.like]: `%${search}%` } },
+  ];
+  const searchTerms = search.split(/\s+/).filter(Boolean);
+
+  if (searchTerms.length > 1) {
+    conditions.push({
+      [Op.and]: searchTerms.map((term) => ({
+        [Op.or]: [
+          { firstNameEn: { [Op.like]: `%${term}%` } },
+          { middleNameEn: { [Op.like]: `%${term}%` } },
+          { lastNameEn: { [Op.like]: `%${term}%` } },
+          { firstNameNp: { [Op.like]: `%${term}%` } },
+          { middleNameNp: { [Op.like]: `%${term}%` } },
+          { lastNameNp: { [Op.like]: `%${term}%` } },
+        ],
+      })),
+    });
+  }
+
+  return conditions;
+}
+
 /**
  * Student Repository
  * Handles all database operations for Student entity using parameterized queries
@@ -177,10 +205,7 @@ class StudentRepository {
       // Full-text search on name fields
       if (filters?.search) {
         where[Op.or as unknown as keyof WhereOptions<StudentAttributes>] = [
-          { firstNameEn: { [Op.like]: `%${filters.search}%` } },
-          { lastNameEn: { [Op.like]: `%${filters.search}%` } },
-          { studentCode: { [Op.like]: `%${filters.search}%` } },
-          { email: { [Op.like]: `%${filters.search}%` } }
+          ...buildStudentSearchConditions(filters.search),
         ] as unknown as WhereOptions<StudentAttributes>[keyof WhereOptions<StudentAttributes>];
       }
 

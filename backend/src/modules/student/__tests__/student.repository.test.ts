@@ -359,6 +359,19 @@ describe('StudentRepository', () => {
       expect(students).toHaveLength(1);
       expect(students[0].studentCode).toBe('TEST-001');
     });
+
+    it('should match a full name across first and last name fields', async () => {
+      await studentRepository.create(createTestStudentData({
+        studentCode: 'TEST-FULL-NAME',
+        firstNameEn: 'Ram',
+        lastNameEn: 'Sharma',
+      }));
+
+      const { students } = await studentRepository.findAll({ search: 'Ram Sharma' });
+
+      expect(students).toHaveLength(1);
+      expect(students[0].studentCode).toBe('TEST-FULL-NAME');
+    });
   });
 
   describe('countByStatus', () => {
