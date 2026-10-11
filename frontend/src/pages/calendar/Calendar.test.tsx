@@ -17,6 +17,15 @@ import axios from 'axios';
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
+// Keep this page test independent of Vite's import.meta.env runtime syntax.
+jest.mock('../../services/apiClient', () => {
+  const mockedAxiosModule = jest.requireMock('axios');
+  return {
+    __esModule: true,
+    default: mockedAxiosModule.default || mockedAxiosModule,
+  };
+});
+
 // Mock i18next
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -37,13 +46,6 @@ const createMockStore = () => {
 describe('Calendar Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset DOM
-    document.body.innerHTML = '';
-  });
-
-  afterEach(() => {
-    // Cleanup
-    document.body.innerHTML = '';
   });
 
   const renderCalendar = () => {
@@ -77,6 +79,20 @@ describe('Calendar Component', () => {
     expect(screen.getByText('BS')).toBeInTheDocument();
     expect(screen.getByText('AD')).toBeInTheDocument();
   });
+
+  it('allows direct year selection from the calendar navigation', async () => {
+    mockedAxios.get.mockResolvedValue({
+      data: { success: true, data: [] },
+    });
+
+    renderCalendar();
+
+    const yearSelector = screen.getByRole('combobox', { name: 'Select year' });
+    fireEvent.mouseDown(yearSelector);
+    fireEvent.click(await screen.findByRole('option', { name: '2085' }));
+    expect(yearSelector).toHaveTextContent('2085');
+
+  }, 15000);
 
   it('should display view toggle buttons', () => {
     mockedAxios.get.mockResolvedValue({
