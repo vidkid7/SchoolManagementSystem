@@ -45,6 +45,7 @@ import * as createAssignmentsTable from '../migrations/20260315000001-create-ass
 import * as createAssignmentSubmissionsTable from '../migrations/20260315000002-create-assignment-submissions-table';
 import * as createLessonPlansTable from '../migrations/20260315000003-create-lesson-plans-table';
 import * as createSyllabusProgressTable from '../migrations/20260315000004-create-syllabus-progress-table';
+import * as ensureCalendarNotificationTables from '../migrations/20261011000001-ensure-calendar-notification-tables';
 
 /**
  * Migration Runner
@@ -254,6 +255,11 @@ const migrations: Migration[] = [
     name: '035-expand-encrypted-student-citizenship-columns',
     up: expandEncryptedStudentCitizenshipColumns.up,
     down: expandEncryptedStudentCitizenshipColumns.down
+  },
+  {
+    name: '20261011000001-ensure-calendar-notification-tables',
+    up: ensureCalendarNotificationTables.up,
+    down: ensureCalendarNotificationTables.down
   }
 ];
 
