@@ -1,5 +1,8 @@
 import { body, param, query } from 'express-validator';
 
+const blankToUndefined = (value: unknown): unknown =>
+  typeof value === 'string' && value.trim() === '' ? undefined : value;
+
 /**
  * Event Validation Rules
  * 
@@ -50,6 +53,7 @@ export const createEventValidation = [
     .withMessage('BS date must not exceed 10 characters'),
 
   body('endDate')
+    .customSanitizer(blankToUndefined)
     .optional()
     .isISO8601()
     .withMessage('End date must be a valid date'),
@@ -61,12 +65,14 @@ export const createEventValidation = [
     .withMessage('BS date must not exceed 10 characters'),
 
   body('startTime')
+    .customSanitizer(blankToUndefined)
     .optional()
     .trim()
     .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
     .withMessage('Start time must be in HH:mm format'),
 
   body('endTime')
+    .customSanitizer(blankToUndefined)
     .optional()
     .trim()
     .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
@@ -95,6 +101,7 @@ export const createEventValidation = [
     .withMessage('Invalid recurrence pattern'),
 
   body('recurrenceEndDate')
+    .customSanitizer(blankToUndefined)
     .optional()
     .isISO8601()
     .withMessage('Recurrence end date must be a valid date'),
@@ -190,6 +197,7 @@ export const updateEventValidation = [
     .withMessage('BS date must not exceed 10 characters'),
 
   body('endDate')
+    .customSanitizer(blankToUndefined)
     .optional()
     .isISO8601()
     .withMessage('End date must be a valid date'),
@@ -201,12 +209,14 @@ export const updateEventValidation = [
     .withMessage('BS date must not exceed 10 characters'),
 
   body('startTime')
+    .customSanitizer(blankToUndefined)
     .optional()
     .trim()
     .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
     .withMessage('Start time must be in HH:mm format'),
 
   body('endTime')
+    .customSanitizer(blankToUndefined)
     .optional()
     .trim()
     .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
@@ -235,6 +245,7 @@ export const updateEventValidation = [
     .withMessage('Invalid recurrence pattern'),
 
   body('recurrenceEndDate')
+    .customSanitizer(blankToUndefined)
     .optional()
     .isISO8601()
     .withMessage('Recurrence end date must be a valid date'),
