@@ -598,9 +598,6 @@ export const Login = () => {
                 <Button component={Link} to="/forgot-password" size="small" sx={{ textTransform: 'none' }}>
                   Forgot password?
                 </Button>
-                <Button component={Link} to="/register" size="small" sx={{ textTransform: 'none' }}>
-                  Register
-                </Button>
               </Box>
             </Box>
 

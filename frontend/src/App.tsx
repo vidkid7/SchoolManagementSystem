@@ -5,7 +5,7 @@
  */
 
 import React, { Suspense } from 'react';
-import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Provider, useSelector, useDispatch } from 'react-redux';
 import { CssBaseline, CircularProgress, Box, Typography, Button } from '@mui/material';
 import { store } from './store';
@@ -15,7 +15,6 @@ import { AccessibilityProvider, useAccessibility } from './contexts/Accessibilit
 import { Login } from './pages/Login';
 import { ForgotPassword } from './pages/auth/ForgotPassword';
 import { ResetPassword } from './pages/auth/ResetPassword';
-import { Register } from './pages/auth/Register';
 import { ChangePassword } from './pages/auth/ChangePassword';
 import { DashboardLayout } from './components/Layout/DashboardLayout';
 import { RoleBasedRedirect } from './components/RoleBasedRedirect';
@@ -239,7 +238,8 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            {/* Account provisioning is restricted to authenticated school admins. */}
+            <Route path="/register" element={<Navigate to="/login" replace />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
