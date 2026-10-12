@@ -48,6 +48,12 @@ interface Student {
   attendance_status?: 'present' | 'absent' | 'late' | 'excused';
 }
 
+interface ClassInfo {
+  classId: number;
+  gradeLevel: number;
+  section: string;
+}
+
 export const AttendanceMarking = () => {
   const theme = useTheme();
   const { t } = useTranslation();
@@ -56,12 +62,17 @@ export const AttendanceMarking = () => {
   const [selectedSection, setSelectedSection] = useState('');
   const [selectedPeriod, setSelectedPeriod] = useState('');
   const [students, setStudents] = useState<Student[]>([]);
-  const [classes, setClasses] = useState<any[]>([]);
+  const [classes, setClasses] = useState<ClassInfo[]>([]);
+  const [classesLoading, setClassesLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState('');
+  const gradeLevels = [...new Set(classes.map((cls) => cls.gradeLevel))].sort((a, b) => a - b);
+  const sections = [...new Set(classes
+    .filter((cls) => cls.gradeLevel.toString() === selectedClass)
+    .map((cls) => cls.section))].sort();
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -90,9 +101,16 @@ export const AttendanceMarking = () => {
     try {
       const response = await apiClient.get('/academic/classes');
       const classesData = response.data?.data || [];
-      setClasses(classesData);
+      setClasses(Array.isArray(classesData) ? classesData.map((row: Record<string, unknown>) => ({
+        classId: Number(row.classId ?? row.class_id ?? row.id),
+        gradeLevel: Number(row.gradeLevel ?? row.grade_level),
+        section: String(row.section ?? ''),
+      })).filter((row: ClassInfo) => Number.isFinite(row.classId) && Number.isFinite(row.gradeLevel) && row.section) : []);
     } catch (error) {
       console.error('Failed to fetch classes:', error);
+      setError(t('academic.failedToLoad'));
+    } finally {
+      setClassesLoading(false);
     }
   };
 
@@ -103,7 +121,7 @@ export const AttendanceMarking = () => {
       
       const response = await apiClient.get('/students', {
         params: {
-          classLevel: selectedClass,
+          class: selectedClass,
           section: selectedSection,
           status: 'active',
         },
@@ -162,10 +180,13 @@ export const AttendanceMarking = () => {
       setError('');
 
       if (isOnline) {
-        const selectedClassData = Array.isArray(classes) 
-          ? classes.find(c => c.classLevel?.toString() === selectedClass)
-          : null;
-        const classId = selectedClassData?.classId || parseInt(selectedClass);
+        const selectedClassData = classes.find((cls) =>
+          cls.gradeLevel.toString() === selectedClass && cls.section === selectedSection
+        );
+        if (!selectedClassData) {
+          setError(t('attendance.selectClassSectionPeriodError'));
+          return;
+        }
 
         const today = new Date();
         const dateISO = today.toISOString().split('T')[0] + 'T00:00:00.000Z';
@@ -173,7 +194,7 @@ export const AttendanceMarking = () => {
         const promises = students.map(student =>
           apiClient.post('/attendance/student/mark', {
             studentId: student.id,
-            classId: classId,
+            classId: selectedClassData.classId,
             date: dateISO,
             status: student.attendance_status,
             periodNumber: parseInt(selectedPeriod),
@@ -264,22 +285,16 @@ export const AttendanceMarking = () => {
                 label={t('common.class')}
                 onChange={(e) => {
                   setSelectedClass(e.target.value);
+                  setSelectedSection('');
                   setStudents([]);
                 }}
+                disabled={classesLoading || gradeLevels.length === 0}
               >
-                {classes.length > 0 ? (
-                  classes.map((cls) => (
-                    <MenuItem key={cls.classId} value={cls.classLevel?.toString() || cls.classId?.toString()}>
-                      {t('common.class')} {cls.classLevel || cls.classId} {cls.className ? `- ${cls.className}` : ''}
-                    </MenuItem>
-                  ))
-                ) : (
-                  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((cls) => (
-                    <MenuItem key={cls} value={cls.toString()}>
-                      {t('common.class')} {cls}
-                    </MenuItem>
-                  ))
-                )}
+                {gradeLevels.map((gradeLevel) => (
+                  <MenuItem key={gradeLevel} value={gradeLevel.toString()}>
+                    {t('common.class')} {gradeLevel}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Grid>
@@ -294,11 +309,13 @@ export const AttendanceMarking = () => {
                   setSelectedSection(e.target.value);
                   setStudents([]);
                 }}
+                disabled={!selectedClass || sections.length === 0}
               >
-                <MenuItem value="A">{t('common.section')} A</MenuItem>
-                <MenuItem value="B">{t('common.section')} B</MenuItem>
-                <MenuItem value="C">{t('common.section')} C</MenuItem>
-                <MenuItem value="D">{t('common.section')} D</MenuItem>
+                {sections.map((section) => (
+                  <MenuItem key={section} value={section}>
+                    {t('common.section')} {section}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Grid>
