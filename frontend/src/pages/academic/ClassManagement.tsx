@@ -86,14 +86,14 @@ interface Subject {
   id?: number;          // Model field name (fallback)
   subjectId?: number;   // Alternative model field name
   code: string;
-  name_en: string;
+  name_en?: string;
   nameEn?: string;
-  name_np: string;
+  name_np?: string;
   nameNp?: string;
   type: 'compulsory' | 'optional';
-  credit_hours: number;
+  credit_hours?: number;
   creditHours?: number;
-  full_marks: number;
+  full_marks?: number;
   fullMarks?: number;
 }
 
@@ -580,8 +580,8 @@ export const ClassManagement = () => {
                       <TableCell sx={S.TD}>
                         <Chip label={subject.code} size="small" variant="outlined" />
                       </TableCell>
-                      <TableCell sx={S.TD}>{subject.name_en}</TableCell>
-                      <TableCell sx={S.TD}>{subject.name_np}</TableCell>
+                      <TableCell sx={S.TD}>{subject.name_en ?? subject.nameEn ?? ''}</TableCell>
+                      <TableCell sx={S.TD}>{subject.name_np ?? subject.nameNp ?? ''}</TableCell>
                       <TableCell sx={S.TD}>
                         <Chip
                           label={subject.type === 'compulsory' ? t('academic.compulsory') : t('academic.optional')}
@@ -589,8 +589,8 @@ export const ClassManagement = () => {
                           size="small"
                         />
                       </TableCell>
-                      <TableCell sx={S.TD}>{subject.credit_hours}</TableCell>
-                      <TableCell sx={S.TD}>{subject.full_marks}</TableCell>
+                      <TableCell sx={S.TD}>{subject.credit_hours ?? subject.creditHours ?? ''}</TableCell>
+                      <TableCell sx={S.TD}>{subject.full_marks ?? subject.fullMarks ?? ''}</TableCell>
                       <TableCell align="right" sx={S.TD}>
                         <Button
                           size="small"
