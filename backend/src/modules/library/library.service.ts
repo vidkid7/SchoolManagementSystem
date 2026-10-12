@@ -138,8 +138,12 @@ export class LibraryService {
     const { count, rows } = await Circulation.findAndCountAll({
       where: whereClause,
       include: [
-        { model: Book, as: 'book' },
-        { model: Student, as: 'student' },
+        { model: Book, as: 'book', attributes: ['bookId', 'title', 'accessionNumber'] },
+        {
+          model: Student,
+          as: 'student',
+          attributes: ['studentId', 'studentCode', 'firstNameEn', 'middleNameEn', 'lastNameEn'],
+        },
       ],
       order: [['dueDate', 'DESC']],
       limit,

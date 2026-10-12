@@ -92,6 +92,11 @@ export class Circulation
   }
 
   public toJSON(): object {
+    const book = this.getDataValue('book' as keyof CirculationAttributes) as { toJSON?: () => Record<string, unknown> } | undefined;
+    const student = this.getDataValue('student' as keyof CirculationAttributes) as { toJSON?: () => Record<string, unknown> } | undefined;
+    const bookData = book?.toJSON ? book.toJSON() : book as unknown as Record<string, unknown> | undefined;
+    const studentData = student?.toJSON ? student.toJSON() : student as unknown as Record<string, unknown> | undefined;
+
     return {
       circulationId: this.circulationId,
       bookId: this.bookId,
@@ -114,6 +119,22 @@ export class Circulation
       canRenew: this.canRenew(),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
+      ...(bookData && {
+        book: {
+          bookId: bookData.bookId,
+          title: bookData.title,
+          accessionNumber: bookData.accessionNumber,
+        },
+      }),
+      ...(studentData && {
+        student: {
+          studentId: studentData.studentId,
+          studentCode: studentData.studentCode,
+          firstNameEn: studentData.firstNameEn,
+          middleNameEn: studentData.middleNameEn,
+          lastNameEn: studentData.lastNameEn,
+        },
+      }),
     };
   }
 }
