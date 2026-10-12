@@ -27,6 +27,7 @@ import {
   DialogContent,
   DialogActions,
   FormControl,
+  FormHelperText,
   InputLabel,
   Select,
   MenuItem,
@@ -87,7 +88,8 @@ interface StaffInfo {
 
 interface ClassInfo {
   classId: number;
-  className: string;
+  gradeLevel: number;
+  section: string;
 }
 
 interface SubjectInfo {
@@ -95,34 +97,6 @@ interface SubjectInfo {
   subjectName: string;
   subjectNameNp: string;
 }
-
-const CLASSES: ClassInfo[] = [
-  { classId: 1, className: 'Class 1' },
-  { classId: 2, className: 'Class 2' },
-  { classId: 3, className: 'Class 3' },
-  { classId: 4, className: 'Class 4' },
-  { classId: 5, className: 'Class 5' },
-  { classId: 6, className: 'Class 6' },
-  { classId: 7, className: 'Class 7' },
-  { classId: 8, className: 'Class 8' },
-  { classId: 9, className: 'Class 9' },
-  { classId: 10, className: 'Class 10' },
-  { classId: 11, className: 'Class 11' },
-  { classId: 12, className: 'Class 12' },
-];
-
-const SUBJECTS: SubjectInfo[] = [
-  { subjectId: 1, subjectName: 'Mathematics', subjectNameNp: 'गणित' },
-  { subjectId: 2, subjectName: 'Science', subjectNameNp: 'विज्ञान' },
-  { subjectId: 3, subjectName: 'English', subjectNameNp: 'अंग्रेजी' },
-  { subjectId: 4, subjectName: 'Nepali', subjectNameNp: 'नेपाली' },
-  { subjectId: 5, subjectName: 'Social Studies', subjectNameNp: 'सामाजिक अध्ययन' },
-  { subjectId: 6, subjectName: 'Computer Science', subjectNameNp: 'कम्प्युटर विज्ञान' },
-  { subjectId: 7, subjectName: 'Health', subjectNameNp: 'स्वास्थ्य' },
-  { subjectId: 8, subjectName: 'Physical Education', subjectNameNp: 'शारीरिक शिक्षा' },
-];
-
-const SECTIONS = ['A', 'B', 'C', 'D'];
 
 export const StaffAssignments = () => {
   const { t, i18n } = useTranslation();
@@ -134,6 +108,10 @@ export const StaffAssignments = () => {
 
   const [staff, setStaff] = useState<StaffInfo | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [classes, setClasses] = useState<ClassInfo[]>([]);
+  const [subjects, setSubjects] = useState<SubjectInfo[]>([]);
+  const [academicYearId, setAcademicYearId] = useState<number | null>(null);
+  const [optionsLoading, setOptionsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -150,7 +128,43 @@ export const StaffAssignments = () => {
 
   useEffect(() => {
     fetchStaffAndAssignments();
+    fetchAssignmentOptions();
   }, [id]);
+
+  const fetchAssignmentOptions = async () => {
+    try {
+      setOptionsLoading(true);
+      const [classesResponse, subjectsResponse, yearResponse] = await Promise.all([
+        apiClient.get('/academic/classes'),
+        apiClient.get('/academic/subjects'),
+        apiClient.get('/academic/years/current'),
+      ]);
+
+      const classRows = classesResponse.data?.data;
+      const subjectRows = subjectsResponse.data?.data;
+      const year = yearResponse.data?.data ?? yearResponse.data;
+      const yearId = Number(year?.academicYearId ?? year?.academic_year_id ?? year?.id);
+
+      setClasses(Array.isArray(classRows) ? classRows.map((row: Record<string, unknown>) => ({
+        classId: Number(row.classId ?? row.class_id ?? row.id),
+        gradeLevel: Number(row.gradeLevel ?? row.grade_level),
+        section: String(row.section ?? ''),
+      })).filter((row: ClassInfo) => Number.isFinite(row.classId) && Number.isFinite(row.gradeLevel) && row.section) : []);
+
+      setSubjects(Array.isArray(subjectRows) ? subjectRows.map((row: Record<string, unknown>) => ({
+        subjectId: Number(row.subjectId ?? row.subject_id ?? row.id),
+        subjectName: String(row.nameEn ?? row.name_en ?? row.subjectName ?? row.subject_name ?? ''),
+        subjectNameNp: String(row.nameNp ?? row.name_np ?? row.subjectNameNp ?? row.subject_name_np ?? ''),
+      })).filter((row: SubjectInfo) => Number.isFinite(row.subjectId) && row.subjectName) : []);
+
+      setAcademicYearId(Number.isFinite(yearId) && yearId > 0 ? yearId : null);
+    } catch (error) {
+      console.error('Failed to load assignment options:', error);
+      setError(t('academic.failedToLoad'));
+    } finally {
+      setOptionsLoading(false);
+    }
+  };
 
   const fetchStaffAndAssignments = async () => {
     try {
@@ -205,11 +219,19 @@ export const StaffAssignments = () => {
       setError(t('validation.required'));
       return;
     }
+    if (assignmentType === 'subject_teacher' && !selectedSubject) {
+      setError(t('validation.required'));
+      return;
+    }
+    if (!academicYearId) {
+      setError(t('academic.failedToLoad'));
+      return;
+    }
 
     try {
       const payload = {
         staffId: parseInt(id as string),
-        academicYearId: 1,
+        academicYearId,
         assignmentType,
         classId: parseInt(selectedClass),
         subjectId: selectedSubject ? parseInt(selectedSubject) : null,
@@ -277,14 +299,16 @@ export const StaffAssignments = () => {
 
   const getSubjectName = (subjectId: number | undefined) => {
     if (!subjectId) return '-';
-    const subject = SUBJECTS.find(s => s.subjectId === subjectId);
+    const subject = subjects.find((item) => item.subjectId === subjectId);
     return subject ? (isNepali ? subject.subjectNameNp : subject.subjectName) : `-`;
   };
 
   const getClassName = (classId: number | undefined) => {
     if (!classId) return '-';
-    const cls = CLASSES.find(c => c.classId === classId);
-    return cls ? cls.className : `Class ${classId}`;
+    const cls = classes.find((item) => item.classId === classId);
+    return cls
+      ? t('academic.classSection', { grade: cls.gradeLevel, section: cls.section })
+      : `Class ${classId}`;
   };
 
   if (loading) {
@@ -458,7 +482,7 @@ export const StaffAssignments = () => {
           <TableHead>
             <TableRow sx={{ bgcolor: S.TH_BG }}>
               <TableCell sx={{ fontWeight: 600 }}>{t('staff.form.assignmentType')}</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>{t('menu.students')}</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>{t('academic.class')}</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>{t('students.section')}</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>{t('examinations.subject')}</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>{t('staff.form.assignedDate')}</TableCell>
@@ -598,35 +622,24 @@ export const StaffAssignments = () => {
 
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
-                <InputLabel>{t('menu.students')}</InputLabel>
+                <InputLabel>{t('academic.class')}</InputLabel>
                 <Select
                   value={selectedClass}
-                  label={t('menu.students')}
-                  onChange={(e) => setSelectedClass(e.target.value)}
+                  label={t('academic.class')}
+                  onChange={(e) => {
+                    const classId = e.target.value;
+                    setSelectedClass(classId);
+                    setSelectedSection(classes.find((cls) => cls.classId.toString() === classId)?.section || '');
+                  }}
+                  disabled={optionsLoading || classes.length === 0}
                 >
-                  {CLASSES.map((cls) => (
+                  {classes.map((cls) => (
                     <MenuItem key={cls.classId} value={cls.classId.toString()}>
-                      {cls.className}
+                      {t('academic.classSection', { grade: cls.gradeLevel, section: cls.section })}
                     </MenuItem>
                   ))}
                 </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>{t('students.section')}</InputLabel>
-                <Select
-                  value={selectedSection}
-                  label={t('students.section')}
-                  onChange={(e) => setSelectedSection(e.target.value)}
-                >
-                  {SECTIONS.map((section) => (
-                    <MenuItem key={section} value={section}>
-                      Section {section}
-                    </MenuItem>
-                  ))}
-                </Select>
+                <FormHelperText>{optionsLoading ? t('common.loading') : undefined}</FormHelperText>
               </FormControl>
             </Grid>
 
@@ -638,8 +651,9 @@ export const StaffAssignments = () => {
                     value={selectedSubject}
                     label={t('examinations.subject')}
                     onChange={(e) => setSelectedSubject(e.target.value)}
+                    disabled={optionsLoading || subjects.length === 0}
                   >
-                    {SUBJECTS.map((subject) => (
+                    {subjects.map((subject) => (
                       <MenuItem key={subject.subjectId} value={subject.subjectId.toString()}>
                         {isNepali ? subject.subjectNameNp : subject.subjectName}
                       </MenuItem>
