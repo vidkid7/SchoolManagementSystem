@@ -185,12 +185,12 @@ export function ECAList() {
   };
 
   useEffect(() => {
-    if (searchParams.get('action') !== 'create' || !formMetadataLoaded) return;
+    if (searchParams.get('action') !== 'create') return;
     const nextParams = new URLSearchParams(searchParams);
     nextParams.delete('action');
     setSearchParams(nextParams, { replace: true });
     handleOpenDialog();
-  }, [searchParams, setSearchParams, formMetadataLoaded]);
+  }, [searchParams, setSearchParams]);
 
   const handleSubmit = async () => {
     try {
