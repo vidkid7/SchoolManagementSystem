@@ -159,7 +159,7 @@ if (statsRes.data?.data) {
             <Button
               variant="contained" sx={{ ...S.BTN_PRIMARY, flex: { xs: '1 1 100%', sm: '0 0 auto' } }}
               startIcon={<AddIcon />}
-              onClick={() => navigate(`/finance/fee-structures/new`)}
+              onClick={() => navigate(`/finance/fee-structures`)}
               fullWidth={false}
             >
               {t('finance.newFeeStructure')}
