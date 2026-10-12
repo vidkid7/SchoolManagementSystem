@@ -89,7 +89,7 @@ export function CustomizeDashboardMenu({ layout }: CustomizeDashboardMenuProps) 
             onClick={layout.hideAll}
             className="dashboard-customize-popover__action"
           >
-            Minimize
+            Hide all
           </Button>
           <Button
             size="small"
