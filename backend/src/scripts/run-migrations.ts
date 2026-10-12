@@ -51,6 +51,7 @@ import * as reconcileStaffSchema from '../migrations/20261011000003-reconcile-st
 import * as ensureEcaSportsTables from '../migrations/20261011000004-ensure-eca-sports-tables';
 import * as widenStaffEmergencyContact from '../migrations/20261012000001-widen-staff-emergency-contact';
 import * as ensureLibraryTables from '../migrations/20261012000002-ensure-library-tables';
+import * as ensureReservationWorkflowColumns from '../migrations/20261012000003-ensure-reservation-workflow-columns';
 
 /**
  * Migration Runner
@@ -290,6 +291,11 @@ const migrations: Migration[] = [
     name: '20261012000002-ensure-library-tables',
     up: (queryInterface) => ensureLibraryTables.up(queryInterface, sequelize),
     down: (queryInterface) => ensureLibraryTables.down(queryInterface, sequelize)
+  },
+  {
+    name: '20261012000003-ensure-reservation-workflow-columns',
+    up: (queryInterface) => ensureReservationWorkflowColumns.up(queryInterface, sequelize),
+    down: (queryInterface) => ensureReservationWorkflowColumns.down(queryInterface, sequelize)
   }
 ];
 
