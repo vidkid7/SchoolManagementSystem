@@ -44,6 +44,7 @@ import {
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import apiClient from '../../services/apiClient';
+import { toNepalDateOnly } from './staffDateUtils';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { motion } from 'framer-motion';
 
@@ -207,7 +208,7 @@ export const StaffForm = () => {
         department: normalizeValue(data.department) || 'academic',
         qualification: data.highestQualification || '',
         specialization: data.specialization || '',
-        joining_date_bs: data.joinDate ? String(data.joinDate).slice(0, 10) : '',
+        joining_date_bs: toNepalDateOnly(data.joinDate),
         contact_number: data.phone || '',
         email: data.email || '',
         address: address,

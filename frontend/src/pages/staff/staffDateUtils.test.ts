@@ -1,0 +1,15 @@
+import { toNepalDateOnly } from './staffDateUtils';
+
+describe('toNepalDateOnly', () => {
+  it('keeps date-only values unchanged', () => {
+    expect(toNepalDateOnly('2083-06-26')).toBe('2083-06-26');
+  });
+
+  it('converts UTC timestamps to the correct Nepal calendar date', () => {
+    expect(toNepalDateOnly('2083-06-25T18:15:00.000Z')).toBe('2083-06-26');
+  });
+
+  it('returns an empty value for invalid dates', () => {
+    expect(toNepalDateOnly('not-a-date')).toBe('');
+  });
+});

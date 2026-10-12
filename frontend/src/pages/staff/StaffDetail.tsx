@@ -47,6 +47,7 @@ import {
   Badge as BadgeIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { toNepalDateOnly } from './staffDateUtils';
 import { motion } from 'framer-motion';
 import StaffDocuments from './StaffDocuments';
 import { C, useAdminStyles } from '../../theme/designTokens';
@@ -192,7 +193,7 @@ export const StaffDetail = () => {
       setStaff({
         ...data,
         dateOfBirthBs: data.dateOfBirthBS || data.dateOfBirthBs,
-        joiningDateBs: data.joinDate ? String(data.joinDate).slice(0, 10) : data.joiningDateBs,
+        joiningDateBs: data.joinDate ? toNepalDateOnly(data.joinDate) : data.joiningDateBs,
         qualification: data.highestQualification || data.qualification,
         address: addressParts.length > 2 ? addressParts.slice(0, -2).join(', ') : addressParts[0] || '',
         city: addressParts.length > 1 ? addressParts[addressParts.length - 2] : '',
