@@ -24,6 +24,7 @@ import Grade from './Grade.model';
 import { Subject, ClassSubject } from './Subject.model';
 import Book from './Book.model';
 import Circulation from './Circulation.model';
+import Reservation from './Reservation.model';
 import Sport from './Sport.model';
 import Team from './Team.model';
 import Tournament from './Tournament.model';
@@ -417,12 +418,12 @@ export function setupGradeAssociations(): void {
 export function setupLibraryAssociations(): void {
   try {
     // Check if models are initialized
-    if (!Book || !Circulation || !Student) {
+    if (!Book || !Circulation || !Reservation || !Student) {
       return;
     }
 
     // Verify sequelize instance exists
-    if (!Book.sequelize || !Circulation.sequelize || !Student.sequelize) {
+    if (!Book.sequelize || !Circulation.sequelize || !Reservation.sequelize || !Student.sequelize) {
       return;
     }
 
@@ -448,6 +449,23 @@ export function setupLibraryAssociations(): void {
     Student.hasMany(Circulation, {
       foreignKey: 'studentId',
       as: 'circulations'
+    });
+
+    Reservation.belongsTo(Book, {
+      foreignKey: 'bookId',
+      as: 'book'
+    });
+    Reservation.belongsTo(Student, {
+      foreignKey: 'studentId',
+      as: 'student'
+    });
+    Book.hasMany(Reservation, {
+      foreignKey: 'bookId',
+      as: 'reservations'
+    });
+    Student.hasMany(Reservation, {
+      foreignKey: 'studentId',
+      as: 'reservations'
     });
   } catch (error) {
     // Silently skip if models aren't ready

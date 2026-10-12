@@ -74,23 +74,43 @@ export class Reservation
   }
 
   public toJSON(): object {
+    const values = this.get({ plain: true }) as ReservationAttributes & {
+      book?: { bookId: number; title: string; accessionNumber: string };
+      student?: { studentId: number; studentCode: string; firstNameEn?: string; middleNameEn?: string; lastNameEn?: string };
+    };
     return {
-      reservationId: this.reservationId,
-      bookId: this.bookId,
-      studentId: this.studentId,
-      reservationDate: this.reservationDate,
-      expiryDate: this.expiryDate,
-      status: this.status,
-      notificationSent: this.notificationSent,
-      fulfilledDate: this.fulfilledDate,
-      cancelledDate: this.cancelledDate,
-      cancelReason: this.cancelReason,
-      cancelledBy: this.cancelledBy,
-      availableDate: this.availableDate,
-      queuePosition: this.queuePosition,
+      reservationId: values.reservationId,
+      bookId: values.bookId,
+      studentId: values.studentId,
+      reservationDate: values.reservationDate,
+      expiryDate: values.expiryDate,
+      status: values.status,
+      notificationSent: values.notificationSent,
+      fulfilledDate: values.fulfilledDate,
+      cancelledDate: values.cancelledDate,
+      cancelReason: values.cancelReason,
+      cancelledBy: values.cancelledBy,
+      availableDate: values.availableDate,
+      queuePosition: values.queuePosition,
       isExpired: this.isExpired(),
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
+      createdAt: values.createdAt,
+      updatedAt: values.updatedAt,
+      ...(values.book && {
+        book: {
+          bookId: values.book.bookId,
+          title: values.book.title,
+          accessionNumber: values.book.accessionNumber,
+        },
+      }),
+      ...(values.student && {
+        student: {
+          studentId: values.student.studentId,
+          studentCode: values.student.studentCode,
+          firstNameEn: values.student.firstNameEn,
+          middleNameEn: values.student.middleNameEn,
+          lastNameEn: values.student.lastNameEn,
+        },
+      }),
     };
   }
 }

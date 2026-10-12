@@ -214,7 +214,10 @@ export class ReservationService {
    */
   getReservationById(reservationId: number): Promise<Reservation | null> {
     return Reservation.findByPk(reservationId, {
-      include: [Book, Student],
+      include: [
+        { model: Book, as: 'book', attributes: ['bookId', 'title', 'accessionNumber'] },
+        { model: Student, as: 'student', attributes: ['studentId', 'studentCode', 'firstNameEn', 'middleNameEn', 'lastNameEn'] },
+      ],
     });
   }
 
@@ -229,7 +232,7 @@ export class ReservationService {
 
     return Reservation.findAll({
       where: whereClause,
-      include: [Book],
+      include: [{ model: Book, as: 'book', attributes: ['bookId', 'title', 'accessionNumber'] }],
       order: [['reservationDate', 'DESC']],
     });
   }
@@ -243,7 +246,7 @@ export class ReservationService {
         studentId,
         status: { [Op.in]: ['pending', 'available'] },
       },
-      include: [Book],
+      include: [{ model: Book, as: 'book', attributes: ['bookId', 'title', 'accessionNumber'] }],
       order: [['reservationDate', 'ASC']],
     });
   }
@@ -259,7 +262,10 @@ export class ReservationService {
 
     return Reservation.findAll({
       where: whereClause,
-      include: [Student],
+      include: [
+        { model: Book, as: 'book', attributes: ['bookId', 'title', 'accessionNumber'] },
+        { model: Student, as: 'student', attributes: ['studentId', 'studentCode', 'firstNameEn', 'middleNameEn', 'lastNameEn'] },
+      ],
       order: [['queuePosition', 'ASC']],
     });
   }

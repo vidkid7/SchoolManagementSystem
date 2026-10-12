@@ -42,6 +42,7 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { createIssueBookPayload } from './issueBookPayload';
+import { createReserveBookPayload } from './reserveBookPayload';
 import { CirculationRow as Circulation, normalizeCirculation } from './circulationRow';
 
 interface BookOption {
@@ -115,9 +116,19 @@ export function BookCirculation() {
   // Reservations
   const [reservations, setReservations] = useState<any[]>([]);
   const [reservationBookId, setReservationBookId] = useState('');
+  const [reservationBooks, setReservationBooks] = useState<BookOption[]>([]);
+  const [reservationBookSearch, setReservationBookSearch] = useState('');
   const [reservationsLoading, setReservationsLoading] = useState(false);
   const [reserveDialog, setReserveDialog] = useState(false);
   const [reserveForm, setReserveForm] = useState({ bookId: '', studentId: '' });
+  const [reserveBookOptions, setReserveBookOptions] = useState<BookOption[]>([]);
+  const [reserveStudentOptions, setReserveStudentOptions] = useState<StudentOption[]>([]);
+  const [reserveBookSearch, setReserveBookSearch] = useState('');
+  const [reserveStudentSearch, setReserveStudentSearch] = useState('');
+  const [selectedReserveBook, setSelectedReserveBook] = useState<BookOption | null>(null);
+  const [selectedReserveStudent, setSelectedReserveStudent] = useState<StudentOption | null>(null);
+  const [reserveBooksLoading, setReserveBooksLoading] = useState(false);
+  const [reserveStudentsLoading, setReserveStudentsLoading] = useState(false);
 
   // Fines by student
   const [finesStudentId, setFinesStudentId] = useState('');
@@ -175,6 +186,58 @@ export function BookCirculation() {
       window.clearTimeout(timer);
     };
   }, [issueDialog, issueStudentSearch]);
+
+  useEffect(() => {
+    if (!reserveDialog && tabValue !== 3) return;
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      if (reserveDialog) setReserveBooksLoading(true);
+      try {
+        const response = await apiClient.get('/library/books', {
+          params: { search: reservationBookSearch || undefined, page: 1, limit: 20 },
+        });
+        const data = response.data?.data;
+        const books: BookOption[] = Array.isArray(data) ? data : data?.books || [];
+        if (!cancelled) {
+          setReservationBooks(books);
+          setReserveBookOptions(books);
+        }
+      } catch {
+        if (!cancelled) {
+          setReservationBooks([]);
+          setReserveBookOptions([]);
+        }
+      } finally {
+        if (!cancelled && reserveDialog) setReserveBooksLoading(false);
+      }
+    }, 200);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [reserveDialog, tabValue, reservationBookSearch]);
+
+  useEffect(() => {
+    if (!reserveDialog) return;
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setReserveStudentsLoading(true);
+      try {
+        const response = await apiClient.get('/api/v1/students', {
+          params: { search: reserveStudentSearch || undefined, page: 1, limit: 20 },
+        });
+        if (!cancelled) setReserveStudentOptions(Array.isArray(response.data?.data) ? response.data.data : []);
+      } catch {
+        if (!cancelled) setReserveStudentOptions([]);
+      } finally {
+        if (!cancelled) setReserveStudentsLoading(false);
+      }
+    }, 200);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [reserveDialog, reserveStudentSearch]);
 
   const fetchCirculations = async () => {
     try {
@@ -285,16 +348,17 @@ export function BookCirculation() {
   const handleReserveBook = async () => {
     try {
       await apiClient.post('/library/reserve', {
-        bookId: parseInt(reserveForm.bookId, 10),
-        studentId: parseInt(reserveForm.studentId, 10),
+        ...createReserveBookPayload(selectedReserveBook!, selectedReserveStudent!),
       });
       setSuccess(t('library.bookReservedSuccess'));
       setReserveDialog(false);
       setReserveForm({ bookId: '', studentId: '' });
+      setSelectedReserveBook(null);
+      setSelectedReserveStudent(null);
       if (reservationBookId) fetchReservations();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || t('library.failedToReserveBook'));
+      setError(err.response?.data?.error || err.response?.data?.message || t('library.failedToReserveBook'));
     }
   };
 
@@ -350,7 +414,15 @@ export function BookCirculation() {
             <Button
               variant="outlined" sx={S.BTN_OUTLINE}
               startIcon={<ReserveIcon />}
-              onClick={() => setReserveDialog(true)}
+              onClick={() => {
+                setError('');
+                setReserveForm({ bookId: '', studentId: '' });
+                setSelectedReserveBook(null);
+                setSelectedReserveStudent(null);
+                setReserveBookSearch('');
+                setReserveStudentSearch('');
+                setReserveDialog(true);
+              }}
             >
               {t('library.reserveBook')}
             </Button>
@@ -566,13 +638,24 @@ export function BookCirculation() {
 
         <TabPanel value={tabValue} index={3}>
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
-            <TextField
+            <Autocomplete
               size="small"
-              label={t('library.bookId')}
-              value={reservationBookId}
-              onChange={(e) => setReservationBookId(e.target.value)}
-              placeholder={t('library.enterBookId')}
-              sx={{ width: 160 }}
+              options={reservationBooks}
+              value={reservationBooks.find((book) => book.bookId === Number(reservationBookId)) ?? null}
+              inputValue={reservationBookSearch}
+              loading={reserveBooksLoading}
+              getOptionLabel={(book) => `${book.title} (${book.accessionNumber})`}
+              isOptionEqualToValue={(option, value) => option.bookId === value.bookId}
+              onInputChange={(_, value, reason) => {
+                setReservationBookSearch(value);
+                if (reason === 'input' || reason === 'clear') setReservationBookId('');
+              }}
+              onChange={(_, book) => {
+                setReservationBookId(book ? String(book.bookId) : '');
+                setReservationBookSearch(book ? `${book.title} (${book.accessionNumber})` : '');
+              }}
+              renderInput={(params) => <TextField {...params} label={t('library.book')} />}
+              sx={{ width: 360 }}
             />
             <Button variant="contained" sx={S.BTN_PRIMARY} onClick={fetchReservations} disabled={!reservationBookId || reservationsLoading}>
               {t('library.loadReservations')}
@@ -599,8 +682,8 @@ export function BookCirculation() {
                   reservations.map((r: any) => (
                     <TableRow key={r.reservationId ?? r.id} sx={S.TR_HOVER}>
                       <TableCell sx={S.TD}>{r.reservationId ?? r.id}</TableCell>
-                      <TableCell sx={S.TD}>{r.Book?.title ?? r.bookTitle ?? r.bookId}</TableCell>
-                      <TableCell sx={S.TD}>{r.Student ? `${r.Student.firstNameEn ?? ''} ${r.Student.lastNameEn ?? ''}`.trim() : r.studentId}</TableCell>
+                      <TableCell sx={S.TD}>{r.book?.title ?? r.Book?.title ?? r.bookTitle ?? r.bookId}</TableCell>
+                      <TableCell sx={S.TD}>{r.student ? `${r.student.firstNameEn ?? ''} ${r.student.lastNameEn ?? ''}`.trim() : r.Student ? `${r.Student.firstNameEn ?? ''} ${r.Student.lastNameEn ?? ''}`.trim() : r.studentId}</TableCell>
                       <TableCell sx={S.TD}><Chip label={r.status ?? 'pending'} size="small" /></TableCell>
                       <TableCell sx={S.TD}>{r.reservationDate ? new Date(r.reservationDate).toLocaleDateString() : '-'}</TableCell>
                       <TableCell align="center" sx={S.TD}>
@@ -783,30 +866,55 @@ export function BookCirculation() {
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
-              <TextField
-                label={t('library.bookId')}
-                value={reserveForm.bookId}
-                onChange={(e) => setReserveForm({ ...reserveForm, bookId: e.target.value })}
-                required
-                fullWidth
-                type="number"
+              <Autocomplete
+                options={reserveBookOptions.filter((book) => Number(book.availableCopies) <= 0)}
+                value={selectedReserveBook}
+                inputValue={reserveBookSearch}
+                loading={reserveBooksLoading}
+                getOptionLabel={(book) => `${book.title} (${book.accessionNumber})`}
+                isOptionEqualToValue={(option, value) => option.bookId === value.bookId}
+                onInputChange={(_, value, reason) => {
+                  setReserveBookSearch(value);
+                  if (reason === 'input' || reason === 'clear') {
+                    setSelectedReserveBook(null);
+                    setReserveForm((prev) => ({ ...prev, bookId: '' }));
+                  }
+                }}
+                onChange={(_, book) => {
+                  setSelectedReserveBook(book);
+                  setReserveForm((prev) => ({ ...prev, bookId: book ? String(book.bookId) : '' }));
+                }}
+                noOptionsText={reserveBooksLoading ? t('library.loading') : 'No unavailable books found'}
+                renderInput={(params) => <TextField {...params} label={t('library.book')} required />}
               />
             </Grid>
             <Grid item xs={12}>
-              <TextField
-                label={t('library.studentId')}
-                value={reserveForm.studentId}
-                onChange={(e) => setReserveForm({ ...reserveForm, studentId: e.target.value })}
-                required
-                fullWidth
-                type="number"
+              <Autocomplete
+                options={reserveStudentOptions}
+                value={selectedReserveStudent}
+                inputValue={reserveStudentSearch}
+                loading={reserveStudentsLoading}
+                getOptionLabel={(student) => `${[student.firstNameEn, student.lastNameEn].filter(Boolean).join(' ')} (${student.studentCode})`}
+                isOptionEqualToValue={(option, value) => option.studentId === value.studentId}
+                onInputChange={(_, value, reason) => {
+                  setReserveStudentSearch(value);
+                  if (reason === 'input' || reason === 'clear') {
+                    setSelectedReserveStudent(null);
+                    setReserveForm((prev) => ({ ...prev, studentId: '' }));
+                  }
+                }}
+                onChange={(_, student) => {
+                  setSelectedReserveStudent(student);
+                  setReserveForm((prev) => ({ ...prev, studentId: student ? String(student.studentId) : '' }));
+                }}
+                renderInput={(params) => <TextField {...params} label={t('library.student')} required />}
               />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setReserveDialog(false)}>{t('library.cancel')}</Button>
-          <Button onClick={handleReserveBook} variant="contained" sx={S.BTN_PRIMARY} disabled={!reserveForm.bookId || !reserveForm.studentId}>
+          <Button onClick={handleReserveBook} variant="contained" sx={S.BTN_PRIMARY} disabled={!selectedReserveBook || !selectedReserveStudent}>
             {t('library.reserveBook')}
           </Button>
         </DialogActions>
