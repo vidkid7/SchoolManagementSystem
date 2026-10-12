@@ -60,6 +60,7 @@ import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import { apiClient } from '../../services/apiClient';
 import { motion } from 'framer-motion';
 import { useNepaliNumbers } from '../../hooks/useNepaliNumbers';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { C, useAdminStyles } from '../../theme/designTokens';
 
 const MotionCard = motion.create(Card);
@@ -112,6 +113,7 @@ export const StudentList = () => {
   
   // Filters
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search);
   const [classFilter, setClassFilter] = useState('');
   const [sectionFilter, setSectionFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -121,20 +123,20 @@ export const StudentList = () => {
   const [fuzzyResults, setFuzzyResults] = useState<FuzzySearchResult[]>([]);
 
   useEffect(() => {
-    if (searchMode === 'fuzzy' && search) {
-      performFuzzySearch();
+    if (searchMode === 'fuzzy' && debouncedSearch) {
+      performFuzzySearch(debouncedSearch);
     } else {
-      fetchStudents();
+      fetchStudents(debouncedSearch);
     }
-  }, [page, rowsPerPage, search, classFilter, sectionFilter, statusFilter, searchMode]);
+  }, [page, rowsPerPage, debouncedSearch, classFilter, sectionFilter, statusFilter, searchMode]);
 
-  const fetchStudents = async () => {
+  const fetchStudents = async (searchTerm: string) => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
         page: (page + 1).toString(),
         limit: rowsPerPage.toString(),
-        ...(search && { search }),
+        ...(searchTerm && { search: searchTerm }),
         ...(classFilter && { class: classFilter }),
         ...(sectionFilter && { section: sectionFilter }),
         ...(statusFilter && { status: statusFilter }),
@@ -151,11 +153,11 @@ export const StudentList = () => {
     }
   };
 
-  const performFuzzySearch = async () => {
+  const performFuzzySearch = async (searchTerm: string) => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
-        query: search,
+        query: searchTerm,
         threshold: '0.4',
         limit: '50',
       });
@@ -293,7 +295,7 @@ export const StudentList = () => {
               <Tooltip title={t('common.refresh')}>
                 <span>
                 <IconButton
-                  onClick={() => fetchStudents()}
+                  onClick={() => fetchStudents(debouncedSearch)}
                   disabled={loading}
                   sx={{
                     background: isDark
