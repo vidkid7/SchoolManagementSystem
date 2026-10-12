@@ -48,6 +48,7 @@ import * as createSyllabusProgressTable from '../migrations/20260315000004-creat
 import * as ensureCalendarNotificationTables from '../migrations/20261011000001-ensure-calendar-notification-tables';
 import * as ensureAdmissionsTable from '../migrations/20261011000002-ensure-admissions-table';
 import * as reconcileStaffSchema from '../migrations/20261011000003-reconcile-staff-schema';
+import * as ensureEcaSportsTables from '../migrations/20261011000004-ensure-eca-sports-tables';
 
 /**
  * Migration Runner
@@ -272,6 +273,11 @@ const migrations: Migration[] = [
     name: '20261011000003-reconcile-staff-schema',
     up: reconcileStaffSchema.up,
     down: reconcileStaffSchema.down
+  },
+  {
+    name: '20261011000004-ensure-eca-sports-tables',
+    up: (queryInterface) => ensureEcaSportsTables.up(queryInterface, sequelize),
+    down: (queryInterface) => ensureEcaSportsTables.down(queryInterface, sequelize)
   }
 ];
 
