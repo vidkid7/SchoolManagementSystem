@@ -17,7 +17,7 @@ export interface BookAttributes {
   titleNp?: string;
   author: string;
   authorNp?: string;
-  publisher: string;
+  publisher?: string;
   publicationYear?: number;
   category: string;
   subcategory?: string;
@@ -44,32 +44,32 @@ export class Book
   extends Model<BookAttributes, BookCreationAttributes>
   implements BookAttributes
 {
-  public bookId!: number;
-  public accessionNumber!: string;
-  public isbn!: string;
-  public title!: string;
-  public titleNp?: string;
-  public author!: string;
-  public authorNp?: string;
-  public publisher!: string;
-  public publicationYear?: number;
-  public category!: string;
-  public subcategory?: string;
-  public language!: string;
-  public edition?: string;
-  public pages?: number;
-  public price?: number;
-  public copies!: number;
-  public availableCopies!: number;
-  public location?: string;
-  public shelfNumber?: string;
-  public barcode?: string;
-  public coverImage?: string;
-  public description?: string;
-  public keywords?: string[];
-  public status!: 'available' | 'borrowed' | 'lost' | 'damaged' | 'withdrawn';
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public bookId: number;
+  declare public accessionNumber: string;
+  declare public isbn: string;
+  declare public title: string;
+  declare public titleNp?: string;
+  declare public author: string;
+  declare public authorNp?: string;
+  declare public publisher?: string;
+  declare public publicationYear?: number;
+  declare public category: string;
+  declare public subcategory?: string;
+  declare public language: string;
+  declare public edition?: string;
+  declare public pages?: number;
+  declare public price?: number;
+  declare public copies: number;
+  declare public availableCopies: number;
+  declare public location?: string;
+  declare public shelfNumber?: string;
+  declare public barcode?: string;
+  declare public coverImage?: string;
+  declare public description?: string;
+  declare public keywords?: string[];
+  declare public status: 'available' | 'borrowed' | 'lost' | 'damaged' | 'withdrawn';
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   public async decrementAvailableCopies(): Promise<void> {
     const availableCopies = Number(this.getDataValue('availableCopies') ?? 0);
@@ -143,7 +143,7 @@ Book.init(
     },
     publisher: {
       type: DataTypes.STRING(255),
-      allowNull: false,
+      allowNull: true,
     },
     publicationYear: {
       type: DataTypes.INTEGER,

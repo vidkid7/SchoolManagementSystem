@@ -198,7 +198,11 @@ export function BookCatalog() {
       fetchBooks();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || t('library.failedToSaveBook'));
+      const responseData = err.response?.data;
+      const fieldMessages = Array.isArray(responseData?.errors)
+        ? responseData.errors.map((item: { message?: string }) => item.message).filter(Boolean)
+        : [];
+      setError(fieldMessages.length ? fieldMessages.join(' ') : responseData?.message || t('library.failedToSaveBook'));
     }
   };
 

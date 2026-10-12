@@ -33,21 +33,21 @@ export class Reservation
   extends Model<ReservationAttributes, ReservationCreationAttributes>
   implements ReservationAttributes
 {
-  public reservationId!: number;
-  public bookId!: number;
-  public studentId!: number;
-  public reservationDate!: Date;
-  public expiryDate!: Date;
-  public status!: 'pending' | 'available' | 'fulfilled' | 'expired' | 'cancelled';
-  public notificationSent!: boolean;
-  public fulfilledDate?: Date;
-  public cancelledDate?: Date;
-  public cancelReason?: string;
-  public cancelledBy?: number;
-  public availableDate?: Date;
-  public queuePosition?: number;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public reservationId: number;
+  declare public bookId: number;
+  declare public studentId: number;
+  declare public reservationDate: Date;
+  declare public expiryDate: Date;
+  declare public status: 'pending' | 'available' | 'fulfilled' | 'expired' | 'cancelled';
+  declare public notificationSent: boolean;
+  declare public fulfilledDate?: Date;
+  declare public cancelledDate?: Date;
+  declare public cancelReason?: string;
+  declare public cancelledBy?: number;
+  declare public availableDate?: Date;
+  declare public queuePosition?: number;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   public isExpired(): boolean {
     return new Date() > this.expiryDate && this.status === 'pending';

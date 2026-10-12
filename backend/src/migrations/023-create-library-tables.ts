@@ -138,7 +138,7 @@ export async function up(queryInterface: QueryInterface, _sequelize: Sequelize):
       primaryKey: true,
     },
     book_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
       references: {
         model: 'books',
@@ -239,7 +239,7 @@ export async function up(queryInterface: QueryInterface, _sequelize: Sequelize):
       primaryKey: true,
     },
     book_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
       references: {
         model: 'books',

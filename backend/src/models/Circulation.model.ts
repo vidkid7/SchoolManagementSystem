@@ -35,24 +35,24 @@ export class Circulation
   extends Model<CirculationAttributes, CirculationCreationAttributes>
   implements CirculationAttributes
 {
-  public circulationId!: number;
-  public bookId!: number;
-  public studentId!: number;
-  public issueDate!: Date;
-  public dueDate!: Date;
-  public returnDate?: Date;
-  public status!: 'borrowed' | 'returned' | 'overdue' | 'lost' | 'renewed';
-  public renewalCount!: number;
-  public maxRenewals!: number;
-  public issuedBy!: number;
-  public returnedBy?: number;
-  public conditionOnIssue!: 'good' | 'damaged' | 'poor';
-  public conditionOnReturn?: 'good' | 'damaged' | 'poor';
-  public fine!: number;
-  public finePaid!: boolean;
-  public remarks?: string;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public circulationId: number;
+  declare public bookId: number;
+  declare public studentId: number;
+  declare public issueDate: Date;
+  declare public dueDate: Date;
+  declare public returnDate?: Date;
+  declare public status: 'borrowed' | 'returned' | 'overdue' | 'lost' | 'renewed';
+  declare public renewalCount: number;
+  declare public maxRenewals: number;
+  declare public issuedBy: number;
+  declare public returnedBy?: number;
+  declare public conditionOnIssue: 'good' | 'damaged' | 'poor';
+  declare public conditionOnReturn?: 'good' | 'damaged' | 'poor';
+  declare public fine: number;
+  declare public finePaid: boolean;
+  declare public remarks?: string;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   public isOverdue(): boolean {
     if (this.status === 'returned' || this.status === 'lost') {

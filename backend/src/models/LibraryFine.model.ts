@@ -37,26 +37,26 @@ export class LibraryFine
   extends Model<LibraryFineAttributes, LibraryFineCreationAttributes>
   implements LibraryFineAttributes
 {
-  public fineId!: number;
-  public circulationId!: number;
-  public studentId!: number;
-  public fineAmount!: number;
-  public paidAmount!: number;
-  public balance!: number;
-  public fineReason!: 'overdue' | 'lost' | 'damaged';
-  public daysOverdue?: number;
-  public dailyRate?: number;
-  public status!: 'pending' | 'partial' | 'paid' | 'waived';
-  public waivedAmount?: number;
-  public waivedBy?: number;
-  public waivedReason?: string;
-  public waivedDate?: Date;
-  public paidDate?: Date;
-  public paymentMethod?: string;
-  public transactionId?: string;
-  public remarks?: string;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public fineId: number;
+  declare public circulationId: number;
+  declare public studentId: number;
+  declare public fineAmount: number;
+  declare public paidAmount: number;
+  declare public balance: number;
+  declare public fineReason: 'overdue' | 'lost' | 'damaged';
+  declare public daysOverdue?: number;
+  declare public dailyRate?: number;
+  declare public status: 'pending' | 'partial' | 'paid' | 'waived';
+  declare public waivedAmount?: number;
+  declare public waivedBy?: number;
+  declare public waivedReason?: string;
+  declare public waivedDate?: Date;
+  declare public paidDate?: Date;
+  declare public paymentMethod?: string;
+  declare public transactionId?: string;
+  declare public remarks?: string;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   public async recordPayment(amount: number, method: string, transactionId?: string): Promise<void> {
     if (amount <= 0) {

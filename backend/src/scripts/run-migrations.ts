@@ -50,6 +50,7 @@ import * as ensureAdmissionsTable from '../migrations/20261011000002-ensure-admi
 import * as reconcileStaffSchema from '../migrations/20261011000003-reconcile-staff-schema';
 import * as ensureEcaSportsTables from '../migrations/20261011000004-ensure-eca-sports-tables';
 import * as widenStaffEmergencyContact from '../migrations/20261012000001-widen-staff-emergency-contact';
+import * as ensureLibraryTables from '../migrations/20261012000002-ensure-library-tables';
 
 /**
  * Migration Runner
@@ -284,6 +285,11 @@ const migrations: Migration[] = [
     name: '20261012000001-widen-staff-emergency-contact',
     up: widenStaffEmergencyContact.up,
     down: widenStaffEmergencyContact.down
+  },
+  {
+    name: '20261012000002-ensure-library-tables',
+    up: (queryInterface) => ensureLibraryTables.up(queryInterface, sequelize),
+    down: (queryInterface) => ensureLibraryTables.down(queryInterface, sequelize)
   }
 ];
 
