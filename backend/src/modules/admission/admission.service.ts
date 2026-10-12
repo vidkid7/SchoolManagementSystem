@@ -1,4 +1,4 @@
-import Admission, { AdmissionStatus } from '@models/Admission.model';
+import Admission, { AdmissionAttributes, AdmissionStatus } from '@models/Admission.model';
 import Student, { StudentStatus, Gender, StudentCreationAttributes } from '@models/Student.model';
 import User, { UserRole, UserStatus } from '@models/User.model';
 import studentIdService from '@modules/student/studentId.service';
@@ -8,6 +8,14 @@ import { logger } from '@utils/logger';
 import { Op, WhereOptions } from 'sequelize';
 import { env } from '@config/env';
 import crypto from 'crypto';
+
+// Sequelize model attributes must be read via get() when model fields are
+// declared as class fields. ES2022 class-field emission can shadow Sequelize's
+// dynamic property accessors in production builds.
+const admissionValue = <K extends keyof AdmissionAttributes>(
+  admission: Admission,
+  key: K
+): AdmissionAttributes[K] => admission.get(key) as AdmissionAttributes[K];
 
 /**
  * Admission Workflow Service
@@ -338,8 +346,11 @@ class AdmissionService {
         throw new Error('Admission not found');
       }
 
-      if (admission.status !== AdmissionStatus.TEST_SCHEDULED) {
-        throw new Error(`Cannot record test score for status: ${admission.status}`);
+      // Read through Sequelize's attribute accessor. In the production build,
+      // emitted class fields can shadow Sequelize's dynamic property accessors.
+      const currentStatus = admission.get('status') as AdmissionStatus;
+      if (currentStatus !== AdmissionStatus.TEST_SCHEDULED) {
+        throw new Error(`Cannot record test score for status: ${currentStatus}`);
       }
 
       await admission.update({

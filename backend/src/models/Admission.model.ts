@@ -125,74 +125,74 @@ export interface AdmissionCreationAttributes extends Optional<AdmissionAttribute
  */
 class Admission extends Model<AdmissionAttributes, AdmissionCreationAttributes>
   implements AdmissionAttributes {
-  public admissionId!: number;
-  public temporaryId!: string;
+  declare public admissionId: number;
+  declare public temporaryId: string;
   
-  public firstNameEn!: string;
-  public middleNameEn?: string;
-  public lastNameEn!: string;
-  public firstNameNp?: string;
-  public middleNameNp?: string;
-  public lastNameNp?: string;
-  public dateOfBirthBS?: string;
-  public dateOfBirthAD?: Date;
-  public gender?: string;
+  declare public firstNameEn: string;
+  declare public middleNameEn?: string;
+  declare public lastNameEn: string;
+  declare public firstNameNp?: string;
+  declare public middleNameNp?: string;
+  declare public lastNameNp?: string;
+  declare public dateOfBirthBS?: string;
+  declare public dateOfBirthAD?: Date;
+  declare public gender?: string;
   
-  public addressEn?: string;
-  public addressNp?: string;
-  public phone?: string;
-  public email?: string;
+  declare public addressEn?: string;
+  declare public addressNp?: string;
+  declare public phone?: string;
+  declare public email?: string;
   
-  public fatherName?: string;
-  public fatherPhone?: string;
-  public motherName?: string;
-  public motherPhone?: string;
-  public guardianName?: string;
-  public guardianPhone?: string;
-  public guardianRelation?: string;
+  declare public fatherName?: string;
+  declare public fatherPhone?: string;
+  declare public motherName?: string;
+  declare public motherPhone?: string;
+  declare public guardianName?: string;
+  declare public guardianPhone?: string;
+  declare public guardianRelation?: string;
   
-  public applyingForClass!: number;
-  public previousSchool?: string;
-  public previousClass?: number;
-  public previousGpa?: number;
+  declare public applyingForClass: number;
+  declare public previousSchool?: string;
+  declare public previousClass?: number;
+  declare public previousGpa?: number;
   
-  public status!: AdmissionStatus;
+  declare public status: AdmissionStatus;
   
-  public inquiryDate!: Date;
-  public inquirySource?: string;
-  public inquiryNotes?: string;
+  declare public inquiryDate: Date;
+  declare public inquirySource?: string;
+  declare public inquiryNotes?: string;
   
-  public applicationDate?: Date;
-  public applicationFee?: number;
-  public applicationFeePaid!: boolean;
+  declare public applicationDate?: Date;
+  declare public applicationFee?: number;
+  declare public applicationFeePaid: boolean;
   
-  public admissionTestDate?: Date;
-  public admissionTestScore?: number;
-  public admissionTestMaxScore?: number;
-  public admissionTestRemarks?: string;
+  declare public admissionTestDate?: Date;
+  declare public admissionTestScore?: number;
+  declare public admissionTestMaxScore?: number;
+  declare public admissionTestRemarks?: string;
   
-  public interviewDate?: Date;
-  public interviewerName?: string;
-  public interviewFeedback?: string;
-  public interviewScore?: number;
+  declare public interviewDate?: Date;
+  declare public interviewerName?: string;
+  declare public interviewFeedback?: string;
+  declare public interviewScore?: number;
   
-  public admissionDate?: Date;
-  public admissionOfferLetterUrl?: string;
+  declare public admissionDate?: Date;
+  declare public admissionOfferLetterUrl?: string;
   
-  public documentsVerified!: boolean;
-  public documentsNotes?: string;
+  declare public documentsVerified: boolean;
+  declare public documentsNotes?: string;
   
-  public enrolledStudentId?: number;
-  public enrollmentDate?: Date;
+  declare public enrolledStudentId?: number;
+  declare public enrollmentDate?: Date;
   
-  public rejectionReason?: string;
-  public rejectionDate?: Date;
+  declare public rejectionReason?: string;
+  declare public rejectionDate?: Date;
   
-  public processedBy?: number;
-  public academicYearId?: number;
+  declare public processedBy?: number;
+  declare public academicYearId?: number;
   
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   /**
    * Get full name in English
