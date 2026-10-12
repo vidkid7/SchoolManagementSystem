@@ -1795,33 +1795,6 @@ html[data-theme="dark"] .role-dashboard .dashboard-widget-card.MuiCard-root {
   background: color-mix(in srgb, var(--sms-warning) 22%, transparent) !important;
 }
 
-/* Key metrics period tabs */
-.dashboard-metric-tabs {
-  flex: 0 0 auto;
-  gap: 2px;
-  padding: 3px;
-  border-radius: 999px;
-  border: 1px solid var(--sms-border);
-  background: var(--sms-surface-soft);
-}
-
-.dashboard-metric-tab {
-  min-height: 26px !important;
-  padding: 2px 12px !important;
-  border-radius: 999px !important;
-  color: var(--sms-muted) !important;
-  font-weight: 800 !important;
-  font-size: 0.7rem !important;
-  text-transform: none !important;
-  background: transparent !important;
-}
-
-.dashboard-metric-tab.is-active {
-  color: #ffffff !important;
-  background: var(--sms-primary) !important;
-  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.26);
-}
-
 /* Bottom four-column grid */
 .dashboard-grid-4 {
   display: grid;
@@ -1972,11 +1945,6 @@ html[data-theme="dark"] .role-dashboard .dashboard-widget-card.MuiCard-root {
     linear-gradient(120deg, #0b2447 0%, #102a52 48%, #081427 100%) !important;
   background-color: #0b2447 !important;
   box-shadow: 0 18px 46px rgba(0, 0, 0, 0.4) !important;
-}
-
-[data-theme="dark"] .dashboard-metric-tabs {
-  border-color: var(--sms-border);
-  background: rgba(17, 28, 47, 0.6);
 }
 
 [data-theme="dark"] .dashboard-facet-row:hover {

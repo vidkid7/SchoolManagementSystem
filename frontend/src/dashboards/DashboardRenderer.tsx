@@ -304,31 +304,6 @@ function OverviewRow({
   );
 }
 
-function MetricsPeriodTabs({ t }: { t: TFunction }) {
-  const periods = [
-    { id: 'today', label: t('dashboard.today', 'Today') },
-    { id: 'week', label: t('dashboard.thisWeek', 'This Week') },
-    { id: 'month', label: t('dashboard.thisMonth', 'This Month') },
-    { id: 'year', label: t('dashboard.thisYear', 'This Year') },
-  ];
-  const [active, setActive] = useState('today');
-
-  return (
-    <Stack direction="row" className="dashboard-metric-tabs">
-      {periods.map((period) => (
-        <Button
-          key={period.id}
-          disableRipple
-          className={`dashboard-metric-tab${active === period.id ? ' is-active' : ''}`}
-          onClick={() => setActive(period.id)}
-        >
-          {period.label}
-        </Button>
-      ))}
-    </Stack>
-  );
-}
-
 function FacetCard({
   title,
   facets,
@@ -572,7 +547,6 @@ export function RoleBasedDashboardRenderer({ configId }: RoleBasedDashboardRende
           <SectionTitle
             title={t('dashboard.keyMetrics', 'Key Metrics')}
             description={t('dashboard.coreSignals', 'Core school signals from connected APIs.')}
-            action={<MetricsPeriodTabs t={t} />}
           />
           <Box className="dashboard-kpi-grid">
             {primaryStats.map((stat) => {
