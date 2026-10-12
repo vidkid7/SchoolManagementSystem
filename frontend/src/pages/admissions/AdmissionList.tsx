@@ -186,14 +186,18 @@ export function AdmissionList() {
     return actions;
   };
 
+  const normalizedSearchQuery = searchQuery.trim().replace(/\s+/g, ' ').toLowerCase();
   const filteredAdmissions = admissions.filter((admission) => {
-    if (!searchQuery) return true;
-    const fullName = `${admission.firstNameEn} ${admission.middleNameEn || ''} ${admission.lastNameEn}`.toLowerCase();
+    if (!normalizedSearchQuery) return true;
+    const fullName = `${admission.firstNameEn} ${admission.middleNameEn || ''} ${admission.lastNameEn}`
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
     return (
-      fullName.includes(searchQuery.toLowerCase()) ||
-      admission.temporaryId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      admission.phone?.includes(searchQuery) ||
-      admission.email?.toLowerCase().includes(searchQuery.toLowerCase())
+      fullName.includes(normalizedSearchQuery) ||
+      admission.temporaryId.toLowerCase().includes(normalizedSearchQuery) ||
+      admission.phone?.includes(searchQuery.trim()) ||
+      admission.email?.toLowerCase().includes(normalizedSearchQuery)
     );
   });
 
