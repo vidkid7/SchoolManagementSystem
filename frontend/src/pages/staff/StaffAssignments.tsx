@@ -171,7 +171,7 @@ export const StaffAssignments = () => {
       setLoading(true);
       const [staffResponse, assignmentsResponse] = await Promise.all([
         apiClient.get(`/api/v1/staff/${id}`),
-        apiClient.get(`/api/v1/staff/${id}/assignments`),
+        apiClient.get(`/api/v1/staff/${id}/assignments`, { params: { includeInactive: true } }),
       ]);
       setStaff(staffResponse.data.data);
       setAssignments(assignmentsResponse.data.data || []);
@@ -562,6 +562,7 @@ export const StaffAssignments = () => {
                         <Switch
                           size="small"
                           checked={assignment.isActive}
+                          disabled={!assignment.isActive}
                           onChange={() => handleToggleActive(assignment)}
                           color="success"
                         />
@@ -570,6 +571,7 @@ export const StaffAssignments = () => {
                         <IconButton
                           size="small"
                           color="primary"
+                          disabled={!assignment.isActive}
                           onClick={() => openEditDialog(assignment)}
                         >
                           <EditIcon fontSize="small" />
