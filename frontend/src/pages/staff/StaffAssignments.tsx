@@ -241,12 +241,14 @@ export const StaffAssignments = () => {
       };
 
       if (editMode && editingAssignment) {
-        // For edit mode, we need to end the old assignment and create a new one
-        // Since there's no direct update endpoint
+        // Assignments are versioned, so edits end the old record and create a
+        // replacement only when the new assignment should remain active.
         await apiClient.put(`/api/v1/staff/assignments/${editingAssignment.assignmentId}/end`, {
           endDate: new Date().toISOString()
         });
-        await apiClient.post(`/api/v1/staff/${id}/assign`, payload);
+        if (isActive) {
+          await apiClient.post(`/api/v1/staff/${id}/assign`, payload);
+        }
         setSuccess(t('staff.form.assignmentUpdated'));
       } else {
         await apiClient.post(`/api/v1/staff/${id}/assign`, payload);
