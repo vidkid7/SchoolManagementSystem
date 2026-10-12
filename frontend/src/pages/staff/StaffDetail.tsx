@@ -184,7 +184,22 @@ export const StaffDetail = () => {
     try {
       setLoading(true);
       const response = await apiClient.get(`/api/v1/staff/${id}`);
-      setStaff(response.data.data);
+      const data = response.data.data;
+      const addressParts = (data.addressEn || '').split(',').map((part: string) => part.trim());
+      const emergencyContactParts = (data.emergencyContact || '').split(':').map((part: string) => part.trim());
+      const hasEmergencyContactParts = emergencyContactParts.length > 1;
+
+      setStaff({
+        ...data,
+        dateOfBirthBs: data.dateOfBirthBS || data.dateOfBirthBs,
+        joiningDateBs: data.joinDate ? String(data.joinDate).slice(0, 10) : data.joiningDateBs,
+        qualification: data.highestQualification || data.qualification,
+        address: addressParts.length > 2 ? addressParts.slice(0, -2).join(', ') : addressParts[0] || '',
+        city: addressParts.length > 1 ? addressParts[addressParts.length - 2] : '',
+        district: addressParts.length > 0 ? addressParts[addressParts.length - 1] : '',
+        emergencyContactName: hasEmergencyContactParts ? emergencyContactParts[0] : '',
+        emergencyContactNumber: hasEmergencyContactParts ? emergencyContactParts.slice(1).join(': ') : data.emergencyContact || '',
+      });
     } catch (err) {
       console.error('Failed to fetch staff:', err);
       setError(t('staff.failedToLoad'));

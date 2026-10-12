@@ -207,7 +207,7 @@ export const StaffForm = () => {
         department: normalizeValue(data.department) || 'academic',
         qualification: data.highestQualification || '',
         specialization: data.specialization || '',
-        joining_date_bs: data.dateOfBirthBS || '',
+        joining_date_bs: data.joinDate ? String(data.joinDate).slice(0, 10) : '',
         contact_number: data.phone || '',
         email: data.email || '',
         address: address,
