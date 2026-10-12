@@ -489,7 +489,7 @@ export const Timetable = () => {
             </Grid>
             <Grid item xs={6}>
               <TextField
-                label={t('attendance.startDate')}
+                label={t('timetable.startTime')}
                 type="time"
                 fullWidth
                 value={periodForm.startTime}
@@ -499,7 +499,7 @@ export const Timetable = () => {
             </Grid>
             <Grid item xs={6}>
               <TextField
-                label={t('attendance.endDate')}
+                label={t('timetable.endTime')}
                 type="time"
                 fullWidth
                 value={periodForm.endTime}
