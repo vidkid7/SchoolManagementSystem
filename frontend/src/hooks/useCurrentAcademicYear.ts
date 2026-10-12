@@ -35,13 +35,36 @@ let cacheExpiry = 0;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 function formatLabel(year: AcademicYear | null): string {
-  if (!year) return '';
+  if (!year || typeof year.name !== 'string' || !year.name.trim()) return '';
   // "2081-2082" → "AY 2081/82"
   const parts = year.name.split('-');
   if (parts.length === 2) {
     return `AY ${parts[0]}/${parts[1].slice(2)}`;
   }
   return `AY ${year.name}`;
+}
+
+function normalizeAcademicYear(value: unknown): AcademicYear | null {
+  if (!value || typeof value !== 'object') return null;
+
+  const candidate = value as Partial<AcademicYear>;
+  const academicYearId = Number(candidate.academicYearId);
+  if (!Number.isFinite(academicYearId) || academicYearId <= 0) return null;
+
+  const name = typeof candidate.name === 'string' && candidate.name.trim()
+    ? candidate.name.trim()
+    : `Academic Year ${academicYearId}`;
+
+  return {
+    ...candidate,
+    academicYearId,
+    name,
+    startDateBS: typeof candidate.startDateBS === 'string' ? candidate.startDateBS : '',
+    endDateBS: typeof candidate.endDateBS === 'string' ? candidate.endDateBS : '',
+    startDateAD: typeof candidate.startDateAD === 'string' ? candidate.startDateAD : '',
+    endDateAD: typeof candidate.endDateAD === 'string' ? candidate.endDateAD : '',
+    isCurrent: Boolean(candidate.isCurrent),
+  };
 }
 
 export function useCurrentAcademicYear(): UseCurrentAcademicYearResult {
@@ -73,11 +96,14 @@ export function useCurrentAcademicYear(): UseCurrentAcademicYearResult {
 
         if (cancelled) return;
 
-        const current: AcademicYear = currentRes.data?.data ?? currentRes.data;
-        const all: AcademicYear[] = allRes.data?.data ?? allRes.data ?? [];
+        const current = normalizeAcademicYear(currentRes.data?.data ?? currentRes.data);
+        const allData = allRes.data?.data ?? allRes.data;
+        const all = Array.isArray(allData)
+          ? allData.map(normalizeAcademicYear).filter((year): year is AcademicYear => year !== null)
+          : [];
 
         cachedCurrentYear = current;
-        cachedAllYears = Array.isArray(all) ? all : [];
+        cachedAllYears = all;
         cacheExpiry = Date.now() + CACHE_TTL_MS;
 
         setCurrentYear(current);
