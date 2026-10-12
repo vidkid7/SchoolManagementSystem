@@ -11,6 +11,7 @@ import apiClient from '../../services/apiClient';
 
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 function TabPanel({ children, value, index }: any) {
   return <div hidden={value !== index}>{value === index && <Box sx={{ pt: 3 }}>{children}</Box>}</div>;
 }
@@ -19,7 +20,11 @@ export function ECAManagement() {
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const { t } = useTranslation();
-  const [tabValue, setTabValue] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [tabValue, setTabValue] = useState(() => {
+    const tab = searchParams.get('tab');
+    return ({ enrollments: 0, attendance: 1, events: 2, achievements: 3 } as Record<string, number>)[tab || ''] ?? 0;
+  });
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
@@ -76,6 +81,15 @@ export function ECAManagement() {
     setFormData({ studentId: '', ecaId: '', achievement: '', date: new Date().toISOString().split('T')[0], description: '' });
     setOpenDialog(true);
   };
+
+  useEffect(() => {
+    if (searchParams.get('action') !== 'create' || tabValue !== 2) return;
+    setFormData({ ecaId: '', title: '', description: '', eventDate: '', venue: '' });
+    setOpenDialog(true);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('action');
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams, tabValue]);
 
   return (
     <Box>

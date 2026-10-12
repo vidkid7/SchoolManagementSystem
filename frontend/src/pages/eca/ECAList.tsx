@@ -8,6 +8,7 @@ import { Box, Paper, Typography, Button, Table, TableBody, TableCell, TableConta
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, People as PeopleIcon } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
+import { useSearchParams } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import apiClient from '../../services/apiClient';
 
@@ -73,6 +74,7 @@ export function ECAList() {
   const { t } = useTranslation();
   const navigate = useSlugNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
+  const [searchParams, setSearchParams] = useSearchParams();
   const canManageECA = ['School_Admin', 'ECA_Coordinator'].includes(user?.role || '');
   const canDeleteECA = user?.role === 'School_Admin';
   const [ecas, setEcas] = useState<ECA[]>([]);
@@ -88,6 +90,7 @@ export function ECAList() {
   const [error, setError] = useState('');
   const [staffOptions, setStaffOptions] = useState<StaffOption[]>([]);
   const [currentAcademicYearId, setCurrentAcademicYearId] = useState<number | null>(null);
+  const [formMetadataLoaded, setFormMetadataLoaded] = useState(false);
   const [formData, setFormData] = useState<ECAFormData>(emptyForm);
 
   useEffect(() => {
@@ -140,6 +143,8 @@ export function ECAList() {
     } catch {
       setStaffOptions([]);
       setCurrentAcademicYearId(null);
+    } finally {
+      setFormMetadataLoaded(true);
     }
   };
 
@@ -178,6 +183,14 @@ export function ECAList() {
     setError('');
     setOpenDialog(true);
   };
+
+  useEffect(() => {
+    if (searchParams.get('action') !== 'create' || !formMetadataLoaded) return;
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('action');
+    setSearchParams(nextParams, { replace: true });
+    handleOpenDialog();
+  }, [searchParams, setSearchParams, formMetadataLoaded]);
 
   const handleSubmit = async () => {
     try {

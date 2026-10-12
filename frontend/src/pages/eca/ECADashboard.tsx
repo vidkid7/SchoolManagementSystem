@@ -33,8 +33,8 @@ export function ECADashboard() {
   const statCards = [
     { title: t('eca.totalEcas'), value: stats.totalECAs, icon: <GroupsIcon sx={{ fontSize: 32 }} />, color: C.primary, bgColor: C.primaryBg, action: () => navigate('/eca/list') },
     { title: t('eca.activeEcas'), value: stats.activeECAs, icon: <EventIcon sx={{ fontSize: 32 }} />, color: C.success, bgColor: C.successBg, action: () => navigate('/eca/list?status=active') },
-    { title: t('eca.enrolledStudents'), value: stats.totalStudents, icon: <GroupsIcon sx={{ fontSize: 32 }} />, color: C.info, bgColor: C.infoBg, action: () => navigate('/eca/enrollments') },
-    { title: t('eca.upcomingEvents'), value: stats.upcomingEvents, icon: <AchievementIcon sx={{ fontSize: 32 }} />, color: C.warning, bgColor: C.warningBg, action: () => navigate('/eca/events') },
+    { title: t('eca.enrolledStudents'), value: stats.totalStudents, icon: <GroupsIcon sx={{ fontSize: 32 }} />, color: C.info, bgColor: C.infoBg, action: () => navigate('/eca/management?tab=enrollments') },
+    { title: t('eca.upcomingEvents'), value: stats.upcomingEvents, icon: <AchievementIcon sx={{ fontSize: 32 }} />, color: C.warning, bgColor: C.warningBg, action: () => navigate('/eca/management?tab=events') },
   ];
 
   return (
@@ -49,8 +49,8 @@ export function ECADashboard() {
             </Box>
           </Box>
           <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/eca/new')} sx={S.BTN_PRIMARY}>{t('eca.newEca')}</Button>
-            <Button variant="outlined" sx={S.BTN_OUTLINE} startIcon={<EventIcon />} onClick={() => navigate('/eca/events/new')}>{t('eca.createEvent')}</Button>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/eca/list?action=create')} sx={S.BTN_PRIMARY}>{t('eca.newEca')}</Button>
+            <Button variant="outlined" sx={S.BTN_OUTLINE} startIcon={<EventIcon />} onClick={() => navigate('/eca/management?tab=events&action=create')}>{t('eca.createEvent')}</Button>
           </Box>
         </Box>
       </Paper>
@@ -101,10 +101,10 @@ export function ECADashboard() {
             <Typography variant="h6" fontWeight={600} gutterBottom>{t('eca.quickActions')}</Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/eca/list')}>{t('eca.manageEcas')}</Button>
-              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/eca/enrollments')}>{t('eca.studentEnrollments')}</Button>
-              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/eca/attendance')}>{t('eca.markAttendance')}</Button>
-              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/eca/achievements')}>{t('eca.recordAchievements')}</Button>
-              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/eca/events')}>{t('eca.ecaEvents')}</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/eca/management?tab=enrollments')}>{t('eca.studentEnrollments')}</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/eca/management?tab=attendance')}>{t('eca.markAttendance')}</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/eca/management?tab=achievements')}>{t('eca.recordAchievements')}</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/eca/management?tab=events')}>{t('eca.ecaEvents')}</Button>
             </Box>
           </Paper>
         </Grid>
