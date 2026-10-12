@@ -23,6 +23,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Autocomplete,
   TextField,
   MenuItem,
   Chip,
@@ -40,6 +41,7 @@ import {
   Cancel as CancelIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { createIssueBookPayload } from './issueBookPayload';
 
 interface Circulation {
   circulationId: number;
@@ -53,6 +55,20 @@ interface Circulation {
   status: 'issued' | 'returned' | 'overdue';
   fineAmount?: number;
   finePaid?: boolean;
+}
+
+interface BookOption {
+  bookId: number;
+  accessionNumber: string;
+  title: string;
+  availableCopies: number;
+}
+
+interface StudentOption {
+  studentId: number;
+  studentCode: string;
+  firstNameEn?: string;
+  lastNameEn?: string;
 }
 
 interface TabPanelProps {
@@ -85,12 +101,24 @@ export function BookCirculation() {
 
   // Issue Dialog
   const [issueDialog, setIssueDialog] = useState(false);
-  const [issueForm, setIssueForm] = useState({
-    bookId: '',
-    memberId: '',
-    memberType: 'student',
-    dueDate: '',
-  });
+  const [issueBooks, setIssueBooks] = useState<BookOption[]>([]);
+  const [issueStudents, setIssueStudents] = useState<StudentOption[]>([]);
+  const [selectedIssueBook, setSelectedIssueBook] = useState<BookOption | null>(null);
+  const [selectedIssueStudent, setSelectedIssueStudent] = useState<StudentOption | null>(null);
+  const [issueBookSearch, setIssueBookSearch] = useState('');
+  const [issueStudentSearch, setIssueStudentSearch] = useState('');
+  const [issueBooksLoading, setIssueBooksLoading] = useState(false);
+  const [issueStudentsLoading, setIssueStudentsLoading] = useState(false);
+  const [issueForm, setIssueForm] = useState({ dueDate: '' });
+
+  const closeIssueDialog = () => {
+    setIssueDialog(false);
+    setSelectedIssueBook(null);
+    setSelectedIssueStudent(null);
+    setIssueBookSearch('');
+    setIssueStudentSearch('');
+    setIssueForm({ dueDate: '' });
+  };
 
   // Return Dialog
   const [returnDialog, setReturnDialog] = useState(false);
@@ -115,6 +143,52 @@ export function BookCirculation() {
     else if (tabValue === 4 && finesStudentId) fetchFines();
   }, [tabValue, page, rowsPerPage, reservationBookId, finesStudentId]);
 
+  useEffect(() => {
+    if (!issueDialog) return;
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setIssueBooksLoading(true);
+      try {
+        const response = await apiClient.get('/library/books', {
+          params: { search: issueBookSearch || undefined, page: 1, limit: 20 },
+        });
+        const data = response.data?.data;
+        const books: BookOption[] = Array.isArray(data) ? data : data?.books || [];
+        if (!cancelled) setIssueBooks(books.filter((book) => Number(book.availableCopies ?? (book as any).available_copies) > 0));
+      } catch {
+        if (!cancelled) setIssueBooks([]);
+      } finally {
+        if (!cancelled) setIssueBooksLoading(false);
+      }
+    }, 200);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [issueDialog, issueBookSearch]);
+
+  useEffect(() => {
+    if (!issueDialog) return;
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setIssueStudentsLoading(true);
+      try {
+        const response = await apiClient.get('/api/v1/students', {
+          params: { search: issueStudentSearch || undefined, page: 1, limit: 20 },
+        });
+        if (!cancelled) setIssueStudents(Array.isArray(response.data?.data) ? response.data.data : []);
+      } catch {
+        if (!cancelled) setIssueStudents([]);
+      } finally {
+        if (!cancelled) setIssueStudentsLoading(false);
+      }
+    }, 200);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [issueDialog, issueStudentSearch]);
+
   const fetchCirculations = async () => {
     try {
       setLoading(true);
@@ -137,20 +211,23 @@ export function BookCirculation() {
   };
 
   const handleIssueBook = async () => {
+    if (!selectedIssueBook || !selectedIssueStudent) {
+      setError('Select an available book and a student before issuing.');
+      return;
+    }
     try {
-      await apiClient.post('/library/issue', issueForm);
+      const payload = createIssueBookPayload(selectedIssueBook, selectedIssueStudent, issueForm.dueDate);
+      await apiClient.post('/library/issue', payload);
       setSuccess(t('library.bookIssuedSuccess'));
-      setIssueDialog(false);
+      closeIssueDialog();
       fetchCirculations();
       setTimeout(() => setSuccess(''), 3000);
-      setIssueForm({
-        bookId: '',
-        memberId: '',
-        memberType: 'student',
-        dueDate: '',
-      });
     } catch (err: any) {
-      setError(err.response?.data?.message || t('library.failedToIssueBook'));
+      const responseData = err.response?.data;
+      const validationMessages = Array.isArray(responseData?.errors)
+        ? responseData.errors.map((item: { message?: string }) => item.message).filter(Boolean)
+        : [];
+      setError(validationMessages.join(' ') || responseData?.message || responseData?.error || t('library.failedToIssueBook'));
     }
   };
 
@@ -292,7 +369,7 @@ export function BookCirculation() {
             <Button
               variant="contained"
               startIcon={<IssueIcon />}
-              onClick={() => setIssueDialog(true)}
+              onClick={() => { setError(''); setIssueDialog(true); }}
               sx={S.BTN_PRIMARY}
             >
               {t('library.issueBook')}
@@ -622,39 +699,34 @@ export function BookCirculation() {
       </Paper>
 
       {/* Issue Book Dialog */}
-      <Dialog open={issueDialog} onClose={() => setIssueDialog(false)} maxWidth="sm" fullWidth>
+      <Dialog open={issueDialog} onClose={closeIssueDialog} maxWidth="sm" fullWidth>
         <DialogTitle>{t('library.issueBook')}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
-              <TextField
-                label={t('library.bookIdAccession')}
-                value={issueForm.bookId}
-                onChange={(e) => setIssueForm({ ...issueForm, bookId: e.target.value })}
-                required
-                fullWidth
+              <Autocomplete
+                options={issueBooks}
+                value={selectedIssueBook}
+                loading={issueBooksLoading}
+                getOptionLabel={(book) => `${book.title} · ${book.accessionNumber}`}
+                isOptionEqualToValue={(option, value) => option.bookId === value.bookId}
+                onChange={(_, book) => setSelectedIssueBook(book)}
+                onInputChange={(_, value, reason) => { if (reason === 'input' || reason === 'clear') setIssueBookSearch(value); }}
+                noOptionsText={issueBooksLoading ? 'Loading books…' : 'No available books found'}
+                renderInput={(params) => <TextField {...params} label="Available book" required />}
               />
             </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                select
-                label={t('library.memberType')}
-                value={issueForm.memberType}
-                onChange={(e) => setIssueForm({ ...issueForm, memberType: e.target.value })}
-                required
-                fullWidth
-              >
-                <MenuItem value="student">{t('library.student')}</MenuItem>
-                <MenuItem value="staff">Staff</MenuItem>
-              </TextField>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                label={t('library.memberId')}
-                value={issueForm.memberId}
-                onChange={(e) => setIssueForm({ ...issueForm, memberId: e.target.value })}
-                required
-                fullWidth
+            <Grid item xs={12}>
+              <Autocomplete
+                options={issueStudents}
+                value={selectedIssueStudent}
+                loading={issueStudentsLoading}
+                getOptionLabel={(student) => `${[student.firstNameEn, student.lastNameEn].filter(Boolean).join(' ')} · ${student.studentCode}`}
+                isOptionEqualToValue={(option, value) => option.studentId === value.studentId}
+                onChange={(_, student) => setSelectedIssueStudent(student)}
+                onInputChange={(_, value, reason) => { if (reason === 'input' || reason === 'clear') setIssueStudentSearch(value); }}
+                noOptionsText={issueStudentsLoading ? 'Searching students…' : 'No students found'}
+                renderInput={(params) => <TextField {...params} label={t('library.student')} required />}
               />
             </Grid>
             <Grid item xs={12}>
@@ -663,7 +735,6 @@ export function BookCirculation() {
                 type="date"
                 value={issueForm.dueDate}
                 onChange={(e) => setIssueForm({ ...issueForm, dueDate: e.target.value })}
-                required
                 fullWidth
                 InputLabelProps={{ shrink: true }}
               />
@@ -672,8 +743,8 @@ export function BookCirculation() {
           {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIssueDialog(false)}>{t('library.cancel')}</Button>
-          <Button onClick={handleIssueBook} variant="contained" sx={S.BTN_PRIMARY}>
+          <Button onClick={closeIssueDialog}>{t('library.cancel')}</Button>
+          <Button onClick={handleIssueBook} variant="contained" sx={S.BTN_PRIMARY} disabled={!selectedIssueBook || !selectedIssueStudent}>
             {t('library.issueBook')}
           </Button>
         </DialogActions>
