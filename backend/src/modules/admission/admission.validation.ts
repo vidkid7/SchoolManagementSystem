@@ -62,6 +62,18 @@ export const createInquirySchema = Joi.object({
       'string.empty': 'Last name is required',
       'string.max': 'Last name must not exceed 50 characters'
     }),
+  dateOfBirthAD: Joi.date()
+    .optional()
+    .messages({ 'date.base': 'Date of birth must be a valid date' }),
+  gender: Joi.string()
+    .valid('male', 'female', 'other')
+    .optional()
+    .messages({ 'any.only': 'Gender must be one of: male, female, other' }),
+  addressEn: Joi.string()
+    .max(255)
+    .optional()
+    .allow('')
+    .messages({ 'string.max': 'Address must not exceed 255 characters' }),
   applyingForClass: Joi.number()
     .integer()
     .min(1)
@@ -82,6 +94,13 @@ export const createInquirySchema = Joi.object({
       'string.max': 'Guardian name must not exceed 100 characters'
     }),
   guardianPhone: phoneSchema,
+  fatherName: Joi.string().max(100).optional().allow(''),
+  fatherPhone: phoneSchema,
+  motherName: Joi.string().max(100).optional().allow(''),
+  motherPhone: phoneSchema,
+  guardianRelation: Joi.string().max(50).optional().allow(''),
+  previousSchool: Joi.string().max(255).optional().allow(''),
+  previousClass: Joi.number().integer().min(1).max(12).optional(),
   inquirySource: Joi.string()
     .valid('walk-in', 'phone', 'online', 'referral')
     .optional()

@@ -1773,12 +1773,18 @@
     "enrolledSuccessfully": "Student enrolled successfully!",
     "failedToEnroll": "Failed to enroll student",
     "testDateAndTime": "Test Date & Time",
+    "testDateRequired": "Select a test date and time.",
     "testScore": "Test Score",
+    "testMaxScore": "Maximum Score",
+    "testScoreRangeInvalid": "Enter a score between zero and the maximum score.",
     "testRemarks": "Remarks",
     "interviewDateAndTime": "Interview Date & Time",
+    "interviewDateRequired": "Select an interview date and time.",
     "interviewFeedback": "Interview Feedback",
+    "interviewFeedbackOrScoreInvalid": "Enter interview feedback and a whole-number score between 0 and 100, if provided.",
     "interviewScoreOptional": "Interview Score (Optional)",
     "rejectionReason": "Rejection Reason",
+    "rejectionReasonRequired": "Enter a rejection reason of no more than 500 characters.",
     "rejectApplication": "Reject Application"
   },
   "sports": {

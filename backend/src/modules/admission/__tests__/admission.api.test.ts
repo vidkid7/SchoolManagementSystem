@@ -73,6 +73,52 @@ describe('Admission API Integration Tests', () => {
       expect(response.body.data.applyingForClass).toBe(5);
     });
 
+    it('should preserve the student, contact, guardian, and previous-school fields from the inquiry form', async () => {
+      const inquiryData = {
+        firstNameEn: 'QA',
+        middleNameEn: 'Admissions',
+        lastNameEn: 'Persistence',
+        dateOfBirthAD: '2020-01-15',
+        gender: 'female',
+        addressEn: 'Synthetic QA address',
+        applyingForClass: 1,
+        phone: '9841234567',
+        email: 'qa.persistence@example.com',
+        fatherName: 'Synthetic Father',
+        fatherPhone: '9841234568',
+        motherName: 'Synthetic Mother',
+        motherPhone: '9841234569',
+        guardianName: 'Synthetic Guardian',
+        guardianRelation: 'Parent',
+        previousSchool: 'Synthetic QA School',
+        previousClass: 1,
+        inquirySource: 'online',
+        inquiryNotes: 'QA persistence check'
+      };
+
+      const response = await request(app)
+        .post('/api/v1/admissions/inquiry')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(inquiryData)
+        .expect(201);
+
+      expect(response.body.data.firstNameEn).toBe(inquiryData.firstNameEn);
+      expect(response.body.data.middleNameEn).toBe(inquiryData.middleNameEn);
+      expect(new Date(response.body.data.dateOfBirthAD).toISOString().slice(0, 10)).toBe(inquiryData.dateOfBirthAD);
+      expect(response.body.data.gender).toBe(inquiryData.gender);
+      expect(response.body.data.addressEn).toBe(inquiryData.addressEn);
+      expect(response.body.data.phone).toBe(inquiryData.phone);
+      expect(response.body.data.email).toBe(inquiryData.email);
+      expect(response.body.data.fatherName).toBe(inquiryData.fatherName);
+      expect(response.body.data.motherName).toBe(inquiryData.motherName);
+      expect(response.body.data.guardianName).toBe(inquiryData.guardianName);
+      expect(response.body.data.guardianRelation).toBe(inquiryData.guardianRelation);
+      expect(response.body.data.previousSchool).toBe(inquiryData.previousSchool);
+      expect(response.body.data.previousClass).toBe(1);
+      expect(response.body.data.inquirySource).toBe(inquiryData.inquirySource);
+      expect(response.body.data.inquiryNotes).toBe(inquiryData.inquiryNotes);
+    });
+
     it('should reject inquiry with missing required fields', async () => {
       const invalidData = {
         firstNameEn: 'John'

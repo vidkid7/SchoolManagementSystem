@@ -118,11 +118,21 @@ class AdmissionService {
     firstNameEn: string;
     lastNameEn: string;
     middleNameEn?: string;
+    dateOfBirthAD?: Date;
+    gender?: string;
+    addressEn?: string;
     applyingForClass: number;
     phone?: string;
     email?: string;
     guardianName?: string;
     guardianPhone?: string;
+    fatherName?: string;
+    fatherPhone?: string;
+    motherName?: string;
+    motherPhone?: string;
+    guardianRelation?: string;
+    previousSchool?: string;
+    previousClass?: number;
     inquirySource?: string;
     inquiryNotes?: string;
     academicYearId?: number;
@@ -133,13 +143,23 @@ class AdmissionService {
       const admission = await Admission.create({
         temporaryId,
         firstNameEn: data.firstNameEn,
-        lastNameEn: data.lastNameEn,
         middleNameEn: data.middleNameEn,
+        lastNameEn: data.lastNameEn,
+        dateOfBirthAD: data.dateOfBirthAD,
+        gender: data.gender,
+        addressEn: data.addressEn,
         applyingForClass: data.applyingForClass,
         phone: data.phone,
         email: data.email,
         guardianName: data.guardianName,
         guardianPhone: data.guardianPhone,
+        fatherName: data.fatherName,
+        fatherPhone: data.fatherPhone,
+        motherName: data.motherName,
+        motherPhone: data.motherPhone,
+        guardianRelation: data.guardianRelation,
+        previousSchool: data.previousSchool,
+        previousClass: data.previousClass,
         inquirySource: data.inquirySource as any,
         inquiryNotes: data.inquiryNotes,
         status: AdmissionStatus.INQUIRY,

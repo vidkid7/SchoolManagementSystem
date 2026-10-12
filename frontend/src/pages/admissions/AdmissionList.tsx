@@ -115,7 +115,7 @@ export function AdmissionList() {
       setLoading(true);
       const params: any = {};
       if (statusFilter) params.status = statusFilter;
-      if (classFilter) params.class = classFilter;
+      if (classFilter) params.applyingForClass = classFilter;
       
       const response = await api.get('/admissions', { params });
       setAdmissions(response.data?.data || []);
@@ -138,38 +138,9 @@ export function AdmissionList() {
 
   const handleAction = async (action: string) => {
     if (!selectedAdmission) return;
-    
+    const admissionId = selectedAdmission.admissionId;
     handleMenuClose();
-    
-    switch (action) {
-      case 'view':
-        navigate(`/admissions/${selectedAdmission.admissionId}`);
-        break;
-      case 'convert':
-        navigate(`/admissions/${selectedAdmission.admissionId}/convert`);
-        break;
-      case 'schedule-test':
-        navigate(`/admissions/${selectedAdmission.admissionId}/schedule-test`);
-        break;
-      case 'record-test':
-        navigate(`/admissions/${selectedAdmission.admissionId}/record-test`);
-        break;
-      case 'schedule-interview':
-        navigate(`/admissions/${selectedAdmission.admissionId}/schedule-interview`);
-        break;
-      case 'record-interview':
-        navigate(`/admissions/${selectedAdmission.admissionId}/record-interview`);
-        break;
-      case 'admit':
-        navigate(`/admissions/${selectedAdmission.admissionId}/admit`);
-        break;
-      case 'enroll':
-        navigate(`/admissions/${selectedAdmission.admissionId}/enroll`);
-        break;
-      case 'reject':
-        navigate(`/admissions/${selectedAdmission.admissionId}/reject`);
-        break;
-    }
+    navigate(action === 'view' ? `/admissions/${admissionId}` : `/admissions/${admissionId}?action=${action}`);
   };
 
   const getAvailableActions = (status: string) => {

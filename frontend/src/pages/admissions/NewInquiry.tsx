@@ -87,7 +87,13 @@ export function NewInquiry() {
       }, 1500);
     } catch (error: any) {
       console.error('Failed to create inquiry:', error);
-      setError(error.response?.data?.message || t('admissions.failedToCreateInquiry'));
+      const validationErrors = error.response?.data?.errors;
+      const validationMessage = Array.isArray(validationErrors)
+        ? validationErrors.map((item: { field?: string; message?: string }) =>
+          item.field ? `${item.field}: ${item.message}` : item.message
+        ).filter(Boolean).join('; ')
+        : '';
+      setError(validationMessage || error.response?.data?.message || t('admissions.failedToCreateInquiry'));
     } finally {
       setLoading(false);
     }

@@ -3,8 +3,8 @@
  * View and manage individual admission with workflow actions
  */
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
@@ -85,6 +85,8 @@ export function AdmissionDetail() {
   const S = useAdminStyles(theme);
   const { t } = useTranslation();
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const actionOpened = useRef(false);
   const navigate = useSlugNavigate();
   const [loading, setLoading] = useState(true);
   const [admission, setAdmission] = useState<AdmissionDetail | null>(null);
@@ -102,13 +104,25 @@ export function AdmissionDetail() {
   // Form states
   const [testDate, setTestDate] = useState('');
   const [testScore, setTestScore] = useState('');
+  const [testMaxScore, setTestMaxScore] = useState('');
   const [testRemarks, setTestRemarks] = useState('');
   const [interviewDate, setInterviewDate] = useState('');
   const [interviewFeedback, setInterviewFeedback] = useState('');
   const [interviewScore, setInterviewScore] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
 
+  const getActionError = (error: any, fallback: string) => {
+    const errors = error.response?.data?.errors;
+    if (Array.isArray(errors) && errors.length > 0) {
+      return errors.map((item: { field?: string; message?: string }) =>
+        item.field ? `${item.field}: ${item.message}` : item.message
+      ).filter(Boolean).join('; ');
+    }
+    return error.response?.data?.message || fallback;
+  };
+
   useEffect(() => {
+    actionOpened.current = false;
     fetchAdmission();
   }, [id]);
 
@@ -116,10 +130,41 @@ export function AdmissionDetail() {
     try {
       setLoading(true);
       const response = await api.get(`/admissions/${id}`);
-      setAdmission(response.data?.data);
+      const currentAdmission = response.data?.data as AdmissionDetail | undefined;
+      setAdmission(currentAdmission || null);
+      const action = searchParams.get('action');
+      if (currentAdmission && action && !actionOpened.current) {
+        actionOpened.current = true;
+        switch (action) {
+          case 'convert':
+            if (currentAdmission.status === 'inquiry') setConvertDialog(true);
+            break;
+          case 'schedule-test':
+            if (currentAdmission.status === 'applied') setTestDialog(true);
+            break;
+          case 'record-test':
+            if (currentAdmission.status === 'test_scheduled') setTestDialog(true);
+            break;
+          case 'schedule-interview':
+            if (['applied', 'tested'].includes(currentAdmission.status)) setInterviewDialog(true);
+            break;
+          case 'record-interview':
+            if (currentAdmission.status === 'interview_scheduled') setInterviewDialog(true);
+            break;
+          case 'admit':
+            if (['applied', 'tested', 'interviewed'].includes(currentAdmission.status)) setAdmitDialog(true);
+            break;
+          case 'enroll':
+            if (currentAdmission.status === 'admitted') setEnrollDialog(true);
+            break;
+          case 'reject':
+            if (!['enrolled', 'rejected', 'withdrawn'].includes(currentAdmission.status)) setRejectDialog(true);
+            break;
+        }
+      }
     } catch (error: any) {
       console.error('Failed to fetch admission:', error);
-      setError(t('admissions.failedToLoad'));
+      setError(getActionError(error, t('admissions.failedToLoad')));
     } finally {
       setLoading(false);
     }
@@ -137,56 +182,78 @@ export function AdmissionDetail() {
   };
 
   const handleScheduleTest = async () => {
+    if (!testDate) {
+      setError(t('admissions.testDateRequired'));
+      return;
+    }
     try {
-      await api.post(`/admissions/${id}/schedule-test`, {
-        admissionTestDate: testDate,
-      });
+      await api.post(`/admissions/${id}/schedule-test`, { testDate });
       setSuccess(t('admissions.testScheduledSuccessfully'));
+      setError('');
       setTestDialog(false);
       fetchAdmission();
     } catch (error: any) {
-      setError(error.response?.data?.message || t('admissions.failedToScheduleTest'));
+      setError(getActionError(error, t('admissions.failedToScheduleTest')));
     }
   };
 
   const handleRecordTestScore = async () => {
+    const score = Number(testScore);
+    const maxScore = Number(testMaxScore);
+    if (!testScore || !testMaxScore || !Number.isFinite(score) || !Number.isFinite(maxScore) || score < 0 || maxScore <= 0 || score > maxScore) {
+      setError(t('admissions.testScoreRangeInvalid'));
+      return;
+    }
     try {
       await api.post(`/admissions/${id}/record-test-score`, {
-        admissionTestScore: parseFloat(testScore),
-        admissionTestRemarks: testRemarks,
+        score,
+        maxScore,
+        remarks: testRemarks,
       });
       setSuccess(t('admissions.testScoreRecordedSuccessfully'));
+      setError('');
       setTestDialog(false);
       fetchAdmission();
     } catch (error: any) {
-      setError(error.response?.data?.message || t('admissions.failedToRecordTestScore'));
+      setError(getActionError(error, t('admissions.failedToRecordTestScore')));
     }
   };
 
   const handleScheduleInterview = async () => {
+    if (!interviewDate) {
+      setError(t('admissions.interviewDateRequired'));
+      return;
+    }
     try {
       await api.post(`/admissions/${id}/schedule-interview`, {
         interviewDate,
       });
       setSuccess(t('admissions.interviewScheduledSuccessfully'));
+      setError('');
       setInterviewDialog(false);
       fetchAdmission();
     } catch (error: any) {
-      setError(error.response?.data?.message || t('admissions.failedToScheduleInterview'));
+      setError(getActionError(error, t('admissions.failedToScheduleInterview')));
     }
   };
 
   const handleRecordInterview = async () => {
+    const score = interviewScore ? Number(interviewScore) : undefined;
+    if (!interviewFeedback.trim() || (score !== undefined && (!Number.isInteger(score) || score < 0 || score > 100))) {
+      setError(t('admissions.interviewFeedbackOrScoreInvalid'));
+      return;
+    }
     try {
       await api.post(`/admissions/${id}/record-interview`, {
-        interviewFeedback,
-        interviewScore: interviewScore ? parseInt(interviewScore) : undefined,
+        feedback: interviewFeedback.trim(),
+        score,
       });
       setSuccess(t('admissions.interviewRecordedSuccessfully'));
+      setError('');
       setInterviewDialog(false);
       fetchAdmission();
     } catch (error: any) {
-      setError(error.response?.data?.message || t('admissions.failedToRecordInterview'));
+      setError(getActionError(error, t('admissions.failedToRecordInterview')));
     }
   };
 
@@ -202,15 +269,21 @@ export function AdmissionDetail() {
   };
 
   const handleReject = async () => {
+    const reason = rejectionReason.trim();
+    if (!reason || reason.length > 500) {
+      setError(t('admissions.rejectionReasonRequired'));
+      return;
+    }
     try {
       await api.post(`/admissions/${id}/reject`, {
-        rejectionReason,
+        reason,
       });
       setSuccess(t('admissions.applicationRejected'));
+      setError('');
       setRejectDialog(false);
       fetchAdmission();
     } catch (error: any) {
-      setError(error.response?.data?.message || t('admissions.failedToReject'));
+      setError(getActionError(error, t('admissions.failedToReject')));
     }
   };
 
@@ -422,6 +495,7 @@ export function AdmissionDetail() {
             <TextField
               fullWidth
               type="datetime-local"
+              required
               label={t('admissions.testDateAndTime')}
               value={testDate}
               onChange={(e) => setTestDate(e.target.value)}
@@ -434,9 +508,21 @@ export function AdmissionDetail() {
                 fullWidth
                 type="number"
                 label={t('admissions.testScore')}
+                inputProps={{ min: 0, max: testMaxScore || undefined, step: 1 }}
+                required
                 value={testScore}
                 onChange={(e) => setTestScore(e.target.value)}
                 sx={{ mt: 2, mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                type="number"
+                label={t('admissions.testMaxScore')}
+                inputProps={{ min: 1, step: 1 }}
+                required
+                value={testMaxScore}
+                onChange={(e) => setTestMaxScore(e.target.value)}
+                sx={{ mb: 2 }}
               />
               <TextField
                 fullWidth
@@ -470,6 +556,7 @@ export function AdmissionDetail() {
             <TextField
               fullWidth
               type="datetime-local"
+              required
               label={t('admissions.interviewDateAndTime')}
               value={interviewDate}
               onChange={(e) => setInterviewDate(e.target.value)}
@@ -483,6 +570,7 @@ export function AdmissionDetail() {
                 multiline
                 rows={4}
                 label={t('admissions.interviewFeedback')}
+                required
                 value={interviewFeedback}
                 onChange={(e) => setInterviewFeedback(e.target.value)}
                 sx={{ mt: 2, mb: 2 }}
@@ -491,6 +579,7 @@ export function AdmissionDetail() {
                 fullWidth
                 type="number"
                 label={t('admissions.interviewScoreOptional')}
+                inputProps={{ min: 0, max: 100, step: 1 }}
                 value={interviewScore}
                 onChange={(e) => setInterviewScore(e.target.value)}
               />
@@ -549,6 +638,8 @@ export function AdmissionDetail() {
             multiline
             rows={4}
             label={t('admissions.rejectionReason')}
+            required
+            inputProps={{ maxLength: 500 }}
             value={rejectionReason}
             onChange={(e) => setRejectionReason(e.target.value)}
             sx={{ mt: 2 }}

@@ -1773,12 +1773,18 @@
     "enrolledSuccessfully": "विद्यार्थी सफलतापूर्वक नामांकन गरियो!",
     "failedToEnroll": "विद्यार्थी नामांकन गर्न असफल",
     "testDateAndTime": "परीक्षाको मिति र समय",
+    "testDateRequired": "परीक्षाको मिति र समय चयन गर्नुहोस्।",
     "testScore": "परीक्षा अंक",
+    "testMaxScore": "पूर्णाङ्क",
+    "testScoreRangeInvalid": "शून्यदेखि पूर्णाङ्कसम्मको अंक प्रविष्ट गर्नुहोस्।",
     "testRemarks": "टिप्पणी",
     "interviewDateAndTime": "अन्तर्वार्ताको मिति र समय",
+    "interviewDateRequired": "अन्तर्वार्ताको मिति र समय चयन गर्नुहोस्।",
     "interviewFeedback": "अन्तर्वार्ता प्रतिक्रिया",
+    "interviewFeedbackOrScoreInvalid": "प्रतिक्रिया र वैकल्पिक रूपमा ० देखि १०० सम्मको पूर्णाङ्क प्रविष्ट गर्नुहोस्।",
     "interviewScoreOptional": "अन्तर्वार्ता अंक (वैकल्पिक)",
     "rejectionReason": "अस्वीकारको कारण",
+    "rejectionReasonRequired": "५०० वर्णभन्दा कम अस्वीकारको कारण प्रविष्ट गर्नुहोस्।",
     "rejectApplication": "आवेदन अस्वीकार गर्नुहोस्"
   },
   "library": {
