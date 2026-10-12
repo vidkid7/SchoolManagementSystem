@@ -389,6 +389,7 @@ describe('Academic API Integration Tests', () => {
             nameEn: 'Mathematics Test',
             nameNp: 'गणित परीक्षण',
             type: 'compulsory',
+            fullMarks: 90,
             creditHours: 100,
             theoryMarks: 75,
             practicalMarks: 25,
@@ -398,6 +399,7 @@ describe('Academic API Integration Tests', () => {
         expect(response.status).toBe(201);
         expect(response.body.success).toBe(true);
         expect(response.body.data.code).toBe('ACADEMIC_TEST_MATH');
+        expect(response.body.data.fullMarks).toBe(90);
         testSubject = response.body.data;
       });
 
@@ -475,12 +477,14 @@ describe('Academic API Integration Tests', () => {
           .set('Authorization', `Bearer ${adminToken}`)
           .send({
             subjectId: testSubject.subjectId,
-            creditHours: 120
+            creditHours: 120,
+            fullMarks: 120
           });
 
         expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);
         expect(response.body.data.creditHours).toBe(120);
+        expect(response.body.data.fullMarks).toBe(120);
       });
     });
   });

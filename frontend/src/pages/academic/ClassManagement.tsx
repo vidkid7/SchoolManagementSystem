@@ -50,6 +50,7 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { SubjectFormValues, toSubjectApiPayload } from './subjectPayload';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -121,7 +122,7 @@ export const ClassManagement = () => {
   });
 
   // Subject form
-  const [subjectForm, setSubjectForm] = useState({
+  const [subjectForm, setSubjectForm] = useState<SubjectFormValues>({
     code: '',
     name_en: '',
     name_np: '',
@@ -235,14 +236,19 @@ export const ClassManagement = () => {
 
   const handleSaveSubject = async () => {
     try {
-      const payload = {
-        code: subjectForm.code,
-        name_en: subjectForm.name_en,
-        name_np: subjectForm.name_np,
-        type: subjectForm.type,
-        credit_hours: parseInt(subjectForm.credit_hours),
-        full_marks: parseInt(subjectForm.full_marks),
-      };
+      if (!subjectForm.code.trim() || !subjectForm.name_en.trim() || !subjectForm.name_np.trim()) {
+        setError(t('academic.fillRequiredSubjectFields', 'Enter a subject code and names in English and Nepali.'));
+        return;
+      }
+
+      const creditHours = Number(subjectForm.credit_hours);
+      const fullMarks = Number(subjectForm.full_marks);
+      if (!Number.isInteger(creditHours) || creditHours < 1 || !Number.isInteger(fullMarks) || fullMarks < 1) {
+        setError(t('academic.invalidSubjectMarks', 'Credit hours and full marks must be positive whole numbers.'));
+        return;
+      }
+
+      const payload = toSubjectApiPayload(subjectForm);
 
       if (editMode && editId) {
         await apiClient.put('/academic/subjects', { subjectId: editId, ...payload });
@@ -254,7 +260,11 @@ export const ClassManagement = () => {
       fetchData();
     } catch (error: any) {
       console.error('Failed to save subject:', error);
-      setError(error.response?.data?.message || t('academic.failedToSaveSubject'));
+      const validationErrors = error.response?.data?.errors;
+      const details = Array.isArray(validationErrors)
+        ? validationErrors.map((item: { message?: string }) => item.message).filter(Boolean).join(', ')
+        : '';
+      setError(details || error.response?.data?.message || t('academic.failedToSaveSubject'));
     }
   };
 

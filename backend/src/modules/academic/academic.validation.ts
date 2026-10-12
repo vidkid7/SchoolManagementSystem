@@ -271,6 +271,10 @@ export const createSubjectValidation = [
     .optional()
     .isInt({ min: 1, max: 500 })
     .withMessage('Credit hours must be between 1 and 500'),
+  body('fullMarks')
+    .optional()
+    .isInt({ min: 1, max: 200 })
+    .withMessage('Full marks must be between 1 and 200'),
   body('theoryMarks')
     .optional()
     .isInt({ min: 0, max: 100 })
@@ -318,6 +322,10 @@ export const updateSubjectValidation = [
     .optional()
     .isInt({ min: 1, max: 500 })
     .withMessage('Credit hours must be between 1 and 500'),
+  body('fullMarks')
+    .optional()
+    .isInt({ min: 1, max: 200 })
+    .withMessage('Full marks must be between 1 and 200'),
   body('theoryMarks')
     .optional()
     .isInt({ min: 0, max: 100 })

@@ -155,7 +155,7 @@ class AcademicController {
   });
 
   createSubject = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { code, nameEn, nameNp, type, stream, creditHours, theoryMarks, practicalMarks, passMarks } = req.body;
+    const { code, nameEn, nameNp, type, stream, creditHours, fullMarks, theoryMarks, practicalMarks, passMarks } = req.body;
     if (!code || !nameEn || !nameNp || !type) {
       throw new ValidationError('code, nameEn, nameNp, and type are required');
     }
@@ -167,6 +167,7 @@ class AcademicController {
       type,
       stream,
       creditHours,
+      fullMarks,
       theoryMarks,
       practicalMarks,
       passMarks

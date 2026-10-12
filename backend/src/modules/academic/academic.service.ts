@@ -190,17 +190,20 @@ class AcademicService {
     type: 'compulsory' | 'optional';
     stream?: string;
     creditHours?: number;
+    fullMarks?: number;
     theoryMarks?: number;
     practicalMarks?: number;
     passMarks?: number;
   }): Promise<Subject> {
-    const fullMarks = (data.theoryMarks || 75) + (data.practicalMarks || 25);
+    const theoryMarks = data.theoryMarks ?? 75;
+    const practicalMarks = data.practicalMarks ?? 25;
+    const fullMarks = data.fullMarks ?? theoryMarks + practicalMarks;
     return Subject.create({
       ...data,
-      creditHours: data.creditHours || 100,
-      theoryMarks: data.theoryMarks || 75,
-      practicalMarks: data.practicalMarks || 25,
-      passMarks: data.passMarks || 35,
+      creditHours: data.creditHours ?? 100,
+      theoryMarks,
+      practicalMarks,
+      passMarks: data.passMarks ?? 35,
       fullMarks
     });
   }
