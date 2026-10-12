@@ -42,20 +42,7 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { createIssueBookPayload } from './issueBookPayload';
-
-interface Circulation {
-  circulationId: number;
-  bookTitle: string;
-  accessionNumber: string;
-  memberName: string;
-  memberType: 'student' | 'staff';
-  issueDate: string;
-  dueDate: string;
-  returnDate?: string;
-  status: 'issued' | 'returned' | 'overdue';
-  fineAmount?: number;
-  finePaid?: boolean;
-}
+import { CirculationRow as Circulation, normalizeCirculation } from './circulationRow';
 
 interface BookOption {
   bookId: number;
@@ -200,7 +187,8 @@ export function BookCirculation() {
           limit: rowsPerPage,
         },
       });
-      setCirculations(response.data?.data || []);
+      const rows = Array.isArray(response.data?.data) ? response.data.data : [];
+      setCirculations(rows.map(normalizeCirculation));
       setTotal(response.data?.meta?.total || 0);
     } catch (err) {
       console.error('Failed to fetch circulations:', err);
