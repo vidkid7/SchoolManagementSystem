@@ -136,6 +136,9 @@ export const BSDatePicker: React.FC<BSDatePickerProps> = ({
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     if (!disabled) {
+      // Keep the calendar on the selected date when reopening it. This lets
+      // users jump to older years without paging from the current month.
+      setViewDate(value || new Date());
       setAnchorEl(event.currentTarget);
     }
   };

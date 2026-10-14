@@ -50,7 +50,6 @@ interface FeeStructure {
   className?: string;
   amount: number;
   totalAmount?: number;
-  dueDate: string;
   description?: string;
   isActive: boolean;
 }
@@ -77,7 +76,6 @@ export function FeeStructures() {
     academicYearId: '',
     classId: '',
     amount: '',
-    dueDate: '',
     description: '',
   });
 
@@ -106,7 +104,6 @@ export function FeeStructures() {
         academicYearId: fee.academicYearId.toString(),
         classId: fee.classId?.toString() || fee.applicableClasses?.[0]?.toString() || '',
         amount: (fee.amount ?? (fee as any).totalAmount ?? 0).toString(),
-        dueDate: fee.dueDate ? fee.dueDate.split('T')[0] : '',
         description: fee.description || '',
       });
     } else {
@@ -116,7 +113,6 @@ export function FeeStructures() {
         academicYearId: currentYear ? String(currentYear.academicYearId) : '',
         classId: '',
         amount: '',
-        dueDate: '',
         description: '',
       });
     }
@@ -130,6 +126,7 @@ export function FeeStructures() {
   };
 
   const handleSubmit = async () => {
+    setError('');
     try {
       const name = formData.name.trim();
       const academicYearId = Number(formData.academicYearId);
@@ -139,13 +136,16 @@ export function FeeStructures() {
       const description = formData.description.trim() || undefined;
 
       if (!name) {
-        throw new Error(t('finance.feeNameRequired', { defaultValue: 'Fee name is required' }));
+        setError(t('finance.feeNameRequired', { defaultValue: 'Fee name is required' }));
+        return;
       }
       if (!Number.isFinite(academicYearId) || academicYearId <= 0) {
-        throw new Error(t('finance.academicYearRequired', { defaultValue: 'Academic year is required' }));
+        setError(t('finance.academicYearRequired', { defaultValue: 'Academic year is required' }));
+        return;
       }
       if (!Number.isFinite(amount) || amount <= 0) {
-        throw new Error(t('finance.amountRequired', { defaultValue: 'Amount must be greater than zero' }));
+        setError(t('finance.amountRequired', { defaultValue: 'Amount must be greater than zero' }));
+        return;
       }
 
       const payload = {
@@ -182,7 +182,7 @@ export function FeeStructures() {
       fetchFeeStructures();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || t('finance.failedToLoad'));
+      setError(err.response?.data?.message || err.message || t('finance.failedToSave', { defaultValue: 'Failed to save fee structure' }));
     }
   };
 
@@ -217,7 +217,7 @@ export function FeeStructures() {
       </Paper>
 
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
+      {error && !openDialog && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
       <Paper sx={{ ...S.GLASS }}>
         <TableContainer>
@@ -228,7 +228,6 @@ export function FeeStructures() {
                 <TableCell>{t('finance.academicYear')}</TableCell>
                 <TableCell>{t('finance.className')}</TableCell>
                 <TableCell align="right">{t('finance.amount')}</TableCell>
-                <TableCell>{t('finance.dueDate')}</TableCell>
                 <TableCell>{t('common.active')}</TableCell>
                 <TableCell align="center">{t('common.actions')}</TableCell>
               </TableRow>
@@ -236,11 +235,11 @@ export function FeeStructures() {
             <TableBody>
               {loading ? (
                 <TableRow sx={S.TR_HOVER}>
-                  <TableCell colSpan={7} align="center" sx={S.TD}>{t('common.loading')}</TableCell>
+                  <TableCell colSpan={6} align="center" sx={S.TD}>{t('common.loading')}</TableCell>
                 </TableRow>
               ) : feeStructures.length === 0 ? (
                 <TableRow sx={S.TR_HOVER}>
-                  <TableCell colSpan={7} align="center" sx={S.TD}>
+                  <TableCell colSpan={6} align="center" sx={S.TD}>
                     {t('finance.noFeeStructures')}
                   </TableCell>
                 </TableRow>
@@ -249,9 +248,15 @@ export function FeeStructures() {
                   <TableRow key={fee.feeStructureId} sx={S.TR_HOVER}>
                     <TableCell sx={S.TD}>{fee.name}</TableCell>
                     <TableCell sx={S.TD}>{fee.academicYearName || fee.academicYearId}</TableCell>
-                    <TableCell sx={S.TD}>{fee.className || fee.classId || t('finance.allClasses')}</TableCell>
+                    <TableCell sx={S.TD}>
+                      {fee.className || (fee.classId ? `Class ${fee.classId}` : (() => {
+                        const classes = fee.applicableClasses || [];
+                        return classes.length === 0 || ALL_CLASSES.every((grade) => classes.includes(grade))
+                          ? t('finance.allClasses')
+                          : classes.map((grade) => `Class ${grade}`).join(', ');
+                      })())}
+                    </TableCell>
                     <TableCell align="right" sx={S.TD}>NPR {(fee.amount || fee.totalAmount || 0).toLocaleString()}</TableCell>
-                    <TableCell sx={S.TD}>{fee.dueDate ? new Date(fee.dueDate).toLocaleDateString() : '—'}</TableCell>
                     <TableCell sx={S.TD}>
                       <Chip
                         label={fee.isActive ? t('common.active') : t('common.no')}
@@ -311,7 +316,8 @@ export function FeeStructures() {
               onChange={(e) => setFormData({ ...formData, academicYearId: e.target.value })}
               required
               fullWidth
-              helperText={t('finance.autoSetAcademicYear')}
+              disabled={Boolean(editingFee)}
+              helperText={editingFee ? t('finance.academicYearCannotEdit', { defaultValue: 'Academic year cannot be changed after the fee structure is created.' }) : t('finance.autoSetAcademicYear')}
             >
               {academicYears.length > 0 ? academicYears.map((y) => (
                 <MenuItem key={y.academicYearId} value={String(y.academicYearId)}>
@@ -333,9 +339,9 @@ export function FeeStructures() {
               fullWidth
             >
               <MenuItem value="">{t('finance.allClasses')}</MenuItem>
-              <MenuItem value="1">Class 1</MenuItem>
-              <MenuItem value="2">Class 2</MenuItem>
-              <MenuItem value="3">Class 3</MenuItem>
+              {ALL_CLASSES.map((grade) => (
+                <MenuItem key={grade} value={String(grade)}>Class {grade}</MenuItem>
+              ))}
             </TextField>
             <TextField
               label={t('finance.amount')}
@@ -344,15 +350,8 @@ export function FeeStructures() {
               onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
               required
               fullWidth
-            />
-            <TextField
-              label={t('finance.dueDate')}
-              type="date"
-              value={formData.dueDate}
-              onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-              required
-              fullWidth
-              InputLabelProps={{ shrink: true }}
+              disabled={Boolean(editingFee)}
+              helperText={editingFee ? t('finance.amountCannotEdit', { defaultValue: 'Amount is set by the fee components and cannot be changed here.' }) : undefined}
             />
             <TextField
               label={t('finance.description')}

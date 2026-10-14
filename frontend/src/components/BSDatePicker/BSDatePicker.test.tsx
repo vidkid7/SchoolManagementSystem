@@ -259,6 +259,27 @@ describe('BSDatePicker', () => {
         expect(screen.getByText('April')).toBeInTheDocument();
       });
     });
+
+    it('should allow selecting a different year in the BS calendar', async () => {
+      const handleChange = jest.fn();
+      render(
+        <BSDatePicker
+          label="Birth Date"
+          value={new Date('2023-04-14')}
+          defaultCalendarView="BS"
+          onChange={handleChange}
+        />
+      );
+
+      await userEvent.click(screen.getByLabelText('Birth Date'));
+      const yearSelect = screen.getByRole('combobox', { name: 'Select year' });
+      expect(yearSelect).toHaveTextContent('2080');
+      await userEvent.click(yearSelect);
+      await userEvent.click(await screen.findByRole('option', { name: '2070' }));
+
+      expect(screen.getByRole('combobox', { name: 'Select year' })).toHaveTextContent('2070');
+      expect(handleChange).not.toHaveBeenCalled();
+    });
   });
 
   describe('Date Selection', () => {
