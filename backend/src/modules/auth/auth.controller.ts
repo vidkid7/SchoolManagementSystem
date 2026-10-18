@@ -20,7 +20,10 @@ class AuthController {
       email,
       password,
       role,
-      phoneNumber
+      phoneNumber,
+      // Tenant ownership comes from the authenticated school admin.
+      municipalityId: req.user?.municipalityId,
+      schoolConfigId: req.user?.schoolConfigId,
     });
 
     sendSuccess(

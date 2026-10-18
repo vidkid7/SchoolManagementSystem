@@ -2,12 +2,57 @@ import { Request, Response, NextFunction } from 'express';
 import { AuthenticationError, AuthorizationError } from './errorHandler';
 import authService from '@modules/auth/auth.service';
 import { logger } from '@utils/logger';
-import { UserRole } from '@models/User.model';
+import User, { UserRole, UserStatus } from '@models/User.model';
 import {
   resolveTenantContext,
   runWithTenantContext,
   TenantContextStore,
 } from './tenantContext';
+
+/**
+ * Access tokens identify a user, but current account state and tenant ownership
+ * must come from the database so inactive users and stale role/scope claims
+ * cannot keep using an old token.
+ */
+const loadCurrentUser = async (userId: number) => {
+  const user = await User.findByPk(userId, {
+    attributes: [
+      'userId',
+      'username',
+      'email',
+      'role',
+      'status',
+      'municipalityId',
+      'schoolConfigId',
+      'accountLockedUntil',
+    ],
+  });
+
+  if (!user || user.status !== UserStatus.ACTIVE) {
+    throw new AuthenticationError('Account is not active');
+  }
+
+  if (user.isAccountLocked()) {
+    throw new AuthenticationError('Account is locked');
+  }
+
+  if (user.role === UserRole.MUNICIPALITY_ADMIN) {
+    if (!user.municipalityId) {
+      throw new AuthenticationError('Account is missing a municipality assignment');
+    }
+  } else if (!user.schoolConfigId) {
+    throw new AuthenticationError('Account is missing a school assignment');
+  }
+
+  return {
+    userId: user.userId,
+    username: user.username,
+    email: user.email,
+    role: user.role,
+    municipalityId: user.municipalityId,
+    schoolConfigId: user.schoolConfigId,
+  };
+};
 
 /**
  * Authentication Middleware
@@ -32,21 +77,18 @@ export const authenticate = async (
     // Verify token
     const decoded = authService.verifyAccessToken(token);
 
-    // Attach user data to request
+    // Resolve current status, role, and tenant ownership instead of trusting
+    // possibly stale claims embedded in the access token.
     req.user = {
-      userId: decoded.userId,
-      username: decoded.username,
-      email: decoded.email,
-      role: decoded.role,
-      municipalityId: decoded.municipalityId,
-      schoolConfigId: decoded.schoolConfigId
+      ...(await loadCurrentUser(decoded.userId)),
+      permissions: decoded.permissions,
     };
 
     const tenantContext = await resolveTenantContext({
-      userId: decoded.userId,
-      role: decoded.role,
-      municipalityId: decoded.municipalityId,
-      schoolConfigId: decoded.schoolConfigId,
+      userId: req.user.userId,
+      role: req.user.role,
+      municipalityId: req.user.municipalityId,
+      schoolConfigId: req.user.schoolConfigId,
     });
 
     if (tenantContext.schoolConfigIds) {
@@ -180,19 +222,15 @@ export const optionalAuth = async (
       const decoded = authService.verifyAccessToken(token);
 
       req.user = {
-        userId: decoded.userId,
-        username: decoded.username,
-        email: decoded.email,
-        role: decoded.role,
-        municipalityId: decoded.municipalityId,
-        schoolConfigId: decoded.schoolConfigId
+        ...(await loadCurrentUser(decoded.userId)),
+        permissions: decoded.permissions,
       };
 
       tenantContext = await resolveTenantContext({
-        userId: decoded.userId,
-        role: decoded.role,
-        municipalityId: decoded.municipalityId,
-        schoolConfigId: decoded.schoolConfigId,
+        userId: req.user.userId,
+        role: req.user.role,
+        municipalityId: req.user.municipalityId,
+        schoolConfigId: req.user.schoolConfigId,
       });
 
       if (tenantContext.schoolConfigIds) {

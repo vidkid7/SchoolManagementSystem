@@ -9,7 +9,7 @@ import {
 } from '../auth';
 import { AuthenticationError } from '../errorHandler';
 import authService from '@modules/auth/auth.service';
-import { UserRole } from '@models/User.model';
+import User, { UserRole, UserStatus } from '@models/User.model';
 
 // Mock dependencies
 jest.mock('@modules/auth/auth.service');
@@ -33,15 +33,26 @@ describe('Authentication Middleware', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    jest.restoreAllMocks();
   });
 
   describe('authenticate', () => {
-    it('should authenticate valid token and attach user to request', () => {
+    it('should authenticate an active user using current database role and scope', async () => {
       const mockDecoded = {
         userId: 1,
         username: 'testuser',
         email: 'test@example.com',
         role: 'School_Admin' as UserRole
+      };
+      const currentUser = {
+        userId: 1,
+        username: 'current-name',
+        email: 'current@example.com',
+        role: UserRole.TRANSPORT_MANAGER,
+        status: UserStatus.ACTIVE,
+        municipalityId: 'municipality-1',
+        schoolConfigId: 'school-1',
+        isAccountLocked: () => false,
       };
 
       mockRequest.headers = {
@@ -49,12 +60,64 @@ describe('Authentication Middleware', () => {
       };
 
       (authService.verifyAccessToken as jest.Mock).mockReturnValue(mockDecoded);
+      jest.spyOn(User, 'findByPk').mockResolvedValue(currentUser as never);
 
-      authenticate(mockRequest as Request, mockResponse as Response, mockNext);
+      await authenticate(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(authService.verifyAccessToken).toHaveBeenCalledWith('valid-token');
-      expect(mockRequest.user).toEqual(mockDecoded);
+      expect(User.findByPk).toHaveBeenCalledWith(1, expect.objectContaining({
+        attributes: expect.arrayContaining(['status', 'role', 'schoolConfigId'])
+      }));
+      expect(mockRequest.user).toMatchObject({
+        userId: 1,
+        username: 'current-name',
+        email: 'current@example.com',
+        role: UserRole.TRANSPORT_MANAGER,
+        schoolConfigId: 'school-1',
+      });
       expect(mockNext).toHaveBeenCalledWith();
+    });
+
+    it('should reject a token after the account is deactivated', async () => {
+      mockRequest.headers = { authorization: 'Bearer old-token' };
+      (authService.verifyAccessToken as jest.Mock).mockReturnValue({ userId: 1 });
+      jest.spyOn(User, 'findByPk').mockResolvedValue({
+        userId: 1,
+        username: 'inactive',
+        email: 'inactive@example.com',
+        role: UserRole.TRANSPORT_MANAGER,
+        status: UserStatus.INACTIVE,
+        isAccountLocked: () => false,
+      } as never);
+
+      await authenticate(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(expect.objectContaining({
+        message: 'Account is not active',
+        statusCode: 401,
+      }));
+      expect(mockRequest.user).toBeUndefined();
+    });
+
+    it('should reject an active school role without a school assignment', async () => {
+      mockRequest.headers = { authorization: 'Bearer unscoped-token' };
+      (authService.verifyAccessToken as jest.Mock).mockReturnValue({ userId: 2 });
+      jest.spyOn(User, 'findByPk').mockResolvedValue({
+        userId: 2,
+        username: 'unscoped',
+        email: 'unscoped@example.com',
+        role: UserRole.TRANSPORT_MANAGER,
+        status: UserStatus.ACTIVE,
+        isAccountLocked: () => false,
+      } as never);
+
+      await authenticate(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(expect.objectContaining({
+        message: 'Account is missing a school assignment',
+        statusCode: 401,
+      }));
+      expect(mockRequest.user).toBeUndefined();
     });
 
     it('should throw error when no authorization header', () => {
@@ -217,7 +280,7 @@ describe('Authentication Middleware', () => {
   });
 
   describe('optionalAuth', () => {
-    it('should attach user when valid token is provided', () => {
+    it('should attach current active user when a valid token is provided', async () => {
       const mockDecoded = {
         userId: 1,
         username: 'testuser',
@@ -230,10 +293,17 @@ describe('Authentication Middleware', () => {
       };
 
       (authService.verifyAccessToken as jest.Mock).mockReturnValue(mockDecoded);
+      jest.spyOn(User, 'findByPk').mockResolvedValue({
+        ...mockDecoded,
+        status: UserStatus.ACTIVE,
+        schoolConfigId: 'school-1',
+        isAccountLocked: () => false,
+      } as never);
 
-      optionalAuth(mockRequest as Request, mockResponse as Response, mockNext);
+      await optionalAuth(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(mockRequest.user).toEqual(mockDecoded);
+      expect(mockRequest.user).toMatchObject(mockDecoded);
+      expect(mockRequest.user?.schoolConfigId).toBe('school-1');
       expect(mockNext).toHaveBeenCalledWith();
     });
 

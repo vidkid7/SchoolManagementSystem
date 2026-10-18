@@ -2,6 +2,7 @@ import User, { UserRole, UserStatus } from '@models/User.model';
 import Municipality from '@models/Municipality.model';
 import { 
   AuthenticationError, 
+  AuthorizationError,
   ValidationError, 
   ConflictError,
   NotFoundError 
@@ -53,7 +54,17 @@ class AuthService {
     password: string;
     role: UserRole;
     phoneNumber?: string;
+    municipalityId?: string;
+    schoolConfigId?: string;
   }): Promise<Record<string, unknown>> {
+    if (userData.role === UserRole.SCHOOL_ADMIN || userData.role === UserRole.MUNICIPALITY_ADMIN) {
+      throw new AuthorizationError('This role cannot be assigned through school user registration');
+    }
+
+    if (!userData.schoolConfigId) {
+      throw new ValidationError('A school assignment is required to register a school user');
+    }
+
     // Check if username already exists
     const existingUsername = await User.findOne({
       where: { username: userData.username }
@@ -79,6 +90,8 @@ class AuthService {
       password: userData.password,
       role: userData.role,
       phoneNumber: userData.phoneNumber,
+      municipalityId: userData.municipalityId,
+      schoolConfigId: userData.schoolConfigId,
       status: UserStatus.ACTIVE,
       failedLoginAttempts: 0
     });
