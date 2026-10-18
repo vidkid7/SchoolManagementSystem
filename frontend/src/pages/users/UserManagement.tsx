@@ -223,11 +223,16 @@ export const UserManagement = () => {
 
   const handleSubmit = async () => {
     try {
+      const payload = {
+        ...userForm,
+        phone: userForm.phone.trim() || undefined,
+      };
+
       if (formMode === 'create') {
-        await apiClient.post('/api/v1/users', userForm);
+        await apiClient.post('/api/v1/users', payload);
         setSnackbar({ open: true, message: t('userManagement.createSuccess'), severity: 'success' });
       } else {
-        await apiClient.put(`/api/v1/users/${selectedUser?.userId}`, userForm);
+        await apiClient.put(`/api/v1/users/${selectedUser?.userId}`, payload);
         setSnackbar({ open: true, message: t('userManagement.updateSuccess'), severity: 'success' });
       }
       handleCloseDialog();
