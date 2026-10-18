@@ -452,7 +452,7 @@ export const StudentDetail = () => {
               </Avatar>
               <Box>
                 <Typography variant="h4" sx={{ fontWeight: 800, mb: 0.5 }}>
-                  {student.firstNameEn} {student.middleNameEn} {student.lastNameEn}
+                  {[student.firstNameEn, student.middleNameEn, student.lastNameEn].filter(Boolean).join(' ')}
                 </Typography>
                 <Typography variant="body1" sx={{ opacity: 0.9, mb: 1.5 }}>
                   {t('students.studentId')}: <strong>{student.studentCode}</strong>
