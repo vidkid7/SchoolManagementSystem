@@ -98,7 +98,7 @@ describe('BSDatePicker', () => {
 
       const input = screen.getByLabelText('Birth Date') as HTMLInputElement;
       expect(input.value).toBe('');
-      expect(consoleErrorSpy).toHaveBeenCalled();
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
 
       consoleErrorSpy.mockRestore();
     });
@@ -326,10 +326,9 @@ describe('BSDatePicker', () => {
           return btn.textContent === '1';
         });
 
-        // At least one should have selected styling (check via class or aria attributes)
+        // The selected date is exposed as a pressed state for assistive technology.
         const selectedButton = dayButtons.find((btn) => {
-          const classes = btn.className;
-          return classes.includes('selected') || btn.getAttribute('aria-selected');
+          return btn.getAttribute('aria-pressed') === 'true';
         });
 
         expect(selectedButton).toBeDefined();

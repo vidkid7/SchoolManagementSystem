@@ -466,6 +466,7 @@ const BSCalendarView: React.FC<BSCalendarViewProps> = ({
                 selected={isDateSelected(date)}
                 today={isToday(date)}
                 disabled={isDateDisabled(date)}
+                aria-pressed={isDateSelected(date)}
                 onClick={() => !isDateDisabled(date) && onDateSelect(date)}
               >
                 {calendarView === 'BS' ? new NepaliDate(date).getDate() : date.getDate()}
