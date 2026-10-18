@@ -28,10 +28,13 @@ jest.mock('../../services/apiClient', () => {
 
 // Mock i18next
 jest.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-    i18n: { language: 'en' },
-  }),
+  useTranslation: () => {
+    const translations = require('../../i18n/locales/en/translation.json');
+    return {
+      t: (key: string) => key.split('.').reduce((value: any, part: string) => value?.[part], translations) ?? key,
+      i18n: { language: 'en' },
+    };
+  },
 }));
 
 // Create a mock store
@@ -66,7 +69,7 @@ describe('Calendar Component', () => {
 
     renderCalendar();
 
-    expect(screen.getByText('Calendar / पात्रो')).toBeInTheDocument();
+    expect(screen.getByText('Calendar')).toBeInTheDocument();
   });
 
   it('should display BS/AD toggle buttons', () => {
@@ -247,7 +250,8 @@ describe('Calendar Component', () => {
       data: { success: true, data: [] },
     });
 
-    const prevButton = screen.getAllByRole('button')[0]; // First button is previous
+    const prevButton = screen.getByTestId('ChevronLeftIcon').closest('button');
+    expect(prevButton).not.toBeNull();
     fireEvent.click(prevButton);
 
     // Should trigger a new fetch
@@ -274,7 +278,8 @@ describe('Calendar Component', () => {
       data: { success: true, data: [] },
     });
 
-    const nextButton = screen.getAllByRole('button')[2]; // Third button is next
+    const nextButton = screen.getByTestId('ChevronRightIcon').closest('button');
+    expect(nextButton).not.toBeNull();
     fireEvent.click(nextButton);
 
     // Should trigger a new fetch
