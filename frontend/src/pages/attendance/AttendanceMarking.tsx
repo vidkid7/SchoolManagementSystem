@@ -115,13 +115,22 @@ export const AttendanceMarking = () => {
   };
 
   const fetchStudents = async () => {
+    const selectedClassData = classes.find((cls) =>
+      cls.gradeLevel.toString() === selectedClass && cls.section === selectedSection
+    );
+    if (!selectedClassData) {
+      setStudents([]);
+      setError(t('attendance.selectClassSectionPeriodError'));
+      return;
+    }
+
     try {
       setLoading(true);
       setError('');
       
       const response = await apiClient.get('/students', {
         params: {
-          class: selectedClass,
+          classId: selectedClassData.classId,
           section: selectedSection,
           status: 'active',
         },
@@ -452,7 +461,7 @@ export const AttendanceMarking = () => {
                   variant="contained"
                   size="large"
                   onClick={handleSave}
-                  disabled={saving || students.length === 0}
+                  disabled={saving || students.length === 0 || !selectedPeriod}
                   sx={{ ...S.BTN_PRIMARY, minWidth: 200 }}
                 >
                   {saving ? t('attendance.savingAttendance') : t('attendance.saveAttendance')}
