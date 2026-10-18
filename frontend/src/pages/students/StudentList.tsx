@@ -292,9 +292,10 @@ export const StudentList = () => {
               </Box>
             </Box>
             <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-              <Tooltip title={t('common.refresh')}>
+              <Tooltip title={t('common.refresh')} describeChild>
                 <span>
                 <IconButton
+                  aria-label={t('common.refresh')}
                   onClick={() => fetchStudents(debouncedSearch)}
                   disabled={loading}
                   sx={{
@@ -516,7 +517,7 @@ export const StudentList = () => {
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, position: 'relative', zIndex: 2 }}>
             <FilterIcon sx={{ color: C.neutral }} />
-            <Typography variant="subtitle1" fontWeight={700}>
+            <Typography variant="subtitle1" component="h5" fontWeight={700}>
               {t('common.filter')} & {t('common.search')}
             </Typography>
             {hasActiveFilters && (
@@ -586,8 +587,10 @@ export const StudentList = () => {
             
             <Grid item xs={6} md={2}>
               <FormControl fullWidth size="small">
-                <InputLabel>{t('students.class')}</InputLabel>
+                <InputLabel id="student-class-filter-label">{t('students.class')}</InputLabel>
                 <Select
+                  id="student-class-filter"
+                  labelId="student-class-filter-label"
                   value={classFilter}
                   label={t('students.class')}
                   onChange={(e) => setClassFilter(e.target.value)}
@@ -606,8 +609,10 @@ export const StudentList = () => {
 
             <Grid item xs={6} md={2}>
               <FormControl fullWidth size="small">
-                <InputLabel>{t('students.section')}</InputLabel>
+                <InputLabel id="student-section-filter-label">{t('students.section')}</InputLabel>
                 <Select
+                  id="student-section-filter"
+                  labelId="student-section-filter-label"
                   value={sectionFilter}
                   label={t('students.section')}
                   onChange={(e) => setSectionFilter(e.target.value)}
@@ -626,8 +631,10 @@ export const StudentList = () => {
 
             <Grid item xs={6} md={2}>
               <FormControl fullWidth size="small">
-                <InputLabel>{t('students.status')}</InputLabel>
+                <InputLabel id="student-status-filter-label">{t('students.status')}</InputLabel>
                 <Select
+                  id="student-status-filter"
+                  labelId="student-status-filter-label"
                   value={statusFilter}
                   label={t('students.status')}
                   onChange={(e) => setStatusFilter(e.target.value)}
@@ -693,7 +700,7 @@ export const StudentList = () => {
             ? alpha(theme.palette.background.paper, 0.8)
             : alpha(theme.palette.primary.main, 0.02),
         }}>
-          <Typography variant="subtitle1" fontWeight={600}>
+          <Typography variant="subtitle1" component="h5" fontWeight={600}>
             {t('students.studentList')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
