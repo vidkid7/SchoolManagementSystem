@@ -93,6 +93,8 @@ export const Messaging: React.FC<MessagingProps> = () => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const newConversationButtonRef = useRef<HTMLButtonElement>(null);
+  const newGroupButtonRef = useRef<HTMLButtonElement>(null);
 
   // Load available users for new conversation
   const loadAvailableUsers = useCallback(async () => {
@@ -511,6 +513,7 @@ export const Messaging: React.FC<MessagingProps> = () => {
               <Box sx={{ display: 'flex', gap: 0.5 }}>
                 <IconButton 
                   size="medium" 
+                  ref={newConversationButtonRef}
                   aria-label={t('communication.newConversation')}
                   onClick={handleOpenNewConversation}
                   sx={{ 
@@ -523,6 +526,7 @@ export const Messaging: React.FC<MessagingProps> = () => {
                 </IconButton>
                 <IconButton 
                   size="medium" 
+                  ref={newGroupButtonRef}
                   aria-label={t('communication.newGroup')}
                   onClick={handleOpenNewGroup}
                   sx={{ 
@@ -964,6 +968,14 @@ export const Messaging: React.FC<MessagingProps> = () => {
       {/* New Conversation Dialog */}
       <Dialog 
         open={newConversationDialogOpen} 
+        disableRestoreFocus
+        TransitionProps={{
+          onExited: () => {
+            window.requestAnimationFrame(() => {
+              window.requestAnimationFrame(() => newConversationButtonRef.current?.focus());
+            });
+          },
+        }}
         onClose={() => {
           setNewConversationDialogOpen(false);
           setSelectedUserId(null);
@@ -1047,6 +1059,14 @@ export const Messaging: React.FC<MessagingProps> = () => {
       {/* New Group Dialog */}
       <Dialog 
         open={newGroupDialogOpen} 
+        disableRestoreFocus
+        TransitionProps={{
+          onExited: () => {
+            window.requestAnimationFrame(() => {
+              window.requestAnimationFrame(() => newGroupButtonRef.current?.focus());
+            });
+          },
+        }}
         onClose={() => {
           setNewGroupDialogOpen(false);
           setGroupName('');
