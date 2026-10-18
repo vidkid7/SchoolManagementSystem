@@ -1,8 +1,9 @@
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { Box, TextField } from '@mui/material';
 import type { TextFieldProps } from '@mui/material/TextField';
+import { useState } from 'react';
 
 export function parseDateOnly(value: string | null | undefined): Date | null {
   if (!value) return null;
@@ -117,25 +118,60 @@ export interface YearSelectableDateTimeFieldProps extends Omit<TextFieldProps, '
 
 /** Drop-in local datetime string field with direct year-first navigation. */
 export function YearSelectableDateTimeField({ value, onChange, ...textFieldProps }: YearSelectableDateTimeFieldProps) {
+  const [pendingTime, setPendingTime] = useState('');
+  const dateTime = parseDateTimeLocal(value);
+  const timeValue = dateTime
+    ? `${String(dateTime.getHours()).padStart(2, '0')}:${String(dateTime.getMinutes()).padStart(2, '0')}`
+    : pendingTime;
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <DateTimePicker
-        label={String(textFieldProps.label ?? '')}
-        value={parseDateTimeLocal(value)}
-        onChange={(date) => onChange?.({ target: { value: formatDateTimeLocal(date) } })}
-        views={['year', 'month', 'day', 'hours', 'minutes']}
-        openTo="year"
-        disabled={textFieldProps.disabled}
-        minDateTime={parseDateTimeLocal((textFieldProps.inputProps as { min?: string } | undefined)?.min) ?? undefined}
-        maxDateTime={parseDateTimeLocal((textFieldProps.inputProps as { max?: string } | undefined)?.max) ?? undefined}
-        slotProps={{
-          textField: {
-            ...textFieldProps,
-            fullWidth: textFieldProps.fullWidth,
-            required: textFieldProps.required,
-          } as TextFieldProps,
-        }}
-      />
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'minmax(0, 1fr) 140px' }, gap: 1 }}>
+        <DatePicker
+          label={String(textFieldProps.label ?? '')}
+          value={dateTime}
+          onChange={(date) => {
+            if (!date) {
+              onChange?.({ target: { value: '' } });
+              return;
+            }
+            const [hours = '09', minutes = '00'] = (timeValue || '09:00').split(':');
+            const next = new Date(date.getFullYear(), date.getMonth(), date.getDate(), Number(hours), Number(minutes));
+            onChange?.({ target: { value: formatDateTimeLocal(next) } });
+          }}
+          views={['year', 'month', 'day']}
+          openTo="year"
+          disabled={textFieldProps.disabled}
+          minDate={parseDateTimeLocal((textFieldProps.inputProps as { min?: string } | undefined)?.min) ?? undefined}
+          maxDate={parseDateTimeLocal((textFieldProps.inputProps as { max?: string } | undefined)?.max) ?? undefined}
+          slotProps={{
+            textField: {
+              ...textFieldProps,
+              fullWidth: true,
+              required: textFieldProps.required,
+              error: textFieldProps.error,
+              helperText: textFieldProps.helperText,
+            } as TextFieldProps,
+          }}
+        />
+        <TextField
+          label="Time"
+          type="time"
+          value={timeValue}
+          disabled={textFieldProps.disabled}
+          required={textFieldProps.required}
+          fullWidth
+          InputLabelProps={{ shrink: true }}
+          onChange={(event) => {
+            const nextTime = event.target.value;
+            setPendingTime(nextTime);
+            if (!dateTime || !nextTime) return;
+            const [hours, minutes] = nextTime.split(':').map(Number);
+            const next = new Date(dateTime.getFullYear(), dateTime.getMonth(), dateTime.getDate(), hours, minutes);
+            onChange?.({ target: { value: formatDateTimeLocal(next) } });
+          }}
+        />
+      </Box>
     </LocalizationProvider>
   );
 }
