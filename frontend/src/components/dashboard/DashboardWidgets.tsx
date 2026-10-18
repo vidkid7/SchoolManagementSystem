@@ -163,7 +163,7 @@ export function SectionTitle({
             {eyebrow}
           </Typography>
         )}
-        <Typography variant="h6" sx={{ color: 'var(--sms-text, #0f172a)', fontWeight: 900, lineHeight: 1.15, fontSize: '1rem' }}>
+        <Typography component="h5" variant="h6" sx={{ color: 'var(--sms-text, #0f172a)', fontWeight: 900, lineHeight: 1.15, fontSize: '1rem' }}>
           {title}
         </Typography>
         {description && (
@@ -682,7 +682,12 @@ export function ChartCard({
         ) : type === 'sparkline' ? (
           <SparklineChart data={data} yKey={yKey} accent={accent} />
         ) : (
-          <DashboardDonutChart data={data} nameKey={nameKey} valueKey={valueKey} />
+          <DashboardDonutChart
+            data={data}
+            nameKey={nameKey}
+            valueKey={valueKey}
+            ariaLabel={`${title}: ${data.map((row) => `${String(row[nameKey] ?? 'Item')}, ${formatDashboardValue(row[valueKey], 'number')}`).join('; ')}`}
+          />
         )}
         {type === 'donut' && data.length > 0 && (
           <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
@@ -894,7 +899,7 @@ export function ProgressCard({ title, value, label, accent = 'blue' }: { title: 
           </Stack>
           <Typography sx={{ fontWeight: 900, color }}>{safeValue}%</Typography>
         </Stack>
-        <LinearProgress variant="determinate" value={safeValue} sx={{ height: 9, borderRadius: 10, bgcolor: alpha(color, 0.12), '& .MuiLinearProgress-bar': { bgcolor: color, borderRadius: 10 } }} />
+        <LinearProgress aria-label={title} aria-valuetext={`${safeValue}%`} variant="determinate" value={safeValue} sx={{ height: 9, borderRadius: 10, bgcolor: alpha(color, 0.12), '& .MuiLinearProgress-bar': { bgcolor: color, borderRadius: 10 } }} />
         {label && <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mt: 1 }}>{label}</Typography>}
       </CardContent>
     </Card>
@@ -917,7 +922,7 @@ export function ActivityFeed({ title, items, emptyLabel }: { title: string; item
   return (
     <Card elevation={0} className="dashboard-widget-card dashboard-widget-card--activity" sx={cardSx('blue')}>
       <CardContent sx={{ p: 1.7 }}>
-        <Typography variant="h6" sx={{ fontWeight: 900, color: 'var(--sms-text, #0f172a)', mb: 1.2, fontSize: '0.95rem' }}>{title}</Typography>
+        <Typography component="h5" variant="h6" sx={{ fontWeight: 900, color: 'var(--sms-text, #0f172a)', mb: 1.2, fontSize: '0.95rem' }}>{title}</Typography>
         {items.length === 0 ? (
           <EmptyState title={emptyLabel || 'No activity'} compact />
         ) : (
