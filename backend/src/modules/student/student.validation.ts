@@ -121,6 +121,8 @@ export const listStudentsQuerySchema = Joi.object({
   limit: Joi.number().integer().min(1).max(PAGINATION.MAX_PAGE_SIZE).default(PAGINATION.DEFAULT_PAGE_SIZE).optional(),
   search: Joi.string().trim().max(100).allow('', null).optional(),
   classId: Joi.number().integer().positive().allow(null).optional(),
+  class: Joi.number().integer().min(1).max(12).optional(),
+  section: Joi.string().trim().max(50).optional(),
   status: Joi.string().valid('active', 'inactive', 'transferred', 'graduated', 'suspended').optional(),
   gender: Joi.string().valid(...Object.values(GENDER)).optional(),
   admissionClass: Joi.number().integer().min(1).max(12).optional(),
