@@ -258,6 +258,7 @@ describe('DocumentController', () => {
         1,
         20
       );
+      expect(mockResponse.setHeader).toHaveBeenCalledWith('Cache-Control', 'private, no-store');
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: true,

@@ -269,6 +269,7 @@ export class DocumentController {
         limit
       );
 
+      res.setHeader('Cache-Control', 'private, no-store');
       res.json({
         success: true,
         data: result.documents,
