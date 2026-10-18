@@ -93,7 +93,7 @@ export function YearSelectableDateField({ value, onChange, ...textFieldProps }: 
       fullWidth={textFieldProps.fullWidth}
       minDate={parseDateOnly(inputConstraints?.min)}
       maxDate={parseDateOnly(inputConstraints?.max)}
-      textFieldProps={textFieldProps}
+      textFieldProps={textFieldProps as unknown as TextFieldProps}
     />
   );
 }
