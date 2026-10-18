@@ -511,6 +511,7 @@ export const Messaging: React.FC<MessagingProps> = () => {
               <Box sx={{ display: 'flex', gap: 0.5 }}>
                 <IconButton 
                   size="medium" 
+                  aria-label={t('communication.newConversation')}
                   onClick={handleOpenNewConversation}
                   sx={{ 
                     bgcolor: 'primary.main',
@@ -522,6 +523,7 @@ export const Messaging: React.FC<MessagingProps> = () => {
                 </IconButton>
                 <IconButton 
                   size="medium" 
+                  aria-label={t('communication.newGroup')}
                   onClick={handleOpenNewGroup}
                   sx={{ 
                     bgcolor: 'primary.main',
@@ -576,7 +578,7 @@ export const Messaging: React.FC<MessagingProps> = () => {
 
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-              <CircularProgress />
+              <CircularProgress aria-label={t('common.loading')} />
             </Box>
           ) : (
             <List sx={{ flex: 1, overflow: 'auto' }}>
@@ -719,7 +721,10 @@ export const Messaging: React.FC<MessagingProps> = () => {
             bgcolor: 'background.paper',
           }}>
             {mobileView === 'chat' && window.innerWidth <= 900 && (
-              <IconButton onClick={() => setMobileView('list')}>
+              <IconButton
+                aria-label={t('communication.backToConversations')}
+                onClick={() => setMobileView('list')}
+              >
                 <ArrowBackIcon />
               </IconButton>
             )}
@@ -752,7 +757,10 @@ export const Messaging: React.FC<MessagingProps> = () => {
                 </Box>
               </>
             ) : null}
-            <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
+            <IconButton
+              aria-label={t('communication.moreOptions')}
+              onClick={(e) => setAnchorEl(e.currentTarget)}
+            >
               <MoreVertIcon />
             </IconButton>
           </Box>
@@ -871,7 +879,11 @@ export const Messaging: React.FC<MessagingProps> = () => {
           {/* Message Input */}
           <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
-              <IconButton size="small" sx={{ mb: 0.5 }}>
+              <IconButton
+                aria-label={t('communication.attachFile')}
+                size="small"
+                sx={{ mb: 0.5 }}
+              >
                 <AttachFileIcon />
               </IconButton>
               <TextField
@@ -891,6 +903,7 @@ export const Messaging: React.FC<MessagingProps> = () => {
                 }}
               />
               <IconButton
+                aria-label={t('communication.sendMessage')}
                 color="primary"
                 onClick={selectedConversation ? handleSendMessage : handleSendGroupMessage}
                 disabled={!newMessage.trim() || sending}
@@ -902,7 +915,7 @@ export const Messaging: React.FC<MessagingProps> = () => {
                   '&.Mui-disabled': { bgcolor: 'action.disabledBackground' },
                 }}
               >
-                {sending ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
+                {sending ? <CircularProgress aria-label={t('common.loading')} size={20} color="inherit" /> : <SendIcon />}
               </IconButton>
             </Box>
           </Box>
@@ -969,7 +982,7 @@ export const Messaging: React.FC<MessagingProps> = () => {
         <DialogContent sx={{ pt: 2 }}>
           {loadingUsers ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-              <CircularProgress />
+              <CircularProgress aria-label={t('common.loading')} />
             </Box>
           ) : (
             <Autocomplete
@@ -1021,11 +1034,12 @@ export const Messaging: React.FC<MessagingProps> = () => {
           </Button>
           <Button 
             variant="contained" 
+            aria-label={t('communication.startChat')}
             onClick={handleCreateConversation}
             disabled={!selectedUserId || creatingConversation}
             sx={{ ...S.BTN_PRIMARY, minWidth: 100 }}
           >
-            {creatingConversation ? <CircularProgress size={24} /> : t('communication.startChat')}
+            {creatingConversation ? <CircularProgress aria-label={t('common.loading')} size={24} /> : t('communication.startChat')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1053,7 +1067,7 @@ export const Messaging: React.FC<MessagingProps> = () => {
         <DialogContent sx={{ pt: 2 }}>
           {loadingUsers ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-              <CircularProgress />
+              <CircularProgress aria-label={t('common.loading')} />
             </Box>
           ) : (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -1156,11 +1170,12 @@ export const Messaging: React.FC<MessagingProps> = () => {
           </Button>
           <Button 
             variant="contained" 
+            aria-label={t('common.create')}
             onClick={handleCreateGroup}
             disabled={!groupName.trim() || selectedGroupMembers.length === 0 || creatingGroup}
             sx={{ ...S.BTN_PRIMARY, minWidth: 100 }}
           >
-            {creatingGroup ? <CircularProgress size={24} /> : t('common.create')}
+            {creatingGroup ? <CircularProgress aria-label={t('common.loading')} size={24} /> : t('common.create')}
           </Button>
         </DialogActions>
       </Dialog>
