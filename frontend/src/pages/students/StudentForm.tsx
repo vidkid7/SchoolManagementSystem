@@ -831,7 +831,7 @@ export const StudentForm = () => {
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label={t('students.firstName')}
+                      label={`${t('students.firstName')} *`}
                       fullWidth
                       error={!!errors.first_name}
                       helperText={errors.first_name?.message}
@@ -869,7 +869,7 @@ export const StudentForm = () => {
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label={t('students.lastName')}
+                      label={`${t('students.lastName')} *`}
                       fullWidth
                       error={!!errors.last_name}
                       helperText={errors.last_name?.message}
