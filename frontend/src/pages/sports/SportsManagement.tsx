@@ -2,7 +2,7 @@
  * Sports Management - Comprehensive sports, teams, tournaments, achievements
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Box, Paper, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Chip, Alert, Grid, IconButton,
   useTheme,
@@ -68,6 +68,7 @@ export function SportsManagement() {
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [total, setTotal] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
+  const dialogOpenerRef = useRef<HTMLElement | null>(null);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -226,6 +227,7 @@ export function SportsManagement() {
   };
 
   const handleOpenDialog = (item?: any) => {
+    dialogOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     if (item) {
       setEditingItem(item);
       if (tabValue === 0) {
@@ -438,7 +440,7 @@ export function SportsManagement() {
                       <Button size="small" startIcon={<EnrollIcon />} onClick={() => { setEnrollSportId(item.sportId ?? item.id); setEnrollDialog(true); }}>{t('sports.enroll')}</Button>
                     </TableCell>
                     <TableCell align="center" sx={S.TD}>
-                      <IconButton size="small" onClick={() => handleOpenDialog(item)}><EditIcon fontSize="small" /></IconButton>
+                      <IconButton size="small" aria-label={t('common.edit')} title={t('common.edit')} onClick={() => handleOpenDialog(item)}><EditIcon fontSize="small" /></IconButton>
                       <IconButton size="small" onClick={() => handleDelete(item)} color="error"><DeleteIcon fontSize="small" /></IconButton>
                     </TableCell>
                   </TableRow>
@@ -473,7 +475,7 @@ export function SportsManagement() {
                     <TableCell sx={S.TD}>{item.captain ?? (item.captainId ? `Student #${item.captainId}` : '-')}</TableCell>
                     <TableCell align="center" sx={S.TD}>{item.playerCount ?? item.memberCount ?? item.members?.length ?? 0}</TableCell>
                     <TableCell align="center" sx={S.TD}>
-                      <IconButton size="small" onClick={() => handleOpenDialog(item)}><EditIcon fontSize="small" /></IconButton>
+                      <IconButton size="small" aria-label={t('common.edit')} title={t('common.edit')} onClick={() => handleOpenDialog(item)}><EditIcon fontSize="small" /></IconButton>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -644,7 +646,22 @@ export function SportsManagement() {
         <TablePagination component="div" count={total} page={page} onPageChange={(_, newPage) => setPage(newPage)} rowsPerPage={rowsPerPage} onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }} />
       </Paper>
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        maxWidth="md"
+        fullWidth
+        disableRestoreFocus
+        TransitionProps={{
+          onExited: () => {
+            window.requestAnimationFrame(() => {
+              window.requestAnimationFrame(() => {
+                if (dialogOpenerRef.current?.isConnected) dialogOpenerRef.current.focus();
+              });
+            });
+          },
+        }}
+      >
         <DialogTitle>{editingItem ? t('sports.edit') : t('common.create')} {[t('sports.sports'), t('sports.teams'), t('sports.tournaments'), t('sports.achievements')][tabValue]}</DialogTitle>
         <DialogContent>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}

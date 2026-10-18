@@ -10,6 +10,15 @@ import SportsEnrollment from '@models/SportsEnrollment.model';
 import SportsAchievement from '@models/SportsAchievement.model';
 import Tournament from '@models/Tournament.model';
 
+const serializeTeam = (team: any) => {
+  const values = typeof team?.get === 'function' ? team.get({ plain: false }) : team;
+  return {
+    ...values,
+    memberCount: Array.isArray(values?.members) ? values.members.length : 0,
+    hasCaptain: values?.captainId !== undefined && values?.captainId !== null,
+  };
+};
+
 /**
  * Sports Controller
  * Handles HTTP requests for sports management
@@ -279,17 +288,21 @@ class SportsController {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
       const offset = (page - 1) * limit;
 
-      const teams = await Team.findAll({
+      const { rows: teams, count: total } = await Team.findAndCountAll({
         where: filters,
         limit,
         offset,
         order: [['createdAt', 'DESC']]
       });
-      const total = teams.length;
+      // Return the model's raw attribute values explicitly. Team's custom
+      // toJSON method has been inconsistently serialized by the deployed API,
+      // dropping persisted fields such as name and sportId from list/detail
+      // responses. Normalize both Sequelize instances and controller mocks.
+      const data = teams.map(serializeTeam);
 
       res.status(200).json({
         success: true,
-        data: teams,
+        data,
         meta: {
           page,
           limit,
@@ -337,7 +350,7 @@ class SportsController {
 
       res.status(201).json({
         success: true,
-        data: team,
+        data: serializeTeam(team),
         message: 'Team created successfully'
       });
     } catch (error) {
@@ -382,7 +395,7 @@ class SportsController {
 
       res.status(200).json({
         success: true,
-        data: team
+        data: serializeTeam(team)
       });
     } catch (error) {
       next(error);
@@ -437,7 +450,7 @@ class SportsController {
 
       res.status(200).json({
         success: true,
-        data: team,
+        data: serializeTeam(team),
         message: 'Team updated successfully'
       });
     } catch (error) {

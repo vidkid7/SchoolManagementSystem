@@ -455,13 +455,40 @@ describe('Sports Controller', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: true,
-        data: mockTeams,
+        data: [{ ...mockTeams[0], memberCount: 0, hasCaptain: false }],
         meta: {
           page: 1,
           limit: 20,
           total: 1,
           totalPages: 1
         }
+      });
+    });
+
+    it('should preserve persisted team fields when serializing Sequelize rows', async () => {
+      const modelValues = {
+        teamId: 7,
+        name: 'QA Team',
+        sportId: 3,
+        members: [11, 12],
+        captainId: 11,
+      };
+      (Team.findAndCountAll as jest.Mock).mockResolvedValue({
+        rows: [{ get: jest.fn().mockReturnValue(modelValues) }],
+        count: 1,
+      });
+      mockRequest.query = { page: '1', limit: '20' };
+
+      await sportsController.getTeams(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: true,
+        data: [{ ...modelValues, memberCount: 2, hasCaptain: true }],
+        meta: { page: 1, limit: 20, total: 1, totalPages: 1 },
       });
     });
   });
@@ -495,7 +522,7 @@ describe('Sports Controller', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(201);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: true,
-        data: createdTeam,
+        data: { ...createdTeam, memberCount: 3, hasCaptain: true },
         message: 'Team created successfully'
       });
     });
