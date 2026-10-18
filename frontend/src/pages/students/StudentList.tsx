@@ -62,6 +62,7 @@ import { motion } from 'framer-motion';
 import { useNepaliNumbers } from '../../hooks/useNepaliNumbers';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { C, useAdminStyles } from '../../theme/designTokens';
+import { extractStudentSections } from './studentListUtils';
 
 const MotionCard = motion.create(Card);
 
@@ -116,11 +117,28 @@ export const StudentList = () => {
   const debouncedSearch = useDebouncedValue(search);
   const [classFilter, setClassFilter] = useState('');
   const [sectionFilter, setSectionFilter] = useState('');
+  const [sectionOptions, setSectionOptions] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState('');
   
   // Fuzzy search
   const [searchMode, setSearchMode] = useState<'exact' | 'fuzzy'>('exact');
   const [fuzzyResults, setFuzzyResults] = useState<FuzzySearchResult[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+    apiClient.get('/academic/classes')
+      .then((response) => {
+        const rows = response.data?.data || response.data;
+        if (mounted) setSectionOptions(extractStudentSections(rows));
+      })
+      .catch((error) => {
+        console.error('Failed to load student section filters:', error);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (searchMode === 'fuzzy' && debouncedSearch) {
@@ -622,7 +640,7 @@ export const StudentList = () => {
                   }}
                 >
                   <MenuItem value="">{t('reports.all')} {t('students.section')}</MenuItem>
-                  {['A', 'B', 'C', 'D', 'E'].map((s) => (
+                  {sectionOptions.map((s) => (
                     <MenuItem key={s} value={s}>{t('students.section')} {s}</MenuItem>
                   ))}
                 </Select>
