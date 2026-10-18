@@ -64,6 +64,7 @@ export function TopNavbar({ sidebarWidth, onMobileMenu }: TopNavbarProps) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   const userName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.username || 'User';
+  const userRoleLabel = (user?.role || '').replace(/_/g, ' ');
   const initials = userName.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
 
   const handleLogout = async () => {
@@ -138,7 +139,7 @@ export function TopNavbar({ sidebarWidth, onMobileMenu }: TopNavbarProps) {
             alignItems="center"
             spacing={1}
             role="button"
-            aria-label="Account menu"
+            aria-label={`${userName}${userRoleLabel ? ` ${userRoleLabel}` : ''}`}
             tabIndex={0}
             onClick={(event) => setAnchorEl(event.currentTarget)}
             onKeyDown={(event) => {

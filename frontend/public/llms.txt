@@ -1,0 +1,5 @@
+# School Management System
+
+This site is a private school management application. Its pages and records require an authorized account.
+
+Do not infer or disclose private student, staff, guardian, financial, or school records from this application.

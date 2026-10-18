@@ -310,7 +310,16 @@ export function ECAList() {
                     <TableCell sx={S.TD}><Chip label={getCategoryLabel(eca.category)} size="small" /></TableCell>
                     <TableCell sx={S.TD}>{getCoordinatorLabel(eca)}</TableCell>
                     <TableCell align="center" sx={S.TD}>{eca.enrolledCount ?? eca.currentEnrollment ?? 0}</TableCell>
-                    <TableCell sx={S.TD}><Chip label={eca.status} color={eca.status === 'active' ? 'success' : 'default'} size="small" /></TableCell>
+                    <TableCell sx={S.TD}>
+                      <Chip
+                        label={eca.status}
+                        size="small"
+                        sx={eca.status === 'active' ? {
+                          bgcolor: theme.palette.mode === 'dark' ? '#14532d' : '#dcfce7',
+                          color: theme.palette.mode === 'dark' ? '#dcfce7' : '#14532d',
+                        } : undefined}
+                      />
+                    </TableCell>
                     {canManageECA && (
                       <TableCell align="center" sx={S.TD}>
                         <IconButton size="small" aria-label={`${t('common.edit')} ${eca.name}`} onClick={() => handleOpenDialog(eca)}><EditIcon fontSize="small" /></IconButton>

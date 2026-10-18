@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Chip,
@@ -44,6 +45,7 @@ function itemIsActive(item: NavItem, currentPath: string): boolean {
 }
 
 export function Sidebar({ collapsed, currentPath, role, onCollapse, onNavigate }: SidebarProps) {
+  const { t } = useTranslation();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   const sections = useMemo(
@@ -113,7 +115,7 @@ export function Sidebar({ collapsed, currentPath, role, onCollapse, onNavigate }
     );
 
     return (
-      <Box key={`${item.label}-${item.path || 'group'}`}>
+      <Box component="li" key={`${item.label}-${item.path || 'group'}`}>
         {collapsed ? <Tooltip title={item.label} placement="right">{button}</Tooltip> : button}
         {hasChildren && !collapsed && (
           <Collapse in={open} timeout="auto" unmountOnExit>
@@ -141,14 +143,14 @@ export function Sidebar({ collapsed, currentPath, role, onCollapse, onNavigate }
           )}
         </Stack>
         {!collapsed && (
-          <IconButton onClick={onCollapse} size="small" sx={{ color: '#cbd5e1', bgcolor: 'rgba(255,255,255,0.07)' }}>
+          <IconButton onClick={onCollapse} size="small" aria-label={t('dashboard.collapse')} sx={{ color: '#cbd5e1', bgcolor: 'rgba(255,255,255,0.07)' }}>
             <ChevronLeft fontSize="small" />
           </IconButton>
         )}
       </Stack>
 
       {collapsed && (
-        <IconButton onClick={onCollapse} size="small" sx={{ mx: 'auto', mb: 1, color: '#cbd5e1', bgcolor: 'rgba(255,255,255,0.07)' }}>
+        <IconButton onClick={onCollapse} size="small" aria-label={t('dashboard.expand')} sx={{ mx: 'auto', mb: 1, color: '#cbd5e1', bgcolor: 'rgba(255,255,255,0.07)' }}>
           <ChevronRight fontSize="small" />
         </IconButton>
       )}
@@ -159,7 +161,7 @@ export function Sidebar({ collapsed, currentPath, role, onCollapse, onNavigate }
         {sections.map((section) => (
           <Box key={section.id} sx={{ mb: 1.5 }}>
             {!collapsed && (
-              <Typography variant="caption" sx={{ display: 'block', px: 2.2, py: 0.8, color: '#64748b', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <Typography variant="caption" sx={{ display: 'block', px: 2.2, py: 0.8, color: '#94a3b8', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 {section.title}
               </Typography>
             )}

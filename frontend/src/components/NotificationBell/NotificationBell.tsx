@@ -125,6 +125,7 @@ export function NotificationBell() {
           ref={anchorRef}
           onClick={handleOpen}
           size="small"
+          aria-label={`Notifications${unreadCount > 0 ? ` ${unreadCount > 99 ? '99+' : unreadCount}` : ''}`}
           sx={{
             position: 'relative',
             width: 36,
