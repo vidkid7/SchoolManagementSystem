@@ -54,17 +54,17 @@ export interface FeeComponentCreationAttributes extends Optional<FeeComponentAtt
  */
 class FeeComponent extends Model<FeeComponentAttributes, FeeComponentCreationAttributes> 
   implements FeeComponentAttributes {
-  public feeComponentId!: number;
-  public feeStructureId!: number;
-  public name!: string;
-  public type!: FeeComponentType;
-  public amount!: number;
-  public frequency!: FeeFrequency;
-  public isMandatory!: boolean;
-  public description?: string;
+  declare public feeComponentId: number;
+  declare public feeStructureId: number;
+  declare public name: string;
+  declare public type: FeeComponentType;
+  declare public amount: number;
+  declare public frequency: FeeFrequency;
+  declare public isMandatory: boolean;
+  declare public description?: string;
   
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 }
 
 /**
@@ -184,21 +184,21 @@ export interface FeeStructureCreationAttributes extends Optional<FeeStructureAtt
  */
 class FeeStructure extends Model<FeeStructureAttributes, FeeStructureCreationAttributes> 
   implements FeeStructureAttributes {
-  public feeStructureId!: number;
-  public name!: string;
-  public applicableClasses!: number[];
-  public applicableShifts!: string[];
-  public academicYearId!: number;
-  public totalAmount!: number;
-  public isActive!: boolean;
-  public description?: string;
+  declare public feeStructureId: number;
+  declare public name: string;
+  declare public applicableClasses: number[];
+  declare public applicableShifts: string[];
+  declare public academicYearId: number;
+  declare public totalAmount: number;
+  declare public isActive: boolean;
+  declare public description?: string;
   
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
-  public readonly deletedAt?: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
+  declare public readonly deletedAt?: Date;
 
   // Association property
-  public readonly feeComponents?: FeeComponent[];
+  declare public readonly feeComponents?: FeeComponent[];
 
   /**
    * Calculate total amount from fee components
