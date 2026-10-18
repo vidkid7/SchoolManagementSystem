@@ -29,18 +29,18 @@ export class Team
   extends Model<TeamAttributes, TeamCreationAttributes>
   implements TeamAttributes
 {
-  public teamId!: number;
-  public sportId!: number;
-  public name!: string;
-  public nameNp?: string;
-  public captainId?: number;
-  public members!: number[];
-  public coachId?: number;
-  public academicYearId!: number;
-  public status!: 'active' | 'inactive';
-  public remarks?: string;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public teamId: number;
+  declare public sportId: number;
+  declare public name: string;
+  declare public nameNp?: string;
+  declare public captainId?: number;
+  declare public members: number[];
+  declare public coachId?: number;
+  declare public academicYearId: number;
+  declare public status: 'active' | 'inactive';
+  declare public remarks?: string;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   public addMember(studentId: number): void {
     if (!this.members) {
