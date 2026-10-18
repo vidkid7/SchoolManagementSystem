@@ -6,7 +6,7 @@
  * Requirements: 25.2, 25.3, 25.5
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Paper,
@@ -119,6 +119,7 @@ export const CertificateManagement = () => {
   
   // Templates state
   const [templates, setTemplates] = useState<CertificateTemplate[]>([]);
+  const [templatesTotal, setTemplatesTotal] = useState(0);
   const [templatesLoading, setTemplatesLoading] = useState(true);
   const [templatePage, setTemplatePage] = useState(0);
   const [templatesPerPage, setTemplatesPerPage] = useState(10);
@@ -127,6 +128,7 @@ export const CertificateManagement = () => {
   
   // Certificates state
   const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [certificatesTotal, setCertificatesTotal] = useState(0);
   const [certificatesLoading, setCertificatesLoading] = useState(true);
   const [certPage, setCertPage] = useState(0);
   const [certsPerPage, setCertsPerPage] = useState(10);
@@ -176,11 +178,6 @@ export const CertificateManagement = () => {
   const [generating, setGenerating] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
-useEffect(() => {
-    fetchTemplates();
-    fetchCertificates();
-  }, []);
-
   useEffect(() => {
     if (generateDialogOpen || bulkGenerateDialogOpen) {
       fetchStudents();
@@ -206,42 +203,50 @@ useEffect(() => {
     }
   };
 
-const fetchTemplates = async () => {
+const fetchTemplates = useCallback(async () => {
     try {
       setTemplatesLoading(true);
       const params = new URLSearchParams({
-        page: (templatePage + 1).toString(),
-        limit: templatesPerPage.toString(),
         ...(templateSearch && { search: templateSearch }),
         ...(templateTypeFilter && { type: templateTypeFilter }),
       });
       const response = await apiClient.get(`/api/v1/certificate-templates?${params}`);
       setTemplates(response.data.data || []);
+      setTemplatesTotal(response.data.meta?.total ?? response.data.data?.length ?? 0);
     } catch (error) {
       console.error('Failed to fetch templates:', error);
     } finally {
       setTemplatesLoading(false);
     }
-  };
+  }, [templateSearch, templateTypeFilter]);
 
-const fetchCertificates = async () => {
+const fetchCertificates = useCallback(async () => {
     try {
       setCertificatesLoading(true);
       const params = new URLSearchParams({
-        page: (certPage + 1).toString(),
-        limit: certsPerPage.toString(),
         ...(certSearch && { search: certSearch }),
         ...(certTypeFilter && { type: certTypeFilter }),
         ...(certStatusFilter && { status: certStatusFilter }),
       });
       const response = await apiClient.get(`/api/v1/certificates?${params}`);
       setCertificates(response.data.data || []);
+      setCertificatesTotal(response.data.meta?.total ?? response.data.data?.length ?? 0);
     } catch (error) {
       console.error('Failed to fetch certificates:', error);
     } finally {
       setCertificatesLoading(false);
     }
-  };
+  }, [certSearch, certTypeFilter, certStatusFilter]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => fetchTemplates(), 250);
+    return () => window.clearTimeout(timeout);
+  }, [fetchTemplates]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => fetchCertificates(), 250);
+    return () => window.clearTimeout(timeout);
+  }, [fetchCertificates]);
 
 const handleCreateTemplate = async () => {
     try {
@@ -385,7 +390,10 @@ const handleRevokeCertificate = async (certificateId: number) => {
               variant="outlined"
               size="small"
               value={templateSearch}
-              onChange={(e) => setTemplateSearch(e.target.value)}
+              onChange={(e) => {
+                setTemplatePage(0);
+                setTemplateSearch(e.target.value);
+              }}
               sx={{ minWidth: 250 }}
               InputProps={{
                 endAdornment: <SearchIcon />,
@@ -396,7 +404,10 @@ const handleRevokeCertificate = async (certificateId: number) => {
               <Select
                 value={templateTypeFilter}
                 label={t('common.type')}
-                onChange={(e) => setTemplateTypeFilter(e.target.value)}
+                onChange={(e) => {
+                  setTemplatePage(0);
+                  setTemplateTypeFilter(e.target.value);
+                }}
               >
                 <MenuItem value="">{t('common.all')}</MenuItem>
                 {CERTIFICATE_TYPES.map((type) => (
@@ -442,7 +453,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
                   </TableCell>
                 </TableRow>
               ) : (
-                templates.map((template) => (
+                templates.slice(templatePage * templatesPerPage, (templatePage + 1) * templatesPerPage).map((template) => (
                   <TableRow key={getTemplateId(template) || template.name} hover sx={S.TR_HOVER}>
                     <TableCell sx={S.TD}>{getTemplateId(template)}</TableCell>
                     <TableCell sx={S.TD}>{template.name}</TableCell>
@@ -471,7 +482,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
           <TablePagination
             rowsPerPageOptions={[10, 20, 50]}
             component="div"
-            count={-1}
+            count={templatesTotal}
             rowsPerPage={templatesPerPage}
             page={templatePage}
             onPageChange={(_, newPage) => setTemplatePage(newPage)}
@@ -492,7 +503,10 @@ const handleRevokeCertificate = async (certificateId: number) => {
               variant="outlined"
               size="small"
               value={certSearch}
-              onChange={(e) => setCertSearch(e.target.value)}
+              onChange={(e) => {
+                setCertPage(0);
+                setCertSearch(e.target.value);
+              }}
               sx={{ minWidth: 250 }}
               InputProps={{
                 endAdornment: <SearchIcon />,
@@ -503,7 +517,10 @@ const handleRevokeCertificate = async (certificateId: number) => {
               <Select
                 value={certTypeFilter}
                 label={t('common.type')}
-                onChange={(e) => setCertTypeFilter(e.target.value)}
+                onChange={(e) => {
+                  setCertPage(0);
+                  setCertTypeFilter(e.target.value);
+                }}
               >
                 <MenuItem value="">{t('common.all')}</MenuItem>
                 {CERTIFICATE_TYPES.map((type) => (
@@ -518,7 +535,10 @@ const handleRevokeCertificate = async (certificateId: number) => {
               <Select
                 value={certStatusFilter}
                 label={t('common.status')}
-                onChange={(e) => setCertStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  setCertPage(0);
+                  setCertStatusFilter(e.target.value);
+                }}
               >
                 <MenuItem value="">{t('common.all')}</MenuItem>
                 <MenuItem value="active">{t('certificates.active')}</MenuItem>
@@ -561,7 +581,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
                   </TableCell>
                 </TableRow>
               ) : (
-                certificates.map((cert) => (
+                certificates.slice(certPage * certsPerPage, (certPage + 1) * certsPerPage).map((cert) => (
                   <TableRow key={getCertificateId(cert) || cert.certificateNumber} hover sx={S.TR_HOVER}>
                     <TableCell sx={S.TD}>
                       <Typography variant="body2" fontWeight="bold">
@@ -620,7 +640,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
           <TablePagination
             rowsPerPageOptions={[10, 20, 50]}
             component="div"
-            count={-1}
+            count={certificatesTotal}
             rowsPerPage={certsPerPage}
             page={certPage}
             onPageChange={(_, newPage) => setCertPage(newPage)}
