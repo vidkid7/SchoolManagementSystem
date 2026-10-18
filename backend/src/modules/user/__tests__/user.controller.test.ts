@@ -36,4 +36,22 @@ describe('UserController.createUser tenant ownership', () => {
     }));
     expect(res.status).toHaveBeenCalledWith(201);
   });
+
+  it('rejects user creation when the authenticated admin has no school scope', async () => {
+    const createUser = jest.fn();
+    const controller = new UserController();
+    (controller as any).userService = { createUser };
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+
+    await controller.createUser({
+      body: { username: 'orphaned-user' },
+      user: { userId: 7, username: 'admin', email: 'admin@example.test', role: 'School_Admin' },
+    } as any, res as any);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(createUser).not.toHaveBeenCalled();
+  });
 });

@@ -58,8 +58,8 @@ export class UserService {
   /**
    * Get all users with filters
    */
-  async getAllUsers(filters: UserFilters): Promise<{ users: any[]; total: number }> {
-    const where: any = {};
+  async getAllUsers(filters: UserFilters, schoolConfigId: string): Promise<{ users: any[]; total: number }> {
+    const where: any = { schoolConfigId };
 
     if (filters.search) {
       where[Op.or] = [
@@ -94,8 +94,9 @@ export class UserService {
   /**
    * Get user by ID
    */
-  async getUserById(userId: number): Promise<any> {
-    const user = await User.findByPk(userId, {
+  async getUserById(userId: number, schoolConfigId: string): Promise<any> {
+    const user = await User.findOne({
+      where: { userId, schoolConfigId },
       attributes: { exclude: ['password', 'refreshToken', 'passwordResetToken'] },
     });
 
@@ -111,6 +112,9 @@ export class UserService {
    */
   async createUser(data: CreateUserData): Promise<any> {
     this.assertAssignableRole(data.roleId);
+    if (!data.schoolConfigId) {
+      throw new Error('A single authorized school is required to create a user');
+    }
 
     const existingUser = await User.findOne({
       where: {
@@ -140,10 +144,10 @@ export class UserService {
   /**
    * Update user
    */
-  async updateUser(userId: number, data: UpdateUserData): Promise<any> {
+  async updateUser(userId: number, schoolConfigId: string, data: UpdateUserData): Promise<any> {
     this.assertAssignableRole(data.roleId);
 
-    const user = await User.findByPk(userId);
+    const user = await User.findOne({ where: { userId, schoolConfigId } });
 
     if (!user) {
       throw new Error('User not found');
@@ -172,8 +176,8 @@ export class UserService {
   /**
    * Delete user
    */
-  async deleteUser(userId: number): Promise<void> {
-    const user = await User.findByPk(userId);
+  async deleteUser(userId: number, schoolConfigId: string): Promise<void> {
+    const user = await User.findOne({ where: { userId, schoolConfigId } });
 
     if (!user) {
       throw new Error('User not found');
@@ -185,8 +189,8 @@ export class UserService {
   /**
    * Reset user password
    */
-  async resetPassword(userId: number): Promise<void> {
-    const user = await User.findByPk(userId);
+  async resetPassword(userId: number, schoolConfigId: string): Promise<void> {
+    const user = await User.findOne({ where: { userId, schoolConfigId } });
 
     if (!user) {
       throw new Error('User not found');
@@ -223,8 +227,8 @@ export class UserService {
   /**
    * Get user activity log
    */
-  async getUserActivity(userId: number): Promise<any[]> {
-    const user = await User.findByPk(userId);
+  async getUserActivity(userId: number, schoolConfigId: string): Promise<any[]> {
+    const user = await User.findOne({ where: { userId, schoolConfigId } });
 
     if (!user) {
       throw new Error('User not found');
@@ -252,16 +256,16 @@ export class UserService {
   /**
    * Get user statistics
    */
-  async getUserStats(): Promise<{
+  async getUserStats(schoolConfigId: string): Promise<{
     total: number;
     active: number;
     inactive: number;
     suspended: number;
   }> {
-    const total = await User.count();
-    const active = await User.count({ where: { status: UserStatus.ACTIVE } });
-    const inactive = await User.count({ where: { status: UserStatus.INACTIVE } });
-    const suspended = await User.count({ where: { status: UserStatus.SUSPENDED } });
+    const total = await User.count({ where: { schoolConfigId } });
+    const active = await User.count({ where: { schoolConfigId, status: UserStatus.ACTIVE } });
+    const inactive = await User.count({ where: { schoolConfigId, status: UserStatus.INACTIVE } });
+    const suspended = await User.count({ where: { schoolConfigId, status: UserStatus.SUSPENDED } });
 
     return { total, active, inactive, suspended };
   }

@@ -23,7 +23,7 @@ describe('UserService role assignment boundary', () => {
     'rejects %s assignment before updating a user', async (roleId) => {
     const findByPk = jest.spyOn(User, 'findByPk');
 
-    await expect(service.updateUser(10, { roleId }))
+    await expect(service.updateUser(10, 'school-1', { roleId }))
       .rejects.toThrow('This role cannot be assigned through school user management');
 
     expect(findByPk).not.toHaveBeenCalled();

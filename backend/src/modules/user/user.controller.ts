@@ -14,11 +14,28 @@ export class UserController {
     this.userService = new UserService();
   }
 
+  private requireSchoolConfigId(req: Request, res: Response): string | null {
+    if (!req.user?.schoolConfigId) {
+      res.status(403).json({
+        success: false,
+        error: {
+          code: 'SCHOOL_SCOPE_REQUIRED',
+          message: 'A school scope is required to manage users',
+        },
+      });
+      return null;
+    }
+    return req.user.schoolConfigId;
+  }
+
   /**
    * Get all users with filters
    * GET /api/v1/users
    */
   getAllUsers = async (req: Request, res: Response): Promise<void> => {
+    const schoolConfigId = this.requireSchoolConfigId(req, res);
+    if (!schoolConfigId) return;
+
     try {
       const filters = {
         search: req.query.search as string,
@@ -28,7 +45,7 @@ export class UserController {
         limit: parseInt(req.query.limit as string) || 10,
       };
 
-      const result = await this.userService.getAllUsers(filters);
+      const result = await this.userService.getAllUsers(filters, schoolConfigId);
       
       res.status(200).json({
         success: true,
@@ -55,9 +72,12 @@ export class UserController {
    * GET /api/v1/users/:id
    */
   getUserById = async (req: Request, res: Response): Promise<void> => {
+    const schoolConfigId = this.requireSchoolConfigId(req, res);
+    if (!schoolConfigId) return;
+
     try {
       const userId = parseInt(req.params.id);
-      const user = await this.userService.getUserById(userId);
+      const user = await this.userService.getUserById(userId, schoolConfigId);
 
       res.status(200).json({
         success: true,
@@ -79,12 +99,15 @@ export class UserController {
    * POST /api/v1/users
    */
   createUser = async (req: Request, res: Response): Promise<void> => {
+    const schoolConfigId = this.requireSchoolConfigId(req, res);
+    if (!schoolConfigId) return;
+
     try {
       const user = await this.userService.createUser({
         ...req.body,
         // Tenant ownership comes from the authenticated admin, never the request body.
         municipalityId: req.user?.municipalityId,
-        schoolConfigId: req.user?.schoolConfigId,
+        schoolConfigId,
       });
 
       res.status(201).json({
@@ -108,9 +131,12 @@ export class UserController {
    * PUT /api/v1/users/:id
    */
   updateUser = async (req: Request, res: Response): Promise<void> => {
+    const schoolConfigId = this.requireSchoolConfigId(req, res);
+    if (!schoolConfigId) return;
+
     try {
       const userId = parseInt(req.params.id);
-      const user = await this.userService.updateUser(userId, req.body);
+      const user = await this.userService.updateUser(userId, schoolConfigId, req.body);
 
       res.status(200).json({
         success: true,
@@ -133,9 +159,12 @@ export class UserController {
    * DELETE /api/v1/users/:id
    */
   deleteUser = async (req: Request, res: Response): Promise<void> => {
+    const schoolConfigId = this.requireSchoolConfigId(req, res);
+    if (!schoolConfigId) return;
+
     try {
       const userId = parseInt(req.params.id);
-      await this.userService.deleteUser(userId);
+      await this.userService.deleteUser(userId, schoolConfigId);
 
       res.status(200).json({
         success: true,
@@ -157,9 +186,12 @@ export class UserController {
    * POST /api/v1/users/:id/reset-password
    */
   resetPassword = async (req: Request, res: Response): Promise<void> => {
+    const schoolConfigId = this.requireSchoolConfigId(req, res);
+    if (!schoolConfigId) return;
+
     try {
       const userId = parseInt(req.params.id);
-      await this.userService.resetPassword(userId);
+      await this.userService.resetPassword(userId, schoolConfigId);
 
       res.status(200).json({
         success: true,
@@ -181,9 +213,12 @@ export class UserController {
    * GET /api/v1/users/:id/activity
    */
   getUserActivity = async (req: Request, res: Response): Promise<void> => {
+    const schoolConfigId = this.requireSchoolConfigId(req, res);
+    if (!schoolConfigId) return;
+
     try {
       const userId = parseInt(req.params.id);
-      const activity = await this.userService.getUserActivity(userId);
+      const activity = await this.userService.getUserActivity(userId, schoolConfigId);
 
       res.status(200).json({
         success: true,
@@ -204,9 +239,12 @@ export class UserController {
    * Get user statistics
    * GET /api/v1/users/stats
    */
-  getUserStats = async (_req: Request, res: Response): Promise<void> => {
+  getUserStats = async (req: Request, res: Response): Promise<void> => {
+    const schoolConfigId = this.requireSchoolConfigId(req, res);
+    if (!schoolConfigId) return;
+
     try {
-      const stats = await this.userService.getUserStats();
+      const stats = await this.userService.getUserStats(schoolConfigId);
 
       res.status(200).json({
         success: true,
