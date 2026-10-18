@@ -96,6 +96,7 @@ export const UserManagement = () => {
   const S = useAdminStyles(theme);
   const { t } = useTranslation();
   const [users, setUsers] = useState<User[]>([]);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -149,6 +150,7 @@ export const UserManagement = () => {
       });
       const response = await apiClient.get(`/api/v1/users?${params}`);
       setUsers(response.data.data || []);
+      setTotalUsers(response.data.meta?.total ?? response.data.data?.length ?? 0);
     } catch (error) {
       console.error('Failed to fetch users:', error);
     } finally {
@@ -522,7 +524,7 @@ export const UserManagement = () => {
         <TablePagination
           rowsPerPageOptions={[10, 25, 50]}
           component="div"
-          count={-1}
+          count={totalUsers}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={(_, newPage) => setPage(newPage)}
