@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { assignPermissionsSchema } from '../rolePermission.validation';
+import { assignPermissionsSchema, updateRoleSchema } from '../rolePermission.validation';
 
 describe('assignPermissionsSchema', () => {
   it('allows an empty list to clear a role’s permissions', () => {
@@ -13,5 +13,11 @@ describe('assignPermissionsSchema', () => {
     const { error } = assignPermissionsSchema.validate({ permissionIds: ['not-a-uuid'] });
 
     expect(error?.details[0]?.message).toBe('Invalid permission ID format');
+  });
+});
+
+describe('updateRoleSchema', () => {
+  it('allows active-state toggles', () => {
+    expect(updateRoleSchema.validate({ isActive: false }).error).toBeUndefined();
   });
 });

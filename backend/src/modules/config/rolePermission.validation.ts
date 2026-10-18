@@ -43,6 +43,7 @@ export const updateRoleSchema = Joi.object({
     .messages({
       'string.max': 'Description must not exceed 500 characters',
     }),
+  isActive: Joi.boolean().optional(),
 }).min(1);
 
 /**
