@@ -333,7 +333,7 @@ export function ECAList() {
         <DialogTitle>{editingECA ? t('eca.editEca') : t('eca.createEca')}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}><TextField label={t('eca.ecaName')} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required fullWidth /></Grid>
+            <Grid item xs={12}><TextField autoFocus label={t('eca.ecaName')} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required fullWidth /></Grid>
             <Grid item xs={12} md={6}>
               <TextField select label={t('eca.category')} value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} required fullWidth>
                 {ECA_CATEGORY_OPTIONS.map((option) => (
