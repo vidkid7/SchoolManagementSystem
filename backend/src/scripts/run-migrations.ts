@@ -58,6 +58,7 @@ import * as ensureUserNameColumns from '../migrations/20261018000003-ensure-user
 import * as addUuidAuditEntitySupport from '../migrations/20261018000004-add-uuid-audit-entity-support';
 import * as ensureClassSubjectsTable from '../migrations/20261018000005-ensure-class-subjects-table';
 import * as addDocumentFileData from '../migrations/20261018000006-add-document-file-data';
+import * as ensureStaffAttendanceTable from '../migrations/20261019000001-ensure-staff-attendance-table';
 
 /**
  * Migration Runner
@@ -332,6 +333,11 @@ const migrations: Migration[] = [
     name: '20261018000006-add-document-file-data',
     up: addDocumentFileData.up,
     down: addDocumentFileData.down
+  },
+  {
+    name: '20261019000001-ensure-staff-attendance-table',
+    up: ensureStaffAttendanceTable.up,
+    down: ensureStaffAttendanceTable.down
   }
 ];
 
