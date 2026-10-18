@@ -3,7 +3,7 @@
  * Create, view, update, and delete fee structures
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import { useTranslation } from 'react-i18next';
@@ -38,6 +38,12 @@ import {
 import apiClient from '../../services/apiClient';
 import { useCurrentAcademicYear } from '../../hooks/useCurrentAcademicYear';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
+import {
+  getAcademicYearDisplayName,
+  getApplicableClassesForUpdate,
+  getFeeStructureAmount,
+  getFeeStructureClassSelection,
+} from './feeStructureUtils';
 
 interface FeeStructure {
   feeStructureId: number;
@@ -70,6 +76,8 @@ export function FeeStructures() {
   const [editingFee, setEditingFee] = useState<FeeStructure | null>(null);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [classSelectionChanged, setClassSelectionChanged] = useState(false);
+  const dialogOpenerRef = useRef<HTMLElement | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -97,13 +105,15 @@ export function FeeStructures() {
   };
 
   const handleOpenDialog = (fee?: FeeStructure) => {
+    dialogOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setClassSelectionChanged(false);
     if (fee) {
       setEditingFee(fee);
       setFormData({
         name: fee.name,
         academicYearId: fee.academicYearId.toString(),
-        classId: fee.classId?.toString() || fee.applicableClasses?.[0]?.toString() || '',
-        amount: (fee.amount ?? (fee as any).totalAmount ?? 0).toString(),
+        classId: getFeeStructureClassSelection(fee),
+        amount: getFeeStructureAmount(fee).toString(),
         description: fee.description || '',
       });
     } else {
@@ -123,6 +133,7 @@ export function FeeStructures() {
     setOpenDialog(false);
     setEditingFee(null);
     setError('');
+    setClassSelectionChanged(false);
   };
 
   const handleSubmit = async () => {
@@ -132,7 +143,9 @@ export function FeeStructures() {
       const academicYearId = Number(formData.academicYearId);
       const amount = Number(formData.amount);
       const applicableClass = formData.classId ? Number(formData.classId) : null;
-      const applicableClasses = applicableClass ? [applicableClass] : ALL_CLASSES;
+      const applicableClasses = editingFee
+        ? getApplicableClassesForUpdate(editingFee.applicableClasses, formData.classId, classSelectionChanged)
+        : applicableClass ? [applicableClass] : ALL_CLASSES;
       const description = formData.description.trim() || undefined;
 
       if (!name) {
@@ -247,7 +260,7 @@ export function FeeStructures() {
                 feeStructures.map((fee) => (
                   <TableRow key={fee.feeStructureId} sx={S.TR_HOVER}>
                     <TableCell sx={S.TD}>{fee.name}</TableCell>
-                    <TableCell sx={S.TD}>{fee.academicYearName || fee.academicYearId}</TableCell>
+                    <TableCell sx={S.TD}>{fee.academicYearName || getAcademicYearDisplayName(fee.academicYearId, academicYears, currentYear)}</TableCell>
                     <TableCell sx={S.TD}>
                       {fee.className || (fee.classId ? `Class ${fee.classId}` : (() => {
                         const classes = fee.applicableClasses || [];
@@ -256,7 +269,7 @@ export function FeeStructures() {
                           : classes.map((grade) => `Class ${grade}`).join(', ');
                       })())}
                     </TableCell>
-                    <TableCell align="right" sx={S.TD}>NPR {(fee.amount || fee.totalAmount || 0).toLocaleString()}</TableCell>
+                    <TableCell align="right" sx={S.TD}>NPR {getFeeStructureAmount(fee).toLocaleString()}</TableCell>
                     <TableCell sx={S.TD}>
                       <Chip
                         label={fee.isActive ? t('common.active') : t('common.no')}
@@ -296,7 +309,22 @@ export function FeeStructures() {
         </TableContainer>
       </Paper>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+        disableRestoreFocus
+        TransitionProps={{
+          onExited: () => {
+            window.requestAnimationFrame(() => {
+              window.requestAnimationFrame(() => {
+                if (dialogOpenerRef.current?.isConnected) dialogOpenerRef.current.focus();
+              });
+            });
+          },
+        }}
+      >
         <DialogTitle>
           {editingFee ? t('finance.editFeeStructure') : t('finance.createFeeStructure')}
         </DialogTitle>
@@ -335,7 +363,10 @@ export function FeeStructures() {
               label={t('finance.selectClassOptional')}
               select
               value={formData.classId}
-              onChange={(e) => setFormData({ ...formData, classId: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, classId: e.target.value });
+                setClassSelectionChanged(true);
+              }}
               fullWidth
             >
               <MenuItem value="">{t('finance.allClasses')}</MenuItem>
