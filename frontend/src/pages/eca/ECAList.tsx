@@ -313,11 +313,11 @@ export function ECAList() {
                     <TableCell sx={S.TD}><Chip label={eca.status} color={eca.status === 'active' ? 'success' : 'default'} size="small" /></TableCell>
                     {canManageECA && (
                       <TableCell align="center" sx={S.TD}>
-                        <IconButton size="small" onClick={() => handleOpenDialog(eca)}><EditIcon fontSize="small" /></IconButton>
+                        <IconButton size="small" aria-label={`${t('common.edit')} ${eca.name}`} onClick={() => handleOpenDialog(eca)}><EditIcon fontSize="small" /></IconButton>
                         {canDeleteECA && (
-                          <IconButton size="small" onClick={() => handleDelete(eca.ecaId)} color="error"><DeleteIcon fontSize="small" /></IconButton>
+                          <IconButton size="small" aria-label={`${t('common.delete')} ${eca.name}`} onClick={() => handleDelete(eca.ecaId)} color="error"><DeleteIcon fontSize="small" /></IconButton>
                         )}
-                        <IconButton size="small" onClick={() => navigate(`/eca/${eca.ecaId}/enrollments`)}><PeopleIcon fontSize="small" /></IconButton>
+                        <IconButton size="small" aria-label={`${t('eca.enrollments')}: ${eca.name}`} onClick={() => navigate(`/eca/${eca.ecaId}/enrollments`)}><PeopleIcon fontSize="small" /></IconButton>
                       </TableCell>
                     )}
                   </TableRow>
