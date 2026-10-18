@@ -659,6 +659,14 @@
     "failedToDeleteClass": "कक्षा मेटाउन असफल: {{message}}",
     "sectionPlaceholder": "उदा., A, B, C, A1, B1",
     "sectionHelperText": "शाखाको नाम प्रविष्ट गर्नुहोस् (उदा., A, B, C)",
+    "classCapacityOptional": "ऐच्छिक; १ देखि १०० सम्मको पूर्ण संख्या प्रविष्ट गर्नुहोस्।",
+    "classValidation": {
+      "gradeRequired": "कक्षा चयन गर्नुहोस्।",
+      "gradeRange": "१ देखि १२ सम्मको कक्षा चयन गर्नुहोस्।",
+      "sectionRequired": "शाखा प्रविष्ट गर्नुहोस्।",
+      "sectionLength": "शाखा १० अक्षर वा सोभन्दा कम हुनुपर्छ।",
+      "capacityRange": "क्षमता १ देखि १०० सम्मको पूर्ण संख्या हुनुपर्छ।"
+    },
     "academicYear": "शैक्षिक वर्ष",
     "periodAlreadyAssigned": "यो अवधि पहिले नै तोकिएको छ"
   },

@@ -659,6 +659,14 @@
     "failedToDeleteClass": "Failed to delete class: {{message}}",
     "sectionPlaceholder": "e.g., A, B, C, A1, B1",
     "sectionHelperText": "Enter section name (e.g., A, B, C)",
+    "classCapacityOptional": "Optional; enter a whole number from 1 to 100.",
+    "classValidation": {
+      "gradeRequired": "Select a class.",
+      "gradeRange": "Select a class from 1 to 12.",
+      "sectionRequired": "Enter a section.",
+      "sectionLength": "Section must be 10 characters or fewer.",
+      "capacityRange": "Capacity must be a whole number from 1 to 100."
+    },
     "academicYear": "Academic Year",
     "periodAlreadyAssigned": "This period is already assigned"
   },

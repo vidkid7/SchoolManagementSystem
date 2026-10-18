@@ -28,6 +28,7 @@ import {
   DialogActions,
   TextField,
   FormControl,
+  FormHelperText,
   InputLabel,
   Select,
   MenuItem,
@@ -51,6 +52,7 @@ import {
 import apiClient from '../../services/apiClient';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { SubjectFormValues, toSubjectApiPayload } from './subjectPayload';
+import { ClassFormErrors, validateClassForm } from './classFormValidation';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -113,6 +115,7 @@ export const ClassManagement = () => {
   const [editMode, setEditMode] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [error, setError] = useState('');
+  const [classErrors, setClassErrors] = useState<ClassFormErrors>({});
 
   // Class form
   const [classForm, setClassForm] = useState({
@@ -162,6 +165,8 @@ export const ClassManagement = () => {
   };
 
   const handleOpenDialog = (type: 'class' | 'subject', item?: Class | Subject) => {
+    setError('');
+    setClassErrors({});
     setDialogType(type);
     setEditMode(!!item);
     
@@ -197,11 +202,16 @@ export const ClassManagement = () => {
     setDialogOpen(false);
     setEditMode(false);
     setEditId(null);
+    setClassErrors({});
     setClassForm({ grade_level: '', section: '', capacity: '' });
     setSubjectForm({ code: '', name_en: '', name_np: '', type: 'compulsory', credit_hours: '', full_marks: '' });
   };
 
   const handleSaveClass = async () => {
+    const validationErrors = validateClassForm(classForm);
+    setClassErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) return;
+
     try {
       const yearsResponse = await apiClient.get('/academic/years');
       const years = yearsResponse.data?.data || [];
@@ -216,8 +226,8 @@ export const ClassManagement = () => {
       const payload = {
         academicYearId,
         gradeLevel: parseInt(classForm.grade_level),
-        section: classForm.section,
-        capacity: parseInt(classForm.capacity),
+        section: classForm.section.trim(),
+        ...(classForm.capacity.trim() ? { capacity: Number(classForm.capacity) } : {}),
       };
 
       if (editMode && editId) {
@@ -645,12 +655,17 @@ export const ClassManagement = () => {
           {dialogType === 'class' ? (
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>{t('academic.class')}</InputLabel>
+                <FormControl fullWidth required error={Boolean(classErrors.grade_level)}>
+                  <InputLabel id="class-grade-level-label">{t('academic.class')}</InputLabel>
                   <Select
+                    id="class-grade-level"
+                    labelId="class-grade-level-label"
                     value={classForm.grade_level}
                     label={t('academic.class')}
-                    onChange={(e) => setClassForm({ ...classForm, grade_level: e.target.value })}
+                    onChange={(e) => {
+                      setClassForm({ ...classForm, grade_level: e.target.value });
+                      setClassErrors((current) => ({ ...current, grade_level: undefined }));
+                    }}
                   >
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((cls) => (
                       <MenuItem key={cls} value={cls.toString()}>
@@ -658,16 +673,26 @@ export const ClassManagement = () => {
                       </MenuItem>
                     ))}
                   </Select>
+                  {classErrors.grade_level && (
+                    <FormHelperText>{t(`academic.classValidation.${classErrors.grade_level}`)}</FormHelperText>
+                  )}
                 </FormControl>
               </Grid>
               <Grid item xs={12}>
                 <TextField
                   label={t('academic.section')}
+                  required
                   fullWidth
                   value={classForm.section}
-                  onChange={(e) => setClassForm({ ...classForm, section: e.target.value })}
+                  error={Boolean(classErrors.section)}
+                  onChange={(e) => {
+                    setClassForm({ ...classForm, section: e.target.value });
+                    setClassErrors((current) => ({ ...current, section: undefined }));
+                  }}
                   placeholder="A, B, C, A1, B1, etc."
-                  helperText={t('academic.sectionHelperText')}
+                  helperText={classErrors.section
+                    ? t(`academic.classValidation.${classErrors.section}`)
+                    : t('academic.sectionHelperText')}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -676,7 +701,14 @@ export const ClassManagement = () => {
                   type="number"
                   fullWidth
                   value={classForm.capacity}
-                  onChange={(e) => setClassForm({ ...classForm, capacity: e.target.value })}
+                  error={Boolean(classErrors.capacity)}
+                  onChange={(e) => {
+                    setClassForm({ ...classForm, capacity: e.target.value });
+                    setClassErrors((current) => ({ ...current, capacity: undefined }));
+                  }}
+                  helperText={classErrors.capacity
+                    ? t(`academic.classValidation.${classErrors.capacity}`)
+                    : t('academic.classCapacityOptional')}
                 />
               </Grid>
             </Grid>
