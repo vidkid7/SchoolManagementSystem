@@ -32,27 +32,8 @@ class CVController {
    * Get CV customization settings
    * GET /api/v1/cv/:id
    */
-  // eslint-disable-next-line require-await
-  getCustomization = asyncHandler(async (_req: Request, res: Response): Promise<void> => {
-    // Return default customization
-    const customization = {
-      studentId: Number(_req.params.id),
-      showPersonalInfo: true,
-      showAcademicPerformance: true,
-      showAttendance: true,
-      showECA: true,
-      showSports: true,
-      showCertificates: true,
-      showAwards: true,
-      showTeacherRemarks: true,
-      skills: [],
-      hobbies: [],
-      careerGoals: '',
-      personalStatement: '',
-      templateId: 'default',
-      schoolBrandingEnabled: true
-    };
-
+  getCustomization = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const customization = await CVService.getOrCreateCustomization(Number(req.params.id));
     sendSuccess(res, customization, 'Customization retrieved successfully');
   });
 
@@ -60,13 +41,9 @@ class CVController {
    * Update CV customization settings
    * PUT /api/v1/cv/:id
    */
-  // eslint-disable-next-line require-await
   updateCustomization = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const customization = req.body;
-
-    // In a real implementation, save to database
-    logger.info('CV customization updated', { customization });
-
+    const customization = await CVService.updateCustomization(Number(req.params.id), req.body);
+    logger.info('CV customization updated', { studentId: customization.studentId });
     sendSuccess(res, customization, 'Customization updated successfully');
   });
 
@@ -123,6 +100,7 @@ class CVController {
     };
 
     const pdfBuffer = await CVService.generatePDF(studentId, customization);
+    await CVService.markGenerated(studentId);
 
     logger.info('CV PDF regenerated', { studentId });
 

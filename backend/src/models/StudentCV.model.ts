@@ -39,7 +39,7 @@ export interface CVCustomizationAttributes {
   schoolBrandingEnabled: boolean;
   
   // Metadata
-  lastGeneratedAt?: Date;
+  lastGeneratedAt?: Date | null;
   createdAt: CreationOptional<Date>;
   updatedAt: CreationOptional<Date>;
 }
@@ -71,7 +71,7 @@ class StudentCV
   public templateId!: string;
   public schoolBrandingEnabled!: boolean;
   
-  public lastGeneratedAt?: Date;
+  public lastGeneratedAt?: Date | null;
   
   public readonly createdAt!: CreationOptional<Date>;
   public readonly updatedAt!: CreationOptional<Date>;

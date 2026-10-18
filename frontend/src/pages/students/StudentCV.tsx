@@ -412,6 +412,7 @@ export const StudentCV = () => {
     try {
       setSaving(true);
       await apiClient.put(`/api/v1/cv/${id}`, updated);
+      setNeedsRegeneration(true);
     } catch (err: any) {
       if (err.response?.status === 500) {
         setError('CV customization feature is not yet available');

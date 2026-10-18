@@ -235,12 +235,19 @@ describe('CVRepository', () => {
       expect(result).toEqual(existingCV);
     });
 
-    it('should return null when CV does not exist', async () => {
+    it('should create a default customization row when marking a first generation', async () => {
       mockStudentCV.findOne.mockResolvedValue(null);
+      const createdCV = { studentId: 999, lastGeneratedAt: new Date() };
+      mockStudentCV.create.mockResolvedValue(createdCV as any);
 
       const result = await repository.updateLastGeneratedAt(999);
 
-      expect(result).toBeNull();
+      expect(mockStudentCV.create).toHaveBeenCalledWith(expect.objectContaining({
+        studentId: 999,
+        templateId: 'standard',
+        lastGeneratedAt: expect.any(Date)
+      }), { transaction: undefined });
+      expect(result).toEqual(createdCV);
     });
   });
 

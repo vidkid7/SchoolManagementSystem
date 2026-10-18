@@ -12,13 +12,13 @@ export default {
   async up(queryInterface: QueryInterface): Promise<void> {
     await queryInterface.createTable('student_cv', {
       cv_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.INTEGER.UNSIGNED,
         autoIncrement: true,
         primaryKey: true,
         allowNull: false
       },
       student_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.INTEGER.UNSIGNED,
         allowNull: false,
         references: {
           model: 'students',

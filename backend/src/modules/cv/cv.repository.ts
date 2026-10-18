@@ -100,7 +100,8 @@ class CVRepository {
         careerGoals: data.careerGoals,
         personalStatement: data.personalStatement,
         templateId: data.templateId,
-        schoolBrandingEnabled: data.schoolBrandingEnabled
+        schoolBrandingEnabled: data.schoolBrandingEnabled,
+        lastGeneratedAt: null
       });
       await existing.save();
       return existing;
@@ -135,9 +136,30 @@ class CVRepository {
    */
   async updateLastGeneratedAt(studentId: number, transaction?: Transaction): Promise<StudentCV | null> {
     const cv = await this.findByStudentId(studentId);
-    if (!cv) return null;
+    const lastGeneratedAt = new Date();
 
-    cv.lastGeneratedAt = new Date();
+    if (!cv) {
+      return StudentCV.create({
+        studentId,
+        showPersonalInfo: true,
+        showAcademicPerformance: true,
+        showAttendance: true,
+        showECA: true,
+        showSports: true,
+        showCertificates: true,
+        showAwards: true,
+        showTeacherRemarks: true,
+        skills: '[]',
+        hobbies: '[]',
+        careerGoals: '',
+        personalStatement: '',
+        templateId: 'standard',
+        schoolBrandingEnabled: true,
+        lastGeneratedAt
+      }, { transaction });
+    }
+
+    cv.lastGeneratedAt = lastGeneratedAt;
     await cv.save({ transaction });
     return cv;
   }

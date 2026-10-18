@@ -14,6 +14,7 @@ import SportsAchievement from '@models/SportsAchievement.model';
 import Sport from '@models/Sport.model';
 import { Certificate } from '@models/Certificate.model';
 import { Op } from 'sequelize';
+import CVRepository, { CVCustomization as PersistedCVCustomization } from './cv.repository';
 
 /**
  * CV Data Interface
@@ -111,6 +112,64 @@ export interface CVCustomization {
  * Handles CV data aggregation and PDF generation
  */
 class CVService {
+  private cvRepository = CVRepository;
+
+  private readonly defaultCustomization = (studentId: number): PersistedCVCustomization => ({
+    studentId,
+    showPersonalInfo: true,
+    showAcademicPerformance: true,
+    showAttendance: true,
+    showECA: true,
+    showSports: true,
+    showCertificates: true,
+    showAwards: true,
+    showTeacherRemarks: true,
+    skills: [],
+    hobbies: [],
+    careerGoals: '',
+    personalStatement: '',
+    templateId: 'standard',
+    schoolBrandingEnabled: true
+  });
+
+  async getOrCreateCustomization(studentId: number): Promise<PersistedCVCustomization & { lastGeneratedAt?: Date | null }> {
+    const existing = await this.cvRepository.findByStudentId(studentId);
+    const cv = existing || await this.cvRepository.upsert(this.defaultCustomization(studentId));
+
+    return {
+      ...this.defaultCustomization(studentId),
+      studentId: cv.studentId,
+      showPersonalInfo: cv.showPersonalInfo,
+      showAcademicPerformance: cv.showAcademicPerformance,
+      showAttendance: cv.showAttendance,
+      showECA: cv.showECA,
+      showSports: cv.showSports,
+      showCertificates: cv.showCertificates,
+      showAwards: cv.showAwards,
+      showTeacherRemarks: cv.showTeacherRemarks,
+      skills: cv.getSkills(),
+      hobbies: cv.getHobbies(),
+      careerGoals: cv.careerGoals || '',
+      personalStatement: cv.personalStatement || '',
+      templateId: cv.templateId || 'standard',
+      schoolBrandingEnabled: cv.schoolBrandingEnabled,
+      lastGeneratedAt: cv.lastGeneratedAt
+    };
+  }
+
+  async updateCustomization(
+    studentId: number,
+    updates: Partial<PersistedCVCustomization>
+  ): Promise<PersistedCVCustomization & { lastGeneratedAt?: Date | null }> {
+    const current = await this.getOrCreateCustomization(studentId);
+    await this.cvRepository.upsert({ ...current, ...updates, studentId });
+    return this.getOrCreateCustomization(studentId);
+  }
+
+  async markGenerated(studentId: number): Promise<void> {
+    await this.cvRepository.updateLastGeneratedAt(studentId);
+  }
+
   private getDurationLabel(dateValue?: string | Date): string {
     if (!dateValue) return 'N/A';
 
@@ -523,9 +582,38 @@ class CVService {
   /**
    * Check if CV needs regeneration
    */
-  needsRegeneration(_studentId: number): boolean {
-    // Always regenerate to ensure CV reflects latest profile/activity state.
-    return true;
+  async needsRegeneration(studentId: number): Promise<boolean> {
+    const [cv, student] = await Promise.all([
+      this.cvRepository.findByStudentId(studentId),
+      StudentRepository.findById(studentId)
+    ]);
+
+    if (!cv?.lastGeneratedAt || !student) return true;
+
+    const relatedModels = [
+      AttendanceRecord,
+      Grade,
+      ECAEnrollment,
+      ECAAchievement,
+      SportsEnrollment,
+      SportsAchievement,
+      Certificate
+    ];
+    const relatedUpdates = await Promise.all(relatedModels.map(async (model) => {
+      const latest = await (model as any).findOne({
+        where: { studentId },
+        attributes: ['updatedAt'],
+        order: [['updatedAt', 'DESC']]
+      });
+      return latest?.get('updatedAt') as Date | undefined;
+    }));
+
+    const lastGeneratedAt = new Date(cv.lastGeneratedAt).getTime();
+    const sourceUpdates = [student.updatedAt, ...relatedUpdates]
+      .filter((updatedAt): updatedAt is Date => updatedAt instanceof Date)
+      .map(updatedAt => updatedAt.getTime());
+
+    return sourceUpdates.some(updatedAt => updatedAt > lastGeneratedAt);
   }
 }
 

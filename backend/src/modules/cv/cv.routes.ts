@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import CVController from './cv.controller';
 import { authenticate } from '@middleware/auth';
+import { validateRequest } from '@middleware/validation';
+import { cvUpdateValidation } from './cv.validation';
 
 const router = Router();
 
@@ -24,6 +26,6 @@ router.post('/:id/regenerate', authenticate, CVController.regeneratePDF);
 
 // Get/Update customization (generic /:id route comes last)
 router.get('/:id', authenticate, CVController.getCustomization);
-router.put('/:id', authenticate, CVController.updateCustomization);
+router.put('/:id', authenticate, validateRequest(cvUpdateValidation), CVController.updateCustomization);
 
 export default router;
