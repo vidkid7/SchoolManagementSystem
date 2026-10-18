@@ -87,6 +87,11 @@ export function FeeStructures() {
     description: '',
   });
 
+  const updateFormField = (field: keyof typeof formData, value: string) => {
+    setFormData((previous) => ({ ...previous, [field]: value }));
+    setError('');
+  };
+
   useEffect(() => {
     fetchFeeStructures();
   }, []);
@@ -333,7 +338,7 @@ export function FeeStructures() {
             <TextField
               label={t('finance.feeName')}
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) => updateFormField('name', e.target.value)}
               required
               fullWidth
             />
@@ -341,7 +346,7 @@ export function FeeStructures() {
               label={t('finance.academicYear')}
               select
               value={formData.academicYearId}
-              onChange={(e) => setFormData({ ...formData, academicYearId: e.target.value })}
+              onChange={(e) => updateFormField('academicYearId', e.target.value)}
               required
               fullWidth
               disabled={Boolean(editingFee)}
@@ -364,7 +369,7 @@ export function FeeStructures() {
               select
               value={formData.classId}
               onChange={(e) => {
-                setFormData({ ...formData, classId: e.target.value });
+                updateFormField('classId', e.target.value);
                 setClassSelectionChanged(true);
               }}
               fullWidth
@@ -378,7 +383,7 @@ export function FeeStructures() {
               label={t('finance.amount')}
               type="number"
               value={formData.amount}
-              onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+              onChange={(e) => updateFormField('amount', e.target.value)}
               required
               fullWidth
               disabled={Boolean(editingFee)}
@@ -389,7 +394,7 @@ export function FeeStructures() {
               multiline
               rows={3}
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) => updateFormField('description', e.target.value)}
               fullWidth
             />
           </Box>
