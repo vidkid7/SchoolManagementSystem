@@ -100,7 +100,7 @@ describe('Image Compression Property Tests', () => {
         ),
         { numRuns: 50 } // Run 50 iterations
       );
-    });
+    }, 30000); // Property-based file generation can take longer under a full-suite run.
 
     it('should compress documents exceeding 500KB to meet the limit', async () => {
       await fc.assert(
@@ -132,7 +132,7 @@ describe('Image Compression Property Tests', () => {
         ),
         { numRuns: 50 } // Run 50 iterations
       );
-    }, 10000); // Increase timeout to 10 seconds
+    }, 30000); // Property-based file generation can take longer under a full-suite run.
 
     it('should not compress files already below the size limit', async () => {
       await fc.assert(

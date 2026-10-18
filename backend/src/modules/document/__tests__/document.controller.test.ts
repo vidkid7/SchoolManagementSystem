@@ -109,6 +109,28 @@ describe('DocumentController', () => {
       );
     });
 
+    it('should accept an empty description and JSON-encoded multipart tags', async () => {
+      mockService.uploadDocument = jest.fn().mockResolvedValue({ documentId: 2 } as any);
+      mockRequest.body = {
+        name: 'Test Document',
+        description: '',
+        category: 'other',
+        accessLevel: 'private',
+        tags: '["qa","school"]',
+      };
+
+      await controller.uploadDocument(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockNext).not.toHaveBeenCalled();
+      expect(mockService.uploadDocument).toHaveBeenCalledWith(expect.objectContaining({
+        name: 'Test Document',
+        description: '',
+        category: 'other',
+        tags: ['qa', 'school'],
+      }));
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+    });
+
     it('should throw error when no file is uploaded', async () => {
       // Arrange
       mockRequest.file = undefined as any;

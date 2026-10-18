@@ -37,8 +37,19 @@ export class DocumentController {
         throw new AuthenticationError('Authentication required');
       }
 
+      // Multipart form fields arrive as strings. The frontend serializes tags
+      // as JSON, so normalize them before validating the shared upload schema.
+      let requestBody = req.body;
+      if (typeof requestBody?.tags === 'string') {
+        try {
+          requestBody = { ...requestBody, tags: JSON.parse(requestBody.tags) };
+        } catch {
+          // Let Joi return the standard validation error for malformed tags.
+        }
+      }
+
       // Validate request body
-      const { error: bodyError, value: bodyValue } = validate(uploadDocumentSchema)(req.body);
+      const { error: bodyError, value: bodyValue } = validate(uploadDocumentSchema)(requestBody);
       if (bodyError) {
         throw new ValidationError('Invalid request body');
       }

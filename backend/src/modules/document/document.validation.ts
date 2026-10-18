@@ -29,7 +29,7 @@ const accessActions = ['view', 'download', 'edit', 'delete', 'share', 'upload', 
 // Upload validation schema
 export const uploadDocumentSchema = Joi.object({
   name: Joi.string().max(255).required(),
-  description: Joi.string().max(2000).optional(),
+  description: Joi.string().max(2000).allow('').optional(),
   category: Joi.string()
     .valid(...documentCategories)
     .required(),

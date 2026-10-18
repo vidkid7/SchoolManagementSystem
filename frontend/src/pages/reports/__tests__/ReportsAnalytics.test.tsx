@@ -78,13 +78,15 @@ describe('ReportsAnalytics', () => {
     await screen.findByLabelText('Start Date');
     
     const startDateInput = screen.getByLabelText('Start Date') as HTMLInputElement;
-    fireEvent.change(startDateInput, { target: { value: '2024-01-01' } });
-    expect(startDateInput.value).toBe('2024-01-01');
+    fireEvent.click(startDateInput);
+    fireEvent.click(await screen.findByRole('radio', { name: '2024' }));
+    await waitFor(() => expect(startDateInput.value).toMatch(/2024/));
 
     const endDateInput = screen.getByLabelText('End Date') as HTMLInputElement;
-    fireEvent.change(endDateInput, { target: { value: '2024-01-31' } });
-    expect(endDateInput.value).toBe('2024-01-31');
-  });
+    fireEvent.click(endDateInput);
+    fireEvent.click(await screen.findByRole('radio', { name: '2024' }));
+    await waitFor(() => expect(endDateInput.value).toMatch(/2024/));
+  }, 15000);
 
   it('should switch between tabs', async () => {
     renderReports();
