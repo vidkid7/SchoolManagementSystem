@@ -24,6 +24,7 @@ describe('Document Access Control', () => {
 
   beforeEach(() => {
     mockRepository = new DocumentRepository() as jest.Mocked<DocumentRepository>;
+    mockRepository.getFileData = jest.fn().mockResolvedValue(Buffer.from('test document content'));
     service = new DocumentService(mockRepository);
   });
 

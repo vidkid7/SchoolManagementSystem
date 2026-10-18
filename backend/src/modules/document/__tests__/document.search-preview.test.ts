@@ -14,6 +14,7 @@ import { Document } from '../../../models/Document.model';
 // Mock dependencies
 jest.mock('../document.repository');
 jest.mock('fs/promises', () => ({
+  readFile: jest.fn().mockRejectedValue(Object.assign(new Error('missing'), { code: 'ENOENT' })),
   writeFile: jest.fn().mockResolvedValue(undefined),
   mkdir: jest.fn().mockResolvedValue(undefined),
 }));
@@ -33,6 +34,7 @@ describe('Document Search and Preview - Task 29.3', () => {
 
   beforeEach(() => {
     mockRepository = new DocumentRepository() as jest.Mocked<DocumentRepository>;
+    mockRepository.getFileData = jest.fn().mockResolvedValue(Buffer.from('test document content'));
     service = new DocumentService(
       mockRepository,
       'uploads/documents',
@@ -441,6 +443,7 @@ describe('Document Search and Preview - Task 29.3', () => {
 
         // Assert
         expect(result.document).toBeDefined();
+        expect(result.fileData).toEqual(Buffer.from('test document content'));
         expect(result.previewUrl).toBe('/uploads/documents/test.pdf');
         expect(mockRepository.logAccess).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -723,6 +726,28 @@ describe('Document Search and Preview - Task 29.3', () => {
         await expect(
           service.previewDocument(999, 1, ['student'])
         ).rejects.toThrow('Document with ID 999 not found');
+      });
+
+      it('should return a not-found error when metadata has no persisted file bytes', async () => {
+        const mockDocument: Partial<Document> = {
+          documentId: 1,
+          name: 'Missing File',
+          mimeType: 'application/pdf',
+          storagePath: '/uploads/documents/missing.pdf',
+          accessLevel: 'public',
+          uploadedBy: 1,
+          status: 'active',
+          isViewable: () => true,
+          toJSON: function() { return this; },
+        } as unknown as Document;
+        mockRepository.findById = jest.fn().mockResolvedValue(mockDocument);
+        mockRepository.getFileData = jest.fn().mockResolvedValue(null);
+
+        await expect(service.previewDocument(1, 1, ['student'])).rejects.toMatchObject({
+          statusCode: 404,
+          message: 'Document file not found',
+        });
+        expect(mockRepository.logAccess).not.toHaveBeenCalledWith(expect.objectContaining({ action: 'preview' }));
       });
 
       it('should throw error for deleted document', async () => {

@@ -57,6 +57,7 @@ import * as ensureExamSchedulesTable from '../migrations/20261018000002-ensure-e
 import * as ensureUserNameColumns from '../migrations/20261018000003-ensure-user-name-columns';
 import * as addUuidAuditEntitySupport from '../migrations/20261018000004-add-uuid-audit-entity-support';
 import * as ensureClassSubjectsTable from '../migrations/20261018000005-ensure-class-subjects-table';
+import * as addDocumentFileData from '../migrations/20261018000006-add-document-file-data';
 
 /**
  * Migration Runner
@@ -326,6 +327,11 @@ const migrations: Migration[] = [
     name: '20261018000005-ensure-class-subjects-table',
     up: ensureClassSubjectsTable.up,
     down: ensureClassSubjectsTable.down
+  },
+  {
+    name: '20261018000006-add-document-file-data',
+    up: addDocumentFileData.up,
+    down: addDocumentFileData.down
   }
 ];
 

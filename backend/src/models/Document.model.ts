@@ -19,6 +19,8 @@ export interface DocumentAttributes {
   size: number; // in bytes
   compressedSize?: number; // in bytes after compression
   storagePath: string;
+  /** File bytes are persisted in TiDB so uploads survive Render restarts and deploys. */
+  fileData?: Buffer | null;
   thumbnailPath?: string;
   version: number;
   parentDocumentId?: number; // For versioning
@@ -52,6 +54,7 @@ export class Document
   declare public size: number;
   declare public compressedSize?: number;
   declare public storagePath: string;
+  declare public fileData?: Buffer | null;
   declare public thumbnailPath?: string;
   declare public version: number;
   declare public parentDocumentId?: number;
@@ -127,6 +130,7 @@ export class Document
     ];
     return {
       ...values,
+      fileData: undefined,
       actualSize: values.isCompressed && values.compressedSize ? values.compressedSize : values.size,
       isImage: mimeType.startsWith('image/'),
       isViewable: viewableTypes.includes(mimeType),
@@ -187,6 +191,10 @@ export function initDocument(sequelize: any): typeof Document {
       storagePath: {
         type: DataTypes.STRING(500),
         allowNull: false,
+      },
+      fileData: {
+        type: DataTypes.BLOB('medium'),
+        allowNull: true,
       },
       thumbnailPath: {
         type: DataTypes.STRING(500),
@@ -253,6 +261,9 @@ export function initDocument(sequelize: any): typeof Document {
     {
       sequelize,
       tableName: 'documents',
+      defaultScope: {
+        attributes: { exclude: ['fileData'] },
+      },
       timestamps: true,
       underscored: true,
       indexes: [

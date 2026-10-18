@@ -51,7 +51,9 @@ describe('DocumentController', () => {
       status: jest.fn().mockReturnThis(),
       download: jest.fn(),
       type: jest.fn().mockReturnThis(),
+      attachment: jest.fn().mockReturnThis(),
       setHeader: jest.fn().mockReturnThis(),
+      send: jest.fn().mockReturnThis(),
       sendFile: jest.fn(),
     };
 
@@ -413,7 +415,7 @@ describe('DocumentController', () => {
 
       mockService.previewDocument = jest.fn().mockResolvedValue({
         document: mockDocument,
-        filePath: '/app/uploads/documents/test.pdf',
+        fileData: Buffer.from('pdf bytes'),
         previewUrl: '/uploads/documents/test.pdf',
       });
 
@@ -424,10 +426,24 @@ describe('DocumentController', () => {
 
       // Assert
       expect(mockResponse.type).toHaveBeenCalledWith('application/pdf');
-      expect(mockResponse.sendFile).toHaveBeenCalledWith(
-        '/app/uploads/documents/test.pdf',
-        expect.any(Function)
-      );
+      expect(mockResponse.send).toHaveBeenCalledWith(Buffer.from('pdf bytes'));
+    });
+  });
+
+  describe('downloadDocument', () => {
+    it('sends persisted bytes with the document download name and MIME type', async () => {
+      const bytes = Buffer.from('pdf bytes');
+      mockService.downloadDocument = jest.fn().mockResolvedValue({
+        document: { originalName: 'qa document.pdf', mimeType: 'application/pdf' } as Document,
+        fileData: bytes,
+      });
+      mockRequest.params = { documentId: '1' };
+
+      await controller.downloadDocument(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockResponse.type).toHaveBeenCalledWith('application/pdf');
+      expect(mockResponse.attachment).toHaveBeenCalledWith('qa document.pdf');
+      expect(mockResponse.send).toHaveBeenCalledWith(bytes);
     });
   });
 

@@ -44,6 +44,15 @@ export class DocumentRepository {
     return await Document.findByPk(documentId);
   }
 
+  /** Load file bytes only for an authorized preview/download operation. */
+  async getFileData(documentId: number): Promise<Buffer | null> {
+    const document = await Document.unscoped().findByPk(documentId, {
+      attributes: ['documentId', 'fileData'],
+    });
+    if (!document?.fileData) return null;
+    return Buffer.isBuffer(document.fileData) ? document.fileData : Buffer.from(document.fileData as any);
+  }
+
   /**
    * Find document by document number
    */

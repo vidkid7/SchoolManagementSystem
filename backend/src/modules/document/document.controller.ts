@@ -198,9 +198,7 @@ export class DocumentController {
 
       res.setHeader('Cache-Control', 'private, no-store');
       res.setHeader('Content-Disposition', 'inline');
-      res.type(result.document.mimeType).sendFile(result.filePath, (error) => {
-        if (error) next(error);
-      });
+      res.type(result.document.mimeType).send(result.fileData);
     } catch (error) {
       next(error);
     }
@@ -228,10 +226,8 @@ export class DocumentController {
         [req.user.role]
       );
 
-      // Set headers for download
-      res.download(result.filePath, result.document.originalName, (error) => {
-        if (error) next(error);
-      });
+      // Keep the user-provided filename out of a quoted header without encoding it.
+      res.type(result.document.mimeType).attachment(result.document.originalName).send(result.fileData);
     } catch (error) {
       next(error);
     }

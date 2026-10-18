@@ -12,6 +12,7 @@ import { DocumentAccessLog } from '../../models/DocumentAccessLog.model';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import sharp from 'sharp';
+import { NotFoundError } from '../../middleware/errorHandler';
 
 export interface UploadDocumentDTO {
   name: string;
@@ -102,16 +103,10 @@ export class DocumentService {
       thumbnailPath = await this.generateThumbnail(buffer, documentNumber);
     }
 
-    // Ensure upload directory exists
-    await this.ensureUploadDir();
-
     // Generate storage path
     const extension = path.extname(dto.originalName);
     const fileName = `${documentNumber}${extension}`;
     const storagePath = path.join(this.uploadDir, fileName);
-
-    // Save file to disk
-    await fs.writeFile(storagePath, buffer);
 
     // Create document record
     const documentData: DocumentCreationAttributes = {
@@ -124,6 +119,7 @@ export class DocumentService {
       size: dto.size,
       compressedSize,
       storagePath: `/${this.uploadDir}/${fileName}`,
+      fileData: buffer,
       thumbnailPath: thumbnailPath ? `/${thumbnailPath}` : undefined,
       version: 1,
       uploadedBy: dto.uploadedBy,
@@ -192,16 +188,10 @@ export class DocumentService {
       thumbnailPath = await this.generateThumbnail(buffer, parentDocument.documentNumber);
     }
 
-    // Ensure upload directory exists
-    await this.ensureUploadDir();
-
     // Generate storage path
     const extension = path.extname(dto.originalName);
     const fileName = `${parentDocument.documentNumber}_v${newVersion}${extension}`;
     const storagePath = path.join(this.uploadDir, fileName);
-
-    // Save file to disk
-    await fs.writeFile(storagePath, buffer);
 
     // Create new version document
     const documentData: DocumentCreationAttributes = {
@@ -214,6 +204,7 @@ export class DocumentService {
       size: dto.size,
       compressedSize,
       storagePath: `/${this.uploadDir}/${fileName}`,
+      fileData: buffer,
       thumbnailPath: thumbnailPath ? `/${thumbnailPath}` : undefined,
       version: newVersion,
       parentDocumentId,
@@ -268,7 +259,7 @@ export class DocumentService {
    */
   async previewDocument(documentId: number, userId: number, userRoles: string[]): Promise<{
     document: Document;
-    filePath: string;
+    fileData: Buffer;
     previewUrl: string;
   }> {
     const document = await this.getDocumentById(documentId, userId, userRoles);
@@ -277,7 +268,9 @@ export class DocumentService {
       throw new Error('Document type is not viewable');
     }
 
-    // Log preview access
+    const fileData = await this.getFileData(document);
+
+    // Log preview access only after confirming the file is available.
     await this.logAccess({
       documentId: document.documentId,
       userId,
@@ -287,7 +280,7 @@ export class DocumentService {
 
     return {
       document,
-      filePath: this.resolveDocumentFilePath(document.storagePath),
+      fileData,
       previewUrl: document.storagePath,
     };
   }
@@ -297,9 +290,10 @@ export class DocumentService {
    */
   async downloadDocument(documentId: number, userId: number, userRoles: string[]): Promise<{
     document: Document;
-    filePath: string;
+    fileData: Buffer;
   }> {
     const document = await this.getDocumentById(documentId, userId, userRoles);
+    const fileData = await this.getFileData(document);
 
     // Log download
     await this.logAccess({
@@ -311,8 +305,23 @@ export class DocumentService {
 
     return {
       document,
-      filePath: this.resolveDocumentFilePath(document.storagePath),
+      fileData,
     };
+  }
+
+  private async getFileData(document: Document): Promise<Buffer> {
+    const fileData = await this.repository.getFileData(document.documentId);
+    if (fileData) return fileData;
+
+    // Read legacy files while they remain on a mounted local disk.
+    try {
+      return await fs.readFile(this.resolveDocumentFilePath(document.storagePath));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        throw new NotFoundError('Document file');
+      }
+      throw error;
+    }
   }
 
   private resolveDocumentFilePath(storagePath: string): string {

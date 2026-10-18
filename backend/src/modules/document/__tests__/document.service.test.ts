@@ -90,7 +90,9 @@ describe('DocumentService', () => {
       expect(result.documentNumber).toMatch(/^DOC-\d{4}-\d{6}$/);
       expect(result.name).toBe('Test Document');
       expect(result.category).toBe('academic');
-      expect(mockRepository.create).toHaveBeenCalled();
+      expect(mockRepository.create).toHaveBeenCalledWith(expect.objectContaining({
+        fileData: dto.buffer,
+      }));
     });
 
     it('should throw error if file size exceeds limit', async () => {
@@ -246,6 +248,7 @@ describe('DocumentService', () => {
       // Arrange
       const mockDocument: Partial<Document> = {
         documentId: 1,
+        uploadedBy: 1,
         status: 'deleted',
         isImage: () => false,
         isViewable: () => true,
@@ -617,6 +620,7 @@ describe('DocumentService', () => {
       // Arrange
       const mockDocument: Partial<Document> = {
         documentId: 1,
+        uploadedBy: 1,
         status: 'deleted',
         isImage: () => false,
         isViewable: () => true,
@@ -759,7 +763,7 @@ describe('DocumentService', () => {
         mimeType: 'application/pdf',
         size: 2048,
         buffer: Buffer.from('updated content'),
-      });
+      }, 1, ['student']);
 
       // Assert
       expect(result.version).toBe(2);
