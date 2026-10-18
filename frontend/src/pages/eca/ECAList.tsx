@@ -326,7 +326,7 @@ export function ECAList() {
                         {canDeleteECA && (
                           <IconButton size="small" aria-label={`${t('common.delete')} ${eca.name}`} onClick={() => handleDelete(eca.ecaId)} color="error"><DeleteIcon fontSize="small" /></IconButton>
                         )}
-                        <IconButton size="small" aria-label={`${t('eca.enrollments')}: ${eca.name}`} onClick={() => navigate(`/eca/${eca.ecaId}/enrollments`)}><PeopleIcon fontSize="small" /></IconButton>
+                        <IconButton size="small" aria-label={`${t('eca.enrollments')}: ${eca.name}`} onClick={() => navigate(`/eca/management?tab=enrollments&ecaId=${eca.ecaId}`)}><PeopleIcon fontSize="small" /></IconButton>
                       </TableCell>
                     )}
                   </TableRow>

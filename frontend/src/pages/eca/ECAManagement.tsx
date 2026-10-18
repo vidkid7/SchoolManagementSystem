@@ -31,16 +31,18 @@ export function ECAManagement() {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [formData, setFormData] = useState<any>({});
+  const ecaId = searchParams.get('ecaId');
 
   useEffect(() => {
     fetchData();
-  }, [tabValue]);
+  }, [tabValue, ecaId]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const endpoints = ['/eca/enrollments', '/eca/attendance', '/eca/events', '/eca/achievements'];
-      const response = await apiClient.get(endpoints[tabValue]);
+      const params = tabValue === 0 && ecaId ? { ecaId } : undefined;
+      const response = await apiClient.get(endpoints[tabValue], { params });
       setData(response.data?.data || []);
     } catch (err) {
       setData([]);
