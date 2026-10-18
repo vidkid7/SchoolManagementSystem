@@ -51,6 +51,10 @@ describe('Calendar Component', () => {
     jest.clearAllMocks();
   });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   const renderCalendar = () => {
     const store = createMockStore();
     return render(
@@ -802,7 +806,7 @@ describe('Calendar Component', () => {
     fireEvent.click(dayButton);
 
     await waitFor(() => {
-      expect(screen.getByText('No events scheduled for this day')).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent('No upcoming events');
     });
   });
 });
