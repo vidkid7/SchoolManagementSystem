@@ -193,6 +193,15 @@ export class DocumentRepository {
     return document;
   }
 
+  /** Restore an archived document to the active list. */
+  async restore(documentId: number): Promise<Document | null> {
+    const document = await this.findById(documentId);
+    if (!document) return null;
+
+    await document.update({ status: 'active' });
+    return document;
+  }
+
   /**
    * Check if document number exists
    */

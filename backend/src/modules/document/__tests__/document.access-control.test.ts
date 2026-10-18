@@ -32,6 +32,37 @@ describe('Document Access Control', () => {
     jest.clearAllMocks();
   });
 
+  describe('Archived document restoration', () => {
+    it('restores an archived document and records the action', async () => {
+      const archivedDocument: Partial<Document> = {
+        documentId: 9,
+        uploadedBy: 1,
+        status: 'archived',
+      } as Document;
+      const restoredDocument = { ...archivedDocument, status: 'active' } as Document;
+      mockRepository.findById = jest.fn().mockResolvedValue(archivedDocument);
+      mockRepository.restore = jest.fn().mockResolvedValue(restoredDocument);
+      mockRepository.logAccess = jest.fn().mockResolvedValue({} as any);
+
+      const result = await service.restoreDocument(9, 1, ['School_Admin']);
+
+      expect(result.status).toBe('active');
+      expect(mockRepository.restore).toHaveBeenCalledWith(9);
+      expect(mockRepository.logAccess).toHaveBeenCalledWith(
+        expect.objectContaining({ documentId: 9, userId: 1, action: 'edit', details: { action: 'restore' } })
+      );
+    });
+
+    it('does not restore documents that are not archived', async () => {
+      mockRepository.findById = jest.fn().mockResolvedValue({ documentId: 9, status: 'active' } as Document);
+
+      await expect(service.restoreDocument(9, 1, ['School_Admin'])).rejects.toThrow(
+        'Only archived documents can be restored'
+      );
+      expect(mockRepository.restore).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Role-Based Access Control', () => {
     describe('Public Documents', () => {
       it('should allow any authenticated user to access public documents', async () => {

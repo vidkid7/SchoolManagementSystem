@@ -477,6 +477,32 @@ describe('DocumentController', () => {
     });
   });
 
+  describe('restoreDocument', () => {
+    it('should restore an archived document successfully', async () => {
+      const mockDocument: Partial<Document> = {
+        documentId: 1,
+        status: 'active',
+        isImage: () => false,
+        isViewable: () => true,
+        getActualSize: () => 1024,
+        toJSON: function() { return this; },
+      } as unknown as Document;
+
+      mockService.restoreDocument = jest.fn().mockResolvedValue(mockDocument);
+      mockRequest.params = { documentId: '1' };
+
+      await controller.restoreDocument(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockService.restoreDocument).toHaveBeenCalledWith(1, 1, ['School_Admin']);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          message: 'Document restored successfully',
+        })
+      );
+    });
+  });
+
   describe('getAccessLogs', () => {
     it('should return document access logs', async () => {
       // Arrange

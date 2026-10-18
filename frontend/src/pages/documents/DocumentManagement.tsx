@@ -57,6 +57,7 @@ import {
   Delete as DeleteIcon,
   Edit as EditIcon,
   Archive as ArchiveIcon,
+  Unarchive as UnarchiveIcon,
   MoreVert as MoreIcon,
   PictureAsPdf as PdfIcon,
   Image as ImageIcon,
@@ -467,6 +468,20 @@ export const DocumentManagement = () => {
     setAnchorEl(null);
   };
 
+  const handleRestore = async (document: Document) => {
+    try {
+      const response = await apiClient.post(`/documents/${document.documentId}/restore`);
+
+      if (response.data.success) {
+        setSuccess(t('documents.documentRestoredSuccessfully'));
+        fetchDocuments();
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || t('documents.failedToRestoreDocument'));
+    }
+    setAnchorEl(null);
+  };
+
   const handleDelete = async (document: Document) => {
     if (!window.confirm(t('documents.areYouSureDelete'))) {
       setAnchorEl(null);
@@ -785,14 +800,21 @@ export const DocumentManagement = () => {
               </ListItemIcon>
               <ListItemText>{t('documents.edit')}</ListItemText>
             </MenuItem>
-            <MenuItem
-              onClick={() => handleArchive(menuDocument)}
-            >
-              <ListItemIcon>
-                <ArchiveIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>{t('documents.archive')}</ListItemText>
-            </MenuItem>
+            {menuDocument.status === 'archived' ? (
+              <MenuItem onClick={() => handleRestore(menuDocument)}>
+                <ListItemIcon>
+                  <UnarchiveIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>{t('documents.restore')}</ListItemText>
+              </MenuItem>
+            ) : (
+              <MenuItem onClick={() => handleArchive(menuDocument)}>
+                <ListItemIcon>
+                  <ArchiveIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>{t('documents.archive')}</ListItemText>
+              </MenuItem>
+            )}
             <Divider />
             <MenuItem
               onClick={() => handleDelete(menuDocument)}

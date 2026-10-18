@@ -43,4 +43,26 @@ describe('DocumentRepository file data persistence', () => {
     expect(JSON.stringify(listedDocument)).not.toContain(bytes.toString());
     expect(loadedBytes).toEqual(bytes);
   });
+
+  it('restores an archived document to the active status', async () => {
+    const saved = await Document.create({
+      documentNumber: 'DOC-TEST-000002',
+      name: 'QA archived document',
+      originalName: 'qa.pdf',
+      category: 'other',
+      mimeType: 'application/pdf',
+      size: 4,
+      storagePath: '/uploads/documents/DOC-TEST-000002.pdf',
+      fileData: Buffer.from('%PDF'),
+      uploadedBy: 1,
+      accessLevel: 'private',
+      isCompressed: false,
+    });
+
+    const repository = new DocumentRepository();
+    await repository.archive(saved.documentId);
+    const restored = await repository.restore(saved.documentId);
+
+    expect(restored?.status).toBe('active');
+  });
 });

@@ -457,6 +457,42 @@ export class DocumentController {
   };
 
   /**
+   * Restore an archived document
+   * POST /api/v1/documents/:documentId/restore
+   */
+  restoreDocument = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user) {
+        throw new AuthenticationError('Authentication required');
+      }
+
+      const { error: paramsError, value: paramsValue } = validateParams(documentParamsSchema)(req.params);
+      if (paramsError) {
+        throw new ValidationError('Invalid parameters');
+      }
+
+      const document = await this.service.restoreDocument(
+        paramsValue.documentId,
+        req.user.userId,
+        [req.user.role]
+      );
+
+      logger.info('Document restored', {
+        documentId: document.documentId,
+        userId: req.user.userId,
+      });
+
+      res.json({
+        success: true,
+        data: document,
+        message: 'Document restored successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
    * Get document access logs
    * GET /api/v1/documents/:documentId/access-logs
    */

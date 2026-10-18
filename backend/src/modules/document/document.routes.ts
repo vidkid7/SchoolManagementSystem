@@ -96,6 +96,12 @@ router.post(
   controller.archiveDocument
 );
 
+router.post(
+  '/:documentId/restore',
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.CLASS_TEACHER, UserRole.SUBJECT_TEACHER),
+  controller.restoreDocument
+);
+
 router.delete(
   '/:documentId',
   authorize(UserRole.SCHOOL_ADMIN, UserRole.CLASS_TEACHER, UserRole.SUBJECT_TEACHER),

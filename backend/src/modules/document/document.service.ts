@@ -479,6 +479,28 @@ export class DocumentService {
     return archivedDocument!;
   }
 
+  /** Restore an archived document to the active list. */
+  async restoreDocument(documentId: number, userId: number, userRoles: string[] = []): Promise<Document> {
+    const document = await this.repository.findById(documentId);
+    if (!document) {
+      throw new Error(`Document with ID ${documentId} not found`);
+    }
+    if (document.status !== 'archived') {
+      throw new Error('Only archived documents can be restored');
+    }
+    this.assertCanManage(document, userId, userRoles);
+
+    const restoredDocument = await this.repository.restore(documentId);
+    await this.logAccess({
+      documentId: document.documentId,
+      userId,
+      action: 'edit',
+      success: true,
+      details: { action: 'restore' },
+    });
+    return restoredDocument!;
+  }
+
   /**
    * Get document access logs
    */
