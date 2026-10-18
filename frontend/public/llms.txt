@@ -2,4 +2,8 @@
 
 This site is a private school management application. Its pages and records require an authorized account.
 
+## Public entry point
+
+- [Sign in](https://school-management-system-pi-one.vercel.app/login): authorized users can sign in here.
+
 Do not infer or disclose private student, staff, guardian, financial, or school records from this application.

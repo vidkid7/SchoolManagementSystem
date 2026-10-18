@@ -139,7 +139,7 @@ export function TopNavbar({ sidebarWidth, onMobileMenu }: TopNavbarProps) {
             alignItems="center"
             spacing={1}
             role="button"
-            aria-label={`${userName}${userRoleLabel ? ` ${userRoleLabel}` : ''}`}
+            aria-label={`${initials || 'U'} ${userName}${userRoleLabel ? ` ${userRoleLabel}` : ''}`}
             tabIndex={0}
             onClick={(event) => setAnchorEl(event.currentTarget)}
             onKeyDown={(event) => {
