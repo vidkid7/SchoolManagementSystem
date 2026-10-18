@@ -267,6 +267,11 @@ export const AttendanceMarking = () => {
             icon={isOnline ? <SyncedIcon /> : <OfflineIcon />}
             label={isOnline ? t('attendance.online') : t('attendance.offline')}
             color={isOnline ? 'success' : 'warning'}
+            sx={{
+              bgcolor: isOnline ? '#166534' : '#92400e',
+              color: '#fff',
+              '& .MuiChip-icon': { color: '#fff' },
+            }}
           />
         </Box>
       </Paper>
@@ -288,10 +293,11 @@ export const AttendanceMarking = () => {
         <Grid container spacing={3}>
           <Grid item xs={12} md={3}>
             <FormControl fullWidth sx={S.TF}>
-              <InputLabel>{t('common.class')}</InputLabel>
+              <InputLabel id="attendance-mark-class-label">{t('common.class')}</InputLabel>
               <Select
                 value={selectedClass}
                 label={t('common.class')}
+                labelId="attendance-mark-class-label"
                 onChange={(e) => {
                   setSelectedClass(e.target.value);
                   setSelectedSection('');
@@ -310,10 +316,11 @@ export const AttendanceMarking = () => {
 
           <Grid item xs={12} md={3}>
             <FormControl fullWidth sx={S.TF}>
-              <InputLabel>{t('common.section')}</InputLabel>
+              <InputLabel id="attendance-mark-section-label">{t('common.section')}</InputLabel>
               <Select
                 value={selectedSection}
                 label={t('common.section')}
+                labelId="attendance-mark-section-label"
                 onChange={(e) => {
                   setSelectedSection(e.target.value);
                   setStudents([]);
@@ -331,10 +338,11 @@ export const AttendanceMarking = () => {
 
           <Grid item xs={12} md={3}>
             <FormControl fullWidth sx={S.TF}>
-              <InputLabel>{t('attendance.period')}</InputLabel>
+              <InputLabel id="attendance-mark-period-label">{t('attendance.period')}</InputLabel>
               <Select
                 value={selectedPeriod}
                 label={t('attendance.period')}
+                labelId="attendance-mark-period-label"
                 onChange={(e) => setSelectedPeriod(e.target.value)}
               >
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((period) => (
