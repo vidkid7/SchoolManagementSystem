@@ -76,12 +76,20 @@ interface User {
   avatar?: string;
 }
 
-interface Role {
-  id: number;
-  name: string;
-  displayName: string;
-  permissions: string[];
-}
+const ASSIGNABLE_ROLES = [
+  { value: 'Class_Teacher', label: 'Class Teacher' },
+  { value: 'Subject_Teacher', label: 'Subject Teacher' },
+  { value: 'Department_Head', label: 'Department Head' },
+  { value: 'ECA_Coordinator', label: 'ECA Coordinator' },
+  { value: 'Sports_Coordinator', label: 'Sports Coordinator' },
+  { value: 'Student', label: 'Student' },
+  { value: 'Parent', label: 'Parent' },
+  { value: 'Librarian', label: 'Librarian' },
+  { value: 'Accountant', label: 'Accountant' },
+  { value: 'Transport_Manager', label: 'Transport Manager' },
+  { value: 'Hostel_Warden', label: 'Hostel Warden' },
+  { value: 'Non_Teaching_Staff', label: 'Non-Teaching Staff' },
+];
 
 interface UserActivity {
   id: number;
@@ -97,7 +105,6 @@ export const UserManagement = () => {
   const { t } = useTranslation();
   const [users, setUsers] = useState<User[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);
-  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -134,7 +141,6 @@ export const UserManagement = () => {
 
   useEffect(() => {
     fetchUsers();
-    fetchRoles();
     fetchStats();
   }, [page, rowsPerPage, search, roleFilter, statusFilter]);
 
@@ -155,15 +161,6 @@ export const UserManagement = () => {
       console.error('Failed to fetch users:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchRoles = async () => {
-    try {
-      const response = await apiClient.get('/api/v1/config/roles');
-      setRoles(response.data.data || []);
-    } catch (error) {
-      console.error('Failed to fetch roles:', error);
     }
   };
 
@@ -409,9 +406,9 @@ export const UserManagement = () => {
               onChange={(e) => setRoleFilter(e.target.value)}
             >
               <MenuItem value="">{t('common.all')}</MenuItem>
-              {roles.map((role) => (
-                <MenuItem key={role.id} value={role.name}>
-                  {role.displayName}
+              {ASSIGNABLE_ROLES.map((role) => (
+                <MenuItem key={role.value} value={role.value}>
+                  {role.label}
                 </MenuItem>
               ))}
             </Select>
@@ -638,9 +635,9 @@ export const UserManagement = () => {
                 label={t('userManagement.role')}
                 onChange={(e) => setUserForm({ ...userForm, roleId: e.target.value })}
               >
-                {roles.map((role) => (
-                  <MenuItem key={role.id} value={role.name}>
-                    {role.displayName}
+                {ASSIGNABLE_ROLES.map((role) => (
+                  <MenuItem key={role.value} value={role.value}>
+                    {role.label}
                   </MenuItem>
                 ))}
               </Select>
