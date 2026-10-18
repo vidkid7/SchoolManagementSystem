@@ -61,19 +61,19 @@ export interface PermissionCreationAttributes extends Optional<PermissionAttribu
  * Permission Model Class
  */
 class Permission extends Model<PermissionAttributes, PermissionCreationAttributes> implements PermissionAttributes {
-  public id!: string;
-  public name!: string;
-  public code!: string;
-  public description?: string;
-  public category!: PermissionCategory;
-  public action!: PermissionAction;
-  public resource!: string;
-  public isSystem!: boolean;
-  public isActive!: boolean;
+  declare id: string;
+  declare name: string;
+  declare code: string;
+  declare description?: string;
+  declare category: PermissionCategory;
+  declare action: PermissionAction;
+  declare resource: string;
+  declare isSystem: boolean;
+  declare isActive: boolean;
 
   // Timestamps
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
 /**

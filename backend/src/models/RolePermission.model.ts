@@ -17,11 +17,11 @@ export interface RolePermissionAttributes {
  * Junction table for many-to-many relationship between Roles and Permissions
  */
 class RolePermission extends Model<RolePermissionAttributes> implements RolePermissionAttributes {
-  public roleId!: string;
-  public permissionId!: string;
+  declare roleId: string;
+  declare permissionId: string;
 
   // Timestamps
-  public readonly createdAt!: Date;
+  declare readonly createdAt: Date;
 }
 
 /**

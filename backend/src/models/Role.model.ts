@@ -25,16 +25,16 @@ export interface RoleCreationAttributes extends Optional<RoleAttributes,
  * Role Model Class
  */
 class Role extends Model<RoleAttributes, RoleCreationAttributes> implements RoleAttributes {
-  public id!: string;
-  public name!: string;
-  public code!: string;
-  public description?: string;
-  public isSystem!: boolean;
-  public isActive!: boolean;
+  declare id: string;
+  declare name: string;
+  declare code: string;
+  declare description?: string;
+  declare isSystem: boolean;
+  declare isActive: boolean;
 
   // Timestamps
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
 /**
