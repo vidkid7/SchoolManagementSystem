@@ -135,23 +135,19 @@ export function TopNavbar({ sidebarWidth, onMobileMenu }: TopNavbarProps) {
           </IconButton>
           <NotificationBell />
           <Stack
+            component="button"
+            type="button"
             direction="row"
             alignItems="center"
             spacing={1}
-            role="button"
-            aria-label={`${initials || 'U'} ${userName}${userRoleLabel ? ` ${userRoleLabel}` : ''}`}
-            tabIndex={0}
             onClick={(event) => setAnchorEl(event.currentTarget)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                setAnchorEl(event.currentTarget);
-              }
-            }}
+            aria-label={compact ? `${initials || 'U'} Account menu` : undefined}
             className="dashboard-topbar__account"
             sx={{
               px: { xs: 0.45, sm: 0.8 },
               py: 0.35,
+              font: 'inherit',
+              textAlign: 'left',
             }}
           >
             <Avatar className="dashboard-topbar__account-avatar" sx={{ width: 24, height: 24, bgcolor: '#2563eb', fontWeight: 900, fontSize: '0.72rem' }}>{initials || 'U'}</Avatar>
