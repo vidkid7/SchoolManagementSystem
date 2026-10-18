@@ -92,7 +92,7 @@ describe('LazyImage', () => {
     );
 
     const wrapper = container.firstChild as HTMLElement;
-    expect(wrapper).toHaveStyle({ aspectRatio: '16/9' });
+    expect(wrapper.style.aspectRatio.replace(/\s/g, '')).toBe('16/9');
   });
 
   it('should show fallback image on error', async () => {

@@ -21,12 +21,22 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// Mock localStorage
+class ResizeObserverMock {
+  observe = jest.fn();
+  unobserve = jest.fn();
+  disconnect = jest.fn();
+}
+Object.defineProperty(global, 'ResizeObserver', { value: ResizeObserverMock, writable: true });
+
+// Mock localStorage with browser-compatible persistence semantics.
+const localStorageData = new Map<string, string>();
 const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  clear: jest.fn(),
-  removeItem: jest.fn(),
+  getItem: jest.fn((key: string) => localStorageData.get(key) ?? null),
+  setItem: jest.fn((key: string, value: string) => localStorageData.set(key, String(value))),
+  clear: jest.fn(() => localStorageData.clear()),
+  removeItem: jest.fn((key: string) => localStorageData.delete(key)),
+  key: jest.fn((index: number) => Array.from(localStorageData.keys())[index] ?? null),
+  get length() { return localStorageData.size; },
 };
 Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,

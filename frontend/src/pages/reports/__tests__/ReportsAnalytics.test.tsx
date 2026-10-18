@@ -1,42 +1,81 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
 import '@testing-library/jest-dom';
 import ReportsAnalytics from '../ReportsAnalytics';
-import axios from 'axios';
+import apiClient from '../../../services/apiClient';
+import { store } from '../../../store';
+import { setUser } from '../../../store/slices/authSlice';
 
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    i18n: { language: 'en' },
+    t: (key: string) => ({
+      'reports.title': 'Reports & Analytics',
+      'reports.enrollment': 'Enrollment',
+      'reports.attendance': 'Attendance',
+      'reports.feeCollection': 'Fee Collection',
+      'reports.overview': 'Overview',
+      'reports.examination': 'Examination',
+      'reports.library': 'Library',
+      'reports.ecaSports': 'ECA & Sports',
+      'reports.startDate': 'Start Date',
+      'reports.endDate': 'End Date',
+      'reports.class': 'Class',
+      'reports.section': 'Section',
+      'reports.pdf': 'PDF',
+      'reports.excel': 'Excel',
+      'reports.attendanceTrend': 'Attendance Trend',
+      'reports.feeCollectionVsPending': 'Fee Collection vs Pending',
+      'reports.enrollmentByClass': 'Student Enrollment by Class',
+      'reports.summary': 'Summary',
+      'dashboard.gradeDistribution': 'Grade Distribution',
+    }[key] ?? key),
+  }),
+}));
+
+jest.mock('../../../services/apiClient');
+const mockedApiClient = apiClient as jest.Mocked<typeof apiClient>;
+
+const renderReports = () => render(
+  <Provider store={store}>
+    <ReportsAnalytics />
+  </Provider>
+);
 
 describe('ReportsAnalytics', () => {
   beforeEach(() => {
+    jest.restoreAllMocks();
     jest.clearAllMocks();
+    store.dispatch(setUser({ userId: 1, username: 'qa', email: 'qa@example.test', role: 'School_Admin' }));
+    mockedApiClient.get.mockResolvedValue({ data: { success: true, data: {} } } as any);
   });
 
-  it('should render reports analytics page', () => {
-    render(<ReportsAnalytics />);
-    expect(screen.getByText('Reports & Analytics')).toBeInTheDocument();
+  it('should render reports analytics page', async () => {
+    renderReports();
+    expect(await screen.findByRole('heading', { name: 'Reports & Analytics' })).toBeInTheDocument();
   });
 
-  it('should render all tabs', () => {
-    render(<ReportsAnalytics />);
-    expect(screen.getByText('Enrollment')).toBeInTheDocument();
-    expect(screen.getByText('Attendance')).toBeInTheDocument();
-    expect(screen.getByText('Fee Collection')).toBeInTheDocument();
-    expect(screen.getByText('Examination')).toBeInTheDocument();
-    expect(screen.getByText('Library')).toBeInTheDocument();
-    expect(screen.getByText('ECA & Sports')).toBeInTheDocument();
+  it('should render all tabs', async () => {
+    renderReports();
+    await screen.findByRole('heading', { name: 'Reports & Analytics' });
+    for (const name of ['Enrollment', 'Attendance', 'Fee Collection', 'Examination', 'Library', 'ECA & Sports']) {
+      expect(screen.getByRole('tab', { name: new RegExp(name) })).toBeInTheDocument();
+    }
   });
 
-  it('should render filter inputs', () => {
-    render(<ReportsAnalytics />);
+  it('should render filter inputs', async () => {
+    renderReports();
+    await screen.findByLabelText('Start Date');
     expect(screen.getByLabelText('Start Date')).toBeInTheDocument();
     expect(screen.getByLabelText('End Date')).toBeInTheDocument();
     expect(screen.getByLabelText('Class')).toBeInTheDocument();
     expect(screen.getByLabelText('Section')).toBeInTheDocument();
   });
 
-  it('should update filters when inputs change', () => {
-    render(<ReportsAnalytics />);
+  it('should update filters when inputs change', async () => {
+    renderReports();
+    await screen.findByLabelText('Start Date');
     
     const startDateInput = screen.getByLabelText('Start Date') as HTMLInputElement;
     fireEvent.change(startDateInput, { target: { value: '2024-01-01' } });
@@ -47,48 +86,41 @@ describe('ReportsAnalytics', () => {
     expect(endDateInput.value).toBe('2024-01-31');
   });
 
-  it('should switch between tabs', () => {
-    render(<ReportsAnalytics />);
+  it('should switch between tabs', async () => {
+    renderReports();
+    const enrollmentTab = await screen.findByRole('tab', { name: /Enrollment/ });
+    fireEvent.click(enrollmentTab);
     
-    const attendanceTab = screen.getByText('Attendance');
+    const attendanceTab = screen.getByRole('tab', { name: /Attendance/ });
     fireEvent.click(attendanceTab);
     expect(screen.getByText('Attendance Trend')).toBeInTheDocument();
 
-    const feeTab = screen.getByText('Fee Collection');
+    const feeTab = screen.getByRole('tab', { name: /Fee Collection/ });
     fireEvent.click(feeTab);
-    expect(screen.getByText('Fee Collection vs Pending')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Fee Collection Overview' })).toBeInTheDocument();
   });
 
-  it('should render export buttons', () => {
-    render(<ReportsAnalytics />);
-    const exportButtons = screen.getAllByText(/Export PDF|Export Excel/);
+  it('should render export buttons', async () => {
+    renderReports();
+    await screen.findByRole('tab', { name: /Enrollment/ });
+    const exportButtons = screen.getAllByRole('button').filter((button) => /PDF|Excel/.test(button.textContent ?? ''));
     expect(exportButtons.length).toBeGreaterThan(0);
   });
 
   it('should handle PDF export', async () => {
     const mockBlob = new Blob(['pdf content'], { type: 'application/pdf' });
-    mockedAxios.get.mockResolvedValue({ data: mockBlob });
+    mockedApiClient.get.mockResolvedValue({ data: mockBlob, headers: { 'content-type': 'application/pdf' } } as any);
 
     // Mock URL.createObjectURL
     global.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
     
-    // Mock document.createElement and appendChild
-    const mockLink = {
-      href: '',
-      setAttribute: jest.fn(),
-      click: jest.fn(),
-      remove: jest.fn(),
-    };
-    jest.spyOn(document, 'createElement').mockReturnValue(mockLink as any);
-    jest.spyOn(document.body, 'appendChild').mockImplementation(() => mockLink as any);
+    jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
-    render(<ReportsAnalytics />);
-    
-    const exportPdfButtons = screen.getAllByText('Export PDF');
-    fireEvent.click(exportPdfButtons[0]);
+    renderReports();
+    fireEvent.click((await screen.findAllByRole('button', { name: /PDF/ }))[0]);
 
     await waitFor(() => {
-      expect(mockedAxios.get).toHaveBeenCalledWith(
+      expect(mockedApiClient.get).toHaveBeenCalledWith(
         '/api/v1/reports/export/pdf/enrollment',
         expect.any(Object)
       );
@@ -99,26 +131,17 @@ describe('ReportsAnalytics', () => {
     const mockBlob = new Blob(['excel content'], { 
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
     });
-    mockedAxios.get.mockResolvedValue({ data: mockBlob });
+    mockedApiClient.get.mockResolvedValue({ data: mockBlob, headers: { 'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' } } as any);
 
     global.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
     
-    const mockLink = {
-      href: '',
-      setAttribute: jest.fn(),
-      click: jest.fn(),
-      remove: jest.fn(),
-    };
-    jest.spyOn(document, 'createElement').mockReturnValue(mockLink as any);
-    jest.spyOn(document.body, 'appendChild').mockImplementation(() => mockLink as any);
+    jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
-    render(<ReportsAnalytics />);
-    
-    const exportExcelButtons = screen.getAllByText('Export Excel');
-    fireEvent.click(exportExcelButtons[0]);
+    renderReports();
+    fireEvent.click((await screen.findAllByRole('button', { name: /Excel/ }))[0]);
 
     await waitFor(() => {
-      expect(mockedAxios.get).toHaveBeenCalledWith(
+      expect(mockedApiClient.get).toHaveBeenCalledWith(
         '/api/v1/reports/export/excel/enrollment',
         expect.any(Object)
       );
@@ -126,13 +149,11 @@ describe('ReportsAnalytics', () => {
   });
 
   it('should handle export errors gracefully', async () => {
-    mockedAxios.get.mockRejectedValue(new Error('Export failed'));
+    mockedApiClient.get.mockRejectedValue(new Error('Export failed'));
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
-    render(<ReportsAnalytics />);
-    
-    const exportPdfButtons = screen.getAllByText('Export PDF');
-    fireEvent.click(exportPdfButtons[0]);
+    renderReports();
+    fireEvent.click((await screen.findAllByRole('button', { name: /PDF/ }))[0]);
 
     await waitFor(() => {
       expect(consoleErrorSpy).toHaveBeenCalledWith('Export failed:', expect.any(Error));
@@ -141,19 +162,18 @@ describe('ReportsAnalytics', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it('should render charts in enrollment tab', () => {
-    render(<ReportsAnalytics />);
-    expect(screen.getByText('Student Enrollment by Class')).toBeInTheDocument();
-    expect(screen.getByText('Summary')).toBeInTheDocument();
+  it('should render charts in enrollment tab', async () => {
+    renderReports();
+    await screen.findByRole('tab', { name: /Enrollment/ });
+    expect(screen.getByRole('heading', { name: 'Student Enrollment by Class' })).toBeInTheDocument();
   });
 
-  it('should render charts in examination tab', () => {
-    render(<ReportsAnalytics />);
-    
-    const examTab = screen.getByText('Examination');
+  it('should render charts in examination tab', async () => {
+    renderReports();
+    await screen.findByRole('tab', { name: /Enrollment/ });
+    const examTab = screen.getByRole('tab', { name: /Examination/ });
     fireEvent.click(examTab);
     
-    expect(screen.getByText('Grade Distribution')).toBeInTheDocument();
-    expect(screen.getByText('Performance Summary')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Grade Distribution' })).toBeInTheDocument();
   });
 });

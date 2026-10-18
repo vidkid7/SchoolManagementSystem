@@ -5,6 +5,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { usePWA } from '../usePWA';
 import * as serviceWorkerUtils from '@utils/serviceWorker';
+import * as offlineSyncUtils from '@utils/offlineSync';
 
 // Mock service worker utilities
 jest.mock('@utils/serviceWorker', () => ({
@@ -22,6 +23,19 @@ jest.mock('@utils/serviceWorker', () => ({
     quota: 10240000,
     percentage: 10
   }))
+}));
+
+jest.mock('@utils/offlineSync', () => ({
+  getSyncStatus: jest.fn(() => Promise.resolve({ pendingCount: 0, lastSyncTime: null })),
+  triggerManualSync: jest.fn(() => Promise.resolve({
+    success: true,
+    syncedCount: 0,
+    failedCount: 0,
+    conflictCount: 0,
+    errors: [],
+    conflicts: [],
+  })),
+  setupAutoSync: jest.fn(() => jest.fn()),
 }));
 
 describe('usePWA Hook', () => {
@@ -48,7 +62,7 @@ describe('usePWA Hook', () => {
     renderHook(() => usePWA());
     
     await waitFor(() => {
-      expect(serviceWorkerUtils.getSyncStatus).toHaveBeenCalled();
+      expect(offlineSyncUtils.getSyncStatus).toHaveBeenCalled();
     });
   });
 
@@ -65,22 +79,20 @@ describe('usePWA Hook', () => {
     const [, actions] = result.current;
 
     await act(async () => {
-      const success = await actions.triggerManualSync();
-      expect(success).toBe(true);
+      const result = await actions.triggerManualSync();
+      expect(result.success).toBe(true);
     });
 
-    expect(serviceWorkerUtils.triggerSync).toHaveBeenCalled();
+    expect(offlineSyncUtils.triggerManualSync).toHaveBeenCalled();
   });
 
   it('should refresh sync status', async () => {
     const mockSyncStatus = {
-      isSyncing: true,
       pendingCount: 5,
       lastSyncTime: new Date(),
-      errors: []
     };
 
-    (serviceWorkerUtils.getSyncStatus as jest.Mock).mockResolvedValue(mockSyncStatus);
+    (offlineSyncUtils.getSyncStatus as jest.Mock).mockResolvedValue(mockSyncStatus);
 
     const { result } = renderHook(() => usePWA());
     const [, actions] = result.current;
@@ -91,7 +103,7 @@ describe('usePWA Hook', () => {
 
     await waitFor(() => {
       const [state] = result.current;
-      expect(state.syncStatus.isSyncing).toBe(true);
+      expect(state.syncStatus.isSyncing).toBe(false);
       expect(state.syncStatus.pendingCount).toBe(5);
     });
   });

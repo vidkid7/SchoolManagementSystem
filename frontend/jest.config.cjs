@@ -31,6 +31,8 @@ module.exports = {
     '^@utils/(.*)': '<rootDir>/src/utils/$1',
     '^@services/(.*)': '<rootDir>/src/services/$1',
     '^@types/(.*)': '<rootDir>/src/types/$1',
+    '^.*apiClient$': '<rootDir>/src/services/__mocks__/apiClient.ts',
+    '\\.(jpg|jpeg|png|gif|webp)$': '<rootDir>/src/tests/__mocks__/fileMock.ts',
     '^config/api$': '<rootDir>/src/config/__mocks__/api.ts',
     '^services/apiClient$': '<rootDir>/src/services/__mocks__/apiClient.ts',
     '\\.(css|less|scss|sass)': 'identity-obj-proxy',

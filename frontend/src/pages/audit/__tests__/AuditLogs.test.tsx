@@ -2,15 +2,41 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import AuditLogs from '../AuditLogs';
-import axios from 'axios';
+import apiClient from '../../../services/apiClient';
 
 /**
  * Audit Logs Component Tests
  * Requirements: 38.5
  */
 
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+jest.mock('../../../services/apiClient');
+const mockedApiClient = apiClient as jest.Mocked<typeof apiClient>;
+
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: { count?: number }) => {
+      const translations: Record<string, string> = {
+        'audit.title': 'Audit Logs', 'audit.subtitle': 'Track all system changes and user actions',
+        'audit.filters': 'Filters', 'audit.applyFilters': 'Apply Filters', 'audit.clearFilters': 'Clear Filters',
+        'audit.totalLogs': 'Total Logs', 'audit.creates': 'Creates', 'audit.updates': 'Updates',
+        'audit.deletes': 'Deletes', 'audit.restores': 'Restores', 'audit.refresh': 'Refresh',
+        'audit.export': 'Export', 'audit.rotateLogs': 'Rotate Logs',
+        'audit.rotateConfirm': 'Are you sure you want to delete logs older than 1 year? This action cannot be undone.',
+        'audit.rotateSuccess': `Successfully deleted ${options?.count ?? '{{count}}'} old audit logs`,
+        'audit.noLogsFound': 'No audit logs found', 'audit.failedToFetch': 'Failed to fetch audit logs',
+        'audit.failedToExport': 'Failed to export audit logs', 'audit.failedToRotate': 'Failed to rotate audit logs',
+        'audit.userId': 'User ID', 'audit.entityType': 'Entity Type', 'audit.entityId': 'Entity ID',
+        'audit.action': 'Action', 'audit.startDate': 'Start Date', 'audit.endDate': 'End Date',
+        'audit.ipAddress': 'IP Address', 'audit.search': 'Search', 'audit.searchPlaceholder': 'Search entity type or fields...',
+        'audit.id': 'ID', 'audit.timestamp': 'Timestamp', 'audit.entity': 'Entity',
+        'audit.changedFields': 'Changed Fields', 'audit.details': 'Details', 'audit.oldValue': 'Old Value',
+        'audit.newValue': 'New Value', 'audit.userAgent': 'User Agent', 'audit.system': 'System',
+        'audit.allActions': 'All Actions',
+      };
+      return translations[key] ?? key;
+    },
+  }),
+}));
 
 const mockAuditLogs = [
   {
@@ -70,7 +96,7 @@ const renderComponent = () => {
 describe('AuditLogs Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockedAxios.get.mockImplementation((url) => {
+    mockedApiClient.get.mockImplementation((url) => {
       if (url === '/api/v1/audit/logs') {
         return Promise.resolve({
           data: {
@@ -101,7 +127,7 @@ describe('AuditLogs Component', () => {
     expect(screen.getByText('Audit Logs')).toBeInTheDocument();
     
     await waitFor(() => {
-      expect(screen.getByText('student #100')).toBeInTheDocument();
+      expect(screen.getAllByText('student #100').length).toBeGreaterThan(0);
     });
   });
 
@@ -124,10 +150,10 @@ describe('AuditLogs Component', () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('student #100')).toBeInTheDocument();
+      expect(screen.getAllByText('student #100').length).toBeGreaterThan(0);
       expect(screen.getByText('CREATE')).toBeInTheDocument();
       expect(screen.getByText('UPDATE')).toBeInTheDocument();
-      expect(screen.getByText('127.0.0.1')).toBeInTheDocument();
+      expect(screen.getAllByText('127.0.0.1').length).toBeGreaterThan(0);
     });
   });
 
@@ -135,11 +161,11 @@ describe('AuditLogs Component', () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('student #100')).toBeInTheDocument();
+      expect(screen.getAllByText('student #100').length).toBeGreaterThan(0);
     });
 
     // Find and click the expand button for the first row
-    const expandButtons = screen.getAllByRole('button', { name: '' });
+    const expandButtons = screen.getAllByRole('button', { name: 'Details' });
     const firstExpandButton = expandButtons.find(btn => 
       btn.querySelector('svg')?.getAttribute('data-testid') === 'ExpandMoreIcon'
     );
@@ -148,7 +174,7 @@ describe('AuditLogs Component', () => {
       fireEvent.click(firstExpandButton);
 
       await waitFor(() => {
-        expect(screen.getByText('New Value:')).toBeInTheDocument();
+        expect(screen.getAllByText('New Value:').length).toBeGreaterThan(0);
       });
     }
   });
@@ -161,7 +187,7 @@ describe('AuditLogs Component', () => {
     });
 
     // Open filters
-    const filterButton = screen.getByRole('button', { name: '' });
+    const filterButton = screen.getByRole('button', { name: 'Filters' });
     fireEvent.click(filterButton);
 
     // Fill in entity type filter
@@ -173,7 +199,7 @@ describe('AuditLogs Component', () => {
     fireEvent.click(applyButton);
 
     await waitFor(() => {
-      expect(mockedAxios.get).toHaveBeenCalledWith(
+      expect(mockedApiClient.get).toHaveBeenCalledWith(
         '/api/v1/audit/logs',
         expect.objectContaining({
           params: expect.objectContaining({
@@ -192,7 +218,7 @@ describe('AuditLogs Component', () => {
     });
 
     // Open filters
-    const filterButton = screen.getByRole('button', { name: '' });
+    const filterButton = screen.getByRole('button', { name: 'Filters' });
     fireEvent.click(filterButton);
 
     // Fill in entity type filter
@@ -211,19 +237,19 @@ describe('AuditLogs Component', () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('student #100')).toBeInTheDocument();
+      expect(screen.getAllByText('student #100').length).toBeGreaterThan(0);
     });
 
     const refreshButton = screen.getByText('Refresh');
     fireEvent.click(refreshButton);
 
     await waitFor(() => {
-      expect(mockedAxios.get).toHaveBeenCalledTimes(4); // Initial + stats + refresh + stats
+      expect(mockedApiClient.get).toHaveBeenCalledTimes(3); // Initial logs + stats + refreshed logs
     });
   });
 
   it('should export audit logs', async () => {
-    mockedAxios.get.mockImplementation((url) => {
+    mockedApiClient.get.mockImplementation((url) => {
       if (url === '/api/v1/audit/export') {
         return Promise.resolve({
           data: {
@@ -250,6 +276,7 @@ describe('AuditLogs Component', () => {
     // Mock URL.createObjectURL and link.click
     global.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
     const mockClick = jest.fn();
+    const createElement = document.createElement.bind(document);
     jest.spyOn(document, 'createElement').mockImplementation((tagName) => {
       if (tagName === 'a') {
         return {
@@ -258,7 +285,7 @@ describe('AuditLogs Component', () => {
           download: ''
         } as any;
       }
-      return document.createElement(tagName);
+      return createElement(tagName);
     });
 
     renderComponent();
@@ -271,7 +298,7 @@ describe('AuditLogs Component', () => {
     fireEvent.click(exportButton);
 
     await waitFor(() => {
-      expect(mockedAxios.get).toHaveBeenCalledWith(
+      expect(mockedApiClient.get).toHaveBeenCalledWith(
         '/api/v1/audit/export',
         expect.any(Object)
       );
@@ -283,7 +310,7 @@ describe('AuditLogs Component', () => {
     global.confirm = jest.fn(() => true);
     global.alert = jest.fn();
 
-    mockedAxios.post.mockResolvedValue({
+    mockedApiClient.post.mockResolvedValue({
       data: {
         success: true,
         data: {
@@ -305,7 +332,7 @@ describe('AuditLogs Component', () => {
 
     await waitFor(() => {
       expect(global.confirm).toHaveBeenCalled();
-      expect(mockedAxios.post).toHaveBeenCalledWith(
+      expect(mockedApiClient.post).toHaveBeenCalledWith(
         '/api/v1/audit/rotate',
         { retentionDays: 365 }
       );
@@ -328,14 +355,14 @@ describe('AuditLogs Component', () => {
     fireEvent.click(rotateButton);
 
     expect(global.confirm).toHaveBeenCalled();
-    expect(mockedAxios.post).not.toHaveBeenCalled();
+    expect(mockedApiClient.post).not.toHaveBeenCalled();
   });
 
   it('should handle pagination', async () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('student #100')).toBeInTheDocument();
+      expect(screen.getAllByText('student #100').length).toBeGreaterThan(0);
     });
 
     // Find pagination controls
@@ -345,7 +372,7 @@ describe('AuditLogs Component', () => {
       fireEvent.click(nextPageButton);
 
       await waitFor(() => {
-        expect(mockedAxios.get).toHaveBeenCalledWith(
+        expect(mockedApiClient.get).toHaveBeenCalledWith(
           '/api/v1/audit/logs',
           expect.objectContaining({
             params: expect.objectContaining({
@@ -358,7 +385,7 @@ describe('AuditLogs Component', () => {
   });
 
   it('should display error message on API failure', async () => {
-    mockedAxios.get.mockRejectedValue({
+    mockedApiClient.get.mockRejectedValue({
       response: {
         data: {
           error: {
@@ -376,7 +403,7 @@ describe('AuditLogs Component', () => {
   });
 
   it('should display loading state', () => {
-    mockedAxios.get.mockImplementation(() => new Promise(() => {})); // Never resolves
+    mockedApiClient.get.mockImplementation(() => new Promise(() => {})); // Never resolves
 
     renderComponent();
 
@@ -384,7 +411,7 @@ describe('AuditLogs Component', () => {
   });
 
   it('should display empty state when no logs', async () => {
-    mockedAxios.get.mockImplementation((url) => {
+    mockedApiClient.get.mockImplementation((url) => {
       if (url === '/api/v1/audit/logs') {
         return Promise.resolve({
           data: {

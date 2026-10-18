@@ -338,7 +338,12 @@ const AuditLogs: React.FC = () => {
             <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
               {t('audit.filters')}
             </Typography>
-            <IconButton size="small" sx={S.BTN_ICON} onClick={() => setShowFilters(!showFilters)}>
+            <IconButton
+              size="small"
+              sx={S.BTN_ICON}
+              aria-label={t('audit.filters')}
+              onClick={() => setShowFilters(!showFilters)}
+            >
               {showFilters ? <ExpandLessIcon /> : <ExpandMoreIcon />}
             </IconButton>
           </Box>
@@ -528,6 +533,7 @@ const AuditLogs: React.FC = () => {
                             <IconButton
                               size="small"
                               sx={S.BTN_ICON}
+                              aria-label={t('audit.details')}
                               onClick={() =>
                                 setExpandedRow(expandedRow === log.auditLogId ? null : log.auditLogId)
                               }
