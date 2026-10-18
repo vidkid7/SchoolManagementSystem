@@ -52,6 +52,7 @@ import * as ensureEcaSportsTables from '../migrations/20261011000004-ensure-eca-
 import * as widenStaffEmergencyContact from '../migrations/20261012000001-widen-staff-emergency-contact';
 import * as ensureLibraryTables from '../migrations/20261012000002-ensure-library-tables';
 import * as ensureReservationWorkflowColumns from '../migrations/20261012000003-ensure-reservation-workflow-columns';
+import * as ensureExamIsInternalColumn from '../migrations/20261018000001-ensure-exam-is-internal-column';
 
 /**
  * Migration Runner
@@ -296,6 +297,11 @@ const migrations: Migration[] = [
     name: '20261012000003-ensure-reservation-workflow-columns',
     up: (queryInterface) => ensureReservationWorkflowColumns.up(queryInterface, sequelize),
     down: (queryInterface) => ensureReservationWorkflowColumns.down(queryInterface, sequelize)
+  },
+  {
+    name: '20261018000001-ensure-exam-is-internal-column',
+    up: (queryInterface) => ensureExamIsInternalColumn.up(queryInterface, sequelize),
+    down: (queryInterface) => ensureExamIsInternalColumn.down(queryInterface, sequelize)
   }
 ];
 
