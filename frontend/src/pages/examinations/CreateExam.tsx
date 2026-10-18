@@ -50,11 +50,9 @@ export function CreateExam() {
 
   const [subjects, setSubjects] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
-  const [terms, setTerms] = useState<any[]>([
-    { termId: 1, name: 'examinations.firstTerm' },
-    { termId: 2, name: 'examinations.secondTerm' },
-    { termId: 3, name: 'examinations.thirdTerm' },
-  ]);
+  const [terms, setTerms] = useState<any[]>([]);
+  const [termsLoading, setTermsLoading] = useState(false);
+  const [termsError, setTermsError] = useState('');
   
   const [formData, setFormData] = useState({
     name: '',
@@ -62,7 +60,7 @@ export function CreateExam() {
     classId: '',
     subjectId: '',
     academicYearId: '',
-    termId: '1',
+    termId: '',
     examDate: '',
     duration: '180',
     fullMarks: '100',
@@ -79,6 +77,38 @@ export function CreateExam() {
       setFormData(prev => ({ ...prev, academicYearId: String(currentYear.academicYearId) }));
     }
   }, [currentYear]);
+
+  useEffect(() => {
+    if (!formData.academicYearId) {
+      setTerms([]);
+      return;
+    }
+
+    let active = true;
+    const fetchTerms = async () => {
+      setTermsLoading(true);
+      setTermsError('');
+      try {
+        const response = await apiClient.get(`/academic/terms?academicYearId=${formData.academicYearId}`);
+        if (!active) return;
+        const availableTerms = Array.isArray(response.data?.data) ? response.data.data : [];
+        setTerms(availableTerms);
+        setFormData(prev => ({
+          ...prev,
+          termId: availableTerms.some((term: any) => String(term.termId) === prev.termId) ? prev.termId : '',
+        }));
+      } catch {
+        if (!active) return;
+        setTerms([]);
+        setTermsError(t('examinations.failedToLoadTerms'));
+      } finally {
+        if (active) setTermsLoading(false);
+      }
+    };
+
+    void fetchTerms();
+    return () => { active = false; };
+  }, [formData.academicYearId, t]);
 
   useEffect(() => {
     fetchDropdownData();
@@ -117,11 +147,6 @@ export function CreateExam() {
       setSubjects(subjectsRes.data?.data || []);
       setClasses(classesRes.data?.data || []);
       
-      setTerms([
-        { termId: 1, name: 'examinations.firstTerm' },
-        { termId: 2, name: 'examinations.secondTerm' },
-        { termId: 3, name: 'examinations.thirdTerm' },
-      ]);
     } catch (error) {
       // Silently handle any unexpected errors
     }
@@ -178,6 +203,13 @@ export function CreateExam() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.termId) {
+      setError(terms.length === 0
+        ? t('examinations.noTermsConfigured')
+        : t('examinations.termRequired'));
+      return;
+    }
     
     try {
       setLoading(true);
@@ -443,13 +475,19 @@ export function CreateExam() {
                 name="termId"
                 value={formData.termId}
                 onChange={handleChange}
+                error={Boolean(termsError)}
+                helperText={termsError || (terms.length === 0 && !termsLoading ? t('examinations.noTermsConfigured') : undefined)}
                 sx={S.TF}
               >
-                {terms.map((term) => (
-                  <MenuItem key={term.termId} value={term.termId.toString()}>
-                    {t(term.name)}
-                  </MenuItem>
-                ))}
+                {termsLoading ? (
+                  <MenuItem value="" disabled>{t('common.loading')}...</MenuItem>
+                ) : terms.length === 0 ? (
+                  <MenuItem value="" disabled>{t('academic.noTermsFound')}</MenuItem>
+                ) : terms.map((term) => (
+                    <MenuItem key={term.termId} value={String(term.termId)}>
+                      {term.name}
+                    </MenuItem>
+                  ))}
               </TextField>
             </Grid>
           </Grid>
@@ -467,7 +505,7 @@ export function CreateExam() {
               type="submit"
               variant="contained"
               startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
-              disabled={loading}
+              disabled={loading || termsLoading || terms.length === 0 || !formData.termId}
               sx={S.BTN_PRIMARY}
             >
               {id ? t('examinations.updateExam') : t('examinations.createExam')}
