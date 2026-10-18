@@ -28,6 +28,8 @@ export interface CreateUserData {
   phone?: string;
   roleId: string;
   status?: UserStatus;
+  municipalityId?: string;
+  schoolConfigId?: string;
 }
 
 export interface UpdateUserData {
@@ -126,6 +128,8 @@ export class UserService {
       password: data.password,
       role: data.roleId as UserRole,
       status: data.status || UserStatus.ACTIVE,
+      municipalityId: data.municipalityId,
+      schoolConfigId: data.schoolConfigId,
       phoneNumber: data.phone,
       failedLoginAttempts: 0,
     });

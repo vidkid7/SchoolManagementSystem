@@ -80,7 +80,12 @@ export class UserController {
    */
   createUser = async (req: Request, res: Response): Promise<void> => {
     try {
-      const user = await this.userService.createUser(req.body);
+      const user = await this.userService.createUser({
+        ...req.body,
+        // Tenant ownership comes from the authenticated admin, never the request body.
+        municipalityId: req.user?.municipalityId,
+        schoolConfigId: req.user?.schoolConfigId,
+      });
 
       res.status(201).json({
         success: true,

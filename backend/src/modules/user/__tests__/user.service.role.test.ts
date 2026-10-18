@@ -29,4 +29,35 @@ describe('UserService role assignment boundary', () => {
     expect(findByPk).not.toHaveBeenCalled();
     findByPk.mockRestore();
   });
+
+  it('persists the authenticated tenant scope supplied by the controller', async () => {
+    const findOne = jest.spyOn(User, 'findOne').mockResolvedValue(null);
+    const created = {
+      userId: 12,
+      username: 'transport-manager',
+      email: 'transport@example.test',
+      role: 'Transport_Manager',
+      status: 'active',
+      municipalityId: 'municipality-1',
+      schoolConfigId: 'school-1',
+      phoneNumber: undefined,
+    } as unknown as User;
+    const create = jest.spyOn(User, 'create').mockResolvedValue(created);
+
+    await service.createUser({
+      username: 'transport-manager',
+      email: 'transport@example.test',
+      password: 'SecurePassword123!',
+      roleId: 'Transport_Manager',
+      municipalityId: 'municipality-1',
+      schoolConfigId: 'school-1',
+    });
+
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({
+      municipalityId: 'municipality-1',
+      schoolConfigId: 'school-1',
+    }));
+    findOne.mockRestore();
+    create.mockRestore();
+  });
 });
