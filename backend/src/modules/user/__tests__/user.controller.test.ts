@@ -13,6 +13,8 @@ describe('UserController.createUser tenant ownership', () => {
     await controller.createUser({
       body: {
         username: 'transport-manager',
+        firstName: 'QA',
+        lastName: 'Transport',
         municipalityId: 'attacker-municipality',
         schoolConfigId: 'attacker-school',
       },
@@ -27,6 +29,8 @@ describe('UserController.createUser tenant ownership', () => {
     } as any, res as any);
 
     expect(createUser).toHaveBeenCalledWith(expect.objectContaining({
+      firstName: 'QA',
+      lastName: 'Transport',
       municipalityId: 'municipality-1',
       schoolConfigId: 'school-1',
     }));

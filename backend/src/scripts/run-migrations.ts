@@ -54,6 +54,7 @@ import * as ensureLibraryTables from '../migrations/20261012000002-ensure-librar
 import * as ensureReservationWorkflowColumns from '../migrations/20261012000003-ensure-reservation-workflow-columns';
 import * as ensureExamIsInternalColumn from '../migrations/20261018000001-ensure-exam-is-internal-column';
 import * as ensureExamSchedulesTable from '../migrations/20261018000002-ensure-exam-schedules-table';
+import * as ensureUserNameColumns from '../migrations/20261018000003-ensure-user-name-columns';
 
 /**
  * Migration Runner
@@ -308,6 +309,11 @@ const migrations: Migration[] = [
     name: '20261018000002-ensure-exam-schedules-table',
     up: (queryInterface) => ensureExamSchedulesTable.up(queryInterface, sequelize),
     down: (queryInterface) => ensureExamSchedulesTable.down(queryInterface, sequelize)
+  },
+  {
+    name: '20261018000003-ensure-user-name-columns',
+    up: (queryInterface) => ensureUserNameColumns.up(queryInterface, sequelize),
+    down: (queryInterface) => ensureUserNameColumns.down(queryInterface, sequelize)
   }
 ];
 

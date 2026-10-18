@@ -35,6 +35,23 @@ describe('UserService school scope', () => {
     expect(findOne).toHaveBeenCalledWith({ where: { userId: 22, schoolConfigId: 'school-1' } });
   });
 
+  it('saves first and last names during a scoped user update', async () => {
+    const update = jest.fn().mockResolvedValue(undefined);
+    const findOne = jest.spyOn(User, 'findOne').mockResolvedValue({
+      userId: 22,
+      username: 'teacher',
+      email: 'teacher@example.test',
+      role: 'Subject_Teacher',
+      status: 'active',
+      update,
+    } as any);
+
+    await service.updateUser(22, 'school-1', { firstName: 'Casey', lastName: 'Teacher' });
+
+    expect(update).toHaveBeenCalledWith({ firstName: 'Casey', lastName: 'Teacher' });
+    expect(findOne).toHaveBeenCalledWith({ where: { userId: 22, schoolConfigId: 'school-1' } });
+  });
+
   it('limits aggregate counts to the authenticated school', async () => {
     const count = jest.spyOn(User, 'count').mockResolvedValue(0);
 

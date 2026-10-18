@@ -48,12 +48,16 @@ describe('UserService role assignment boundary', () => {
       username: 'transport-manager',
       email: 'transport@example.test',
       password: 'SecurePassword123!',
+      firstName: 'QA',
+      lastName: 'Transport',
       roleId: 'Transport_Manager',
       municipalityId: 'municipality-1',
       schoolConfigId: 'school-1',
     });
 
     expect(create).toHaveBeenCalledWith(expect.objectContaining({
+      firstName: 'QA',
+      lastName: 'Transport',
       municipalityId: 'municipality-1',
       schoolConfigId: 'school-1',
     }));

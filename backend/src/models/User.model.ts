@@ -39,6 +39,8 @@ export interface UserAttributes {
   userId: number;
   username: string;
   email: string;
+  firstName?: string;
+  lastName?: string;
   password: string;
   role: UserRole;
   status: UserStatus;
@@ -75,6 +77,8 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   declare userId: number;
   declare username: string;
   declare email: string;
+  declare firstName?: string;
+  declare lastName?: string;
   declare password: string;
   declare role: UserRole;
   declare status: UserStatus;
@@ -210,6 +214,16 @@ User.init(
       validate: {
         isEmail: true
       }
+    },
+    firstName: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      field: 'first_name'
+    },
+    lastName: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      field: 'last_name'
     },
     password: {
       type: DataTypes.STRING(255),

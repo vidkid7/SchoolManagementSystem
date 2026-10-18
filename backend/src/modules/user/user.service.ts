@@ -129,6 +129,8 @@ export class UserService {
     const user = await User.create({
       username: data.username,
       email: data.email,
+      firstName: data.firstName,
+      lastName: data.lastName,
       password: data.password,
       role: data.roleId as UserRole,
       status: data.status || UserStatus.ACTIVE,
@@ -164,6 +166,8 @@ export class UserService {
 
     const updateData: any = {};
     if (data.email) updateData.email = data.email;
+    if (data.firstName !== undefined) updateData.firstName = data.firstName;
+    if (data.lastName !== undefined) updateData.lastName = data.lastName;
     if (data.phone) updateData.phoneNumber = data.phone;
     if (data.roleId) updateData.role = data.roleId as UserRole;
     if (data.status) updateData.status = data.status;
@@ -278,8 +282,8 @@ export class UserService {
       userId: user.userId,
       username: user.username,
       email: user.email,
-      firstName: '', // These would come from Staff/Student tables
-      lastName: '',
+      firstName: user.firstName ?? '',
+      lastName: user.lastName ?? '',
       phone: user.phoneNumber,
       role: user.role,
       roleName: this.getRoleDisplayName(user.role),
