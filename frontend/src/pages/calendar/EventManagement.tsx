@@ -39,6 +39,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { YearSelectableDatePicker, parseDateOnly, formatDateOnly } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -545,24 +546,18 @@ export const EventManagement = () => {
                 </FormControl>
               </Grid>
               <Grid item xs={12} md={6}>
-                <TextField
+                <YearSelectableDatePicker
                   label={t('calendar.form.startDate')}
-                  type="date"
-                  fullWidth
+                  value={parseDateOnly(formData.startDate)}
+                  onChange={(date) => setFormData({ ...formData, startDate: formatDateOnly(date) })}
                   required
-                  InputLabelProps={{ shrink: true }}
-                  value={formData.startDate}
-                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                 />
               </Grid>
               <Grid item xs={12} md={6}>
-                <TextField
+                <YearSelectableDatePicker
                   label={t('calendar.form.endDate')}
-                  type="date"
-                  fullWidth
-                  InputLabelProps={{ shrink: true }}
-                  value={formData.endDate}
-                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  value={parseDateOnly(formData.endDate)}
+                  onChange={(date) => setFormData({ ...formData, endDate: formatDateOnly(date) })}
                 />
               </Grid>
               <Grid item xs={12} md={6}>

@@ -40,6 +40,7 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { apiClient } from '../../services/apiClient';
 import { BSDatePicker } from '../../components/BSDatePicker/BSDatePicker';
+import { YearSelectableDatePicker } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 import { motion } from 'framer-motion';
 import { useNepaliNumbers } from '../../hooks/useNepaliNumbers';
 import { C, useAdminStyles } from '../../theme/designTokens';
@@ -951,15 +952,11 @@ export const StudentForm = () => {
                   control={control}
                   rules={{ required: t('validation.required') }}
                   render={({ field }) => (
-                    <TextField
-                      {...field}
-                      type="date"
+                    <YearSelectableDatePicker
                       label={`${t('students.dateOfBirth')} (AD) *`}
-                      fullWidth
-                      InputLabelProps={{ shrink: true }}
-                      onChange={(event) => {
-                        field.onChange(event);
-                        const date = parseDate(event.target.value);
+                      value={parseDate(field.value)}
+                      onChange={(date) => {
+                        field.onChange(formatDate(date));
                         setValue('date_of_birth_bs', date ? formatBSDate(date) : '', {
                           shouldDirty: true,
                           shouldValidate: true,
@@ -967,6 +964,7 @@ export const StudentForm = () => {
                       }}
                       error={!!errors.date_of_birth_ad}
                       helperText={errors.date_of_birth_ad?.message}
+                      required
                     />
                   )}
                 />
@@ -1026,14 +1024,13 @@ export const StudentForm = () => {
                   control={control}
                   rules={{ required: t('validation.required') }}
                   render={({ field }) => (
-                    <TextField
-                      {...field}
-                      type="date"
+                    <YearSelectableDatePicker
                       label={`${t('students.admissionDate')} *`}
-                      fullWidth
-                      InputLabelProps={{ shrink: true }}
+                      value={parseDate(field.value)}
+                      onChange={(date) => field.onChange(formatDate(date))}
                       error={!!errors.admission_date}
                       helperText={errors.admission_date?.message}
+                      required
                     />
                   )}
                 />

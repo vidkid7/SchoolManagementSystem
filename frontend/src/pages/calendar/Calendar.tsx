@@ -63,6 +63,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import apiClient from '../../services/apiClient';
 import NepaliDate from 'nepali-date-converter';
+import { YearSelectableDatePicker, parseDateOnly, formatDateOnly } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 
@@ -1118,26 +1119,20 @@ const Calendar = () => {
 
                 {/* Start Date */}
                 <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    required
-                    type="date"
+                  <YearSelectableDatePicker
                     label={t('calendar.form.startDate')}
-                    value={eventForm.startDate}
-                    onChange={(e) => handleEventFormChange('startDate', e.target.value)}
-                    InputLabelProps={{ shrink: true }}
+                    value={parseDateOnly(eventForm.startDate)}
+                    onChange={(date) => handleEventFormChange('startDate', formatDateOnly(date))}
+                    required
                   />
                 </Grid>
 
                 {/* End Date */}
                 <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    type="date"
+                  <YearSelectableDatePicker
                     label={t('calendar.form.endDate')}
-                    value={eventForm.endDate}
-                    onChange={(e) => handleEventFormChange('endDate', e.target.value)}
-                    InputLabelProps={{ shrink: true }}
+                    value={parseDateOnly(eventForm.endDate)}
+                    onChange={(date) => handleEventFormChange('endDate', formatDateOnly(date))}
                     helperText={t('calendar.form.endDateOptional')}
                   />
                 </Grid>

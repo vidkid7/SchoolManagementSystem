@@ -39,6 +39,7 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { C, useAdminStyles } from '../../theme/designTokens';
+import { YearSelectableDatePicker, parseDateOnly, formatDateOnly } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 
 interface Event {
   eventId: number;
@@ -403,23 +404,17 @@ export const Calendar = () => {
               />
             </Grid>
             <Grid item xs={6}>
-              <TextField
+              <YearSelectableDatePicker
                 label="Start Date"
-                type="date"
-                fullWidth
-                value={eventForm.startDate}
-                onChange={(e) => setEventForm({ ...eventForm, startDate: e.target.value })}
-                InputLabelProps={{ shrink: true }}
+                value={parseDateOnly(eventForm.startDate)}
+                onChange={(date) => setEventForm({ ...eventForm, startDate: formatDateOnly(date) })}
               />
             </Grid>
             <Grid item xs={6}>
-              <TextField
+              <YearSelectableDatePicker
                 label="End Date"
-                type="date"
-                fullWidth
-                value={eventForm.endDate}
-                onChange={(e) => setEventForm({ ...eventForm, endDate: e.target.value })}
-                InputLabelProps={{ shrink: true }}
+                value={parseDateOnly(eventForm.endDate)}
+                onChange={(date) => setEventForm({ ...eventForm, endDate: formatDateOnly(date) })}
               />
             </Grid>
             <Grid item xs={6}>
