@@ -812,7 +812,7 @@ export const StudentForm = () => {
         }}
       >
         <CardContent sx={{ p: 3 }}>
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form noValidate onSubmit={handleSubmit(onSubmit)}>
             <Grid container spacing={3}>
               {/* Personal Information */}
               <Grid item xs={12}>
