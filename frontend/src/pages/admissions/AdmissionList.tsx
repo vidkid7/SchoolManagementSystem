@@ -235,8 +235,10 @@ export function AdmissionList() {
           </Grid>
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
-              <InputLabel>{t('admissions.status')}</InputLabel>
+              <InputLabel id="admission-status-filter-label">{t('admissions.status')}</InputLabel>
               <Select
+                id="admission-status-filter"
+                labelId="admission-status-filter-label"
                 value={statusFilter}
                 label={t('admissions.status')}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -250,8 +252,10 @@ export function AdmissionList() {
           </Grid>
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
-              <InputLabel>{t('admissions.class')}</InputLabel>
+              <InputLabel id="admission-class-filter-label">{t('admissions.class')}</InputLabel>
               <Select
+                id="admission-class-filter"
+                labelId="admission-class-filter-label"
                 value={classFilter}
                 label={t('admissions.class')}
                 onChange={(e) => setClassFilter(e.target.value)}
@@ -318,6 +322,7 @@ export function AdmissionList() {
                     <TableCell align="center" sx={S.TD}>
                       <IconButton
                         size="small"
+                        aria-label={`${t('admissions.actions')} ${admission.temporaryId}`}
                         onClick={(e) => handleMenuOpen(e, admission)}
                       >
                         <MoreIcon />
