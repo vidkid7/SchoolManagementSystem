@@ -97,6 +97,16 @@ describe('Calendar Component', () => {
 
   }, 15000);
 
+  it('should give month navigation buttons accessible names', () => {
+    mockedAxios.get.mockResolvedValue({
+      data: { success: true, data: [] },
+    });
+
+    renderCalendar();
+
+    expect(screen.getByRole('button', { name: 'Previous Month' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Next Month' })).toBeInTheDocument();
+  });
   it('should display view toggle buttons', () => {
     mockedAxios.get.mockResolvedValue({
       data: { success: true, data: [] },

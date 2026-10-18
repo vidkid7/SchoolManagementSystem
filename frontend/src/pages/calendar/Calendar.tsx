@@ -822,7 +822,11 @@ const Calendar = () => {
         {/* Navigation and Filters */}
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
           <Box display="flex" gap={1} alignItems="center">
-            <IconButton onClick={handlePrevious} size="small">
+            <IconButton
+              onClick={handlePrevious}
+              size="small"
+              aria-label={`${t('common.previous')} ${t('calendar.month')}`}
+            >
               <ChevronLeftIcon />
             </IconButton>
             <Button
@@ -833,11 +837,15 @@ const Calendar = () => {
             >
               {t('calendar.today')}
             </Button>
-            <IconButton onClick={handleNext} size="small">
+            <IconButton
+              onClick={handleNext}
+              size="small"
+              aria-label={`${t('common.next')} ${t('calendar.month')}`}
+            >
               <ChevronRightIcon />
             </IconButton>
             <Box sx={{ ml: 2 }}>
-              <Typography variant="h6">
+              <Typography variant="h6" component="h5">
                 {calendarSystem === 'BS' ? (
                   <>
                     {NEPALI_MONTHS[currentNepaliDate.getMonth()].np} / {NEPALI_MONTHS[currentNepaliDate.getMonth()].en} {currentNepaliDate.getDate()}, {currentNepaliDate.getYear()} (BS)
