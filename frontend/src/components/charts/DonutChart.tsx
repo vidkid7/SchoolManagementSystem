@@ -14,7 +14,7 @@ export function DashboardDonutChart({ data, nameKey, valueKey, ariaLabel }: Dash
       <div aria-hidden="true">
         <ResponsiveContainer width="100%" height={220}>
           <PieChart>
-            <Pie data={data} cx="50%" cy="50%" innerRadius={54} outerRadius={82} paddingAngle={4} dataKey={valueKey} nameKey={nameKey}>
+            <Pie data={data} cx="50%" cy="50%" innerRadius={54} outerRadius={82} paddingAngle={4} dataKey={valueKey} nameKey={nameKey} rootTabIndex={-1}>
               {data.map((_, index) => (
                 <Cell key={`donut-${index}`} fill={categoricalColors[index % categoricalColors.length]} />
               ))}
