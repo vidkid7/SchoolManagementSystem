@@ -323,27 +323,19 @@ describe('Calendar Component', () => {
     });
 
     // Find the select input by its parent
-    const categorySelect = screen.getAllByText('Category')[0].closest('.MuiFormControl-root')?.querySelector('input');
-    
-    if (categorySelect) {
-      fireEvent.mouseDown(categorySelect);
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Category' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'Academic' }));
 
-      await waitFor(() => {
-        const academicOption = screen.getByText('Academic');
-        fireEvent.click(academicOption);
-      });
-
-      await waitFor(() => {
-        expect(mockedAxios.get).toHaveBeenCalledWith(
-          '/api/v1/calendar/events',
-          expect.objectContaining({
-            params: expect.objectContaining({
-              category: 'academic',
-            }),
-          })
-        );
-      });
-    }
+    await waitFor(() => {
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        '/api/v1/calendar/events',
+        expect.objectContaining({
+          params: expect.objectContaining({
+            category: 'academic',
+          }),
+        })
+      );
+    });
   });
 
   it('should display error message on API failure', async () => {

@@ -881,8 +881,9 @@ const Calendar = () => {
           <Box display="flex" gap={2} alignItems="center">
             {/* Category Filter */}
             <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>{t('calendar.category')}</InputLabel>
+              <InputLabel id="calendar-category-label">{t('calendar.category')}</InputLabel>
               <Select
+                labelId="calendar-category-label"
                 value={selectedCategory}
                 label={t('calendar.category')}
                 onChange={(e) => setSelectedCategory(e.target.value)}
