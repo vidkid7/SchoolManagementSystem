@@ -381,9 +381,6 @@ export const createAppTheme = (
       },
       MuiDialog: {
         defaultProps: {
-          disableEnforceFocus: true,
-          disableAutoFocus: true,
-          disableRestoreFocus: true,
           hideBackdrop: false,
           disableScrollLock: true,
         },
@@ -404,24 +401,7 @@ export const createAppTheme = (
       },
       MuiModal: {
         defaultProps: {
-          disableEnforceFocus: true,
-          disableAutoFocus: true,
-          disableRestoreFocus: true,
           disableScrollLock: true,
-        },
-      },
-      MuiPopover: {
-        defaultProps: {
-          disableEnforceFocus: true,
-          disableAutoFocus: true,
-          disableRestoreFocus: true,
-        },
-      },
-      MuiMenu: {
-        defaultProps: {
-          disableEnforceFocus: true,
-          disableAutoFocus: true,
-          disableRestoreFocus: true,
         },
       },
       MuiDrawer: {
