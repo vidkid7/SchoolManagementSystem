@@ -268,6 +268,7 @@ export class DocumentService {
    */
   async previewDocument(documentId: number, userId: number, userRoles: string[]): Promise<{
     document: Document;
+    filePath: string;
     previewUrl: string;
   }> {
     const document = await this.getDocumentById(documentId, userId, userRoles);
@@ -286,6 +287,7 @@ export class DocumentService {
 
     return {
       document,
+      filePath: this.resolveDocumentFilePath(document.storagePath),
       previewUrl: document.storagePath,
     };
   }
@@ -309,8 +311,25 @@ export class DocumentService {
 
     return {
       document,
-      filePath: path.join(process.cwd(), document.storagePath),
+      filePath: this.resolveDocumentFilePath(document.storagePath),
     };
+  }
+
+  private resolveDocumentFilePath(storagePath: string): string {
+    // Database paths are URL-like (for example /uploads/documents/file.pdf),
+    // while the files live under the configured upload directory.
+    const fileName = path.basename(storagePath.replace(/\\/g, '/'));
+    if (!fileName || fileName === '.' || fileName === path.sep) {
+      throw new Error('Document file is unavailable');
+    }
+
+    const filePath = path.resolve(this.uploadDir, fileName);
+    const uploadRoot = path.resolve(this.uploadDir);
+    if (!filePath.startsWith(`${uploadRoot}${path.sep}`)) {
+      throw new Error('Invalid document storage path');
+    }
+
+    return filePath;
   }
 
   /**

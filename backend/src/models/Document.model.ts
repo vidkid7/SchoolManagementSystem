@@ -42,30 +42,30 @@ export class Document
   extends Model<DocumentAttributes, DocumentCreationAttributes>
   implements DocumentAttributes
 {
-  public documentId!: number;
-  public documentNumber!: string;
-  public name!: string;
-  public originalName!: string;
-  public description?: string;
-  public category!: 'academic' | 'administrative' | 'financial' | 'student_record' | 'staff_record' | 'curriculum' | 'exam' | 'other';
-  public mimeType!: string;
-  public size!: number;
-  public compressedSize?: number;
-  public storagePath!: string;
-  public thumbnailPath?: string;
-  public version!: number;
-  public parentDocumentId?: number;
-  public uploadedBy!: number;
-  public accessLevel!: 'private' | 'restricted' | 'public';
-  public allowedRoles?: string[];
-  public allowedUserIds?: number[];
-  public isCompressed!: boolean;
-  public compressionRatio?: number;
-  public tags?: string[];
-  public metadata?: Record<string, any>;
-  public status!: 'active' | 'archived' | 'deleted';
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public documentId: number;
+  declare public documentNumber: string;
+  declare public name: string;
+  declare public originalName: string;
+  declare public description?: string;
+  declare public category: 'academic' | 'administrative' | 'financial' | 'student_record' | 'staff_record' | 'curriculum' | 'exam' | 'other';
+  declare public mimeType: string;
+  declare public size: number;
+  declare public compressedSize?: number;
+  declare public storagePath: string;
+  declare public thumbnailPath?: string;
+  declare public version: number;
+  declare public parentDocumentId?: number;
+  declare public uploadedBy: number;
+  declare public accessLevel: 'private' | 'restricted' | 'public';
+  declare public allowedRoles?: string[];
+  declare public allowedUserIds?: number[];
+  declare public isCompressed: boolean;
+  declare public compressionRatio?: number;
+  declare public tags?: string[];
+  declare public metadata?: Record<string, any>;
+  declare public status: 'active' | 'archived' | 'deleted';
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   /**
    * Check if document is a new version

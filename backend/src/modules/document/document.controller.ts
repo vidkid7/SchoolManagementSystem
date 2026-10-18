@@ -196,12 +196,10 @@ export class DocumentController {
         [req.user.role]
       );
 
-      res.json({
-        success: true,
-        data: {
-          document: result.document,
-          previewUrl: result.previewUrl,
-        },
+      res.setHeader('Cache-Control', 'private, no-store');
+      res.setHeader('Content-Disposition', 'inline');
+      res.type(result.document.mimeType).sendFile(result.filePath, (error) => {
+        if (error) next(error);
       });
     } catch (error) {
       next(error);
@@ -231,7 +229,9 @@ export class DocumentController {
       );
 
       // Set headers for download
-      res.download(result.filePath, result.document.originalName);
+      res.download(result.filePath, result.document.originalName, (error) => {
+        if (error) next(error);
+      });
     } catch (error) {
       next(error);
     }

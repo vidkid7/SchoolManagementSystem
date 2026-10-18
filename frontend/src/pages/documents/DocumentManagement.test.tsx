@@ -169,6 +169,26 @@ describe('DocumentManagement Page', () => {
       });
     });
 
+    it('should fetch and render an authenticated PDF preview and release it on close', async () => {
+      const previewBlob = new Blob(['%PDF-1.4 synthetic QA preview'], { type: 'application/pdf' });
+      (global.URL.createObjectURL as jest.Mock).mockReturnValue('blob:qa-preview');
+      (apiClient.get as jest.Mock).mockImplementation((url: string) => {
+        if (url === '/documents/1/preview') return Promise.resolve({ data: previewBlob });
+        return Promise.resolve({
+          data: { success: true, data: mockDocuments, meta: { total: 2 } },
+        });
+      });
+
+      renderComponent();
+      fireEvent.click(await screen.findByText('Sample Document'));
+
+      expect(await screen.findByTitle('Sample Document')).toHaveAttribute('src', 'blob:qa-preview');
+      expect(apiClient.get).toHaveBeenCalledWith('/documents/1/preview', { responseType: 'blob' });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+      await waitFor(() => expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:qa-preview'));
+    });
+
     it('should show loading state initially', async () => {
       (apiClient.get as jest.Mock).mockImplementation(() => 
         new Promise(resolve => setTimeout(() => resolve({

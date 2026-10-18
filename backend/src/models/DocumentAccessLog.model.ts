@@ -28,16 +28,16 @@ export class DocumentAccessLog
   extends Model<DocumentAccessLogAttributes, DocumentAccessLogCreationAttributes>
   implements DocumentAccessLogAttributes
 {
-  public accessLogId!: number;
-  public documentId!: number;
-  public userId!: number;
-  public action!: 'view' | 'download' | 'edit' | 'delete' | 'share' | 'upload' | 'preview';
-  public ipAddress?: string;
-  public userAgent?: string;
-  public details?: Record<string, any>;
-  public success!: boolean;
-  public errorMessage?: string;
-  public readonly createdAt!: Date;
+  declare public accessLogId: number;
+  declare public documentId: number;
+  declare public userId: number;
+  declare public action: 'view' | 'download' | 'edit' | 'delete' | 'share' | 'upload' | 'preview';
+  declare public ipAddress?: string;
+  declare public userAgent?: string;
+  declare public details?: Record<string, any>;
+  declare public success: boolean;
+  declare public errorMessage?: string;
+  declare public readonly createdAt: Date;
 
   public toJSON(): object {
     return {

@@ -50,6 +50,9 @@ describe('DocumentController', () => {
       json: jest.fn().mockReturnThis(),
       status: jest.fn().mockReturnThis(),
       download: jest.fn(),
+      type: jest.fn().mockReturnThis(),
+      setHeader: jest.fn().mockReturnThis(),
+      sendFile: jest.fn(),
     };
 
     mockNext = jest.fn();
@@ -297,7 +300,7 @@ describe('DocumentController', () => {
       await controller.updateDocument(mockRequest as Request, mockResponse as Response, mockNext);
 
       // Assert
-      expect(mockService.updateDocument).toHaveBeenCalledWith(1, mockRequest.body, 1);
+      expect(mockService.updateDocument).toHaveBeenCalledWith(1, mockRequest.body, 1, ['School_Admin']);
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: true,
@@ -341,7 +344,7 @@ describe('DocumentController', () => {
       await controller.deleteDocument(mockRequest as Request, mockResponse as Response, mockNext);
 
       // Assert
-      expect(mockService.deleteDocument).toHaveBeenCalledWith(1, 1);
+      expect(mockService.deleteDocument).toHaveBeenCalledWith(1, 1, ['School_Admin']);
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: true,
@@ -403,12 +406,14 @@ describe('DocumentController', () => {
       const mockDocument: Partial<Document> = {
         documentId: 1,
         name: 'Test Document',
+        mimeType: 'application/pdf',
         isViewable: () => true,
         toJSON: function() { return this; },
       } as unknown as Document;
 
       mockService.previewDocument = jest.fn().mockResolvedValue({
         document: mockDocument,
+        filePath: '/app/uploads/documents/test.pdf',
         previewUrl: '/uploads/documents/test.pdf',
       });
 
@@ -418,13 +423,11 @@ describe('DocumentController', () => {
       await controller.previewDocument(mockRequest as Request, mockResponse as Response, mockNext);
 
       // Assert
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        success: true,
-        data: {
-          document: mockDocument,
-          previewUrl: '/uploads/documents/test.pdf',
-        },
-      });
+      expect(mockResponse.type).toHaveBeenCalledWith('application/pdf');
+      expect(mockResponse.sendFile).toHaveBeenCalledWith(
+        '/app/uploads/documents/test.pdf',
+        expect.any(Function)
+      );
     });
   });
 
@@ -448,7 +451,7 @@ describe('DocumentController', () => {
       await controller.archiveDocument(mockRequest as Request, mockResponse as Response, mockNext);
 
       // Assert
-      expect(mockService.archiveDocument).toHaveBeenCalledWith(1, 1);
+      expect(mockService.archiveDocument).toHaveBeenCalledWith(1, 1, ['School_Admin']);
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: true,

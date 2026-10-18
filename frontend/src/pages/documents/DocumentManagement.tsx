@@ -231,6 +231,7 @@ export const DocumentManagement = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [versionsDialogOpen, setVersionsDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedVersions, setSelectedVersions] = useState<DocumentVersion[]>([]);
 
   // State for upload form
@@ -257,6 +258,10 @@ export const DocumentManagement = () => {
   useEffect(() => {
     fetchDocuments();
   }, [page, rowsPerPage, filters]);
+
+  useEffect(() => () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
 
   const fetchDocuments = async () => {
     try {
@@ -401,14 +406,19 @@ export const DocumentManagement = () => {
   const handlePreview = async (document: Document) => {
     try {
       setSelectedDocument(document);
-      const response = await apiClient.get(`/documents/${document.documentId}/preview`);
-      
-      if (response.data.success) {
-        setPreviewDialogOpen(true);
-      }
+      const response = await apiClient.get(`/documents/${document.documentId}/preview`, {
+        responseType: 'blob',
+      });
+      setPreviewUrl(URL.createObjectURL(response.data));
+      setPreviewDialogOpen(true);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || t('documents.failedToPreviewDocument'));
     }
+  };
+
+  const closePreviewDialog = () => {
+    setPreviewDialogOpen(false);
+    setPreviewUrl(null);
   };
 
   const handleDownload = async (doc: Document) => {
@@ -954,7 +964,7 @@ export const DocumentManagement = () => {
       {/* Preview Dialog */}
       <Dialog
         open={previewDialogOpen}
-        onClose={() => setPreviewDialogOpen(false)}
+        onClose={closePreviewDialog}
         maxWidth="lg"
         fullWidth
       >
@@ -977,17 +987,18 @@ export const DocumentManagement = () => {
                   <CardContent sx={{ textAlign: 'center', py: 4 }}>
                     {selectedDocument.mimeType.startsWith('image/') ? (
                       <img
-                        src={`/api/v1/documents/${selectedDocument.documentId}/preview`}
+                        src={previewUrl || undefined}
                         alt={selectedDocument.name}
                         style={{ maxWidth: '100%', maxHeight: '500px' }}
                       />
                     ) : selectedDocument.mimeType === 'application/pdf' ? (
-                      <Box>
-                        <PdfIcon sx={{ fontSize: 64, mb: 2 }} />
-                        <Typography>
-                          {t('documents.preview')}
-                        </Typography>
-                      </Box>
+                      previewUrl ? (
+                        <iframe
+                          title={selectedDocument.name}
+                          src={previewUrl}
+                          style={{ width: '100%', height: '70vh', border: 0 }}
+                        />
+                      ) : <CircularProgress />
                     ) : (
                       <Box>
                         <DocIcon sx={{ fontSize: 64, mb: 2 }} />
@@ -1073,7 +1084,7 @@ export const DocumentManagement = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPreviewDialogOpen(false)}>
+          <Button onClick={closePreviewDialog}>
             {t('documents.close')}
           </Button>
           {selectedDocument && (
