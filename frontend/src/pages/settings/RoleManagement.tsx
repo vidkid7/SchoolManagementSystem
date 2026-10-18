@@ -51,6 +51,7 @@ import {
   CheckBoxOutlineBlank as CheckBoxOutlineIcon,
 } from '@mui/icons-material';
 import { apiClient } from '../../services/apiClient';
+import { getApiErrorMessage, isRoleCodeValid } from './roleFormValidation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 
@@ -153,7 +154,7 @@ export const RoleManagement = () => {
       setRoleForm({ name: '', code: '', description: '', isActive: true });
       fetchData();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create role');
+      setError(getApiErrorMessage(err, 'Failed to create role'));
     }
   };
 
@@ -167,7 +168,7 @@ export const RoleManagement = () => {
       setRoleForm({ name: '', code: '', description: '', isActive: true });
       fetchData();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update role');
+      setError(getApiErrorMessage(err, 'Failed to update role'));
     }
   };
 
@@ -188,7 +189,7 @@ export const RoleManagement = () => {
       await apiClient.put(`/api/v1/config/roles/${role.id}`, { isActive: !role.isActive });
       fetchData();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update role');
+      setError(getApiErrorMessage(err, 'Failed to update role'));
     }
   };
 
@@ -231,6 +232,8 @@ export const RoleManagement = () => {
   const getPermissionsByCategory = (category: string) => {
     return permissions.filter(p => p.category === category);
   };
+
+  const roleCodeIsValid = isRoleCodeValid(roleForm.code);
 
   if (loading) {
     return (
@@ -415,7 +418,11 @@ export const RoleManagement = () => {
                 value={roleForm.code}
                 onChange={(e) => setRoleForm({ ...roleForm, code: e.target.value.toUpperCase().replace(/\s/g, '_') })}
                 disabled={roleDialog.mode === 'edit'}
-                helperText="e.g., SCHOOL_ADMIN"
+                error={roleForm.code.length > 0 && !roleCodeIsValid}
+                inputProps={{ maxLength: 50, pattern: '[A-Z_]+' }}
+                helperText={roleForm.code.length > 0 && !roleCodeIsValid
+                  ? 'Use 3–50 uppercase letters or underscores only'
+                  : 'Use 3–50 uppercase letters or underscores, e.g., SCHOOL_ADMIN'}
               />
             </Grid>
             <Grid item xs={12}>
@@ -448,7 +455,7 @@ export const RoleManagement = () => {
           <Button
             sx={S.BTN_PRIMARY}
             onClick={roleDialog.mode === 'create' ? handleCreateRole : handleUpdateRole}
-            disabled={!roleForm.name || !roleForm.code}
+            disabled={!roleForm.name || !roleCodeIsValid}
           >
             {roleDialog.mode === 'create' ? t('roles.createRole') : t('roles.updateRole')}
           </Button>

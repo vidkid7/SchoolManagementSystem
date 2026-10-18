@@ -137,7 +137,8 @@ class RolePermissionService {
     await auditLogger.log({
       userId,
       entityType: 'role',
-      entityId: role.id as any,
+      entityId: null,
+      entityUuid: role.id,
       action: AuditAction.CREATE,
       newValue: data,
     });
@@ -182,7 +183,8 @@ class RolePermissionService {
     await auditLogger.log({
       userId,
       entityType: 'role',
-      entityId: role.id as any,
+      entityId: null,
+      entityUuid: role.id,
       action: AuditAction.UPDATE,
       oldValue: oldData,
       newValue: data,
@@ -214,7 +216,8 @@ class RolePermissionService {
     await auditLogger.log({
       userId,
       entityType: 'role',
-      entityId: role.id as any,
+      entityId: null,
+      entityUuid: role.id,
       action: AuditAction.DELETE,
       oldValue: role.toJSON(),
     });
@@ -296,7 +299,8 @@ class RolePermissionService {
     await auditLogger.log({
       userId,
       entityType: 'permission',
-      entityId: permission.id as any,
+      entityId: null,
+      entityUuid: permission.id,
       action: AuditAction.CREATE,
       newValue: data,
     });
@@ -341,7 +345,8 @@ class RolePermissionService {
     await auditLogger.log({
       userId,
       entityType: 'permission',
-      entityId: permission.id as any,
+      entityId: null,
+      entityUuid: permission.id,
       action: AuditAction.UPDATE,
       oldValue: oldData,
       newValue: data,
@@ -373,7 +378,8 @@ class RolePermissionService {
     await auditLogger.log({
       userId,
       entityType: 'permission',
-      entityId: permission.id as any,
+      entityId: null,
+      entityUuid: permission.id,
       action: AuditAction.DELETE,
       oldValue: permission.toJSON(),
     });
@@ -443,7 +449,8 @@ class RolePermissionService {
     await auditLogger.log({
       userId,
       entityType: 'role_permission',
-      entityId: roleId as any,
+      entityId: null,
+      entityUuid: roleId,
       action: AuditAction.UPDATE,
       oldValue: { permissionIds: currentPermissionIds },
       newValue: { permissionIds },
@@ -480,7 +487,8 @@ class RolePermissionService {
     await auditLogger.log({
       userId,
       entityType: 'role_permission',
-      entityId: roleId as any,
+      entityId: null,
+      entityUuid: roleId,
       action: AuditAction.DELETE,
       oldValue: { permissionId },
     });

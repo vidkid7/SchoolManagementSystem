@@ -90,6 +90,7 @@ class AuditService {
           userId: log.userId,
           entityType: log.entityType,
           entityId: log.entityId,
+          entityUuid: log.entityUuid,
           action: log.action,
           oldValue: log.oldValue,
           newValue: log.newValue,

@@ -36,7 +36,8 @@ export interface AuditLogResponse {
     auditLogId: number;
     userId: number | null;
     entityType: string;
-    entityId: number;
+    entityId: number | null;
+    entityUuid: string | null;
     action: AuditAction;
     oldValue: unknown | null;
     newValue: unknown | null;

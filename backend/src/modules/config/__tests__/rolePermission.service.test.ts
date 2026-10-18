@@ -3,6 +3,7 @@ import sequelize from '@config/database';
 import Role from '@models/Role.model';
 import Permission, { PermissionCategory, PermissionAction } from '@models/Permission.model';
 import RolePermission from '@models/RolePermission.model';
+import AuditLog from '@models/AuditLog.model';
 import rolePermissionService from '../rolePermission.service';
 import { NotFoundError, ValidationError } from '@middleware/errorHandler';
 
@@ -38,6 +39,10 @@ describe('RolePermissionService', () => {
         expect(role.description).toBe(roleData.description);
         expect(role.isSystem).toBe(false);
         expect(role.isActive).toBe(true);
+
+        const auditLog = await AuditLog.findOne({ where: { entityType: 'role', entityUuid: role.id } });
+        expect(auditLog?.entityId).toBeNull();
+        expect(auditLog?.entityUuid).toBe(role.id);
       });
 
       it('should throw error if role code already exists', async () => {

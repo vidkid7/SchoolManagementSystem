@@ -1230,6 +1230,8 @@ export class CommunicationController {
     const announcements = new Map<number, Record<string, any>>();
 
     for (const log of logs) {
+      if (log.entityId === null) continue;
+
       const currentState = this.buildAnnouncementFromLog(log);
       if (!currentState) {
         announcements.delete(log.entityId);

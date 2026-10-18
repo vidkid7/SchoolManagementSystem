@@ -14,7 +14,8 @@ import { Op } from 'sequelize';
 interface AuditLogOptions {
   userId?: number | null;
   entityType: string;
-  entityId: number;
+  entityId: number | null;
+  entityUuid?: string | null;
   action: AuditAction;
   oldValue?: unknown | null;
   newValue?: unknown | null;
@@ -41,6 +42,7 @@ class AuditLoggerService {
         userId: options.userId || null,
         entityType: options.entityType,
         entityId: options.entityId,
+        entityUuid: options.entityUuid || null,
         action: options.action,
         oldValue: options.oldValue || null,
         newValue: options.newValue || null,

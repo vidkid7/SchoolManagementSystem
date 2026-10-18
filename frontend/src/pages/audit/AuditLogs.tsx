@@ -54,7 +54,8 @@ interface AuditLog {
   auditLogId: number;
   userId: number | null;
   entityType: string;
-  entityId: number;
+  entityId: number | null;
+  entityUuid?: string | null;
   action: 'create' | 'update' | 'delete' | 'restore';
   oldValue: any;
   newValue: any;
@@ -498,7 +499,7 @@ const AuditLogs: React.FC = () => {
                           <TableCell sx={S.TD}>{formatDate(log.timestamp)}</TableCell>
                           <TableCell sx={S.TD}>{log.userId ?? t('audit.system')}</TableCell>
                           <TableCell sx={S.TD}>
-                            {log.entityType} #{log.entityId}
+                            {log.entityType} #{log.entityUuid || log.entityId}
                           </TableCell>
                           <TableCell sx={S.TD}>
                             <Chip

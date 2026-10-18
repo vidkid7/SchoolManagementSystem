@@ -122,10 +122,9 @@ export const updatePermissionSchema = Joi.object({
  * Validation schema for assigning permissions to a role
  */
 export const assignPermissionsSchema = Joi.object({
-  permissionIds: Joi.array().items(Joi.string().uuid()).min(1).required()
+  // An empty list is valid: it removes every permission from the role.
+  permissionIds: Joi.array().items(Joi.string().uuid()).required()
     .messages({
-      'array.empty': 'At least one permission ID is required',
-      'array.min': 'At least one permission ID is required',
       'string.guid': 'Invalid permission ID format',
     }),
 });

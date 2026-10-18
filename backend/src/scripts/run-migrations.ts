@@ -55,6 +55,7 @@ import * as ensureReservationWorkflowColumns from '../migrations/20261012000003-
 import * as ensureExamIsInternalColumn from '../migrations/20261018000001-ensure-exam-is-internal-column';
 import * as ensureExamSchedulesTable from '../migrations/20261018000002-ensure-exam-schedules-table';
 import * as ensureUserNameColumns from '../migrations/20261018000003-ensure-user-name-columns';
+import * as addUuidAuditEntitySupport from '../migrations/20261018000004-add-uuid-audit-entity-support';
 
 /**
  * Migration Runner
@@ -314,6 +315,11 @@ const migrations: Migration[] = [
     name: '20261018000003-ensure-user-name-columns',
     up: (queryInterface) => ensureUserNameColumns.up(queryInterface, sequelize),
     down: (queryInterface) => ensureUserNameColumns.down(queryInterface, sequelize)
+  },
+  {
+    name: '20261018000004-add-uuid-audit-entity-support',
+    up: (queryInterface) => addUuidAuditEntitySupport.up(queryInterface, sequelize),
+    down: (queryInterface) => addUuidAuditEntitySupport.down(queryInterface, sequelize)
   }
 ];
 

@@ -18,7 +18,8 @@ export interface AuditLogAttributes {
   auditLogId: number;
   userId: number | null;
   entityType: string;
-  entityId: number;
+  entityId: number | null;
+  entityUuid?: string | null;
   action: AuditAction;
   oldValue: unknown | null;
   newValue: unknown | null;
@@ -39,7 +40,8 @@ class AuditLog extends Model<AuditLogAttributes, AuditLogCreationAttributes>
   declare auditLogId: number;
   declare userId: number | null;
   declare entityType: string;
-  declare entityId: number;
+  declare entityId: number | null;
+  declare entityUuid: string | null;
   declare action: AuditAction;
   declare oldValue: unknown | null;
   declare newValue: unknown | null;
@@ -71,8 +73,13 @@ AuditLog.init(
     },
     entityId: {
       type: DataTypes.INTEGER.UNSIGNED,
-      allowNull: false,
+      allowNull: true,
       field: 'entity_id'
+    },
+    entityUuid: {
+      type: DataTypes.STRING(36),
+      allowNull: true,
+      field: 'entity_uuid'
     },
     action: {
       type: DataTypes.ENUM(...Object.values(AuditAction)),
