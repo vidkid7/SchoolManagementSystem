@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 
 export function SportsDashboard() {
   const navigate = useSlugNavigate();
+  const goToManagement = (tab: number) => navigate(`/sports/management?tab=${tab}`);
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const { t } = useTranslation();
@@ -31,10 +32,10 @@ export function SportsDashboard() {
   }, []);
 
   const statCards = [
-    { title: t('sports.totalSports'), value: stats.totalSports, icon: <MatchIcon sx={{ fontSize: 32 }} />, color: C.primary, bgColor: C.primaryBg, action: () => navigate('/sports/list') },
-    { title: t('sports.activeTeams'), value: stats.totalTeams, icon: <TeamIcon sx={{ fontSize: 32 }} />, color: C.success, bgColor: C.successBg, action: () => navigate('/sports/teams') },
-    { title: t('sports.totalPlayers'), value: stats.totalPlayers, icon: <TeamIcon sx={{ fontSize: 32 }} />, color: C.info, bgColor: C.infoBg, action: () => navigate('/sports/players') },
-    { title: t('sports.upcomingMatches'), value: stats.upcomingMatches, icon: <TrophyIcon sx={{ fontSize: 32 }} />, color: C.warning, bgColor: C.warningBg, action: () => navigate('/sports/tournaments') },
+    { title: t('sports.totalSports'), value: stats.totalSports, icon: <MatchIcon sx={{ fontSize: 32 }} />, color: C.primary, bgColor: C.primaryBg, action: () => goToManagement(0) },
+    { title: t('sports.activeTeams'), value: stats.totalTeams, icon: <TeamIcon sx={{ fontSize: 32 }} />, color: C.success, bgColor: C.successBg, action: () => goToManagement(1) },
+    { title: t('sports.totalPlayers'), value: stats.totalPlayers, icon: <TeamIcon sx={{ fontSize: 32 }} />, color: C.info, bgColor: C.infoBg, action: () => goToManagement(4) },
+    { title: t('sports.upcomingMatches'), value: stats.upcomingMatches, icon: <TrophyIcon sx={{ fontSize: 32 }} />, color: C.warning, bgColor: C.warningBg, action: () => goToManagement(2) },
   ];
 
   return (
@@ -49,8 +50,8 @@ export function SportsDashboard() {
             </Box>
           </Box>
           <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/sports/new')} sx={S.BTN_PRIMARY}>{t('sports.newSport')}</Button>
-            <Button variant="outlined" sx={S.BTN_OUTLINE} startIcon={<TeamIcon />} onClick={() => navigate('/sports/teams/new')}>{t('sports.createTeam')}</Button>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => goToManagement(0)} sx={S.BTN_PRIMARY}>{t('sports.newSport')}</Button>
+            <Button variant="outlined" sx={S.BTN_OUTLINE} startIcon={<TeamIcon />} onClick={() => goToManagement(1)}>{t('sports.createTeam')}</Button>
           </Box>
         </Box>
       </Paper>
@@ -97,11 +98,11 @@ export function SportsDashboard() {
           <Paper sx={{ ...S.GLASS, p: 3 }}>
             <Typography variant="h6" fontWeight={600} gutterBottom>{t('sports.quickActions')}</Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/sports/list')}>{t('sports.manageSports')}</Button>
-              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/sports/teams')}>{t('sports.manageTeams')}</Button>
-              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/sports/tournaments')}>{t('sports.tournaments')}</Button>
-              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/sports/attendance')}>{t('sports.markAttendance')}</Button>
-              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => navigate('/sports/achievements')}>{t('sports.recordAchievements')}</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => goToManagement(0)}>{t('sports.manageSports')}</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => goToManagement(1)}>{t('sports.manageTeams')}</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => goToManagement(2)}>{t('sports.tournaments')}</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => goToManagement(4)}>{t('sports.markAttendance')}</Button>
+              <Button variant="outlined" sx={S.BTN_OUTLINE} fullWidth onClick={() => goToManagement(3)}>{t('sports.recordAchievements')}</Button>
             </Box>
           </Paper>
         </Grid>

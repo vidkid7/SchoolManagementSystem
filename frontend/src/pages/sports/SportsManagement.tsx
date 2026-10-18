@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Box, Paper, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Chip, Alert, Grid, IconButton,
   useTheme,
 } from '@mui/material';
@@ -57,7 +58,10 @@ export function SportsManagement() {
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const { t } = useTranslation();
-  const [tabValue, setTabValue] = useState(0);
+  const [searchParams] = useSearchParams();
+  const requestedTab = Number(searchParams.get('tab'));
+  const initialTab = Number.isInteger(requestedTab) && requestedTab >= 0 && requestedTab <= 5 ? requestedTab : 0;
+  const [tabValue, setTabValue] = useState(initialTab);
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
