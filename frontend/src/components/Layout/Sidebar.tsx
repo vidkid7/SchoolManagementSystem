@@ -143,14 +143,14 @@ export function Sidebar({ collapsed, currentPath, role, onCollapse, onNavigate }
           )}
         </Stack>
         {!collapsed && (
-          <IconButton onClick={onCollapse} size="small" aria-label={t('dashboard.collapse')} sx={{ color: '#cbd5e1', bgcolor: 'rgba(255,255,255,0.07)' }}>
+          <IconButton onClick={onCollapse} size="small" aria-label={t('menu.collapse')} sx={{ color: '#cbd5e1', bgcolor: 'rgba(255,255,255,0.07)' }}>
             <ChevronLeft fontSize="small" />
           </IconButton>
         )}
       </Stack>
 
       {collapsed && (
-        <IconButton onClick={onCollapse} size="small" aria-label={t('dashboard.expand')} sx={{ mx: 'auto', mb: 1, color: '#cbd5e1', bgcolor: 'rgba(255,255,255,0.07)' }}>
+        <IconButton onClick={onCollapse} size="small" aria-label={t('menu.expand')} sx={{ mx: 'auto', mb: 1, color: '#cbd5e1', bgcolor: 'rgba(255,255,255,0.07)' }}>
           <ChevronRight fontSize="small" />
         </IconButton>
       )}
