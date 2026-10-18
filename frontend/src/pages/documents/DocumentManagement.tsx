@@ -548,7 +548,11 @@ export const DocumentManagement = () => {
                 ),
                 endAdornment: filters.search && (
                   <InputAdornment position="end">
-                    <IconButton size="small" onClick={() => handleFilterChange('search', '')}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleFilterChange('search', '')}
+                      aria-label={t('common.clear')}
+                    >
                       <ClearIcon />
                     </IconButton>
                   </InputAdornment>
@@ -558,8 +562,9 @@ export const DocumentManagement = () => {
           </Grid>
           <Grid item xs={12} md={2}>
             <FormControl fullWidth size="small">
-              <InputLabel>{t('documents.category')}</InputLabel>
+              <InputLabel id="document-category-filter-label">{t('documents.category')}</InputLabel>
               <Select
+                labelId="document-category-filter-label"
                 value={filters.category}
                 label={t('documents.category')}
                 onChange={(e) => handleFilterChange('category', e.target.value)}
@@ -575,8 +580,9 @@ export const DocumentManagement = () => {
           </Grid>
           <Grid item xs={12} md={2}>
             <FormControl fullWidth size="small">
-              <InputLabel>{t('documents.status')}</InputLabel>
+              <InputLabel id="document-status-filter-label">{t('documents.status')}</InputLabel>
               <Select
+                labelId="document-status-filter-label"
                 value={filters.status}
                 label={t('documents.status')}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
@@ -591,8 +597,9 @@ export const DocumentManagement = () => {
           </Grid>
           <Grid item xs={12} md={2}>
             <FormControl fullWidth size="small">
-              <InputLabel>{t('documents.accessLevel')}</InputLabel>
+              <InputLabel id="document-access-level-filter-label">{t('documents.accessLevel')}</InputLabel>
               <Select
+                labelId="document-access-level-filter-label"
                 value={filters.accessLevel}
                 label={t('documents.accessLevel')}
                 onChange={(e) => handleFilterChange('accessLevel', e.target.value)}
@@ -803,6 +810,9 @@ export const DocumentManagement = () => {
             {/* File Input */}
             <Paper
               variant="outlined"
+              role="button"
+              tabIndex={0}
+              aria-label={t('documents.clickToSelectFile')}
               sx={{
                 p: 3,
                 textAlign: 'center',
@@ -810,6 +820,12 @@ export const DocumentManagement = () => {
                 bgcolor: uploadForm.file ? 'action.hover' : 'background.paper',
               }}
               onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }}
             >
               <input
                 ref={fileInputRef}
@@ -857,8 +873,9 @@ export const DocumentManagement = () => {
             />
 
             <FormControl fullWidth margin="normal" required>
-              <InputLabel>{t('documents.category')}</InputLabel>
+              <InputLabel id="document-upload-category-label">{t('documents.category')}</InputLabel>
               <Select
+                labelId="document-upload-category-label"
                 value={uploadForm.category}
                 label={t('documents.category')}
                 onChange={(e) => setUploadForm(prev => ({ ...prev, category: e.target.value }))}
@@ -872,8 +889,9 @@ export const DocumentManagement = () => {
             </FormControl>
 
             <FormControl fullWidth margin="normal" required>
-              <InputLabel>{t('documents.accessLevel')}</InputLabel>
+              <InputLabel id="document-upload-access-level-label">{t('documents.accessLevel')}</InputLabel>
               <Select
+                labelId="document-upload-access-level-label"
                 value={uploadForm.accessLevel}
                 label={t('documents.accessLevel')}
                 onChange={(e) => setUploadForm(prev => ({ ...prev, accessLevel: e.target.value }))}

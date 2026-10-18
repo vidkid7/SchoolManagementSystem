@@ -13,7 +13,7 @@ jest.mock('../../services/apiClient', () => ({
   },
 }));
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material';
@@ -23,9 +23,12 @@ import { apiClient } from '../../services/apiClient';
 
 // Mock the i18n module
 jest.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-  }),
+  useTranslation: () => {
+    const translations = require('../../i18n/locales/en/translation.json');
+    return {
+      t: (key: string) => key.split('.').reduce((value: any, part: string) => value?.[part], translations) ?? key,
+    };
+  },
 }));
 
 // Mock window.URL.createObjectURL
@@ -146,9 +149,9 @@ describe('DocumentManagement Page', () => {
       
       await waitFor(() => {
         expect(screen.getByText('Name')).toBeInTheDocument();
-        expect(screen.getByText('Category')).toBeInTheDocument();
+        expect(within(screen.getByRole('table')).getByRole('columnheader', { name: 'Category' })).toBeInTheDocument();
         expect(screen.getByText('Size')).toBeInTheDocument();
-        expect(screen.getByText('Access')).toBeInTheDocument();
+        expect(within(screen.getByRole('table')).getByRole('columnheader', { name: 'Access Level' })).toBeInTheDocument();
         expect(screen.getByText('Uploaded By')).toBeInTheDocument();
         expect(screen.getByText('Date')).toBeInTheDocument();
         expect(screen.getByText('Actions')).toBeInTheDocument();
@@ -217,7 +220,7 @@ describe('DocumentManagement Page', () => {
       const searchInput = screen.getByPlaceholderText('Search documents...');
       fireEvent.change(searchInput, { target: { value: 'sample' } });
       
-      const clearButton = screen.getByLabelText('close');
+      const clearButton = screen.getByRole('button', { name: 'Clear' });
       fireEvent.click(clearButton);
       
       await waitFor(() => {
@@ -255,47 +258,57 @@ describe('DocumentManagement Page', () => {
     it('should open upload dialog when clicking upload button', async () => {
       renderComponent();
       
-      const uploadButton = screen.getByText('Upload Document');
+      const uploadButton = screen.getByRole('button', { name: 'Upload Document' });
       fireEvent.click(uploadButton);
       
       await waitFor(() => {
-        expect(screen.getByText('Upload Document')).toBeInTheDocument(); // Dialog title
-        expect(screen.getByText('Click to select a file')).toBeInTheDocument();
+        const dialog = screen.getByRole('dialog');
+        expect(within(dialog).getByRole('heading', { name: 'Upload Document' })).toBeInTheDocument();
+        expect(within(dialog).getByRole('button', { name: 'Click to select a file' })).toBeInTheDocument();
       });
+    });
+
+    it('should open the file picker from the keyboard-accessible control', () => {
+      renderComponent();
+      fireEvent.click(screen.getByRole('button', { name: 'Upload Document' }));
+
+      const picker = screen.getByRole('button', { name: 'Click to select a file' });
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const clickSpy = jest.spyOn(fileInput, 'click').mockImplementation(() => {});
+
+      fireEvent.keyDown(picker, { key: 'Enter' });
+
+      expect(clickSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should close upload dialog when clicking cancel', async () => {
       renderComponent();
       
-      const uploadButton = screen.getByText('Upload Document');
+      const uploadButton = screen.getByRole('button', { name: 'Upload Document' });
       fireEvent.click(uploadButton);
       
       const cancelButton = screen.getByText('Cancel');
       fireEvent.click(cancelButton);
       
       await waitFor(() => {
-        expect(screen.queryByText('Click to select a file')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Click to select a file' })).not.toBeInTheDocument();
       });
     });
 
     it('should show error when trying to upload without file', async () => {
       renderComponent();
       
-      const uploadButton = screen.getByText('Upload Document');
+      const uploadButton = screen.getByRole('button', { name: 'Upload Document' });
       fireEvent.click(uploadButton);
       
-      const submitButton = screen.getByText('Upload');
-      fireEvent.click(submitButton);
-      
-      await waitFor(() => {
-        expect(screen.getByText('Please select a file to upload')).toBeInTheDocument();
-      });
+      expect(screen.getByRole('button', { name: 'Upload', exact: true })).toBeDisabled();
+      expect(apiClient.post).not.toHaveBeenCalled();
     });
 
     it('should show error when file size exceeds limit', async () => {
       renderComponent();
       
-      const uploadButton = screen.getByText('Upload Document');
+      const uploadButton = screen.getByRole('button', { name: 'Upload Document' });
       fireEvent.click(uploadButton);
       
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -329,20 +342,26 @@ describe('DocumentManagement Page', () => {
       
       renderComponent();
       
-      const uploadButton = screen.getByText('Upload Document');
+      const uploadButton = screen.getByRole('button', { name: 'Upload Document' });
       fireEvent.click(uploadButton);
       
       // Wait for dialog to open
       await waitFor(() => {
-        expect(screen.getByText('Upload Document')).toBeInTheDocument();
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
       });
       
-      // Submit without file to trigger error first
-      const submitButton = screen.getByText('Upload');
-      fireEvent.click(submitButton);
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const file = new File(['test content'], 'test-document.pdf', { type: 'application/pdf' });
+      fireEvent.change(fileInput, { target: { files: [file] } });
+      fireEvent.click(screen.getByRole('button', { name: 'Upload', exact: true }));
       
       await waitFor(() => {
-        expect(screen.getByText('Please select a file to upload')).toBeInTheDocument();
+        expect(apiClient.post).toHaveBeenCalledWith(
+          '/documents',
+          expect.any(FormData),
+          expect.objectContaining({ headers: { 'Content-Type': 'multipart/form-data' } }),
+        );
+        expect(screen.getByText('Document uploaded successfully')).toBeInTheDocument();
       });
     });
   });
