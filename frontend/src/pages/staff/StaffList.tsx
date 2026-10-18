@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import {
   Box,
   Paper,
@@ -145,13 +146,14 @@ export const StaffList = () => {
   
   // Filters
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search);
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [positionFilter, setPositionFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
   useEffect(() => {
     fetchStaff();
-  }, [page, rowsPerPage, search, departmentFilter, positionFilter, statusFilter]);
+  }, [page, rowsPerPage, debouncedSearch, departmentFilter, positionFilter, statusFilter]);
 
   const fetchStaff = async () => {
     try {
@@ -160,7 +162,7 @@ export const StaffList = () => {
         page: (page + 1).toString(),
         limit: rowsPerPage.toString(),
         _t: Date.now().toString(),
-        ...(search && { search }),
+        ...(debouncedSearch && { search: debouncedSearch }),
         ...(departmentFilter && { department: departmentFilter }),
         ...(positionFilter && { position: positionFilter }),
         ...(statusFilter && { status: statusFilter }),
