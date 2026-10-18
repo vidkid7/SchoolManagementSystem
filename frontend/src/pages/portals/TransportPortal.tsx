@@ -34,6 +34,11 @@ interface MaintenanceRecord { id: number; vehicleId: number; type: string; descr
 
 const authHdr = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
 
+function getApiErrorMessage(error: unknown, fallback: string): string {
+  const responseData = (error as { response?: { data?: { error?: { message?: string }; message?: string } } })?.response?.data;
+  return responseData?.error?.message || responseData?.message || fallback;
+}
+
 function TabPanel({ children, value, index }: { children: React.ReactNode; value: number; index: number }) {
   return <div hidden={value !== index}>{value === index && <Box sx={{ pt: 2 }}>{children}</Box>}</div>;
 }
@@ -90,8 +95,8 @@ const TransportPortal: React.FC = () => {
       setPickupPoints(pickupsRes.data?.data?.pickupPoints ?? []);
       setDriversList(driversRes.data?.data?.drivers ?? []);
       setMaintenance(maintenanceRes.data?.data?.records ?? []);
-    } catch {
-      setError(t('portal.failedToLoadData'));
+    } catch (loadError) {
+      setError(getApiErrorMessage(loadError, t('portal.failedToLoadData')));
     } finally {
       setLoading(false);
     }
@@ -100,6 +105,11 @@ const TransportPortal: React.FC = () => {
   useEffect(() => { loadData(); }, [loadData]);
 
   const handleSaveRoute = async () => {
+    if (![formData.routeName, formData.origin, formData.destination].every(value => typeof value === 'string' && value.trim())) {
+      setError(t('transport.routeRequiredFields'));
+      return;
+    }
+
     try {
       if (editRoute) {
         await apiClient.put(`/api/v1/transport/routes/${editRoute.id}`, formData, authHdr(accessToken!));
@@ -107,7 +117,7 @@ const TransportPortal: React.FC = () => {
         await apiClient.post('/api/v1/transport/routes', formData, authHdr(accessToken!));
       }
       setRouteDialog(false); setEditRoute(null); setFormData({}); loadData();
-    } catch { setError(t('portal.failedToLoadData')); }
+    } catch (saveError) { setError(getApiErrorMessage(saveError, t('portal.failedToLoadData'))); }
   };
 
   const handleDeleteRoute = async (id: number) => {
@@ -115,7 +125,7 @@ const TransportPortal: React.FC = () => {
     try {
       await apiClient.delete(`/api/v1/transport/routes/${id}`, authHdr(accessToken!));
       loadData();
-    } catch { setError(t('portal.failedToLoadData')); }
+    } catch (deleteError) { setError(getApiErrorMessage(deleteError, t('portal.failedToLoadData'))); }
   };
 
   const handleSaveVehicle = async () => {
@@ -126,14 +136,14 @@ const TransportPortal: React.FC = () => {
         await apiClient.post('/api/v1/transport/vehicles', formData, authHdr(accessToken!));
       }
       setVehicleDialog(false); setEditVehicle(null); setFormData({}); loadData();
-    } catch { setError(t('portal.failedToLoadData')); }
+    } catch (saveError) { setError(getApiErrorMessage(saveError, t('portal.failedToLoadData'))); }
   };
 
   const handleCreatePickup = async () => {
     try {
       await apiClient.post('/api/v1/transport/pickup-points', formData, authHdr(accessToken!));
       setPickupDialog(false); setFormData({}); loadData();
-    } catch { setError(t('portal.failedToLoadData')); }
+    } catch (saveError) { setError(getApiErrorMessage(saveError, t('portal.failedToLoadData'))); }
   };
 
   const handleSaveDriver = async () => {
@@ -144,7 +154,7 @@ const TransportPortal: React.FC = () => {
         await apiClient.post('/api/v1/transport/drivers', formData, authHdr(accessToken!));
       }
       setDriverDialog(false); setEditDriver(null); setFormData({}); loadData();
-    } catch { setError(t('portal.failedToLoadData')); }
+    } catch (saveError) { setError(getApiErrorMessage(saveError, t('portal.failedToLoadData'))); }
   };
 
   const handleDeleteDriver = async (id: number) => {
@@ -152,7 +162,7 @@ const TransportPortal: React.FC = () => {
     try {
       await apiClient.delete(`/api/v1/transport/drivers/${id}`, authHdr(accessToken!));
       loadData();
-    } catch { setError(t('portal.failedToLoadData')); }
+    } catch (deleteError) { setError(getApiErrorMessage(deleteError, t('portal.failedToLoadData'))); }
   };
 
   const handleSaveMaintenance = async () => {
@@ -163,7 +173,7 @@ const TransportPortal: React.FC = () => {
         await apiClient.post('/api/v1/transport/maintenance', formData, authHdr(accessToken!));
       }
       setMaintenanceDialog(false); setEditMaintenance(null); setFormData({}); loadData();
-    } catch { setError(t('portal.failedToLoadData')); }
+    } catch (saveError) { setError(getApiErrorMessage(saveError, t('portal.failedToLoadData'))); }
   };
 
   if (loading) return <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh"><CircularProgress /></Box>;
