@@ -56,6 +56,7 @@ import * as ensureExamIsInternalColumn from '../migrations/20261018000001-ensure
 import * as ensureExamSchedulesTable from '../migrations/20261018000002-ensure-exam-schedules-table';
 import * as ensureUserNameColumns from '../migrations/20261018000003-ensure-user-name-columns';
 import * as addUuidAuditEntitySupport from '../migrations/20261018000004-add-uuid-audit-entity-support';
+import * as ensureClassSubjectsTable from '../migrations/20261018000005-ensure-class-subjects-table';
 
 /**
  * Migration Runner
@@ -320,6 +321,11 @@ const migrations: Migration[] = [
     name: '20261018000004-add-uuid-audit-entity-support',
     up: (queryInterface) => addUuidAuditEntitySupport.up(queryInterface, sequelize),
     down: (queryInterface) => addUuidAuditEntitySupport.down(queryInterface, sequelize)
+  },
+  {
+    name: '20261018000005-ensure-class-subjects-table',
+    up: ensureClassSubjectsTable.up,
+    down: ensureClassSubjectsTable.down
   }
 ];
 
