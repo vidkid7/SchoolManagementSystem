@@ -25,18 +25,9 @@ import {
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import api from '../../config/api';
+import { AdmissionStats, mapAdmissionReportStats } from './admissionDashboardStats';
 
 import { useTranslation } from 'react-i18next';
-
-interface AdmissionStats {
-  totalInquiries: number;
-  totalApplications: number;
-  totalAdmitted: number;
-  totalEnrolled: number;
-  totalRejected: number;
-  pendingTests: number;
-  pendingInterviews: number;
-}
 
 export function AdmissionDashboard() {
   const theme = useTheme();
@@ -62,7 +53,7 @@ export function AdmissionDashboard() {
     try {
       setLoading(true);
       const response = await api.get('/admissions/reports');
-      setStats(response.data?.data || stats);
+      setStats(mapAdmissionReportStats(response.data?.data));
     } catch (error) {
       console.error('Failed to fetch admission stats:', error);
     } finally {
@@ -115,7 +106,7 @@ export function AdmissionDashboard() {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <TrendIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-            <Typography variant="h5" fontWeight={600}>
+            <Typography component="h2" variant="h5" fontWeight={600}>
               {t('admissions.dashboardTitle')}
             </Typography>
           </Box>
@@ -139,7 +130,7 @@ export function AdmissionDashboard() {
                     <Typography color="text.secondary" variant="body2" gutterBottom>
                       {card.title}
                     </Typography>
-                    <Typography variant="h4" fontWeight={600}>
+                    <Typography component="p" variant="h4" fontWeight={600}>
                       {card.value}
                     </Typography>
                   </Box>
@@ -163,7 +154,7 @@ export function AdmissionDashboard() {
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <Paper sx={{ ...S.GLASS, p: 3 }}>
-            <Typography variant="h6" gutterBottom>
+            <Typography component="h3" variant="h6" gutterBottom>
               {t('admissions.pendingActions')}
             </Typography>
             <Box sx={{ mt: 2 }}>
@@ -189,7 +180,7 @@ export function AdmissionDashboard() {
 
         <Grid item xs={12} md={6}>
           <Paper sx={{ ...S.GLASS, p: 3 }}>
-            <Typography variant="h6" gutterBottom>
+            <Typography component="h3" variant="h6" gutterBottom>
               {t('admissions.quickActions')}
             </Typography>
             <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
