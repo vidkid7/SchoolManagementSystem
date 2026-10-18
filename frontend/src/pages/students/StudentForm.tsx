@@ -196,6 +196,8 @@ export const StudentForm = () => {
   const [photoPreview, setPhotoPreview] = useState<string>('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [academicClasses, setAcademicClasses] = useState<AcademicClassOption[]>([]);
+  const [academicClassesLoading, setAcademicClassesLoading] = useState(true);
+  const [academicClassesLoadFailed, setAcademicClassesLoadFailed] = useState(false);
   
   // Enhanced features
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
@@ -276,6 +278,10 @@ export const StudentForm = () => {
       })
       .catch((classError) => {
         console.error('Failed to load academic classes:', classError);
+        if (mounted) setAcademicClassesLoadFailed(true);
+      })
+      .finally(() => {
+        if (mounted) setAcademicClassesLoading(false);
       });
 
     return () => {
@@ -1073,7 +1079,13 @@ export const StudentForm = () => {
                 />
               </Grid>
 
-              {academicClasses.length === 0 && (
+              {!academicClassesLoading && academicClassesLoadFailed && (
+                <Grid item xs={12}>
+                  <Alert severity="error">{t('academic.failedToLoad')}</Alert>
+                </Grid>
+              )}
+
+              {!academicClassesLoading && !academicClassesLoadFailed && academicClasses.length === 0 && (
                 <Grid item xs={12}>
                   <Alert severity="info">{t('students.noClassesConfigured')}</Alert>
                 </Grid>
