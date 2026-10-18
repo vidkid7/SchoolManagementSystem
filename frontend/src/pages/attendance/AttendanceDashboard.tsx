@@ -165,7 +165,7 @@ export function AttendanceDashboard() {
                   >
                     {feature.icon}
                   </Box>
-                  <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mt: 2 }}>
+                  <Typography component="h5" variant="h6" fontWeight={600} gutterBottom sx={{ mt: 2 }}>
                     {feature.title}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
