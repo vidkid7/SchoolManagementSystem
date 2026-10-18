@@ -202,10 +202,11 @@ export const Calendar = () => {
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
-              <InputLabel>Month</InputLabel>
+              <InputLabel id="academic-calendar-month-label">Month</InputLabel>
               <Select
                 value={selectedMonth}
                 label="Month"
+                labelId="academic-calendar-month-label"
                 onChange={(e) => setSelectedMonth(Number(e.target.value))}
               >
                 {months.map((month, index) => (
@@ -218,10 +219,11 @@ export const Calendar = () => {
           </Grid>
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
-              <InputLabel>Year</InputLabel>
+              <InputLabel id="academic-calendar-year-label">Year</InputLabel>
               <Select
                 value={selectedYear}
                 label="Year"
+                labelId="academic-calendar-year-label"
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
               >
                 {Array.from({ length: 101 }, (_, index) => new Date().getFullYear() - 50 + index).map((year) => (
@@ -233,7 +235,7 @@ export const Calendar = () => {
             </FormControl>
           </Grid>
           <Grid item xs={12} md={4}>
-            <Typography variant="h6" textAlign="center">
+            <Typography component="h5" variant="h6" textAlign="center">
               {months[selectedMonth]} {selectedYear}
             </Typography>
           </Grid>
@@ -248,7 +250,7 @@ export const Calendar = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <EventIcon sx={{ fontSize: 40 }} />
                 <Box>
-                  <Typography variant="h3" fontWeight={700}>
+                  <Typography component="p" variant="h3" fontWeight={700}>
                     {events.length}
                   </Typography>
                   <Typography variant="body2">Total Events</Typography>
@@ -263,7 +265,7 @@ export const Calendar = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <EventIcon sx={{ fontSize: 40 }} />
                 <Box>
-                  <Typography variant="h3" fontWeight={700}>
+                  <Typography component="p" variant="h3" fontWeight={700}>
                     {events.filter(e => e.isHoliday).length}
                   </Typography>
                   <Typography variant="body2">Holidays</Typography>
@@ -278,7 +280,7 @@ export const Calendar = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <EventIcon sx={{ fontSize: 40 }} />
                 <Box>
-                  <Typography variant="h3" fontWeight={700}>
+                  <Typography component="p" variant="h3" fontWeight={700}>
                     {events.filter(e => e.category === 'exam').length}
                   </Typography>
                   <Typography variant="body2">Examinations</Typography>
@@ -292,7 +294,7 @@ export const Calendar = () => {
       {/* Events List */}
       <Paper sx={{ ...S.GLASS }}>
         <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-          <Typography variant="h6" fontWeight={600}>
+          <Typography component="h5" variant="h6" fontWeight={600}>
             {t('calendar.eventsIn', 'Events in')} {months[selectedMonth]} {selectedYear}
           </Typography>
         </Box>
