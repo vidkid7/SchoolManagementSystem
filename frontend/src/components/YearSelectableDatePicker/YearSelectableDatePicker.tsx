@@ -27,6 +27,15 @@ export interface YearSelectableDatePickerProps {
   required?: boolean;
   disabled?: boolean;
   fullWidth?: boolean;
+  minDate?: Date | null;
+  maxDate?: Date | null;
+  textFieldProps?: TextFieldProps;
+}
+
+export interface YearSelectableDateFieldProps extends Omit<TextFieldProps, 'value' | 'onChange' | 'type'> {
+  value?: string | null;
+  // Keep MUI TextField's event callback shape for existing form handlers.
+  onChange?: (event: any) => void;
 }
 
 /** A Gregorian date picker that opens on the year view for quick year selection. */
@@ -39,6 +48,9 @@ export function YearSelectableDatePicker({
   required = false,
   disabled = false,
   fullWidth = true,
+  minDate,
+  maxDate,
+  textFieldProps = {},
 }: YearSelectableDatePickerProps) {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -49,8 +61,11 @@ export function YearSelectableDatePicker({
         views={['year', 'month', 'day']}
         openTo="year"
         disabled={disabled}
+        minDate={minDate ?? undefined}
+        maxDate={maxDate ?? undefined}
         slotProps={{
           textField: {
+            ...textFieldProps,
             fullWidth,
             required,
             error,
@@ -59,5 +74,26 @@ export function YearSelectableDatePicker({
         }}
       />
     </LocalizationProvider>
+  );
+}
+
+/** Drop-in string-valued field for replacing native type=date TextFields. */
+export function YearSelectableDateField({ value, onChange, ...textFieldProps }: YearSelectableDateFieldProps) {
+  const inputConstraints = textFieldProps.inputProps as { min?: string; max?: string } | undefined;
+
+  return (
+    <YearSelectableDatePicker
+      label={String(textFieldProps.label ?? '')}
+      value={parseDateOnly(value)}
+      onChange={(date) => onChange?.({ target: { value: formatDateOnly(date) } })}
+      error={textFieldProps.error}
+      helperText={textFieldProps.helperText}
+      required={textFieldProps.required}
+      disabled={textFieldProps.disabled}
+      fullWidth={textFieldProps.fullWidth}
+      minDate={parseDateOnly(inputConstraints?.min)}
+      maxDate={parseDateOnly(inputConstraints?.max)}
+      textFieldProps={textFieldProps}
+    />
   );
 }

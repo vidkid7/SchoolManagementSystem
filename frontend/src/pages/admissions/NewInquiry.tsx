@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 /**
  * New Inquiry Form
  * Create new admission inquiry
@@ -147,9 +148,8 @@ export function NewInquiry() {
               />
             </Grid>
             <Grid item xs={12} md={4}>
-              <TextField
+              <YearSelectableDateField
                 fullWidth
-                type="date"
                 label={t('admissions.dateOfBirth')}
                 name="dateOfBirthAD"
                 value={formData.dateOfBirthAD}

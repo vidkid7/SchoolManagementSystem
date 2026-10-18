@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
@@ -770,10 +771,9 @@ interface TeacherPerformanceData {
           </Box>
           <Grid container spacing={1.5} alignItems="center">
             <Grid item xs={12} sm={6} md={3}>
-              <TextField
+              <YearSelectableDateField
                 fullWidth
                 label={t('reports.startDate')}
-                type="date"
                 value={filters.startDate}
                 onChange={(e) => handleFilterChange('startDate', e.target.value)}
                 InputLabelProps={{ shrink: true }}
@@ -787,10 +787,9 @@ interface TeacherPerformanceData {
               />
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <TextField
+              <YearSelectableDateField
                 fullWidth
                 label={t('reports.endDate')}
-                type="date"
                 value={filters.endDate}
                 onChange={(e) => handleFilterChange('endDate', e.target.value)}
                 InputLabelProps={{ shrink: true }}

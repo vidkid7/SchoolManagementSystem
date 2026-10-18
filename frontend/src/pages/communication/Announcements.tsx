@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 /**
  * Announcements Page
  * 
@@ -510,10 +511,9 @@ export const Announcements: React.FC = () => {
               </Grid>
             </Grid>
 
-            <TextField
+            <YearSelectableDateField
               fullWidth
               label={t('communication.expiryDate')}
-              type="date"
               value={formData.expiresAt || ''}
               onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
               InputLabelProps={{ shrink: true }}

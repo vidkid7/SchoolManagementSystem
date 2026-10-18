@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 /**
  * Book Circulation Management
  * Issue and return books, manage borrowing history
@@ -801,9 +802,8 @@ export function BookCirculation() {
               />
             </Grid>
             <Grid item xs={12}>
-              <TextField
+              <YearSelectableDateField
                 label={t('library.dueDate')}
-                type="date"
                 value={issueForm.dueDate}
                 onChange={(e) => setIssueForm({ ...issueForm, dueDate: e.target.value })}
                 fullWidth

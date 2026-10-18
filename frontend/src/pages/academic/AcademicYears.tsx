@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 /**
  * Academic Years Management Page
  *
@@ -508,9 +509,8 @@ export const AcademicYears = () => {
               />
             </Grid>
             <Grid item xs={6}>
-              <TextField
+              <YearSelectableDateField
                 label={t('academicYears.startDateAD')}
-                type="date"
                 fullWidth
                 required
                 value={yearForm.startDateAD}
@@ -519,9 +519,8 @@ export const AcademicYears = () => {
               />
             </Grid>
             <Grid item xs={6}>
-              <TextField
+              <YearSelectableDateField
                 label={t('academicYears.endDateAD')}
-                type="date"
                 fullWidth
                 required
                 value={yearForm.endDateAD}
@@ -566,9 +565,8 @@ export const AcademicYears = () => {
               />
             </Grid>
             <Grid item xs={6}>
-              <TextField
+              <YearSelectableDateField
                 label={t('academicYears.startDate')}
-                type="date"
                 fullWidth
                 value={termForm.startDate}
                 onChange={(e) => setTermForm({ ...termForm, startDate: e.target.value })}
@@ -576,9 +574,8 @@ export const AcademicYears = () => {
               />
             </Grid>
             <Grid item xs={6}>
-              <TextField
+              <YearSelectableDateField
                 label={t('academicYears.endDate')}
-                type="date"
                 fullWidth
                 value={termForm.endDate}
                 onChange={(e) => setTermForm({ ...termForm, endDate: e.target.value })}
@@ -586,9 +583,8 @@ export const AcademicYears = () => {
               />
             </Grid>
             <Grid item xs={6}>
-              <TextField
+              <YearSelectableDateField
                 label={t('academicYears.examStartDate')}
-                type="date"
                 fullWidth
                 value={termForm.examStartDate}
                 onChange={(e) => setTermForm({ ...termForm, examStartDate: e.target.value })}
@@ -596,9 +592,8 @@ export const AcademicYears = () => {
               />
             </Grid>
             <Grid item xs={6}>
-              <TextField
+              <YearSelectableDateField
                 label={t('academicYears.examEndDate')}
-                type="date"
                 fullWidth
                 value={termForm.examEndDate}
                 onChange={(e) => setTermForm({ ...termForm, examEndDate: e.target.value })}

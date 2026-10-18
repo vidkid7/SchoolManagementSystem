@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 /**
  * Student Documents Component
  * 
@@ -509,9 +510,8 @@ const getCategoryLabel = (category: string) => {
               </FormControl>
             </Grid>
             <Grid item xs={12}>
-<TextField
+<YearSelectableDateField
                 label={t('documents.expiryDateOptional')}
-                type="date"
                 fullWidth
                 value={uploadForm.expiryDate}
                 onChange={(e) => setUploadForm({ ...uploadForm, expiryDate: e.target.value })}

@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 /**
  * Create/Edit Exam Form
  * Create or edit examination details
@@ -347,10 +348,9 @@ export function CreateExam() {
               </TextField>
             </Grid>
             <Grid item xs={12} md={6}>
-              <TextField
+              <YearSelectableDateField
                 fullWidth
                 required
-                type="date"
                 label={t('examinations.examDate')}
                 name="examDate"
                 value={formData.examDate}

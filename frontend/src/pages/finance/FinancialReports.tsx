@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 /**
  * Financial Reports
  * Generate and view financial reports and statistics
@@ -332,9 +333,8 @@ export function FinancialReports() {
                 </TextField>
               </Grid>
               <Grid item xs={12} md={6}>
-                <TextField
+                <YearSelectableDateField
                   label={t('common.startDate')}
-                  type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   fullWidth
@@ -352,9 +352,8 @@ export function FinancialReports() {
                 />
               </Grid>
               <Grid item xs={12} md={6}>
-                <TextField
+                <YearSelectableDateField
                   label={t('common.endDate')}
-                  type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   fullWidth

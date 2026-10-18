@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 /**
  * Sports Management - Comprehensive sports, teams, tournaments, achievements
  */
@@ -738,8 +739,8 @@ export function SportsManagement() {
                   </TextField>
                 </Grid>
                 <Grid item xs={12} md={6}><TextField label={t('sports.venue')} value={formData.venue || ''} onChange={(e) => setFormData({ ...formData, venue: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12} md={6}><TextField label={t('sports.startDate')} type="date" value={formData.startDate || ''} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
-                <Grid item xs={12} md={6}><TextField label={t('sports.endDate')} type="date" value={formData.endDate || ''} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
+                <Grid item xs={12} md={6}><YearSelectableDateField label={t('sports.startDate')} value={formData.startDate || ''} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
+                <Grid item xs={12} md={6}><YearSelectableDateField label={t('sports.endDate')} value={formData.endDate || ''} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
                 <Grid item xs={12}><TextField label="Remarks" value={formData.remarks || ''} onChange={(e) => setFormData({ ...formData, remarks: e.target.value })} fullWidth /></Grid>
               </>
             )}
@@ -768,7 +769,7 @@ export function SportsManagement() {
                     ))}
                   </TextField>
                 </Grid>
-                <Grid item xs={12}><TextField label={t('sports.date')} type="date" value={formData.achievementDate || ''} onChange={(e) => setFormData({ ...formData, achievementDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
+                <Grid item xs={12}><YearSelectableDateField label={t('sports.date')} value={formData.achievementDate || ''} onChange={(e) => setFormData({ ...formData, achievementDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
               </>
             )}
           </Grid>

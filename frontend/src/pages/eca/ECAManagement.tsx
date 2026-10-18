@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 /**
  * ECA Management - Enrollments, Attendance, Events, Achievements
  */
@@ -237,20 +238,20 @@ export function ECAManagement() {
               <>
                 <Grid item xs={12}><TextField label={t('eca.ecaId')} type="number" value={formData.ecaId} onChange={(e) => setFormData({ ...formData, ecaId: e.target.value })} fullWidth /></Grid>
                 <Grid item xs={12}><TextField label={t('eca.studentId')} type="number" value={formData.studentId} onChange={(e) => setFormData({ ...formData, studentId: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12}><TextField label={t('eca.enrollmentDate')} type="date" value={formData.enrollmentDate} onChange={(e) => setFormData({ ...formData, enrollmentDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
+                <Grid item xs={12}><YearSelectableDateField label={t('eca.enrollmentDate')} value={formData.enrollmentDate} onChange={(e) => setFormData({ ...formData, enrollmentDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
               </>
             )}
             {tabValue === 1 && (
               <>
                 <Grid item xs={12}><TextField label={t('eca.ecaId')} type="number" value={formData.ecaId} onChange={(e) => setFormData({ ...formData, ecaId: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12}><TextField label={t('eca.date')} type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
+                <Grid item xs={12}><YearSelectableDateField label={t('eca.date')} value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
               </>
             )}
             {tabValue === 2 && (
               <>
                 <Grid item xs={12}><TextField label={t('eca.ecaId')} type="number" value={formData.ecaId} onChange={(e) => setFormData({ ...formData, ecaId: e.target.value })} fullWidth /></Grid>
                 <Grid item xs={12}><TextField label={t('eca.eventTitle')} value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12}><TextField label={t('eca.eventDate')} type="date" value={formData.eventDate} onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
+                <Grid item xs={12}><YearSelectableDateField label={t('eca.eventDate')} value={formData.eventDate} onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
                 <Grid item xs={12}><TextField label={t('eca.venue')} value={formData.venue} onChange={(e) => setFormData({ ...formData, venue: e.target.value })} fullWidth /></Grid>
                 <Grid item xs={12}><TextField label={t('eca.description')} multiline rows={3} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} fullWidth /></Grid>
               </>
@@ -260,7 +261,7 @@ export function ECAManagement() {
                 <Grid item xs={12}><TextField label={t('eca.studentId')} type="number" value={formData.studentId} onChange={(e) => setFormData({ ...formData, studentId: e.target.value })} fullWidth /></Grid>
                 <Grid item xs={12}><TextField label={t('eca.ecaId')} type="number" value={formData.ecaId} onChange={(e) => setFormData({ ...formData, ecaId: e.target.value })} fullWidth /></Grid>
                 <Grid item xs={12}><TextField label={t('eca.achievements')} value={formData.achievement} onChange={(e) => setFormData({ ...formData, achievement: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12}><TextField label={t('eca.date')} type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
+                <Grid item xs={12}><YearSelectableDateField label={t('eca.date')} value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
                 <Grid item xs={12}><TextField label={t('eca.description')} multiline rows={2} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} fullWidth /></Grid>
               </>
             )}

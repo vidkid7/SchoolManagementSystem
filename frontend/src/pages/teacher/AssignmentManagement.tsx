@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 /**
  * Assignment Management Page
  * 
@@ -534,10 +535,9 @@ export const AssignmentManagement = () => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <TextField
+              <YearSelectableDateField
                 fullWidth
                 label={t('teacher.dueDate')}
-                type="date"
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>

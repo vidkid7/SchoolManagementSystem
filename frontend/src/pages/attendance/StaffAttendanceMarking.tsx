@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 /**
  * Staff Attendance Marking Page
  * 
@@ -159,9 +160,8 @@ export function StaffAttendanceMarking() {
         </Box>
 
         <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-          <TextField
+          <YearSelectableDateField
             label={t('attendance.date')}
-            type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
             InputLabelProps={{ shrink: true }}

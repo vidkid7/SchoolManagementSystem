@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box, Grid, Card, CardContent, Typography, Button, Divider, Avatar, List, ListItem,
@@ -1164,7 +1165,7 @@ const AccountantPortal: React.FC = () => {
               onChange={e => setInvoiceForm(p => ({ ...p, studentId: e.target.value }))} />
             <TextField label={`${t('finance.feeStructureId')} (${t('finance.optional')})`} type="number" fullWidth value={invoiceForm.feeStructureId} sx={TF}
               onChange={e => setInvoiceForm(p => ({ ...p, feeStructureId: e.target.value }))} />
-            <TextField label={`${t('finance.dueDate')} *`} type="date" fullWidth InputLabelProps={{ shrink: true }} value={invoiceForm.dueDate} sx={TF}
+            <YearSelectableDateField label={`${t('finance.dueDate')} *`} fullWidth InputLabelProps={{ shrink: true }} value={invoiceForm.dueDate} sx={TF}
               onChange={e => setInvoiceForm(p => ({ ...p, dueDate: e.target.value }))} />
             <TextField label={`${t('finance.description')} (${t('finance.optional')})`} fullWidth multiline rows={2} value={invoiceForm.description} sx={TF}
               onChange={e => setInvoiceForm(p => ({ ...p, description: e.target.value }))} />

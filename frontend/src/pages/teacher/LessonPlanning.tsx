@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 /**
  * Lesson Planning Page
  * 
@@ -450,10 +451,9 @@ export const LessonPlanning = () => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <TextField
+              <YearSelectableDateField
                 fullWidth
                 label={t('common.date')}
-                type="date"
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>

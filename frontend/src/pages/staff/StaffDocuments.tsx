@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 /**
  * Staff Documents Component
  * 
@@ -613,9 +614,8 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
               </FormControl>
             </Grid>
             <Grid item xs={12}>
-              <TextField
+              <YearSelectableDateField
                 label={t('staff.doc.expiryDateOptional')}
-                type="date"
                 fullWidth
                 value={uploadForm.expiryDate}
                 onChange={(e) => setUploadForm({ ...uploadForm, expiryDate: e.target.value })}
@@ -798,9 +798,8 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
                 </FormControl>
               </Grid>
               <Grid item xs={12}>
-                <TextField
+                <YearSelectableDateField
                   label={t('staff.doc.expiryDateOptional')}
-                  type="date"
                   fullWidth
                   value={editDialog.document.expiryDate ? editDialog.document.expiryDate.split('T')[0] : ''}
                   onChange={(e) => setEditDialog({ 

@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 /**
  * Invoice Generation Page
  * Create single or bulk invoices
@@ -258,9 +259,8 @@ export function InvoiceGeneration() {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <TextField
+              <YearSelectableDateField
                 label={t('finance.dueDate')}
-                type="date"
                 value={singleForm.dueDate}
                 onChange={(e) => setSingleForm({ ...singleForm, dueDate: e.target.value })}
                 required
@@ -357,9 +357,8 @@ export function InvoiceGeneration() {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <TextField
+              <YearSelectableDateField
                 label={t('finance.dueDate')}
-                type="date"
                 value={bulkForm.dueDate}
                 onChange={(e) => setBulkForm({ ...bulkForm, dueDate: e.target.value })}
                 required

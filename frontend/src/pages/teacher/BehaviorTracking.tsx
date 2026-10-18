@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 /**
  * Behavior Tracking - Record and monitor student behavior
  * For Class Teachers to track discipline and conduct
@@ -310,9 +311,8 @@ export function BehaviorTracking() {
               helperText={t('teacher.actionTakenHelper')}
             />
 
-            <TextField
+            <YearSelectableDateField
               label={t('common.date')}
-              type="date"
               value={formData.date}
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               required

@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 /**
  * Library Reports
  * Generate various library reports
@@ -216,9 +217,8 @@ export function LibraryReports() {
                 </TextField>
               </Grid>
               <Grid item xs={12} md={6}>
-                <TextField
+                <YearSelectableDateField
                   label={t('library.startDate')}
-                  type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   fullWidth
@@ -226,9 +226,8 @@ export function LibraryReports() {
                 />
               </Grid>
               <Grid item xs={12} md={6}>
-                <TextField
+                <YearSelectableDateField
                   label={t('library.endDate')}
-                  type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   fullWidth

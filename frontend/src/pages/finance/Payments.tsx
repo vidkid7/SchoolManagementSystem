@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 /**
  * Payments Management
  * Record payments, view history, process refunds
@@ -279,9 +280,8 @@ export function Payments() {
               fullWidth
               helperText={t('finance.onlinePayment')}
             />
-            <TextField
+            <YearSelectableDateField
               label={t('finance.paymentDate')}
-              type="date"
               value={formData.paymentDate}
               onChange={(e) => setFormData({ ...formData, paymentDate: e.target.value })}
               required

@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 /**
  * Attendance Reports Page
  * 
@@ -253,20 +254,18 @@ export function AttendanceReports() {
             </FormControl>
           </Grid>
           <Grid item xs={12} md={2}>
-            <TextField
+            <YearSelectableDateField
               fullWidth
               label={t('common.startDate')}
-              type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
           <Grid item xs={12} md={2}>
-            <TextField
+            <YearSelectableDateField
               fullWidth
               label={t('common.endDate')}
-              type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               InputLabelProps={{ shrink: true }}

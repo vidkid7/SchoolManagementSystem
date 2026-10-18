@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 /**
  * Bulk Add Students
  * Add multiple students at once using a form or import from Excel
@@ -530,9 +531,8 @@ export const BulkAdd = () => {
               />
             </Grid>
             <Grid item xs={12} md={4}>
-              <TextField
+              <YearSelectableDateField
                 fullWidth
-                type="date"
                 label={t('students.dateOfBirth') + ' (BS) *'}
                 value={student.dateOfBirthBS}
                 onChange={(e) => updateStudent(student.id, 'dateOfBirthBS', e.target.value)}
@@ -541,9 +541,8 @@ export const BulkAdd = () => {
               />
             </Grid>
             <Grid item xs={12} md={4}>
-              <TextField
+              <YearSelectableDateField
                 fullWidth
-                type="date"
                 label={t('students.dateOfBirth') + ' (AD) *'}
                 value={student.dateOfBirthAD}
                 onChange={(e) => updateStudent(student.id, 'dateOfBirthAD', e.target.value)}
@@ -724,9 +723,8 @@ export const BulkAdd = () => {
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={12} md={4}>
-              <TextField
+              <YearSelectableDateField
                 fullWidth
-                type="date"
                 label={t('students.admissionDate') + ' *'}
                 value={student.admissionDate}
                 onChange={(e) => updateStudent(student.id, 'admissionDate', e.target.value)}

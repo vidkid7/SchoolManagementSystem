@@ -1,3 +1,4 @@
+import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box, Grid, Card, CardContent, Typography, Button, Divider, List, ListItem,
@@ -291,8 +292,8 @@ const NonTeachingStaffPortal: React.FC = () => {
                 <MenuItem value="other">{t('portal.other')}</MenuItem>
               </Select>
             </FormControl>
-            <TextField fullWidth label={t('common.startDate')} type="date" InputLabelProps={{ shrink: true }} value={leaveForm.startDate} onChange={(e) => setLeaveForm(prev => ({ ...prev, startDate: e.target.value }))} sx={{ mb: 2 }} />
-            <TextField fullWidth label={t('common.endDate')} type="date" InputLabelProps={{ shrink: true }} value={leaveForm.endDate} onChange={(e) => setLeaveForm(prev => ({ ...prev, endDate: e.target.value }))} sx={{ mb: 2 }} />
+            <YearSelectableDateField fullWidth label={t('common.startDate')} InputLabelProps={{ shrink: true }} value={leaveForm.startDate} onChange={(e) => setLeaveForm(prev => ({ ...prev, startDate: e.target.value }))} sx={{ mb: 2 }} />
+            <YearSelectableDateField fullWidth label={t('common.endDate')} InputLabelProps={{ shrink: true }} value={leaveForm.endDate} onChange={(e) => setLeaveForm(prev => ({ ...prev, endDate: e.target.value }))} sx={{ mb: 2 }} />
             <TextField fullWidth label={t('portal.reason')} multiline rows={3} value={leaveForm.reason} onChange={(e) => setLeaveForm(prev => ({ ...prev, reason: e.target.value }))} />
           </DialogContent>
           <DialogActions>
