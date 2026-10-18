@@ -270,8 +270,12 @@ export const Announcements: React.FC = () => {
           {!isStudent && !isParent && (
             <Grid item xs={12} md={4}>
               <FormControl fullWidth size="medium">
-                <InputLabel>{t('communication.filterByAudience')}</InputLabel>
+                <InputLabel id="announcement-audience-filter-label">
+                  {t('communication.filterByAudience')}
+                </InputLabel>
                 <Select
+                  labelId="announcement-audience-filter-label"
+                  id="announcement-audience-filter"
                   value={filterAudience}
                   label={t('communication.filterByAudience')}
                   onChange={(e) => setFilterAudience(e.target.value)}
