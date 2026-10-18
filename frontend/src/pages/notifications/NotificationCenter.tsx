@@ -58,6 +58,7 @@ import {
 import apiClient from '../../services/apiClient';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { useTranslation } from 'react-i18next';
+import { YearSelectableDateTimeField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -397,13 +398,11 @@ export const NotificationCenter = () => {
                     inputProps={{ maxLength: 160 }}
                     helperText={`${smsForm.message.length}/160 characters`}
                   />
-                  <TextField
+                  <YearSelectableDateTimeField
                     label={t('notifications.scheduleTimeOptional')}
-                    type="datetime-local"
                     fullWidth
                     value={smsForm.scheduleTime}
                     onChange={(e) => setSmsForm({ ...smsForm, scheduleTime: e.target.value })}
-                    InputLabelProps={{ shrink: true }}
                   />
                   <Box sx={{ display: 'flex', gap: 2 }}>
                     <Button
@@ -484,13 +483,11 @@ export const NotificationCenter = () => {
                 value={emailForm.body}
                 onChange={(e) => setEmailForm({ ...emailForm, body: e.target.value })}
               />
-              <TextField
+              <YearSelectableDateTimeField
                 label={t('notifications.scheduleTimeOptional')}
-                type="datetime-local"
                 fullWidth
                 value={emailForm.scheduleTime}
                 onChange={(e) => setEmailForm({ ...emailForm, scheduleTime: e.target.value })}
-                InputLabelProps={{ shrink: true }}
               />
               <Button
                 variant="contained" sx={S.BTN_PRIMARY}
@@ -542,13 +539,11 @@ export const NotificationCenter = () => {
                   <MenuItem value="admin">{t('notifications.admins')}</MenuItem>
                 </Select>
               </FormControl>
-              <TextField
+              <YearSelectableDateTimeField
                 label={t('notifications.scheduleTimeOptional')}
-                type="datetime-local"
                 fullWidth
                 value={pushForm.scheduleTime}
                 onChange={(e) => setPushForm({ ...pushForm, scheduleTime: e.target.value })}
-                InputLabelProps={{ shrink: true }}
               />
               <Button
                 variant="contained" sx={S.BTN_PRIMARY}

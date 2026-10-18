@@ -32,6 +32,7 @@ import {
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import api from '../../config/api';
 import { useTranslation } from 'react-i18next';
+import { YearSelectableDateTimeField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 
 interface AdmissionDetail {
   admissionId: number;
@@ -492,14 +493,12 @@ export function AdmissionDetail() {
         </DialogTitle>
         <DialogContent>
           {admission.status === 'applied' ? (
-            <TextField
+            <YearSelectableDateTimeField
               fullWidth
-              type="datetime-local"
               required
               label={t('admissions.testDateAndTime')}
               value={testDate}
               onChange={(e) => setTestDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
               sx={{ mt: 2 }}
             />
           ) : (
@@ -553,14 +552,12 @@ export function AdmissionDetail() {
         </DialogTitle>
         <DialogContent>
           {admission.status === 'applied' || admission.status === 'tested' ? (
-            <TextField
+            <YearSelectableDateTimeField
               fullWidth
-              type="datetime-local"
               required
               label={t('admissions.interviewDateAndTime')}
               value={interviewDate}
               onChange={(e) => setInterviewDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
               sx={{ mt: 2 }}
             />
           ) : (
