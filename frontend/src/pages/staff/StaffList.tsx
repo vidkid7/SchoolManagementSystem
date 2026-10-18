@@ -326,7 +326,7 @@ export const StaffList = () => {
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
           <FilterIcon sx={{ color: 'primary.main', fontSize: 22 }} />
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>
+          <Typography component="h5" variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>
             {t('common.filters')}
           </Typography>
         </Box>
@@ -360,9 +360,10 @@ export const StaffList = () => {
           />
           
           <FormControl size="small" sx={{ minWidth: 160 }}>
-            <InputLabel>{t('staff.department')}</InputLabel>
+            <InputLabel id="staff-department-filter-label">{t('staff.department')}</InputLabel>
             <Select
               value={departmentFilter}
+              labelId="staff-department-filter-label"
               label={t('staff.department')}
               onChange={(e) => setDepartmentFilter(e.target.value)}
               sx={{ borderRadius: 2.5 }}
@@ -375,9 +376,10 @@ export const StaffList = () => {
           </FormControl>
 
           <FormControl size="small" sx={{ minWidth: 160 }}>
-            <InputLabel>{t('staff.position')}</InputLabel>
+            <InputLabel id="staff-position-filter-label">{t('staff.position')}</InputLabel>
             <Select
               value={positionFilter}
+              labelId="staff-position-filter-label"
               label={t('staff.position')}
               onChange={(e) => setPositionFilter(e.target.value)}
               sx={{ borderRadius: 2.5 }}
@@ -393,9 +395,10 @@ export const StaffList = () => {
           </FormControl>
 
           <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel>{t('staff.status')}</InputLabel>
+            <InputLabel id="staff-status-filter-label">{t('staff.status')}</InputLabel>
             <Select
               value={statusFilter}
+              labelId="staff-status-filter-label"
               label={t('staff.status')}
               onChange={(e) => setStatusFilter(e.target.value)}
               sx={{ borderRadius: 2.5 }}
