@@ -16,7 +16,7 @@
  * Requirements: 31.1, 31.2, 31.5, 31.7
  */
 
-import { useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -126,6 +126,7 @@ const Calendar = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [currentAcademicYear, setCurrentAcademicYear] = useState<string>('');
   const [saveLoading, setSaveLoading] = useState(false);
+  const dialogOpenerRef = useRef<HTMLElement | null>(null);
 
   // Event form state
   const [eventForm, setEventForm] = useState({
@@ -552,6 +553,7 @@ const Calendar = () => {
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
+                    dialogOpenerRef.current = e.currentTarget;
                     setSelectedEvent(event);
                     setShowEventDialog(true);
                   }}
@@ -680,6 +682,7 @@ const Calendar = () => {
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
+                  dialogOpenerRef.current = e.currentTarget;
                   setSelectedEvent(event);
                   setShowEventDialog(true);
                 }}
@@ -747,7 +750,8 @@ const Calendar = () => {
                     cursor: 'pointer',
                     '&:hover': { boxShadow: 3 },
                   }}
-                  onClick={() => {
+                  onClick={(e) => {
+                    dialogOpenerRef.current = e.currentTarget;
                     setSelectedEvent(event);
                     setShowEventDialog(true);
                   }}
@@ -923,7 +927,10 @@ const Calendar = () => {
             <Button
               variant="contained" sx={S.BTN_PRIMARY}
               startIcon={<AddIcon />}
-              onClick={handleOpenAddEvent}
+              onClick={(event) => {
+                dialogOpenerRef.current = event.currentTarget;
+                handleOpenAddEvent();
+              }}
             >
               {t('calendar.addEvent')}
             </Button>
@@ -970,8 +977,17 @@ const Calendar = () => {
         onClose={() => setShowEventDialog(false)}
         maxWidth="md"
         fullWidth
-        disableEnforceFocus
-        disableAutoFocus
+        disableRestoreFocus
+        TransitionProps={{
+          onExited: () => {
+            window.requestAnimationFrame(() => {
+              window.requestAnimationFrame(() => {
+                const opener = dialogOpenerRef.current;
+                if (opener?.isConnected) opener.focus();
+              });
+            });
+          },
+        }}
       >
         <DialogTitle>
           {selectedEvent ? t('calendar.eventDetails') : t('calendar.addNewEvent')}
@@ -1025,6 +1041,7 @@ const Calendar = () => {
                   <TextField
                     fullWidth
                     required
+                    autoFocus
                     label={t('calendar.form.titleEn')}
                     value={eventForm.title}
                     onChange={(e) => handleEventFormChange('title', e.target.value)}

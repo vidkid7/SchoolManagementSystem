@@ -145,6 +145,21 @@ describe('Calendar Component', () => {
     expect(screen.getByText('Add Event')).toBeInTheDocument();
   });
 
+  it('moves keyboard focus into the Add Event dialog when it opens', async () => {
+    mockedAxios.get.mockResolvedValue({
+      data: { success: true, data: [] },
+    });
+
+    renderCalendar();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add Event' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Add New Event' });
+
+    await waitFor(() => {
+      expect(dialog).toContainElement(document.activeElement as HTMLElement);
+    });
+  });
+
   it('should fetch events on mount', async () => {
     const mockEvents = [
       {
