@@ -118,6 +118,29 @@ describe('FeeStructure Repository', () => {
       expect(found!.feeComponents).toHaveLength(1);
     });
 
+    it('repairs a stale total from persisted components when loading one structure', async () => {
+      const created = await feeStructureRepository.create({
+        name: 'Stale Total Structure',
+        applicableClasses: [1],
+        applicableShifts: ['morning'],
+        academicYearId: testAcademicYear.academicYearId,
+        feeComponents: [{
+          name: 'Tuition',
+          type: FeeComponentType.MONTHLY,
+          amount: 100,
+          frequency: FeeFrequency.MONTHLY,
+          isMandatory: true,
+        }],
+      });
+      await FeeStructure.update({ totalAmount: 0 }, { where: { feeStructureId: created.feeStructureId } });
+
+      const found = await feeStructureRepository.findById(created.feeStructureId);
+      const persisted = await FeeStructure.findByPk(created.feeStructureId);
+
+      expect(Number(found!.totalAmount)).toBe(100);
+      expect(Number(persisted!.totalAmount)).toBe(100);
+    });
+
     it('should return null for non-existent id', async () => {
       const found = await feeStructureRepository.findById(99999);
       expect(found).toBeNull();
@@ -155,6 +178,30 @@ describe('FeeStructure Repository', () => {
     it('should find all fee structures', async () => {
       const structures = await feeStructureRepository.findAll();
       expect(structures.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('repairs stale totals for list results from their persisted components', async () => {
+      const created = await feeStructureRepository.create({
+        name: 'List Stale Total Structure',
+        applicableClasses: [1],
+        applicableShifts: ['morning'],
+        academicYearId: testAcademicYear.academicYearId,
+        feeComponents: [{
+          name: 'Tuition',
+          type: FeeComponentType.MONTHLY,
+          amount: 100,
+          frequency: FeeFrequency.MONTHLY,
+          isMandatory: true,
+        }],
+      });
+      await FeeStructure.update({ totalAmount: 0 }, { where: { feeStructureId: created.feeStructureId } });
+
+      const structures = await feeStructureRepository.findAll();
+      const found = structures.find((structure) => structure.feeStructureId === created.feeStructureId);
+      const persisted = await FeeStructure.findByPk(created.feeStructureId);
+
+      expect(Number(found!.totalAmount)).toBe(100);
+      expect(Number(persisted!.totalAmount)).toBe(100);
     });
 
     it('should filter by academic year', async () => {

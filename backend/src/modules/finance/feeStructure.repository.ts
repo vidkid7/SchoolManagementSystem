@@ -41,6 +41,18 @@ export interface FeeStructureFilters {
 }
 
 class FeeStructureRepository {
+  private async repairTotalAmount(feeStructure: FeeStructure, transaction?: Transaction): Promise<FeeStructure> {
+    const calculatedTotal = await feeStructure.calculateTotalAmount();
+    if (Number(feeStructure.totalAmount) !== calculatedTotal) {
+      await FeeStructure.update(
+        { totalAmount: calculatedTotal },
+        { where: { feeStructureId: feeStructure.feeStructureId }, transaction }
+      );
+      feeStructure.setDataValue('totalAmount', calculatedTotal);
+    }
+    return feeStructure;
+  }
+
   /**
    * Create a new fee structure with components
    */
@@ -84,7 +96,7 @@ class FeeStructureRepository {
     }
 
     // Reload with components
-    const reloaded = await this.findById(feeStructure.feeStructureId);
+    const reloaded = await this.findById(feeStructure.feeStructureId, transaction);
     if (!reloaded) {
       throw new Error('Failed to reload fee structure after creation');
     }
@@ -94,15 +106,17 @@ class FeeStructureRepository {
   /**
    * Find fee structure by ID
    */
-  async findById(id: number): Promise<FeeStructure | null> {
-    return FeeStructure.findByPk(id, {
+  async findById(id: number, transaction?: Transaction): Promise<FeeStructure | null> {
+    const feeStructure = await FeeStructure.findByPk(id, {
       include: [
         {
           model: FeeComponent,
           as: 'feeComponents'
         }
-      ]
+      ],
+      transaction,
     });
+    return feeStructure ? this.repairTotalAmount(feeStructure, transaction) : null;
   }
 
   /**
@@ -132,7 +146,7 @@ class FeeStructureRepository {
       };
     }
 
-    return FeeStructure.findAll({
+    const feeStructures = await FeeStructure.findAll({
       where,
       include: [
         {
@@ -142,6 +156,7 @@ class FeeStructureRepository {
       ],
       order: [['createdAt', 'DESC']]
     });
+    return Promise.all(feeStructures.map((feeStructure) => this.repairTotalAmount(feeStructure)));
   }
 
   /**
