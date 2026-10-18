@@ -11,7 +11,7 @@ interface DashboardDonutChartProps {
 export function DashboardDonutChart({ data, nameKey, valueKey, ariaLabel }: DashboardDonutChartProps) {
   return (
     <div role="img" aria-label={ariaLabel}>
-      <ResponsiveContainer width="100%" height={220}>
+      <ResponsiveContainer aria-hidden="true" width="100%" height={220}>
         <PieChart>
           <Pie data={data} cx="50%" cy="50%" innerRadius={54} outerRadius={82} paddingAngle={4} dataKey={valueKey} nameKey={nameKey}>
             {data.map((_, index) => (
