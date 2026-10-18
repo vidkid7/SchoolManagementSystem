@@ -169,6 +169,39 @@ describe('DocumentManagement Page', () => {
       });
     });
 
+    it('should update document metadata from the row actions menu', async () => {
+      const documents = mockDocuments.map((document) => ({ ...document }));
+      (apiClient.get as jest.Mock).mockImplementation(() => Promise.resolve({
+        data: { success: true, data: documents, meta: { total: documents.length } },
+      }));
+      (apiClient.put as jest.Mock).mockImplementation(async (_url: string, changes: Partial<typeof documents[number]>) => {
+        documents[0] = { ...documents[0], ...changes };
+        return { data: { success: true, data: documents[0] } };
+      });
+
+      renderComponent();
+      const row = await screen.findByRole('row', { name: /Sample Document/ });
+      fireEvent.click(within(row).getByRole('button', { name: 'Actions' }));
+      fireEvent.click(await screen.findByRole('menuitem', { name: 'Edit' }));
+
+      const dialog = await screen.findByRole('dialog', { name: 'Edit Document' });
+      fireEvent.change(within(dialog).getByRole('textbox', { name: 'Document Name' }), {
+        target: { value: 'Updated Sample Document' },
+      });
+      fireEvent.change(within(dialog).getByRole('textbox', { name: 'Description' }), {
+        target: { value: 'Updated document details' },
+      });
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Save Changes' }));
+
+      await waitFor(() => {
+        expect(apiClient.put).toHaveBeenCalledWith('/documents/1', expect.objectContaining({
+          name: 'Updated Sample Document',
+          description: 'Updated document details',
+        }));
+        expect(screen.getByText('Updated Sample Document')).toBeInTheDocument();
+      });
+    });
+
     it('should fetch and render an authenticated PDF preview and release it on close', async () => {
       const previewBlob = new Blob(['%PDF-1.4 synthetic QA preview'], { type: 'application/pdf' });
       (global.URL.createObjectURL as jest.Mock).mockReturnValue('blob:qa-preview');
@@ -311,7 +344,7 @@ describe('DocumentManagement Page', () => {
       fireEvent.click(cancelButton);
       
       await waitFor(() => {
-        expect(screen.queryByRole('button', { name: 'Click to select a file' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
       });
     });
 

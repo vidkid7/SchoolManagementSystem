@@ -151,6 +151,13 @@ interface UploadFormData {
   file: File | null;
 }
 
+interface DocumentEditFormData {
+  name: string;
+  description: string;
+  category: string;
+  accessLevel: string;
+}
+
 // Interface for tab panel props
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -244,7 +251,14 @@ export const DocumentManagement = () => {
     tags: [],
     file: null,
   });
+  const [editForm, setEditForm] = useState<DocumentEditFormData>({
+    name: '',
+    description: '',
+    category: 'other',
+    accessLevel: 'private',
+  });
   const [uploading, setUploading] = useState(false);
+  const [updatingDocument, setUpdatingDocument] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [tagInput, setTagInput] = useState('');
 
@@ -369,6 +383,43 @@ export const DocumentManagement = () => {
     } finally {
       setUploading(false);
       setUploadProgress(0);
+    }
+  };
+
+  const openEditDialog = (document: Document) => {
+    setSelectedDocument(document);
+    setEditForm({
+      name: document.name,
+      description: document.description || '',
+      category: document.category,
+      accessLevel: document.accessLevel,
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateDocument = async () => {
+    if (!selectedDocument || !editForm.name.trim()) return;
+
+    try {
+      setUpdatingDocument(true);
+      setError(null);
+      const response = await apiClient.put(`/documents/${selectedDocument.documentId}`, {
+        name: editForm.name.trim(),
+        description: editForm.description,
+        category: editForm.category,
+        accessLevel: editForm.accessLevel,
+      });
+
+      if (response.data.success) {
+        setSelectedDocument(response.data.data);
+        setEditDialogOpen(false);
+        setSuccess(t('documents.documentUpdatedSuccessfully'));
+        fetchDocuments();
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || t('documents.failedToUpdateDocument'));
+    } finally {
+      setUpdatingDocument(false);
     }
   };
 
@@ -746,6 +797,7 @@ export const DocumentManagement = () => {
                       </Tooltip>
                       <IconButton
                         size="small"
+                        aria-label={t('documents.actions')}
                         onClick={(e) => handleMenuOpen(e, doc)}
                       >
                         <MoreIcon />
@@ -790,8 +842,7 @@ export const DocumentManagement = () => {
             <Divider />
             <MenuItem
               onClick={() => {
-                setSelectedDocument(menuDocument);
-                setEditDialogOpen(true);
+                openEditDialog(menuDocument);
                 handleMenuClose();
               }}
             >
@@ -979,6 +1030,79 @@ export const DocumentManagement = () => {
             disabled={!uploadForm.file || !uploadForm.name || uploading}
           >
             {t('documents.upload')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Document Dialog */}
+      <Dialog
+        open={editDialogOpen}
+        onClose={() => !updatingDocument && setEditDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{t('documents.editDocument')}</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            required
+            fullWidth
+            margin="normal"
+            label={t('documents.documentName')}
+            value={editForm.name}
+            onChange={(event) => setEditForm((previous) => ({ ...previous, name: event.target.value }))}
+          />
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            margin="normal"
+            label={t('documents.description')}
+            value={editForm.description}
+            onChange={(event) => setEditForm((previous) => ({ ...previous, description: event.target.value }))}
+          />
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="document-edit-category-label">{t('documents.category')}</InputLabel>
+            <Select
+              labelId="document-edit-category-label"
+              value={editForm.category}
+              label={t('documents.category')}
+              onChange={(event) => setEditForm((previous) => ({ ...previous, category: event.target.value }))}
+            >
+              {DOCUMENT_CATEGORIES.map((category) => (
+                <MenuItem key={category.value} value={category.value}>
+                  {t(`documents.${category.value}`, category.label)}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="document-edit-access-level-label">{t('documents.accessLevel')}</InputLabel>
+            <Select
+              labelId="document-edit-access-level-label"
+              value={editForm.accessLevel}
+              label={t('documents.accessLevel')}
+              onChange={(event) => setEditForm((previous) => ({ ...previous, accessLevel: event.target.value }))}
+            >
+              {ACCESS_LEVELS.map((level) => (
+                <MenuItem key={level.value} value={level.value}>
+                  {t(`documents.${level.value}`, level.label)}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditDialogOpen(false)} disabled={updatingDocument}>
+            {t('documents.cancel')}
+          </Button>
+          <Button
+            variant="contained"
+            sx={S.BTN_PRIMARY}
+            onClick={handleUpdateDocument}
+            disabled={!editForm.name.trim() || updatingDocument}
+          >
+            {updatingDocument ? <CircularProgress size={20} color="inherit" /> : t('documents.saveChanges')}
           </Button>
         </DialogActions>
       </Dialog>
