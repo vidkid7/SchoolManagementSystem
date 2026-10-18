@@ -648,6 +648,10 @@
     "roomNumberOptional": "Room Number (Optional)",
     "roomNumberPlaceholder": "e.g., 101, Lab-A",
     "savePeriod": "Save Period",
+    "timetableValidation": {
+      "subjectRequired": "Select a subject.",
+      "endAfterStart": "End time must be later than start time."
+    },
     "monday": "Monday",
     "tuesday": "Tuesday",
     "wednesday": "Wednesday",

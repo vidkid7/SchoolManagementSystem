@@ -648,6 +648,10 @@
     "roomNumberOptional": "कोठा नम्बर (ऐच्छिक)",
     "roomNumberPlaceholder": "जस्तै, १०१, ल्याब-A",
     "savePeriod": "अवधि बचत गर्नुहोस्",
+    "timetableValidation": {
+      "subjectRequired": "विषय चयन गर्नुहोस्।",
+      "endAfterStart": "समाप्ति समय सुरु समयभन्दा पछि हुनुपर्छ।"
+    },
     "monday": "सोमबार",
     "tuesday": "मंगलबार",
     "wednesday": "बुधबार",

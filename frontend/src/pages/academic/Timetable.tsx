@@ -12,6 +12,7 @@ import {
   Button,
   Grid,
   FormControl,
+  FormHelperText,
   InputLabel,
   Select,
   MenuItem,
@@ -39,6 +40,8 @@ import {
 } from '@mui/icons-material';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import api from '../../config/api';
+import { useCurrentAcademicYear } from '../../hooks/useCurrentAcademicYear';
+import { TimetablePeriodErrors, validateTimetablePeriod } from './timetablePeriodValidation';
 
 import { useTranslation } from 'react-i18next';
 
@@ -93,6 +96,7 @@ export const Timetable = () => {
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const { t } = useTranslation();
+  const { currentYear } = useCurrentAcademicYear();
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -101,6 +105,7 @@ export const Timetable = () => {
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [error, setError] = useState('');
+  const [periodErrors, setPeriodErrors] = useState<TimetablePeriodErrors>({});
   
   const [periodForm, setPeriodForm] = useState({
     dayOfWeek: 0,
@@ -178,6 +183,8 @@ export const Timetable = () => {
   };
 
   const handleOpenDialog = (dayIndex: number, periodNumber: number) => {
+    setError('');
+    setPeriodErrors({});
     const period = PERIODS.find(p => p.number === periodNumber);
     // Convert dayIndex to dayOfWeek (0=Sunday, 1=Monday, etc.)
     // DAYS array: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
@@ -206,6 +213,7 @@ export const Timetable = () => {
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
+    setPeriodErrors({});
     setPeriodForm({
       dayOfWeek: 0,
       periodNumber: 1,
@@ -220,6 +228,14 @@ export const Timetable = () => {
   const handleSavePeriod = async () => {
     if (!selectedClass) return;
 
+    const validationErrors = validateTimetablePeriod(periodForm);
+    setPeriodErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) return;
+    if (!currentYear?.academicYearId) {
+      setError(t('academic.noAcademicYearAvailable'));
+      return;
+    }
+
     try {
       // First, create or get timetable for the day
       const timetable = timetables.find(t => t.dayOfWeek === periodForm.dayOfWeek);
@@ -233,7 +249,7 @@ export const Timetable = () => {
       if (!timetableId) {
         const timetablePayload = {
           classId: selectedClass,
-          academicYearId: 1, // Should get current academic year
+          academicYearId: currentYear.academicYearId,
           dayOfWeek: periodForm.dayOfWeek,
         };
         console.log('Creating timetable with payload:', timetablePayload);
@@ -330,8 +346,10 @@ export const Timetable = () => {
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
-              <InputLabel>{t('academic.selectClass')}</InputLabel>
+              <InputLabel id="timetable-class-label">{t('academic.selectClass')}</InputLabel>
               <Select
+                id="timetable-class"
+                labelId="timetable-class-label"
                 value={selectedClass || ''}
                 label={t('academic.selectClass')}
                 onChange={(e) => setSelectedClass(Number(e.target.value))}
@@ -423,7 +441,11 @@ export const Timetable = () => {
                               )}
                             </Box>
                           ) : (
-                            <IconButton size="small" color="primary">
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              aria-label={t('academic.addPeriodTitle', { day: getDayName(dayIndex), number: period.number })}
+                            >
                               <AddIcon fontSize="small" />
                             </IconButton>
                           )}
@@ -455,12 +477,17 @@ export const Timetable = () => {
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>{t('common.subject')}</InputLabel>
+              <FormControl fullWidth required error={Boolean(periodErrors.subjectId)}>
+                <InputLabel id="timetable-subject-label">{t('common.subject')}</InputLabel>
                 <Select
+                  id="timetable-subject"
+                  labelId="timetable-subject-label"
                   value={periodForm.subjectId}
                   label={t('common.subject')}
-                  onChange={(e) => setPeriodForm({ ...periodForm, subjectId: e.target.value })}
+                  onChange={(e) => {
+                    setPeriodForm({ ...periodForm, subjectId: e.target.value });
+                    setPeriodErrors((current) => ({ ...current, subjectId: undefined }));
+                  }}
                 >
                   {subjects.map((subject) => (
                     <MenuItem key={subject.subjectId} value={subject.subjectId}>
@@ -468,12 +495,17 @@ export const Timetable = () => {
                     </MenuItem>
                   ))}
                 </Select>
+                {periodErrors.subjectId && (
+                  <FormHelperText>{t(`academic.timetableValidation.${periodErrors.subjectId}`)}</FormHelperText>
+                )}
               </FormControl>
             </Grid>
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>{t('academic.teacherOptional')}</InputLabel>
+                <InputLabel id="timetable-teacher-label">{t('academic.teacherOptional')}</InputLabel>
                 <Select
+                  id="timetable-teacher"
+                  labelId="timetable-teacher-label"
                   value={periodForm.teacherId}
                   label={t('academic.teacherOptional')}
                   onChange={(e) => setPeriodForm({ ...periodForm, teacherId: e.target.value })}
@@ -503,7 +535,14 @@ export const Timetable = () => {
                 type="time"
                 fullWidth
                 value={periodForm.endTime}
-                onChange={(e) => setPeriodForm({ ...periodForm, endTime: e.target.value })}
+                error={Boolean(periodErrors.endTime)}
+                helperText={periodErrors.endTime
+                  ? t(`academic.timetableValidation.${periodErrors.endTime}`)
+                  : undefined}
+                onChange={(e) => {
+                  setPeriodForm({ ...periodForm, endTime: e.target.value });
+                  setPeriodErrors((current) => ({ ...current, endTime: undefined }));
+                }}
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
