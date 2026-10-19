@@ -485,6 +485,7 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
 
             <Route element={<ProtectedRoute allowedRoles={[ADMIN, LIBRARIAN, CLASS_TEACHER, SUBJECT_TEACHER, DEPT_HEAD, STUDENT, PARENT]} />}>
               <Route element={<DashboardLayout />}>
+                <Route path="library/books/new" element={<BookCatalog initialAddDialogOpen />} />
                 <Route path="library/books" element={<BookCatalog />} />
                 <Route path="library/catalog" element={<BookCatalog />} />
                 <Route path="library/categories" element={<LibraryCategories />} />

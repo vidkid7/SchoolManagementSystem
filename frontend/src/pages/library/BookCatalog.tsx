@@ -73,7 +73,7 @@ const normalizeBook = (book: any): Book => ({
   price: book?.price,
 });
 
-export function BookCatalog() {
+export function BookCatalog({ initialAddDialogOpen = false }: { initialAddDialogOpen?: boolean } = {}) {
   const { t } = useTranslation();
   const theme = useTheme();
   const S = useAdminStyles(theme);
@@ -84,7 +84,7 @@ export function BookCatalog() {
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [openDialog, setOpenDialog] = useState(false);
+  const [openDialog, setOpenDialog] = useState(initialAddDialogOpen);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
