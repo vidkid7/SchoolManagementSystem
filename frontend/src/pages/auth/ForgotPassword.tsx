@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, Button, TextField, Typography, Alert, CircularProgress } from '@mui/material';
@@ -11,6 +11,10 @@ export function ForgotPassword() {
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
+
+  useEffect(() => {
+    dispatch(clearError());
+  }, [dispatch]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
