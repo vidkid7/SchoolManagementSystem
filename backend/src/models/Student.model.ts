@@ -46,6 +46,8 @@ export interface StudentAttributes {
   // Contact Information
   addressEn: string;
   addressNp?: string;
+  city?: string;
+  district?: string;
   phone?: string;
   email?: string;
   
@@ -88,7 +90,7 @@ export interface StudentAttributes {
 export interface StudentCreationAttributes extends Optional<StudentAttributes,
   'studentId' | 'userId' | 'symbolNumber' | 'nebRegistrationNumber' | 'middleNameEn' | 
   'firstNameNp' | 'middleNameNp' | 'lastNameNp' | 'bloodGroup' | 'addressNp' | 'phone' | 
-  'email' | 'fatherCitizenshipNo' | 'motherCitizenshipNo' | 'localGuardianName' | 
+  'email' | 'city' | 'district' | 'fatherCitizenshipNo' | 'motherCitizenshipNo' | 'localGuardianName' |
   'localGuardianPhone' | 'localGuardianRelation' | 'currentClassId' | 'rollNumber' | 
   'previousSchool' | 'allergies' | 'medicalConditions' | 'photoUrl' | 'createdAt' | 
   'updatedAt' | 'deletedAt'> {}
@@ -120,6 +122,8 @@ class Student extends Model<StudentAttributes, StudentCreationAttributes> implem
   // Contact Information
   declare addressEn: string;
   declare addressNp?: string;
+  declare city?: string;
+  declare district?: string;
   declare phone?: string;
   declare email?: string;
   
@@ -327,6 +331,14 @@ Student.init(
       type: DataTypes.TEXT,
       allowNull: true,
       field: 'address_np'
+    },
+    city: {
+      type: DataTypes.STRING(100),
+      allowNull: true
+    },
+    district: {
+      type: DataTypes.STRING(100),
+      allowNull: true
     },
     phone: {
       type: DataTypes.STRING(20),

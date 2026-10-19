@@ -63,6 +63,7 @@ import * as ensureStudentCVTable from '../migrations/20261019000002-ensure-stude
 import * as createLibraryCategoriesTable from '../migrations/20261019000003-create-library-categories-table';
 import * as ensureRefundsTable from '../migrations/20261019000004-ensure-refunds-table';
 import * as addInvoiceRemarks from '../migrations/20261019000005-add-invoice-remarks';
+import * as addStudentCityDistrict from '../migrations/20261019000006-add-student-city-district';
 
 /**
  * Migration Runner
@@ -362,6 +363,11 @@ const migrations: Migration[] = [
     name: '20261019000005-add-invoice-remarks',
     up: addInvoiceRemarks.up,
     down: addInvoiceRemarks.down
+  },
+  {
+    name: '20261019000006-add-student-city-district',
+    up: addStudentCityDistrict.up,
+    down: addStudentCityDistrict.down
   }
 ];
 

@@ -36,6 +36,8 @@ export const createStudentSchema = Joi.object({
   addressEn: Joi.string().trim().min(1).max(255).required()
     .messages({ 'any.required': 'Address (English) is required' }),
   addressNp: Joi.string().trim().max(255).allow('', null).optional(),
+  city: Joi.string().trim().max(100).allow('', null).optional(),
+  district: Joi.string().trim().max(100).allow('', null).optional(),
   phone: Joi.string().trim().pattern(/^(\+977)?[0-9]{7,10}$/).allow('', null).optional()
     .messages({ 'string.pattern.base': 'Invalid phone number format' }),
   email: Joi.string().trim().email().allow('', null).optional(),
@@ -91,6 +93,8 @@ export const updateStudentSchema = Joi.object({
   bloodGroup: Joi.string().valid(...BLOOD_GROUPS).allow('', null).optional(),
   addressEn: Joi.string().trim().min(1).max(255).optional(),
   addressNp: Joi.string().trim().max(255).allow('', null).optional(),
+  city: Joi.string().trim().max(100).allow('', null).optional(),
+  district: Joi.string().trim().max(100).allow('', null).optional(),
   phone: Joi.string().trim().pattern(/^(\+977)?[0-9]{7,10}$/).allow('', null).optional(),
   email: Joi.string().trim().email().allow('', null).optional(),
   fatherName: Joi.string().trim().min(1).max(100).optional(),
