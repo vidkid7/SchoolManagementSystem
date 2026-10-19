@@ -302,6 +302,7 @@ export const Login = () => {
 
       {/* Right Side - Login Form */}
       <Box
+        component="main"
         sx={{
           flex: 1,
           display: 'flex',
@@ -515,6 +516,7 @@ export const Login = () => {
                       <InputAdornment position="end">
                         <IconButton
                           onClick={() => setShowPassword(!showPassword)}
+                          aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                           edge="end"
                           disabled={isLoading}
                           sx={{ opacity: 0.7, '&:hover': { opacity: 1 } }}

@@ -139,6 +139,8 @@
     "confirmPassword": "पासवर्ड पुष्टि गर्नुहोस्",
     "welcomeBack": "फेरि स्वागत छ",
     "signInToContinue": "आफ्नो ड्यासबोर्डमा जारी राख्न साइन इन गर्नुहोस्",
+    "showPassword": "पासवर्ड देखाउनुहोस्",
+    "hidePassword": "पासवर्ड लुकाउनुहोस्",
     "poweredBy": "Nepex Creation द्वारा संचालित"
   },
   "app": {

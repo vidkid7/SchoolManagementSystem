@@ -139,6 +139,8 @@
     "confirmPassword": "Confirm Password",
     "welcomeBack": "Welcome Back",
     "signInToContinue": "Sign in to continue to your dashboard",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "poweredBy": "Powered by Nepex Creation"
   },
   "app": {
