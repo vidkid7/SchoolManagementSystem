@@ -117,6 +117,7 @@ export function BookCirculation() {
   // Reservations
   const [reservations, setReservations] = useState<any[]>([]);
   const [reservationBookId, setReservationBookId] = useState('');
+  const [selectedReservationBook, setSelectedReservationBook] = useState<BookOption | null>(null);
   const [reservationBooks, setReservationBooks] = useState<BookOption[]>([]);
   const [reservationBookSearch, setReservationBookSearch] = useState('');
   const [reservationsLoading, setReservationsLoading] = useState(false);
@@ -642,17 +643,21 @@ export function BookCirculation() {
             <Autocomplete
               size="small"
               options={reservationBooks}
-              value={reservationBooks.find((book) => book.bookId === Number(reservationBookId)) ?? null}
+              value={selectedReservationBook}
               inputValue={reservationBookSearch}
               loading={reserveBooksLoading}
               getOptionLabel={(book) => `${book.title} (${book.accessionNumber})`}
               isOptionEqualToValue={(option, value) => option.bookId === value.bookId}
               onInputChange={(_, value, reason) => {
                 setReservationBookSearch(value);
-                if (reason === 'input' || reason === 'clear') setReservationBookId('');
+                if (reason === 'input' || reason === 'clear') {
+                  setReservationBookId('');
+                  setSelectedReservationBook(null);
+                }
               }}
               onChange={(_, book) => {
                 setReservationBookId(book ? String(book.bookId) : '');
+                setSelectedReservationBook(book);
                 setReservationBookSearch(book ? `${book.title} (${book.accessionNumber})` : '');
               }}
               renderInput={(params) => <TextField {...params} label={t('library.book')} />}
