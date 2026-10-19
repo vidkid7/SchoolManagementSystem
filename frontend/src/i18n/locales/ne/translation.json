@@ -421,6 +421,7 @@
     "admissionDate": "भर्ना मिति",
     "status": "स्थिति",
     "active": "सक्रिय",
+    "activeOnPage": "सक्रिय (यस पृष्ठमा)",
     "inactive": "निष्क्रिय",
     "transferred": "स्थानान्तरण",
     "graduated": "स्नातक",

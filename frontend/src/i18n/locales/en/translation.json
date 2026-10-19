@@ -421,6 +421,7 @@
     "admissionDate": "Admission Date",
     "status": "Status",
     "active": "Active",
+    "activeOnPage": "Active (this page)",
     "inactive": "Inactive",
     "transferred": "Transferred",
     "graduated": "Graduated",

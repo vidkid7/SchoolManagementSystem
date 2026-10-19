@@ -411,7 +411,7 @@ export const StudentList = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {[
           { icon: <PeopleIcon />, labelKey: 'dashboard.totalStudents', value: total, color: C.neutral, bg: 'linear-gradient(135deg, #475569 0%, #334155 100%)' },
-          { icon: <ActiveIcon />, labelKey: 'students.active', value: students.filter(s => s.status === 'active').length || 0, color: C.success, bg: 'linear-gradient(135deg, #059669 0%, #047857 100%)' },
+          { icon: <ActiveIcon />, labelKey: 'students.activeOnPage', value: students.filter(s => s.status === 'active').length || 0, color: C.success, bg: 'linear-gradient(135deg, #059669 0%, #047857 100%)' },
           { icon: <SchoolIcon />, labelKey: 'students.class', value: new Set(students.map(s => s.class?.gradeLevel).filter(Boolean)).size || 0, color: C.primary, bg: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)' },
           { icon: <GroupIcon />, labelKey: 'students.section', value: new Set(students.map(s => s.class?.section).filter(Boolean)).size || 0, color: C.warning, bg: 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)' },
         ].map((stat, index) => (
