@@ -771,6 +771,7 @@ export const StudentForm = () => {
                 <IconButton 
                   color="primary" 
                   component="span"
+                  aria-label={t('students.uploadPhotoLabel')}
                   sx={{ 
                     position: 'absolute',
                     bottom: 0,
@@ -785,7 +786,7 @@ export const StudentForm = () => {
               </label>
             </Box>
             <Box>
-              <Typography variant="subtitle1" fontWeight={600}>
+              <Typography variant="subtitle1" component="h5" fontWeight={600}>
                 {t('students.photo')}
               </Typography>
               <Typography variant="caption" color="text.secondary">
@@ -977,8 +978,8 @@ export const StudentForm = () => {
                   rules={{ required: t('validation.required') }}
                   render={({ field }) => (
                     <FormControl fullWidth error={!!errors.gender}>
-                      <InputLabel>{t('students.gender')} *</InputLabel>
-                      <Select {...field} label={`${t('students.gender')} *`}>
+                      <InputLabel id="student-gender-label">{t('students.gender')} *</InputLabel>
+                      <Select {...field} labelId="student-gender-label" label={`${t('students.gender')} *`}>
                         {GENDER_OPTIONS.map((option) => (
                           <MenuItem key={option.value} value={option.value}>
                             {t(option.labelKey)}
@@ -996,8 +997,8 @@ export const StudentForm = () => {
                   control={control}
                   render={({ field }) => (
                     <FormControl fullWidth>
-                      <InputLabel>{t('students.bloodGroup')}</InputLabel>
-                      <Select {...field} label={t('students.bloodGroup')}>
+                      <InputLabel id="student-blood-group-label">{t('students.bloodGroup')}</InputLabel>
+                      <Select {...field} labelId="student-blood-group-label" label={t('students.bloodGroup')}>
                         <MenuItem value="">{t('common.none')}</MenuItem>
                         {BLOOD_GROUP_OPTIONS.filter(Boolean).map((bg) => (
                           <MenuItem key={bg} value={bg}>{bg}</MenuItem>
@@ -1043,8 +1044,8 @@ export const StudentForm = () => {
                   rules={{ required: t('validation.required') }}
                   render={({ field }) => (
                     <FormControl fullWidth error={!!errors.admission_class}>
-                      <InputLabel>{t('students.admissionClass')} *</InputLabel>
-                      <Select {...field} label={`${t('students.admissionClass')} *`}>
+                      <InputLabel id="student-admission-class-label">{t('students.admissionClass')} *</InputLabel>
+                      <Select {...field} labelId="student-admission-class-label" label={`${t('students.admissionClass')} *`}>
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((cls) => (
                           <MenuItem key={cls} value={cls}>
                             Class {formatNumber(cls)}
@@ -1062,8 +1063,8 @@ export const StudentForm = () => {
                   control={control}
                   render={({ field }) => (
                     <FormControl fullWidth error={!!errors.current_class}>
-                      <InputLabel>{t('students.currentClass')}</InputLabel>
-                      <Select {...field} label={t('students.currentClass')} value={field.value || ''}>
+                      <InputLabel id="student-current-class-label">{t('students.currentClass')}</InputLabel>
+                      <Select {...field} labelId="student-current-class-label" label={t('students.currentClass')} value={field.value || ''}>
                         <MenuItem value="">{t('students.unassigned')}</MenuItem>
                         {academicClasses.map((cls) => (
                           <MenuItem key={cls.classId} value={cls.classId}>
@@ -1512,8 +1513,8 @@ export const StudentForm = () => {
                   control={control}
                   render={({ field }) => (
                     <FormControl fullWidth>
-                      <InputLabel>{t('students.status')}</InputLabel>
-                      <Select {...field} label={t('students.status')}>
+                      <InputLabel id="student-status-label">{t('students.status')}</InputLabel>
+                      <Select {...field} labelId="student-status-label" label={t('students.status')}>
                         {STATUS_OPTIONS.map((option) => (
                           <MenuItem key={option.value} value={option.value}>
                             {t(option.labelKey)}

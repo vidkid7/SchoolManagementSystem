@@ -449,6 +449,7 @@
     "addStudentSubtitle": "Fill in the form to add a new student",
     "editStudentSubtitle": "Update student information",
     "photoHint": "Upload student photo (Max 200KB)",
+    "uploadPhotoLabel": "Upload student photo",
     "none": "None",
     "remarks": "Remarks",
     "goodRemarks": "Good Remarks",
