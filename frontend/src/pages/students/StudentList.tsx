@@ -589,7 +589,7 @@ export const StudentList = () => {
                         </ToggleButton>
                         <ToggleButton
                           value="fuzzy"
-                          aria-label={t('students.fuzzySearch') || 'Fuzzy Search (handles typos)'}
+                          aria-label={`${t('students.fuzzySearch') || 'Fuzzy Search (handles typos)'} AI`}
                           sx={{ px: 1.5, py: 0.5 }}
                         >
                           <Tooltip title={t('students.fuzzySearch') || 'Fuzzy Search (handles typos)'}>
