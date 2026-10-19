@@ -20,12 +20,24 @@ export interface OfflineQueueItem {
   retryCount: number;
 }
 
+export function handleServiceWorkerUpdate(
+  serviceWorkerContainer: Pick<ServiceWorkerContainer, 'addEventListener'>,
+  reload: () => void
+): void {
+  serviceWorkerContainer.addEventListener('controllerchange', reload, { once: true });
+}
+
 /**
  * Register service worker and handle updates
  */
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if ('serviceWorker' in navigator) {
     try {
+      const hadController = Boolean(navigator.serviceWorker.controller);
+      if (hadController) {
+        handleServiceWorkerUpdate(navigator.serviceWorker, () => window.location.reload());
+      }
+
       const registration = await navigator.serviceWorker.register('/sw.js', {
         scope: '/'
       });
@@ -38,13 +50,9 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // New service worker available
-              console.log('New service worker available. Refresh to update.');
-              
-              // Notify user about update
-              if (window.confirm('New version available! Reload to update?')) {
-                window.location.reload();
-              }
+              // vite-plugin-pwa configures the new worker to skip waiting. The
+              // controllerchange listener reloads once it takes control.
+              console.log('New service worker installed; applying update.');
             }
           });
         }

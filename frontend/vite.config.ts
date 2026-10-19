@@ -11,6 +11,9 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // The app registers the worker in main.tsx so update handling and
+      // registration are owned by one path.
+      injectRegister: null,
       includeAssets: ['vite.svg'],
       manifest: {
         name: 'School Management System',

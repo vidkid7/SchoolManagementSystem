@@ -3,12 +3,36 @@
  */
 
 import {
+  handleServiceWorkerUpdate,
   isOnline,
   formatBytes,
   setupNetworkListeners
 } from '../serviceWorker';
 
 describe('Service Worker Utilities', () => {
+  describe('handleServiceWorkerUpdate', () => {
+    it('reloads once when an updated worker takes control', () => {
+      const reload = jest.fn();
+      let controllerChangeListener: EventListener | undefined;
+      const serviceWorkerContainer = {
+        addEventListener: jest.fn((_event: string, listener: EventListener, options?: AddEventListenerOptions) => {
+          controllerChangeListener = listener;
+          expect(options).toEqual({ once: true });
+        })
+      } as unknown as Pick<ServiceWorkerContainer, 'addEventListener'>;
+
+      handleServiceWorkerUpdate(serviceWorkerContainer, reload);
+
+      expect(serviceWorkerContainer.addEventListener).toHaveBeenCalledWith(
+        'controllerchange',
+        expect.any(Function),
+        { once: true }
+      );
+      controllerChangeListener?.(new Event('controllerchange'));
+      expect(reload).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('isOnline', () => {
     it('should return navigator.onLine status', () => {
       // Mock navigator.onLine
