@@ -5,6 +5,7 @@
  */
 
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { refreshAuthTokens } from '../services/tokenRefresh';
 
 // Get API URL from runtime config or fallback to build-time env var
 const getApiBaseUrl = () => {
@@ -84,18 +85,7 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) {
-          throw new Error('No refresh token');
-        }
-
-        // Call refresh endpoint
-        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-          refreshToken,
-        });
-
-        const { accessToken } = response.data.data;
-        localStorage.setItem('accessToken', accessToken);
+        const { accessToken } = await refreshAuthTokens(API_BASE_URL);
 
         // Retry original request with new token
         if (originalRequest.headers) {

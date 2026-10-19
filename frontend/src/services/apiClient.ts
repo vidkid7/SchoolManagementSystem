@@ -9,6 +9,7 @@ import axios from 'axios';
 import { store } from '../store';
 import { logout, setCredentials } from '../store/slices/authSlice';
 import { requestQueue } from '../utils/requestQueue';
+import { refreshAuthTokens } from './tokenRefresh';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -23,7 +24,6 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     const state = store.getState();
-    const token = state.auth.accessToken;
 
     // Normalize short API paths to /api/v1/* so mixed call styles remain compatible
     if (config.url && config.url.startsWith('/') && !config.url.startsWith('/api/')) {
@@ -32,7 +32,7 @@ apiClient.interceptors.request.use(
 
     // Also check localStorage as fallback
     const localToken = localStorage.getItem('accessToken');
-    const finalToken = token || localToken;
+    const finalToken = localToken || state.auth.accessToken;
 
     if (finalToken) {
       config.headers.Authorization = `Bearer ${finalToken}`;
@@ -55,21 +55,6 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Track if we're already refreshing to prevent duplicate refresh requests
-let isRefreshing = false;
-let refreshSubscribers: Array<(token: string) => void> = [];
-
-// Subscribe to token refresh
-const subscribeTokenRefresh = (cb: (token: string) => void) => {
-  refreshSubscribers.push(cb);
-};
-
-// Notify all waiting requests of new token
-const onTokenRefreshed = (token: string) => {
-  refreshSubscribers.forEach(cb => cb(token));
-  refreshSubscribers = [];
-};
-
 // Response interceptor
 apiClient.interceptors.response.use(
   (response) => response,
@@ -78,54 +63,19 @@ apiClient.interceptors.response.use(
 
     // Handle 401 errors (unauthorized)
     if (error.response?.status === 401 && !originalRequest._retry) {
-      // If already refreshing, wait for the new token
-      if (isRefreshing) {
-        return new Promise((resolve) => {
-          subscribeTokenRefresh((token: string) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            resolve(apiClient(originalRequest));
-          });
-        });
-      }
-
       originalRequest._retry = true;
-      isRefreshing = true;
 
       try {
-        // Try to refresh the token
-        const refreshToken = localStorage.getItem('refreshToken');
+        const { accessToken, refreshToken } = await refreshAuthTokens(API_URL);
         
-        if (!refreshToken) {
-          throw new Error('No refresh token');
-        }
-
-        const response = await axios.post(
-          '/api/v1/auth/refresh',
-          { refreshToken },
-          { baseURL: API_URL }
-        );
-
-        const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-
-        // Store new tokens in both localStorage and Redux
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', newRefreshToken);
-        
-        // Update Redux store
         store.dispatch(setCredentials({
           accessToken,
-          refreshToken: newRefreshToken,
+          refreshToken,
         }));
 
-        // Notify waiting requests
-        onTokenRefreshed(accessToken);
-
-        // Retry original request with new token
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-        isRefreshing = false;
         return apiClient(originalRequest);
       } catch (refreshError) {
-        isRefreshing = false;
         // Refresh failed, logout user
         store.dispatch(logout());
         localStorage.removeItem('accessToken');
