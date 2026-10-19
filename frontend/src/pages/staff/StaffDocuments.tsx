@@ -49,6 +49,7 @@ import {
   FilterList as FilterListIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { normalizeDocumentStats, type DocumentStats } from './staffDocumentsUtils';
 import { motion } from 'framer-motion';
 import { C, useAdminStyles } from '../../theme/designTokens';
 
@@ -66,13 +67,6 @@ interface StaffDocument {
   isExpiringSoon: boolean;
   createdAt: string;
   version: number;
-}
-
-interface DocumentStats {
-  total: number;
-  active: number;
-  expired: number;
-  expiringSoon: number;
 }
 
 interface DocumentVersion {
@@ -161,12 +155,12 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
   const fetchStats = async () => {
     try {
       const response = await apiClient.get(`/api/v1/staff/${staffId}/documents/statistics`);
-      setStats(response.data.data || { total: 0, active: 0, expired: 0, expiringSoon: 0 });
+      setStats(normalizeDocumentStats(response.data.data));
     } catch (err: any) {
       console.error('Failed to fetch stats:', err);
       // Handle 500 errors gracefully - feature not implemented yet
       if (err.response?.status === 500) {
-        setStats({ total: 0, active: 0, expired: 0, expiringSoon: 0 });
+        setStats(normalizeDocumentStats(null));
       }
     }
   };
