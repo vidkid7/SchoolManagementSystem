@@ -343,7 +343,9 @@ interface TeacherPerformanceData {
       });
       
       const contentType = response.headers['content-type'];
-      const blob = new Blob([response.data], { type: contentType });
+      const blob = new Blob([response.data], {
+        type: typeof contentType === 'string' ? contentType : undefined,
+      });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
