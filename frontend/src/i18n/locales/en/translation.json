@@ -2128,6 +2128,7 @@
     "bookDeletedSuccess": "Book deleted successfully",
     "failedToSaveBook": "Failed to save book",
     "failedToDeleteBook": "Failed to delete book",
+    "copiesPositiveInteger": "Enter a whole number of copies greater than zero",
     "confirmDeleteBook": "Are you sure you want to delete this book?",
     "enterStudentId": "Enter student ID",
     "enterAccessionNumber": "Enter accession number",

@@ -3,7 +3,7 @@
  * Add, update, delete books in the library catalog
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
@@ -39,6 +39,8 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { BookFormErrors, BookFormValues, validateBookForm } from './bookFormValidation';
 
 interface Book {
   bookId: number;
@@ -92,12 +94,15 @@ export function BookCatalog({ initialAddDialogOpen = false }: { initialAddDialog
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [categories, setCategories] = useState<BookCategory[]>([]);
   const [openDialog, setOpenDialog] = useState(initialAddDialogOpen);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [formErrors, setFormErrors] = useState<BookFormErrors>({});
+  const bookRequestVersion = useRef(0);
 
   const [formData, setFormData] = useState({
     accessionNumber: '',
@@ -113,8 +118,19 @@ export function BookCatalog({ initialAddDialogOpen = false }: { initialAddDialog
   });
 
   useEffect(() => {
-    fetchBooks();
-  }, [page, rowsPerPage, search, categoryFilter]);
+    const requestVersion = ++bookRequestVersion.current;
+    if (search !== debouncedSearch) {
+      setLoading(true);
+      return () => {
+        if (bookRequestVersion.current === requestVersion) bookRequestVersion.current += 1;
+      };
+    }
+
+    fetchBooks(debouncedSearch, requestVersion);
+    return () => {
+      if (bookRequestVersion.current === requestVersion) bookRequestVersion.current += 1;
+    };
+  }, [page, rowsPerPage, search, debouncedSearch, categoryFilter]);
 
   useEffect(() => {
     if (location.state?.openAddDialog) {
@@ -141,30 +157,35 @@ export function BookCatalog({ initialAddDialogOpen = false }: { initialAddDialog
     return () => { active = false; };
   }, []);
 
-  const fetchBooks = async () => {
+  const fetchBooks = async (searchTerm = debouncedSearch, requestVersion = ++bookRequestVersion.current) => {
     try {
       setLoading(true);
       const params: any = {
         page: page + 1,
         limit: rowsPerPage,
       };
-      if (search) params.search = search;
+      if (searchTerm) params.search = searchTerm;
       if (categoryFilter) params.category = categoryFilter;
 
       const response = await apiClient.get('/library/books', { params });
+      if (bookRequestVersion.current !== requestVersion) return;
       const respData = response.data?.data;
       const list = Array.isArray(respData) ? respData : (respData?.books || []);
       setBooks(list.map(normalizeBook));
       setTotal(toNumber(respData?.total ?? response.data?.meta?.total, list.length));
     } catch (err) {
-      console.error('Failed to fetch books:', err);
-      setBooks([]);
+      if (bookRequestVersion.current === requestVersion) {
+        console.error('Failed to fetch books:', err);
+        setBooks([]);
+      }
     } finally {
-      setLoading(false);
+      if (bookRequestVersion.current === requestVersion) setLoading(false);
     }
   };
 
   const handleOpenDialog = (book?: Book) => {
+    setFormErrors({});
+    setError('');
     if (book) {
       setEditingBook(book);
       setFormData({
@@ -201,9 +222,31 @@ export function BookCatalog({ initialAddDialogOpen = false }: { initialAddDialog
     setOpenDialog(false);
     setEditingBook(null);
     setError('');
+    setFormErrors({});
+  };
+
+  const updateFormField = (field: keyof BookFormValues, value: string) => {
+    setFormData((current) => ({ ...current, [field]: value }));
+    setFormErrors((current) => ({ ...current, [field]: undefined }));
+  };
+
+  const formErrorMessage = (field: keyof BookFormValues) => {
+    const validationError = formErrors[field];
+    if (!validationError) return undefined;
+    if (validationError === 'required') return t('validation.required');
+    if (validationError === 'minLength') return t('validation.minLength', { min: 3 });
+    if (validationError === 'maxLength') return t('validation.maxLength', { max: field === 'accessionNumber' ? 50 : 255 });
+    return t('library.copiesPositiveInteger');
   };
 
   const handleSubmit = async () => {
+    const validationErrors = validateBookForm(formData);
+    setFormErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) {
+      setError('');
+      return;
+    }
+
     try {
       const copies = Number(formData.totalCopies);
       const publicationYear = formData.publicationYear ? Number(formData.publicationYear) : undefined;
@@ -374,6 +417,7 @@ export function BookCatalog({ initialAddDialogOpen = false }: { initialAddDialog
           component="div"
           count={total}
           page={page}
+          rowsPerPageOptions={[10, 20, 50, 100]}
           onPageChange={(_, newPage) => setPage(newPage)}
           rowsPerPage={rowsPerPage}
           onRowsPerPageChange={(e) => {
@@ -393,7 +437,9 @@ export function BookCatalog({ initialAddDialogOpen = false }: { initialAddDialog
               <TextField
                 label={t('library.accessionNumber')}
                 value={formData.accessionNumber}
-                onChange={(e) => setFormData({ ...formData, accessionNumber: e.target.value })}
+                onChange={(e) => updateFormField('accessionNumber', e.target.value)}
+                error={Boolean(formErrors.accessionNumber)}
+                helperText={formErrorMessage('accessionNumber')}
                 required
                 fullWidth
               />
@@ -410,7 +456,9 @@ export function BookCatalog({ initialAddDialogOpen = false }: { initialAddDialog
               <TextField
                 label={t('library.bookTitle')}
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) => updateFormField('title', e.target.value)}
+                error={Boolean(formErrors.title)}
+                helperText={formErrorMessage('title')}
                 required
                 fullWidth
               />
@@ -419,7 +467,9 @@ export function BookCatalog({ initialAddDialogOpen = false }: { initialAddDialog
               <TextField
                 label={t('library.author')}
                 value={formData.author}
-                onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                onChange={(e) => updateFormField('author', e.target.value)}
+                error={Boolean(formErrors.author)}
+                helperText={formErrorMessage('author')}
                 required
                 fullWidth
               />
@@ -446,7 +496,9 @@ export function BookCatalog({ initialAddDialogOpen = false }: { initialAddDialog
                 select
                 label={t('library.category')}
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                onChange={(e) => updateFormField('category', e.target.value)}
+                error={Boolean(formErrors.category)}
+                helperText={formErrorMessage('category')}
                 required
                 fullWidth
               >
@@ -458,7 +510,9 @@ export function BookCatalog({ initialAddDialogOpen = false }: { initialAddDialog
                 label={t('library.totalCopies')}
                 type="number"
                 value={formData.totalCopies}
-                onChange={(e) => setFormData({ ...formData, totalCopies: e.target.value })}
+                onChange={(e) => updateFormField('totalCopies', e.target.value)}
+                error={Boolean(formErrors.totalCopies)}
+                helperText={formErrorMessage('totalCopies')}
                 required
                 fullWidth
               />

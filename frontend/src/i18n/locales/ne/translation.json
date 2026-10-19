@@ -1973,6 +1973,7 @@
     "bookDeletedSuccess": "पुस्तक सफलतापूर्वक मेटाइयो",
     "failedToSaveBook": "पुस्तक बचत गर्न असफल",
     "failedToDeleteBook": "पुस्तक मेटाउन असफल",
+    "copiesPositiveInteger": "शून्यभन्दा ठूलो पूर्ण सङ्ख्यामा प्रति लेख्नुहोस्",
     "confirmDeleteBook": "के तपाईं यो पुस्तक मेटाउन निश्चित हुनुहुन्छ?",
     "enterStudentId": "विद्यार्थी ID हाल्नुहोस्",
     "enterAccessionNumber": "प्रवेश नम्बर हाल्नुहोस्",
