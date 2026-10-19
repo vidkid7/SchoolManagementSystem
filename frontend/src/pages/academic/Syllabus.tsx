@@ -154,11 +154,23 @@ export const Syllabus = () => {
       const response = await api.get(
         `/academic/syllabus?classId=${selectedClass}&subjectId=${selectedSubject}`
       );
-      console.log('Fetched syllabus response:', response.data);
-      const syllabusData = response.data?.data || response.data;
-      console.log('Syllabus data:', syllabusData);
-      console.log('Topics:', syllabusData?.topics);
-      setSyllabus(syllabusData);
+      // A successful response with data:null means this class/subject has no
+      // syllabus yet. Do not mistake the { success, data, ... } envelope for
+      // the syllabus itself.
+      const syllabusData = response.data && Object.prototype.hasOwnProperty.call(response.data, 'data')
+        ? response.data.data
+        : response.data;
+      if (syllabusData == null) {
+        setSyllabus(null);
+      } else if (typeof syllabusData === 'object' && Number(syllabusData.syllabusId) > 0) {
+        setSyllabus({
+          ...syllabusData,
+          syllabusId: Number(syllabusData.syllabusId),
+          topics: Array.isArray(syllabusData.topics) ? syllabusData.topics : [],
+        });
+      } else {
+        throw new Error('Invalid syllabus response');
+      }
     } catch (error: any) {
       if (error.response?.status === 404) {
         setSyllabus(null);
@@ -175,12 +187,20 @@ export const Syllabus = () => {
     if (!selectedClass || !selectedSubject) return;
 
     try {
+      setError('');
+      const yearResponse = await api.get('/academic/years/current');
+      const currentYear = yearResponse.data?.data ?? yearResponse.data;
+      const academicYearId = Number(currentYear?.academicYearId ?? currentYear?.academic_year_id ?? currentYear?.id);
+      if (!Number.isFinite(academicYearId) || academicYearId <= 0) {
+        throw new Error(t('academic.failedToLoadSyllabus'));
+      }
+
       await api.post('/academic/syllabus', {
         classId: selectedClass,
         subjectId: selectedSubject,
-        academicYearId: 1, // Should get current academic year
+        academicYearId,
       });
-      fetchSyllabus();
+      await fetchSyllabus();
     } catch (error: any) {
       console.error('Failed to create syllabus:', error);
       setError(error.response?.data?.message || t('academic.failedToCreateSyllabus'));
@@ -231,13 +251,6 @@ export const Syllabus = () => {
         return;
       }
 
-      console.log('Saving topic with data:', {
-        syllabusId: syllabus.syllabusId,
-        title: topicForm.title,
-        description: topicForm.description,
-        estimatedHours
-      });
-
       const response = await api.post('/academic/syllabus', {
         syllabusId: syllabus.syllabusId,
         title: topicForm.title,
@@ -245,12 +258,9 @@ export const Syllabus = () => {
         estimatedHours,
       });
       
-      console.log('Topic saved successfully:', response.data);
       handleCloseDialog();
-      fetchSyllabus();
+      await fetchSyllabus();
     } catch (error: any) {
-      console.error('Failed to save topic:', error);
-      console.error('Error response:', error.response?.data);
       setError(error.response?.data?.message || t('academic.failedToSaveTopic'));
     }
   };
