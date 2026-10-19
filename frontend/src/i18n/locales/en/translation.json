@@ -384,6 +384,7 @@
     "bulkAdd": "Bulk Add",
     "bulkAddSubtitle": "Add multiple students at once",
     "student": "Student",
+    "removeStudent": "Remove student {{number}}",
     "addAnother": "Add Another Student",
     "saveAll": "Save All Students",
     "fillRequiredFields": "Please fill all required fields for all students",

@@ -470,6 +470,7 @@ export const BulkAdd = () => {
                 color="error"
                 onClick={() => removeStudentForm(student.id)}
                 size="small"
+                aria-label={t('students.removeStudent', { number: index + 1 })}
               >
                 <DeleteIcon />
               </IconButton>
