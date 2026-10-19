@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import '@testing-library/jest-dom';
-import ReportsAnalytics from '../ReportsAnalytics';
+import ReportsAnalytics, { formatEnrollmentClassLabel } from '../ReportsAnalytics';
 import apiClient from '../../../services/apiClient';
 import { store } from '../../../store';
 import { setUser } from '../../../store/slices/authSlice';
@@ -22,6 +22,7 @@ jest.mock('react-i18next', () => ({
       'reports.startDate': 'Start Date',
       'reports.endDate': 'End Date',
       'reports.class': 'Class',
+      'reports.unassignedClass': 'Unassigned',
       'reports.section': 'Section',
       'reports.pdf': 'PDF',
       'reports.excel': 'Excel',
@@ -168,6 +169,16 @@ describe('ReportsAnalytics', () => {
     renderReports();
     await screen.findByRole('tab', { name: /Enrollment/ });
     expect(screen.getByRole('heading', { name: 'Student Enrollment by Class' })).toBeInTheDocument();
+  });
+
+  it('labels students without a class as unassigned in the enrollment chart', () => {
+    const translate = (key: string) => ({
+      'reports.class': 'Class',
+      'reports.unassignedClass': 'Unassigned',
+    }[key] ?? key);
+
+    expect(formatEnrollmentClassLabel(null, translate)).toBe('Unassigned');
+    expect(formatEnrollmentClassLabel(4, translate)).toBe('Class 4');
   });
 
   it('should render charts in examination tab', async () => {

@@ -62,6 +62,7 @@ export function RefundManagement() {
   const [openDialog, setOpenDialog] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState<{ paymentId?: string; reason?: string }>({});
 
   const [formData, setFormData] = useState({
     paymentId: '',
@@ -93,8 +94,19 @@ export function RefundManagement() {
   };
 
   const handleProcessRefund = async () => {
+    const paymentId = Number(formData.paymentId);
+    const nextErrors: typeof validationErrors = {};
+    if (!formData.paymentId.trim()) {
+      nextErrors.paymentId = t('finance.paymentIdRequired');
+    } else if (!Number.isSafeInteger(paymentId) || paymentId <= 0) {
+      nextErrors.paymentId = t('finance.paymentIdMustBePositiveInteger');
+    }
+    if (!formData.reason) nextErrors.reason = t('finance.refundReasonRequired');
+    setValidationErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
     try {
-      await apiClient.post('/finance/refunds', formData);
+      await apiClient.post('/finance/refunds', { ...formData, paymentId });
       setSuccess(t('finance.refundProcessedSuccess'));
       setOpenDialog(false);
       fetchRefunds();
@@ -217,17 +229,26 @@ export function RefundManagement() {
               label={t('finance.paymentId')}
               type="number"
               value={formData.paymentId}
-              onChange={(e) => setFormData({ ...formData, paymentId: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, paymentId: e.target.value });
+                setValidationErrors((current) => ({ ...current, paymentId: undefined }));
+              }}
               required
+              error={Boolean(validationErrors.paymentId)}
               fullWidth
-              helperText={t('finance.enterPaymentIdToRefund')}
+              helperText={validationErrors.paymentId || t('finance.enterPaymentIdToRefund')}
             />
             <TextField
               label={t('finance.reason')}
               select
               value={formData.reason}
-              onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, reason: e.target.value });
+                setValidationErrors((current) => ({ ...current, reason: undefined }));
+              }}
               required
+              error={Boolean(validationErrors.reason)}
+              helperText={validationErrors.reason}
               fullWidth
             >
               <MenuItem value="duplicate_payment">{t('finance.duplicatePayment')}</MenuItem>

@@ -173,6 +173,9 @@ interface EnrollmentData {
   byShift: Array<{ shift: string; count: number }>;
 }
 
+export const formatEnrollmentClassLabel = (classNumber: number | null | undefined, translate: (key: string) => string) =>
+  classNumber == null ? translate('reports.unassignedClass') : `${translate('reports.class')} ${classNumber}`;
+
 interface AttendanceData {
   averageAttendance: number;
   byDate: Array<{ date: string; presentCount: number; absentCount: number; lateCount: number }>;
@@ -431,9 +434,9 @@ interface TeacherPerformanceData {
 
   const enrollmentChartData = useMemo(() => {
     return enrollmentData?.byClass?.map((item: any) => ({
-      name: `${t('reports.class')} ${item.class}`,
+      name: formatEnrollmentClassLabel(item.class, t),
       students: item.count,
-      fill: COLORS[item.class % COLORS.length],
+      fill: COLORS[(Number(item.class) || 0) % COLORS.length],
     })) || [];
   }, [enrollmentData, i18n.language, t]);
 
