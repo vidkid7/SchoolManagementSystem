@@ -146,7 +146,7 @@ export function LibraryDashboard() {
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={() => navigate(`/library/books/new`)}
+              onClick={() => navigate(`/library/books`, { state: { openAddDialog: true } })}
               sx={S.BTN_PRIMARY}
             >
               {t('library.addBook')}

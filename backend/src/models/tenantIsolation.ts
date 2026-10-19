@@ -23,6 +23,7 @@ import Book from './Book.model';
 import Circulation from './Circulation.model';
 import Reservation from './Reservation.model';
 import LibraryFine from './LibraryFine.model';
+import LibraryCategory from './LibraryCategory.model';
 import Sport from './Sport.model';
 import Team from './Team.model';
 import Tournament from './Tournament.model';
@@ -97,6 +98,7 @@ const SCHOOL_CONFIG_SCOPED_TABLES = new Set([
   'circulations',
   'reservations',
   'library_fines',
+  'library_categories',
   'sports',
   'teams',
   'tournaments',
@@ -145,6 +147,7 @@ const TENANT_MODELS: Array<ModelStatic<Model>> = [
   Circulation,
   Reservation,
   LibraryFine,
+  LibraryCategory,
   Sport,
   Team,
   Tournament,

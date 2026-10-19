@@ -8,7 +8,9 @@
 
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
+import sequelize from '../../config/database';
 import { LibraryFine } from '../../models/LibraryFine.model';
+import { LibraryCategory } from '../../models/LibraryCategory.model';
 import { Book } from '../../models/Book.model';
 import { Circulation } from '../../models/Circulation.model';
 import Student from '../../models/Student.model';
@@ -16,13 +18,15 @@ import { libraryService } from './library.service';
 import { lateFeeService } from './lateFee.service';
 import { reservationService } from './reservation.service';
 
-/** In-memory library categories (optional: persist to DB later) */
-let categoryStore: { categoryId: number; name: string; description: string }[] = [
-  { categoryId: 1, name: 'Fiction', description: 'Fiction and literature' },
-  { categoryId: 2, name: 'Non-Fiction', description: 'Non-fiction and reference' },
-  { categoryId: 3, name: 'Academic', description: 'Academic and textbooks' },
+const defaultCategories = [
+  { name: 'Fiction', description: 'Fiction and literature' },
+  { name: 'Non-Fiction', description: 'Non-fiction and reference' },
+  { name: 'Academic', description: 'Academic and textbooks' },
+  { name: 'Science', description: '' },
+  { name: 'History', description: '' },
+  { name: 'Reference', description: '' },
+  { name: 'Textbook', description: '' },
 ];
-let nextCategoryId = 4;
 
 export class LibraryController {
   /**
@@ -31,9 +35,24 @@ export class LibraryController {
    */
   async getCategories(_req: Request, res: Response): Promise<void> {
     try {
+      const existingBooks = await Book.findAll({ attributes: ['category'], group: ['category'], raw: true }) as unknown as Array<{ category: string }>;
+      const categoriesByName = new Map(defaultCategories.map((category) => [category.name, category.description]));
+      existingBooks.forEach(({ category }) => {
+        if (category?.trim()) categoriesByName.set(category.trim(), categoriesByName.get(category.trim()) ?? '');
+      });
+
+      for (const [name, description] of categoriesByName) {
+        await LibraryCategory.findOrCreate({ where: { name }, defaults: { name, description } });
+      }
+
+      const categories = await LibraryCategory.findAll({ order: [['name', 'ASC']] });
+      const data = await Promise.all(categories.map(async (category) => ({
+        ...category.toJSON(),
+        bookCount: await Book.count({ where: { category: category.name } }),
+      })));
       res.status(200).json({
         success: true,
-        data: categoryStore.map((c) => ({ ...c, bookCount: 0 })),
+        data,
       });
     } catch (error) {
       res.status(500).json({
@@ -50,15 +69,28 @@ export class LibraryController {
    */
   async createCategory(req: Request, res: Response): Promise<void> {
     try {
-      const { name, description } = req.body;
-      const newCat = { categoryId: nextCategoryId++, name: name || '', description: description || '' };
-      categoryStore.push(newCat);
+      const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+      const description = typeof req.body?.description === 'string' ? req.body.description.trim() : '';
+      if (!name || name.length > 100 || description.length > 255) {
+        res.status(400).json({ success: false, message: 'Category name is required and must be 100 characters or fewer; description must be 255 characters or fewer.' });
+        return;
+      }
+
+      const [newCategory, created] = await LibraryCategory.findOrCreate({ where: { name }, defaults: { name, description } });
+      if (!created) {
+        res.status(409).json({ success: false, message: 'A category with this name already exists.' });
+        return;
+      }
       res.status(201).json({
         success: true,
         message: 'Category created successfully',
-        data: { ...newCat, bookCount: 0 },
+        data: { ...newCategory.toJSON(), bookCount: 0 },
       });
     } catch (error) {
+      if ((error as { name?: string }).name === 'SequelizeUniqueConstraintError') {
+        res.status(409).json({ success: false, message: 'A category with this name already exists.' });
+        return;
+      }
       res.status(500).json({
         success: false,
         message: 'Failed to create category',
@@ -74,20 +106,45 @@ export class LibraryController {
   async updateCategory(req: Request, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);
-      const idx = categoryStore.findIndex((c) => c.categoryId === id);
-      if (idx === -1) {
+      const category = await LibraryCategory.findByPk(id);
+      if (!category) {
         res.status(404).json({ success: false, message: 'Category not found' });
         return;
       }
-      const { name, description } = req.body || {};
-      if (name !== undefined) categoryStore[idx].name = name;
-      if (description !== undefined) categoryStore[idx].description = description;
+      const name = typeof req.body?.name === 'string' ? req.body.name.trim() : undefined;
+      const description = typeof req.body?.description === 'string' ? req.body.description.trim() : undefined;
+      if (name !== undefined && (!name || name.length > 100)) {
+        res.status(400).json({ success: false, message: 'Category name is required and must be 100 characters or fewer.' });
+        return;
+      }
+      if (description !== undefined && description.length > 255) {
+        res.status(400).json({ success: false, message: 'Description must be 255 characters or fewer.' });
+        return;
+      }
+
+      const oldName = category.name;
+      await sequelize.transaction(async (transaction) => {
+        if (name && name !== oldName) {
+          const duplicate = await LibraryCategory.findOne({ where: { name }, transaction });
+          if (duplicate) throw Object.assign(new Error('A category with this name already exists.'), { status: 409 });
+          await Book.update({ category: name }, { where: { category: oldName }, transaction });
+        }
+        await category.update({ ...(name ? { name } : {}), ...(description !== undefined ? { description } : {}) }, { transaction });
+      });
       res.status(200).json({
         success: true,
         message: 'Category updated successfully',
-        data: { ...categoryStore[idx], bookCount: 0 },
+        data: { ...category.toJSON(), bookCount: await Book.count({ where: { category: category.name } }) },
       });
     } catch (error) {
+      if ((error as { status?: number }).status === 409) {
+        res.status(409).json({ success: false, message: (error as Error).message });
+        return;
+      }
+      if ((error as { name?: string }).name === 'SequelizeUniqueConstraintError') {
+        res.status(409).json({ success: false, message: 'A category with this name already exists.' });
+        return;
+      }
       res.status(500).json({
         success: false,
         message: 'Failed to update category',
@@ -103,12 +160,17 @@ export class LibraryController {
   async deleteCategory(req: Request, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);
-      const idx = categoryStore.findIndex((c) => c.categoryId === id);
-      if (idx === -1) {
+      const category = await LibraryCategory.findByPk(id);
+      if (!category) {
         res.status(404).json({ success: false, message: 'Category not found' });
         return;
       }
-      categoryStore.splice(idx, 1);
+      const bookCount = await Book.count({ where: { category: category.name } });
+      if (bookCount > 0) {
+        res.status(409).json({ success: false, message: 'Cannot delete a category while books are assigned to it.' });
+        return;
+      }
+      await category.destroy();
       res.status(200).json({
         success: true,
         message: 'Category deleted successfully',

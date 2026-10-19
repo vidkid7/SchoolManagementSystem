@@ -60,6 +60,7 @@ import * as ensureClassSubjectsTable from '../migrations/20261018000005-ensure-c
 import * as addDocumentFileData from '../migrations/20261018000006-add-document-file-data';
 import * as ensureStaffAttendanceTable from '../migrations/20261019000001-ensure-staff-attendance-table';
 import * as ensureStudentCVTable from '../migrations/20261019000002-ensure-student-cv-table';
+import * as createLibraryCategoriesTable from '../migrations/20261019000003-create-library-categories-table';
 
 /**
  * Migration Runner
@@ -344,6 +345,11 @@ const migrations: Migration[] = [
     name: '20261019000002-ensure-student-cv-table',
     up: ensureStudentCVTable.up,
     down: ensureStudentCVTable.down
+  },
+  {
+    name: '20261019000003-create-library-categories-table',
+    up: createLibraryCategoriesTable.up,
+    down: createLibraryCategoriesTable.down
   }
 ];
 

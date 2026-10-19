@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
@@ -37,6 +38,7 @@ import {
   Search as SearchIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 
 interface Book {
   bookId: number;
@@ -51,6 +53,11 @@ interface Book {
   availableCopies: number;
   location?: string;
   price?: number;
+}
+
+interface BookCategory {
+  categoryId: number;
+  name: string;
 }
 
 const toNumber = (value: unknown, fallback = 0) => {
@@ -75,6 +82,8 @@ const normalizeBook = (book: any): Book => ({
 
 export function BookCatalog({ initialAddDialogOpen = false }: { initialAddDialogOpen?: boolean } = {}) {
   const { t } = useTranslation();
+  const location = useLocation();
+  const navigate = useSlugNavigate();
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const [books, setBooks] = useState<Book[]>([]);
@@ -84,6 +93,7 @@ export function BookCatalog({ initialAddDialogOpen = false }: { initialAddDialog
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [categories, setCategories] = useState<BookCategory[]>([]);
   const [openDialog, setOpenDialog] = useState(initialAddDialogOpen);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [success, setSuccess] = useState('');
@@ -105,6 +115,31 @@ export function BookCatalog({ initialAddDialogOpen = false }: { initialAddDialog
   useEffect(() => {
     fetchBooks();
   }, [page, rowsPerPage, search, categoryFilter]);
+
+  useEffect(() => {
+    if (location.state?.openAddDialog) {
+      setOpenDialog(true);
+      navigate('/library/books', { replace: true, state: null });
+    }
+  }, [location.state, navigate]);
+
+  useEffect(() => {
+    let active = true;
+    apiClient.get('/library/categories')
+      .then((response) => {
+        const data = response.data?.data;
+        if (active && Array.isArray(data)) {
+          setCategories(data.filter((category: unknown): category is BookCategory =>
+            Boolean(category && typeof category === 'object' && 'name' in category && typeof category.name === 'string')
+          ));
+        }
+      })
+      .catch(() => {
+        if (active) setCategories(['Fiction', 'Non-Fiction', 'Science', 'History', 'Reference', 'Textbook'].map((name, index) => ({ categoryId: index + 1, name })));
+      });
+
+    return () => { active = false; };
+  }, []);
 
   const fetchBooks = async () => {
     try {
@@ -262,11 +297,7 @@ export function BookCatalog({ initialAddDialogOpen = false }: { initialAddDialog
               onChange={(e) => setCategoryFilter(e.target.value)}
             >
               <MenuItem value="">{t('library.allCategories')}</MenuItem>
-              <MenuItem value="Fiction">{t('library.fiction')}</MenuItem>
-              <MenuItem value="Non-Fiction">{t('library.nonFiction')}</MenuItem>
-              <MenuItem value="Science">{t('library.science')}</MenuItem>
-              <MenuItem value="History">{t('library.history')}</MenuItem>
-              <MenuItem value="Reference">{t('library.reference')}</MenuItem>
+              {categories.map((category) => <MenuItem key={category.categoryId} value={category.name}>{category.name}</MenuItem>)}
             </TextField>
           </Grid>
         </Grid>
@@ -419,12 +450,7 @@ export function BookCatalog({ initialAddDialogOpen = false }: { initialAddDialog
                 required
                 fullWidth
               >
-                <MenuItem value="Fiction">{t('library.fiction')}</MenuItem>
-                <MenuItem value="Non-Fiction">{t('library.nonFiction')}</MenuItem>
-                <MenuItem value="Science">{t('library.science')}</MenuItem>
-                <MenuItem value="History">{t('library.history')}</MenuItem>
-                <MenuItem value="Reference">{t('library.reference')}</MenuItem>
-                <MenuItem value="Textbook">{t('library.textbook')}</MenuItem>
+                {categories.map((category) => <MenuItem key={category.categoryId} value={category.name}>{category.name}</MenuItem>)}
               </TextField>
             </Grid>
             <Grid item xs={12} md={4}>
