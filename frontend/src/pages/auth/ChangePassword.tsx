@@ -1,11 +1,13 @@
 import { useState, FormEvent } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { Box, Button, TextField, Typography, Alert, CircularProgress, InputAdornment, IconButton, Paper } from '@mui/material';
 import { Lock, Visibility, VisibilityOff } from '@mui/icons-material';
 import { AppDispatch, RootState } from '../../store';
 import { changePassword, clearError } from '../../store/slices/authSlice';
 
 export function ChangePassword() {
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -56,7 +58,13 @@ export function ChangePassword() {
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton onClick={() => setShowPasswords(!showPasswords)} edge="end">{showPasswords ? <VisibilityOff /> : <Visibility />}</IconButton>
+                  <IconButton
+                    onClick={() => setShowPasswords(!showPasswords)}
+                    edge="end"
+                    aria-label={showPasswords ? t('auth.hidePassword') : t('auth.showPassword')}
+                  >
+                    {showPasswords ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
                 </InputAdornment>
               ),
             }}
