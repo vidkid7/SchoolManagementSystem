@@ -228,12 +228,7 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
       highContrast={highContrastMode}
     >
       <CssBaseline />
-      <BrowserRouter
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-      >
+      <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Public routes */}

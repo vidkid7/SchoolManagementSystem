@@ -1,9 +1,13 @@
 import '@testing-library/jest-dom';
 import 'fake-indexeddb/auto';
+import { TextDecoder, TextEncoder } from 'node:util';
+
+Object.defineProperty(global, 'TextEncoder', { value: TextEncoder, writable: true });
+Object.defineProperty(global, 'TextDecoder', { value: TextDecoder, writable: true });
 
 // Polyfill for structuredClone (required by fake-indexeddb)
 if (typeof global.structuredClone === 'undefined') {
-  global.structuredClone = (obj: any) => JSON.parse(JSON.stringify(obj));
+  global.structuredClone = <T>(obj: T): T => JSON.parse(JSON.stringify(obj)) as T;
 }
 
 // Mock window.matchMedia

@@ -11,15 +11,12 @@ import { refreshAuthTokens } from '../services/tokenRefresh';
 const getApiBaseUrl = () => {
   const buildTimeApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
-  // @ts-ignore - window.ENV is injected at runtime
   if (typeof window !== 'undefined' && window.ENV && window.ENV.API_BASE_URL) {
     // The checked-in development config uses /api/v1 as a placeholder. Allow
     // explicit Vite env overrides to win for isolated local QA/backends.
-    // @ts-ignore
     if (window.ENV.API_BASE_URL === '/api/v1' && buildTimeApiBaseUrl) {
       return buildTimeApiBaseUrl;
     }
-    // @ts-ignore
     return window.ENV.API_BASE_URL;
   }
   return buildTimeApiBaseUrl || 'http://localhost:3000/api/v1';
