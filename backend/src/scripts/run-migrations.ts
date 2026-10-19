@@ -61,6 +61,7 @@ import * as addDocumentFileData from '../migrations/20261018000006-add-document-
 import * as ensureStaffAttendanceTable from '../migrations/20261019000001-ensure-staff-attendance-table';
 import * as ensureStudentCVTable from '../migrations/20261019000002-ensure-student-cv-table';
 import * as createLibraryCategoriesTable from '../migrations/20261019000003-create-library-categories-table';
+import * as ensureRefundsTable from '../migrations/20261019000004-ensure-refunds-table';
 
 /**
  * Migration Runner
@@ -350,6 +351,11 @@ const migrations: Migration[] = [
     name: '20261019000003-create-library-categories-table',
     up: createLibraryCategoriesTable.up,
     down: createLibraryCategoriesTable.down
+  },
+  {
+    name: '20261019000004-ensure-refunds-table',
+    up: ensureRefundsTable.up,
+    down: ensureRefundsTable.down
   }
 ];
 
