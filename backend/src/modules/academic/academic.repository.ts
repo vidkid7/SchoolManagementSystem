@@ -5,7 +5,12 @@ import auditLogger from '@utils/auditLogger';
 import { Request } from 'express';
 import { getCurrentAcademicYearInfo, getAcademicYearInfo, getCurrentBSAcademicYear } from '@utils/nepaliCalendar';
 
-const dateOnly = (value: Date | string): string => new Date(value).toISOString().slice(0, 10);
+const dateOnly = (value: Date | string): string => {
+  const date = new Date(value);
+  // DATEONLY values are materialized at midnight in the configured Nepal timezone.
+  date.setMinutes(date.getMinutes() + 5 * 60 + 45);
+  return date.toISOString().slice(0, 10);
+};
 
 function hasLegacyGeneratedAcademicYearDates(
   year: AcademicYear,
