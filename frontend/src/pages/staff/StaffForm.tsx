@@ -17,6 +17,7 @@ import {
   Grid,
   MenuItem,
   FormControl,
+  FormHelperText,
   InputLabel,
   Select,
   Avatar,
@@ -564,6 +565,9 @@ export const StaffForm = () => {
                             <MenuItem value="hostel_warden">{t('staff.positions.hostelWarden')}</MenuItem>
                             <MenuItem value="school_administrator">{t('staff.positions.schoolAdministrator')}</MenuItem>
                           </StyledSelect>
+                          {errors.position?.message && (
+                            <FormHelperText>{errors.position.message}</FormHelperText>
+                          )}
                         </FormControl>
                       )}
                     />
