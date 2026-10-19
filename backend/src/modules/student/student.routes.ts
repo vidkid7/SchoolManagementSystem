@@ -4,6 +4,7 @@ import { authenticate, authorize } from '@middleware/auth';
 import { validate } from '@middleware/validation';
 import { UserRole } from '@models/User.model';
 import { photoUpload, documentUpload } from './photo.service';
+import { studentImportFileFilter } from './studentImportUpload';
 import multer from 'multer';
 import {
   createStudentSchema,
@@ -16,20 +17,10 @@ import {
 
 const router = Router();
 
-// Excel file upload middleware for bulk import
+// Spreadsheet upload middleware for student import
 const excelUpload = multer({
   storage: multer.memoryStorage(),
-  fileFilter: (_req, file, cb) => {
-    const allowedTypes = [
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    ];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type. Only Excel files (.xlsx, .xls) are allowed.'));
-    }
-  },
+  fileFilter: studentImportFileFilter,
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB max
   }

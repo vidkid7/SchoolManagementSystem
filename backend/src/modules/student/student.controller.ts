@@ -239,7 +239,7 @@ class StudentController {
   parseExcel = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     if (!req.file) {
       throw new ValidationError('Excel file is required', [
-        { field: 'file', message: 'Please upload an Excel file (.xlsx or .xls)' }
+        { field: 'file', message: 'Please upload an Excel or CSV file (.xlsx, .xls, or .csv)' }
       ]);
     }
 
@@ -374,7 +374,7 @@ class StudentController {
 
     if (!req.file) {
       throw new ValidationError('Excel file is required', [
-        { field: 'file', message: 'Please upload an Excel file (.xlsx or .xls)' }
+        { field: 'file', message: 'Please upload an Excel or CSV file (.xlsx, .xls, or .csv)' }
       ]);
     }
 
