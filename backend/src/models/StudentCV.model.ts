@@ -168,6 +168,7 @@ StudentCV.init(
     },
     showECA: {
       type: DataTypes.BOOLEAN,
+      field: 'show_eca',
       allowNull: false,
       defaultValue: true
     },

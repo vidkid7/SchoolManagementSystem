@@ -6,6 +6,14 @@
  * Requirements: 26.3, 26.4
  */
 
+import StudentCV from '../StudentCV.model';
+
+describe('StudentCV database mapping', () => {
+  it('maps the acronym property to the existing show_eca column', () => {
+    expect(StudentCV.rawAttributes.showECA.field).toBe('show_eca');
+  });
+});
+
 describe('StudentCV Model Logic', () => {
   describe('Instance Methods Logic', () => {
     // Test the helper methods logic without database
