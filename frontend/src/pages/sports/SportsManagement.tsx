@@ -348,6 +348,12 @@ export function SportsManagement() {
     };
   };
 
+  const closeDialog = () => {
+    setOpenDialog(false);
+    setError('');
+    setEditingItem(null);
+  };
+
   const getEditableId = (item: any) => {
     if (tabValue === 0) return item?.sportId ?? item?.id;
     if (tabValue === 1) return item?.teamId ?? item?.id;
@@ -649,7 +655,7 @@ export function SportsManagement() {
 
       <Dialog
         open={openDialog}
-        onClose={() => setOpenDialog(false)}
+        onClose={closeDialog}
         maxWidth="md"
         fullWidth
         disableRestoreFocus
@@ -775,7 +781,7 @@ export function SportsManagement() {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>{t('sports.cancel')}</Button>
+          <Button onClick={closeDialog}>{t('sports.cancel')}</Button>
           <Button onClick={handleSubmit} variant="contained" sx={S.BTN_PRIMARY}>{t('sports.submit')}</Button>
         </DialogActions>
       </Dialog>

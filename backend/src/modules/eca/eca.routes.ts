@@ -9,6 +9,7 @@ import {
   deleteECAValidation,
   getECAsValidation,
   enrollStudentValidation,
+  directEnrollStudentValidation,
   markAttendanceValidation,
   createEventValidation,
   recordAchievementValidation,
@@ -119,7 +120,7 @@ router.get(
 router.post(
   '/enrollments',
   authorize(...manageRoles),
-  enrollStudentValidation,
+  directEnrollStudentValidation,
   ecaController.enrollStudentDirect
 );
 

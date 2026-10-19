@@ -53,6 +53,7 @@ import apiClient from '../../services/apiClient';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { SubjectFormValues, toSubjectApiPayload } from './subjectPayload';
 import { ClassFormErrors, validateClassForm } from './classFormValidation';
+import { getStudentCount } from './studentCount';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -154,8 +155,7 @@ export const ClassManagement = () => {
       setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
       
       // Get total student count from pagination info
-      const studentCount = studentsResponse.data?.pagination?.total || studentsResponse.data?.total || 0;
-      setTotalStudents(studentCount);
+      setTotalStudents(getStudentCount(studentsResponse));
     } catch (error) {
       console.error('Failed to fetch data:', error);
       setError(t('academic.failedToLoad'));

@@ -23,6 +23,14 @@ jest.mock('../ecaEnrollment.service');
 jest.mock('../ecaEvent.service');
 jest.mock('../ecaCertificate.service');
 
+jest.mock('@middleware/auth', () => ({
+  authenticate: (req: any, _res: any, next: any) => {
+    req.user = { userId: 1, role: 'eca_coordinator' };
+    next();
+  },
+  authorize: () => (_req: any, _res: any, next: any) => next()
+}));
+
 import ecaEnrollmentService from '../ecaEnrollment.service';
 import ecaEventService from '../ecaEvent.service';
 import ecaCertificateService from '../ecaCertificate.service';
@@ -145,6 +153,7 @@ describe('ECA Routes', () => {
 
       const createdECA = {
         ecaId: 1,
+        getDataValue: jest.fn(() => 1),
         ...newECA,
         currentEnrollment: 0,
         status: 'active'
@@ -339,6 +348,36 @@ describe('ECA Routes', () => {
 
       expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);
+    });
+  });
+
+  describe('POST /api/v1/eca/enrollments', () => {
+    it('accepts ECA and student ids from the request body', async () => {
+      const mockEnrollment = { enrollmentId: 2, ecaId: 1, studentId: 100 };
+      (ecaEnrollmentService.enrollStudent as jest.Mock).mockResolvedValue(mockEnrollment);
+
+      const response = await request(app)
+        .post('/api/v1/eca/enrollments')
+        .send({ ecaId: 1, studentId: 100, enrollmentDate: '2026-10-19' });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toEqual(mockEnrollment);
+      expect(ecaEnrollmentService.enrollStudent).toHaveBeenCalledWith(
+        expect.objectContaining({ ecaId: 1, studentId: 100 }),
+        1,
+        expect.anything()
+      );
+    });
+
+    it('rejects missing ids before creating an enrollment', async () => {
+      const response = await request(app)
+        .post('/api/v1/eca/enrollments')
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      expect(ecaEnrollmentService.enrollStudent).not.toHaveBeenCalled();
     });
   });
 

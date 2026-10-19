@@ -13,6 +13,7 @@ import apiClient from '../../services/apiClient';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
+import { EnrollmentFormErrors, validateEnrollmentForm } from './enrollmentValidation';
 function TabPanel({ children, value, index }: any) {
   return <div hidden={value !== index}>{value === index && <Box sx={{ pt: 3 }}>{children}</Box>}</div>;
 }
@@ -31,6 +32,7 @@ export function ECAManagement() {
   const [openDialog, setOpenDialog] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [formErrors, setFormErrors] = useState<EnrollmentFormErrors>({});
   const [formData, setFormData] = useState<any>({});
   const ecaId = searchParams.get('ecaId');
 
@@ -53,6 +55,11 @@ export function ECAManagement() {
   };
 
   const handleSubmit = async () => {
+    if (tabValue === 0) {
+      const nextErrors = validateEnrollmentForm(formData);
+      setFormErrors(nextErrors);
+      if (Object.keys(nextErrors).length > 0) return;
+    }
     try {
       const endpoints = ['/eca/enrollments', '/eca/attendance', '/eca/events', '/eca/achievements'];
       await apiClient.post(endpoints[tabValue], formData);
@@ -61,11 +68,13 @@ export function ECAManagement() {
       fetchData();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || t('eca.operationFailed'));
+      setError(err.response?.data?.message || err.response?.data?.error?.message || t('eca.operationFailed'));
     }
   };
 
   const openEnrollDialog = () => {
+    setFormErrors({});
+    setError('');
     setFormData({ ecaId: '', studentId: '', enrollmentDate: new Date().toISOString().split('T')[0] });
     setOpenDialog(true);
   };
@@ -236,8 +245,8 @@ export function ECAManagement() {
           <Grid container spacing={2} sx={{ mt: 1 }}>
             {tabValue === 0 && (
               <>
-                <Grid item xs={12}><TextField label={t('eca.ecaId')} type="number" value={formData.ecaId} onChange={(e) => setFormData({ ...formData, ecaId: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12}><TextField label={t('eca.studentId')} type="number" value={formData.studentId} onChange={(e) => setFormData({ ...formData, studentId: e.target.value })} fullWidth /></Grid>
+                <Grid item xs={12}><TextField label={t('eca.ecaId')} type="number" value={formData.ecaId} onChange={(e) => { setFormData({ ...formData, ecaId: e.target.value }); setFormErrors((current) => ({ ...current, ecaId: undefined })); }} error={Boolean(formErrors.ecaId)} helperText={formErrors.ecaId ? t(`eca.${formErrors.ecaId === 'required' ? 'ecaIdRequired' : 'positiveIdRequired'}`) : undefined} fullWidth /></Grid>
+                <Grid item xs={12}><TextField label={t('eca.studentId')} type="number" value={formData.studentId} onChange={(e) => { setFormData({ ...formData, studentId: e.target.value }); setFormErrors((current) => ({ ...current, studentId: undefined })); }} error={Boolean(formErrors.studentId)} helperText={formErrors.studentId ? t(`eca.${formErrors.studentId === 'required' ? 'studentIdRequired' : 'positiveIdRequired'}`) : undefined} fullWidth /></Grid>
                 <Grid item xs={12}><YearSelectableDateField label={t('eca.enrollmentDate')} value={formData.enrollmentDate} onChange={(e) => setFormData({ ...formData, enrollmentDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
               </>
             )}

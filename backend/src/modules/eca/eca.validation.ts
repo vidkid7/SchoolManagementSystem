@@ -214,6 +214,32 @@ export const enrollStudentValidation = [
 ];
 
 /**
+ * Validation for the direct enrollment endpoint, where both ids are in the body.
+ */
+export const directEnrollStudentValidation = [
+  body('ecaId')
+    .notEmpty()
+    .withMessage('ECA ID is required')
+    .isInt({ min: 1 })
+    .withMessage('ECA ID must be a positive integer'),
+
+  body('studentId')
+    .notEmpty()
+    .withMessage('Student ID is required')
+    .isInt({ min: 1 })
+    .withMessage('Student ID must be a positive integer'),
+
+  body('enrollmentDate')
+    .optional()
+    .isISO8601()
+    .withMessage('Enrollment date must be a valid date'),
+
+  body('remarks')
+    .optional()
+    .trim()
+];
+
+/**
  * Validation for marking attendance
  */
 export const markAttendanceValidation = [
