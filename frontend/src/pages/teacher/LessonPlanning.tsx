@@ -79,6 +79,25 @@ const toArray = (value: any): any[] => {
   return [];
 };
 
+type LessonPlanFormState = {
+  subject: string;
+  className: string;
+  topic: string;
+  date: string;
+  duration: string;
+  objectives: string;
+  methodology: string;
+  assessment: string;
+};
+
+export const buildLessonPlanPayload = (form: LessonPlanFormState, status: string) => ({
+  ...form,
+  topic: form.topic.trim(),
+  duration: form.duration ? Number(form.duration) : 45,
+  objectives: form.objectives.split(/\r?\n/).map((objective) => objective.trim()).filter(Boolean),
+  status,
+});
+
 export const LessonPlanning = () => {
   const theme = useTheme();
   const S = useAdminStyles(theme);
@@ -92,17 +111,40 @@ export const LessonPlanning = () => {
   const [syllabusTopics, setSyllabusTopics] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<{ subject?: string; topic?: string; duration?: string }>({});
+  const [lessonPlanForm, setLessonPlanForm] = useState<LessonPlanFormState>({
+    subject: '',
+    className: '',
+    topic: '',
+    date: '',
+    duration: '45',
+    objectives: '',
+    methodology: '',
+    assessment: '',
+  });
 
   const loadData = useCallback(async () => {
-    if (!accessToken) return;
+    if (!accessToken) {
+      setLessonPlans([]);
+      setSyllabusTopics([]);
+      setError(t('portal.failedToLoadData'));
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
       const [plansRes, progressRes] = await Promise.all([
         apiClient.get('/api/v1/lesson-plans', { ...authHdr(accessToken), params: { limit: 50 } })
-          .catch(() => ({ data: { data: { lessonPlans: [] } } })),
+          .catch(() => {
+            setError(t('portal.failedToLoadData'));
+            return { data: { data: { lessonPlans: [] } } };
+          }),
         apiClient.get('/api/v1/lesson-plans/syllabus-progress', { ...authHdr(accessToken), params: { limit: 50 } })
-          .catch(() => ({ data: { data: { progress: [] } } })),
+          .catch(() => {
+            setError(t('portal.failedToLoadData'));
+            return { data: { data: { progress: [] } } };
+          }),
       ]);
       setLessonPlans(toArray(plansRes.data?.data));
       setSyllabusTopics(toArray(progressRes.data?.data));
@@ -142,32 +184,49 @@ export const LessonPlanning = () => {
   };
 
   const handleCreatePlan = () => {
+    setError(null);
+    setFormErrors({});
+    setLessonPlanForm({
+      subject: '',
+      className: '',
+      topic: '',
+      date: '',
+      duration: '45',
+      objectives: '',
+      methodology: '',
+      assessment: '',
+    });
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
+    setFormErrors({});
   };
 
   const handleSavePlan = async (status: string = 'draft') => {
     if (!accessToken) return;
+    const nextErrors: typeof formErrors = {};
+    if (!lessonPlanForm.subject) nextErrors.subject = t('teacher.subjectRequired');
+    if (!lessonPlanForm.topic.trim()) nextErrors.topic = t('teacher.topicRequired');
+    if (lessonPlanForm.duration && (!Number.isSafeInteger(Number(lessonPlanForm.duration)) || Number(lessonPlanForm.duration) <= 0)) {
+      nextErrors.duration = t('teacher.durationMustBePositiveInteger');
+    }
+    setFormErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
     try {
-      const formEl = document.querySelector('#lesson-plan-form') as HTMLFormElement | null;
-      const formData: any = {};
-      if (formEl) {
-        const inputs = formEl.querySelectorAll('input, textarea, select');
-        inputs.forEach((el: any) => {
-          if (el.name) formData[el.name] = el.value;
-        });
-      }
-      formData.status = status;
-      await apiClient.post('/api/v1/lesson-plans', formData, authHdr(accessToken));
+      await apiClient.post('/api/v1/lesson-plans', buildLessonPlanPayload(lessonPlanForm, status), authHdr(accessToken));
       setOpenDialog(false);
       loadData();
     } catch {
       setError(t('portal.failedToLoadData'));
-      setOpenDialog(false);
     }
+  };
+
+  const updateLessonPlanForm = (field: keyof typeof lessonPlanForm, value: string) => {
+    setLessonPlanForm((current) => ({ ...current, [field]: value }));
+    setFormErrors((current) => ({ ...current, [field]: undefined }));
   };
 
   const handleDeletePlan= async (planId: number | string) => {
@@ -419,22 +478,33 @@ export const LessonPlanning = () => {
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>{t('teacher.createLessonPlan')}</DialogTitle>
         <DialogContent>
+          {error && <Alert severity="error" sx={{ mt: 1 }}>{error}</Alert>}
           <Grid container spacing={3} sx={{ mt: 1 }}>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
                 <InputLabel>{t('common.subject')}</InputLabel>
-                <Select label={t('common.subject')} defaultValue="">
+                <Select
+                  label={t('common.subject')}
+                  value={lessonPlanForm.subject}
+                  error={Boolean(formErrors.subject)}
+                  onChange={(event) => updateLessonPlanForm('subject', event.target.value)}
+                >
                   <MenuItem value="Mathematics">Mathematics</MenuItem>
                   <MenuItem value="Physics">Physics</MenuItem>
                   <MenuItem value="Chemistry">Chemistry</MenuItem>
                 </Select>
+                {formErrors.subject && <Typography variant="caption" color="error">{formErrors.subject}</Typography>}
               </FormControl>
             </Grid>
 
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
                 <InputLabel>{t('common.class')}</InputLabel>
-                <Select label={t('common.class')} defaultValue="">
+                <Select
+                  label={t('common.class')}
+                  value={lessonPlanForm.className}
+                  onChange={(event) => updateLessonPlanForm('className', event.target.value)}
+                >
                   <MenuItem value="Class 10 A">Class 10 A</MenuItem>
                   <MenuItem value="Class 10 B">Class 10 B</MenuItem>
                   <MenuItem value="Class 11 Science">Class 11 Science</MenuItem>
@@ -447,6 +517,11 @@ export const LessonPlanning = () => {
                 fullWidth
                 label="Topic / शीर्षक"
                 placeholder="Enter lesson topic"
+                value={lessonPlanForm.topic}
+                onChange={(event) => updateLessonPlanForm('topic', event.target.value)}
+                required
+                error={Boolean(formErrors.topic)}
+                helperText={formErrors.topic}
               />
             </Grid>
 
@@ -455,6 +530,8 @@ export const LessonPlanning = () => {
                 fullWidth
                 label={t('common.date')}
                 InputLabelProps={{ shrink: true }}
+                value={lessonPlanForm.date}
+                onChange={(event) => updateLessonPlanForm('date', event.target.value)}
               />
             </Grid>
 
@@ -463,6 +540,11 @@ export const LessonPlanning = () => {
                 fullWidth
                 label={t('teacher.duration')}
                 placeholder={t('teacher.duration')}
+                type="number"
+                value={lessonPlanForm.duration}
+                onChange={(event) => updateLessonPlanForm('duration', event.target.value)}
+                error={Boolean(formErrors.duration)}
+                helperText={formErrors.duration}
               />
             </Grid>
 
@@ -473,6 +555,8 @@ export const LessonPlanning = () => {
                 rows={3}
                 label={t('teacher.learningObjectives')}
                 placeholder={t('teacher.learningObjectives')}
+                value={lessonPlanForm.objectives}
+                onChange={(event) => updateLessonPlanForm('objectives', event.target.value)}
               />
             </Grid>
 
@@ -483,6 +567,8 @@ export const LessonPlanning = () => {
                 rows={4}
                 label={t('teacher.teachingActivities')}
                 placeholder={t('teacher.teachingActivities')}
+                value={lessonPlanForm.methodology}
+                onChange={(event) => updateLessonPlanForm('methodology', event.target.value)}
               />
             </Grid>
 
@@ -493,6 +579,8 @@ export const LessonPlanning = () => {
                 rows={3}
                 label={t('teacher.assessmentMethods')}
                 placeholder={t('teacher.assessmentMethods')}
+                value={lessonPlanForm.assessment}
+                onChange={(event) => updateLessonPlanForm('assessment', event.target.value)}
               />
             </Grid>
 

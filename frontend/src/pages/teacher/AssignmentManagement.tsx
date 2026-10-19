@@ -93,12 +93,20 @@ export const AssignmentManagement = () => {
   const [gradeFeedback, setGradeFeedback] = useState<string>('');
 
   const loadAssignments = useCallback(async () => {
-    if (!accessToken) return;
+    if (!accessToken) {
+      setAssignments([]);
+      setError(t('portal.failedToLoadData'));
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
       const res = await apiClient.get('/api/v1/assignments', { ...authHdr(accessToken), params: { limit: 50 } })
-        .catch(() => ({ data: { data: { assignments: [] } } }));
+        .catch(() => {
+          setError(t('portal.failedToLoadData'));
+          return { data: { data: { assignments: [] } } };
+        });
       setAssignments(res.data?.data?.assignments ?? res.data?.data ?? []);
     } catch {
       setError(t('portal.failedToLoadData'));
@@ -106,6 +114,10 @@ export const AssignmentManagement = () => {
       setLoading(false);
     }
   }, [accessToken, t]);
+
+  useEffect(() => {
+    void loadAssignments();
+  }, [loadAssignments]);
 
   const loadSubmissions = useCallback(async (assignmentId: number | string) => {
     if (!accessToken) return;
