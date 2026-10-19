@@ -154,6 +154,29 @@ const BS_CALENDAR_DATA: BSYearData[] = [
  */
 const AD_EPOCH_DATE = new Date('1943-04-14');
 
+/** Return the exact Gregorian range represented by a BS month in the bundled calendar. */
+export function getBSMonthDateRange(yearBS: number, monthBS: number): {
+  daysInMonth: number;
+  startDateAD: Date;
+  endDateAD: Date;
+} | null {
+  const yearData = BS_CALENDAR_DATA.find((year) => year.year === yearBS);
+  const daysInMonth = yearData?.months[monthBS - 1];
+  if (!daysInMonth || monthBS < 1 || monthBS > 12) return null;
+
+  let daysBeforeMonth = 0;
+  for (let year = 2000; year < yearBS; year += 1) {
+    const previousYear = BS_CALENDAR_DATA.find((entry) => entry.year === year);
+    if (!previousYear) return null;
+    daysBeforeMonth += previousYear.months.reduce((sum, days) => sum + days, 0);
+  }
+  daysBeforeMonth += yearData.months.slice(0, monthBS - 1).reduce((sum, days) => sum + days, 0);
+
+  const startDateAD = new Date(AD_EPOCH_DATE.getTime() + daysBeforeMonth * 24 * 60 * 60 * 1000);
+  const endDateAD = new Date(startDateAD.getTime() + (daysInMonth - 1) * 24 * 60 * 60 * 1000);
+  return { daysInMonth, startDateAD, endDateAD };
+}
+
 export class BSCalendarService {
   /**
    * Populate the BS calendar table with data for years 2000-2100 BS

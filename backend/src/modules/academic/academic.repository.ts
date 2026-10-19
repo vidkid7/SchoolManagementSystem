@@ -5,6 +5,19 @@ import auditLogger from '@utils/auditLogger';
 import { Request } from 'express';
 import { getCurrentAcademicYearInfo, getAcademicYearInfo, getCurrentBSAcademicYear } from '@utils/nepaliCalendar';
 
+const dateOnly = (value: Date | string): string => new Date(value).toISOString().slice(0, 10);
+
+function hasLegacyGeneratedAcademicYearDates(
+  year: AcademicYear,
+  expected: ReturnType<typeof getAcademicYearInfo>
+): boolean {
+  const startBsYear = Number(expected.name.split('-')[0]);
+  return year.startDateBS === expected.startDateBS &&
+    year.endDateBS === expected.endDateBS &&
+    dateOnly(year.startDateAD) === `${startBsYear - 57}-07-16` &&
+    dateOnly(year.endDateAD) === `${startBsYear - 56}-07-15`;
+}
+
 /**
  * Academic Repository
  * Handles all database operations for AcademicYear and Term entities
@@ -317,6 +330,17 @@ class AcademicRepository {
         });
 
         logger.info(`✅ Auto-created academic year: ${info.name}`);
+      } else if (current.name === info.name && hasLegacyGeneratedAcademicYearDates(current, info)) {
+        // Repair rows created by the old fixed July 16/July 15 boundary logic.
+        await current.update({
+          startDateAD: info.startDateAD,
+          endDateAD: info.endDateAD,
+          isCurrent: true,
+        });
+        await AcademicYear.update({ isCurrent: false }, {
+          where: { academicYearId: { [Op.ne]: current.academicYearId } },
+        });
+        logger.info(`✅ Repaired generated academic year AD boundaries: ${current.name}`);
       } else if (!current.isCurrent) {
         // The correct year exists but is not flagged as current — fix that
         await AcademicYear.update({ isCurrent: false }, { where: {} });
@@ -353,6 +377,12 @@ class AcademicRepository {
         isCurrent: false,
       });
       logger.info(`✅ Pre-created next academic year: ${nextInfo.name}`);
+    } else if (hasLegacyGeneratedAcademicYearDates(exists, nextInfo)) {
+      await exists.update({
+        startDateAD: nextInfo.startDateAD,
+        endDateAD: nextInfo.endDateAD,
+      });
+      logger.info(`✅ Repaired generated academic year AD boundaries: ${exists.name}`);
     }
   }
 
