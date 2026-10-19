@@ -40,6 +40,8 @@
   "author": "School Management System Team",
   "license": "MIT",
   "dependencies": {
+    "@emnapi/core": "^1.11.3",
+    "@emnapi/runtime": "^1.11.3",
     "axios": "^1.6.2",
     "bcrypt": "^6.0.0",
     "compression": "^1.7.4",
