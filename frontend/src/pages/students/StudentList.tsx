@@ -578,12 +578,20 @@ export const StudentList = () => {
                         size="small"
                         sx={{ height: 28 }}
                       >
-                        <ToggleButton value="exact" sx={{ px: 1.5, py: 0.5 }}>
+                        <ToggleButton
+                          value="exact"
+                          aria-label={t('students.exactSearch') || 'Exact Search'}
+                          sx={{ px: 1.5, py: 0.5 }}
+                        >
                           <Tooltip title={t('students.exactSearch') || 'Exact Search'}>
                             <ExactIcon fontSize="small" />
                           </Tooltip>
                         </ToggleButton>
-                        <ToggleButton value="fuzzy" sx={{ px: 1.5, py: 0.5 }}>
+                        <ToggleButton
+                          value="fuzzy"
+                          aria-label={t('students.fuzzySearch') || 'Fuzzy Search (handles typos)'}
+                          sx={{ px: 1.5, py: 0.5 }}
+                        >
                           <Tooltip title={t('students.fuzzySearch') || 'Fuzzy Search (handles typos)'}>
                             <Badge badgeContent="AI" color="primary" sx={{ '& .MuiBadge-badge': { fontSize: '0.5rem', height: 14, minWidth: 14 } }}>
                               <FuzzyIcon fontSize="small" />
