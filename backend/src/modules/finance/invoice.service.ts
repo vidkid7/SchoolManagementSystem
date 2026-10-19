@@ -19,6 +19,7 @@ export interface GenerateInvoiceParams {
   dueDate: string;
   discount?: number;
   discountReason?: string;
+  remarks?: string;
 }
 
 export interface BulkGenerateInvoiceParams {
@@ -136,7 +137,8 @@ class InvoiceService {
           dueDate: params.dueDate,
           items,
           discount: params.discount,
-          discountReason: params.discountReason
+          discountReason: params.discountReason,
+          remarks: params.remarks
         },
         t
       );

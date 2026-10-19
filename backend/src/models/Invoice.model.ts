@@ -144,6 +144,7 @@ export interface InvoiceAttributes {
   subtotal: number;
   discount: number;
   discountReason?: string;
+  remarks?: string;
   discountApprovalStatus?: DiscountApprovalStatus;
   discountApprovedBy?: number;
   discountApprovedAt?: Date;
@@ -162,7 +163,7 @@ export interface InvoiceAttributes {
  */
 export interface InvoiceCreationAttributes extends Optional<InvoiceAttributes,
   'invoiceId' | 'paidAmount' | 'balance' | 'status' | 'generatedAt' | 
-  'discountReason' | 'discountApprovalStatus' | 'discountApprovedBy' | 
+  'discountReason' | 'remarks' | 'discountApprovalStatus' | 'discountApprovedBy' |
   'discountApprovedAt' | 'createdAt' | 'updatedAt' | 'deletedAt'> {}
 
 /**
@@ -179,6 +180,7 @@ class Invoice extends Model<InvoiceAttributes, InvoiceCreationAttributes>
   public subtotal!: number;
   public discount!: number;
   public discountReason?: string;
+  public remarks?: string;
   public discountApprovalStatus?: DiscountApprovalStatus;
   public discountApprovedBy?: number;
   public discountApprovedAt?: Date;
@@ -406,6 +408,11 @@ Invoice.init(
       allowNull: true,
       field: 'discount_reason',
       comment: 'Reason for discount/concession'
+    },
+    remarks: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      comment: 'Optional invoice notes'
     },
     discountApprovalStatus: {
       type: DataTypes.ENUM(...Object.values(DiscountApprovalStatus)),

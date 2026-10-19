@@ -75,7 +75,8 @@ export const generateInvoiceSchema = Joi.object({
   dueDate: Joi.date().iso().required()
     .messages({ 'any.required': 'Due date is required' }),
   discount: Joi.number().min(0).optional(),
-  discountReason: Joi.string().trim().max(500).allow('', null).optional()
+  discountReason: Joi.string().trim().max(500).allow('', null).optional(),
+  remarks: Joi.string().trim().max(500).allow('', null).optional()
 });
 
 export const bulkGenerateInvoicesSchema = Joi.object({

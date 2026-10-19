@@ -62,6 +62,7 @@ import * as ensureStaffAttendanceTable from '../migrations/20261019000001-ensure
 import * as ensureStudentCVTable from '../migrations/20261019000002-ensure-student-cv-table';
 import * as createLibraryCategoriesTable from '../migrations/20261019000003-create-library-categories-table';
 import * as ensureRefundsTable from '../migrations/20261019000004-ensure-refunds-table';
+import * as addInvoiceRemarks from '../migrations/20261019000005-add-invoice-remarks';
 
 /**
  * Migration Runner
@@ -356,6 +357,11 @@ const migrations: Migration[] = [
     name: '20261019000004-ensure-refunds-table',
     up: ensureRefundsTable.up,
     down: ensureRefundsTable.down
+  },
+  {
+    name: '20261019000005-add-invoice-remarks',
+    up: addInvoiceRemarks.up,
+    down: addInvoiceRemarks.down
   }
 ];
 

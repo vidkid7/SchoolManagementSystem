@@ -129,6 +129,7 @@ export function InvoiceGeneration() {
       const response = await apiClient.post('/finance/invoices', {
         studentId: Number(singleForm.studentId),
         feeStructureId: Number(singleForm.feeStructureId),
+        academicYearId: selectedSingleFee?.academicYearId,
         dueDate: singleForm.dueDate,
         discount: singleForm.discount,
         discountReason: singleForm.discountReason,
@@ -151,10 +152,14 @@ export function InvoiceGeneration() {
       setLoading(true);
       setError('');
 
+      const studentIds = bulkForm.studentIds.length > 0
+        ? bulkForm.studentIds
+        : filteredStudents.map((student) => student.studentId);
+
       const response = await apiClient.post('/finance/invoices/bulk-generate', {
-        classId: bulkForm.classId ? Number(bulkForm.classId) : undefined,
-        studentIds: bulkForm.studentIds.length > 0 ? bulkForm.studentIds : undefined,
+        studentIds,
         feeStructureId: Number(bulkForm.feeStructureId),
+        academicYearId: selectedBulkFee?.academicYearId,
         dueDate: bulkForm.dueDate,
       });
 
@@ -197,6 +202,8 @@ export function InvoiceGeneration() {
   const getStudentOptionLabel = (student: Student) =>
     `${student.firstNameEn} ${student.lastNameEn || ''} - ${getStudentClassLabel(student)}`.trim();
   const selectedClass = classes.find((item) => item.classId === Number(bulkForm.classId));
+  const selectedSingleFee = feeStructures.find((item) => item.feeStructureId === Number(singleForm.feeStructureId));
+  const selectedBulkFee = feeStructures.find((item) => item.feeStructureId === Number(bulkForm.feeStructureId));
 
   return (
     <Box>
@@ -337,7 +344,7 @@ export function InvoiceGeneration() {
                 size="large"
                 startIcon={<ReceiptIcon />}
                 onClick={handleGenerateSingle}
-                disabled={loading || !singleForm.studentId || !singleForm.feeStructureId || !singleForm.dueDate}
+                disabled={loading || !singleForm.studentId || !selectedSingleFee?.academicYearId || !singleForm.dueDate}
                 fullWidth
               >
                 {loading ? t('finance.processing') : t('finance.generateInvoice')}
@@ -455,7 +462,7 @@ export function InvoiceGeneration() {
                 size="large"
                 startIcon={<GroupIcon />}
                 onClick={handleGenerateBulk}
-                disabled={loading || !bulkForm.feeStructureId || !bulkForm.dueDate}
+                disabled={loading || !selectedBulkFee?.academicYearId || !bulkForm.dueDate || filteredStudents.length === 0}
                 fullWidth
               >
                 {loading ? t('finance.processing') : t('finance.generateInvoices')}

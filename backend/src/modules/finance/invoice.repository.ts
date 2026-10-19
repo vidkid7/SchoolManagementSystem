@@ -17,6 +17,7 @@ export interface CreateInvoiceData {
   items: CreateInvoiceItemData[];
   discount?: number;
   discountReason?: string;
+  remarks?: string;
 }
 
 export interface CreateInvoiceItemData {
@@ -79,6 +80,7 @@ class InvoiceRepository {
         subtotal,
         discount,
         discountReason: data.discountReason,
+        remarks: data.remarks,
         discountApprovalStatus: discount > 0 ? DiscountApprovalStatus.PENDING : undefined,
         totalAmount,
         paidAmount: 0,
