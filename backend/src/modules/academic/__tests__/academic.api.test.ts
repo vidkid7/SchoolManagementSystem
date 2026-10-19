@@ -687,6 +687,8 @@ describe('Academic API Integration Tests', () => {
         expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);
         expect(response.body.data.subjectId).toBe(testSubject.subjectId);
+        expect(response.body.data.topics).toHaveLength(1);
+        expect(response.body.data.topics[0].title).toBe('Algebra Basics');
       });
 
       it('should require subjectId and classId', async () => {

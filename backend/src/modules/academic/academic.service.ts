@@ -413,7 +413,7 @@ class AcademicService {
         model: SyllabusTopic, 
         as: 'topics',
         separate: true,
-        order: [['orderIndex', 'ASC']]
+        order: [['topicId', 'ASC']]
       }]
     });
   }
@@ -424,7 +424,7 @@ class AcademicService {
         model: SyllabusTopic, 
         as: 'topics',
         separate: true,
-        order: [['orderIndex', 'ASC']]
+        order: [['topicId', 'ASC']]
       }]
     });
   }
