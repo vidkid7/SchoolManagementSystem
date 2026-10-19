@@ -58,6 +58,8 @@ interface CertificateVerificationResult {
   verifiedAt: string;
 }
 
+const CERTIFICATE_NUMBER_PATTERN = /^CERT-[A-Z]{4}-\d{4}-\d{4}$/;
+
 export const CertificateVerification = () => {
   const theme = useTheme();
   const S = useAdminStyles(theme);
@@ -72,8 +74,13 @@ export const CertificateVerification = () => {
   const animationRef = useRef<number | null>(null);
 
   const verifyCertificate = async (input: string) => {
-    const certNumber = input.trim();
+    const certNumber = input.trim().toUpperCase();
     if (!certNumber) return;
+    if (!CERTIFICATE_NUMBER_PATTERN.test(certNumber)) {
+      setError(t('certificates.invalidCertificateNumberFormat'));
+      setResult(null);
+      return;
+    }
     setLoading(true);
     setError('');
     setResult(null);
@@ -86,11 +93,11 @@ export const CertificateVerification = () => {
         setResult({
           valid: false,
           certificate: null,
-          message: 'Certificate not found. Please check the certificate number.',
+          message: t('certificates.certificateNotFound'),
           verifiedAt: new Date().toISOString(),
         });
       } else {
-        setError('Failed to verify certificate. Please try again.');
+        setError(t('certificates.verificationFailed'));
       }
     } finally {
       setLoading(false);
@@ -99,7 +106,7 @@ export const CertificateVerification = () => {
 
   const handleVerify = async () => {
     if (!certificateNumber.trim()) {
-      setError('Please enter a certificate number');
+      setError(t('certificates.certificateNumberRequired'));
       return;
     }
     await verifyCertificate(certificateNumber);
@@ -269,13 +276,14 @@ export const CertificateVerification = () => {
         {/* Search Box */}
         <Card sx={{ ...S.GLASS, mb: 4 }}>
           <CardContent>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" component="h5" gutterBottom>
               Enter Certificate Number / प्रमाणपत्र नम्बर प्रविष्ट गर्नुहोस्
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
               <TextField
                 fullWidth
-                placeholder="e.g., CERT-2024-001234"
+                label={t('certificates.enterCertificateNumber')}
+                placeholder={t('certificates.certificateNumberPlaceholder')}
                 value={certificateNumber}
                 onChange={(e) => setCertificateNumber(e.target.value)}
                 InputProps={{
@@ -449,7 +457,7 @@ export const CertificateVerification = () => {
 
         {/* Instructions */}
         <Box sx={{ mt: 4 }}>
-          <Typography variant="h6" gutterBottom>
+          <Typography variant="h6" component="h5" gutterBottom>
             How to Verify / कसरी प्रमाणित गर्ने
           </Typography>
           <Grid container spacing={2}>

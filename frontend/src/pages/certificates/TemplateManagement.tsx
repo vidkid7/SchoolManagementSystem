@@ -47,6 +47,7 @@ import {
 import apiClient from '../../services/apiClient';
 
 import { useTranslation } from 'react-i18next';
+import { extractTemplateVariables } from './certificateTemplateUtils';
 
 const CERTIFICATE_TYPES = [
   { value: 'character', label: 'Character Certificate' },
@@ -56,8 +57,6 @@ const CERTIFICATE_TYPES = [
   { value: 'sports', label: 'Sports Participation/Achievement' },
   { value: 'course_completion', label: 'Course Completion' },
   { value: 'bonafide', label: 'Bonafide Certificate' },
-  { value: 'conduct', label: 'Conduct Certificate' },
-  { value: 'participation', label: 'Participation Certificate' },
 ];
 
 interface Template {
@@ -65,7 +64,6 @@ interface Template {
   name: string;
   type: string;
   templateHtml: string;
-  templateCss?: string;
   variables: string[];
   isActive: boolean;
   createdAt: string;
@@ -104,7 +102,6 @@ export const TemplateManagement = () => {
     name: '',
     type: 'character',
     templateHtml: '',
-    templateCss: '',
     variables: [] as string[],
     isActive: true,
   });
@@ -133,7 +130,6 @@ const fetchTemplates = async () => {
         name: template.name,
         type: template.type,
         templateHtml: template.templateHtml,
-        templateCss: template.templateCss || '',
         variables: template.variables || [],
         isActive: template.isActive,
       });
@@ -143,7 +139,6 @@ const fetchTemplates = async () => {
         name: '',
         type: 'character',
         templateHtml: getDefaultTemplate(),
-        templateCss: getDefaultCss(),
         variables: [],
         isActive: true,
       });
@@ -160,11 +155,17 @@ const fetchTemplates = async () => {
 const handleSubmit = async () => {
     try {
       setError('');
+      const variables = extractTemplateVariables(formData.templateHtml);
+      if (formData.name.trim().length < 3 || !formData.type || formData.templateHtml.trim().length < 10 || variables.length === 0) {
+        setError(t('certificates.templateFormRequired'));
+        return;
+      }
+      const templatePayload = { ...formData, name: formData.name.trim(), variables };
       if (selectedTemplate) {
-        await apiClient.put(`/api/v1/certificate-templates/${selectedTemplate.templateId}`, formData);
+        await apiClient.put(`/api/v1/certificate-templates/${selectedTemplate.templateId}`, templatePayload);
         setSuccess(t('certificates.templateUpdated'));
       } else {
-        await apiClient.post('/api/v1/certificate-templates', formData);
+        await apiClient.post('/api/v1/certificate-templates', templatePayload);
         setSuccess(t('certificates.templateCreated'));
       }
       handleCloseDialog();
@@ -250,48 +251,6 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
     </div>
   </div>
 </div>`;
-  };
-
-  const getDefaultCss = () => {
-    return `.certificate {
-  width: 800px;
-  padding: 40px;
-  border: 2px solid #333;
-  font-family: 'Times New Roman', serif;
-  text-align: center;
-}
-
-.header h1 {
-  font-size: 32px;
-  margin: 0;
-  color: #4a5568;
-}
-
-.title h2 {
-  font-size: 28px;
-  margin: 30px 0;
-  text-decoration: underline;
-}
-
-.content {
-  margin: 40px 0;
-  line-height: 2;
-}
-
-.content h3 {
-  font-size: 24px;
-  margin: 20px 0;
-  text-decoration: underline;
-}
-
-.footer {
-  margin-top: 60px;
-}
-
-.signature {
-  float: right;
-  text-align: center;
-}`;
   };
 
   const getTypeLabel = (type: string) => {
@@ -423,6 +382,7 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
         </DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
+            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <TextField
@@ -454,7 +414,6 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
             <Paper sx={{ ...S.GLASS, mt: 3 }}>
               <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
                 <Tab label={t('certificates.htmlTemplateTab')} />
-                <Tab label={t('certificates.cssStylesTab')} />
                 <Tab label={t('certificates.variablesTab')} />
               </Tabs>
             </Paper>
@@ -473,18 +432,6 @@ const handleToggleActive = async (templateId: number, isActive: boolean) => {
             </TabPanel>
 
             <TabPanel value={tabValue} index={1}>
-              <TextField
-                label={t('certificates.cssStylesTab')}
-                fullWidth
-                multiline
-                rows={15}
-                value={formData.templateCss}
-                onChange={(e) => setFormData({ ...formData, templateCss: e.target.value })}
-                placeholder=".certificate { padding: 20px; }"
-              />
-            </TabPanel>
-
-            <TabPanel value={tabValue} index={2}>
               <Alert severity="info" sx={{ mb: 2 }}>
                 Available variables: student_name, parent_name, school_name, school_address, 
                 course_name, academic_year, issue_date, certificate_number, class_name, 

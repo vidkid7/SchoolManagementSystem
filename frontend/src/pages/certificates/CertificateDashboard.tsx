@@ -236,7 +236,7 @@ export const CertificateDashboard = () => {
         <Grid item xs={12} md={6}>
           <Card sx={{ ...S.GLASS }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" component="h5" gutterBottom>
                 {t('certificates.byType')}
               </Typography>
               <Box sx={{ mt: 2 }}>
@@ -263,7 +263,7 @@ export const CertificateDashboard = () => {
         <Grid item xs={12} md={6}>
           <Card sx={{ ...S.GLASS }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" component="h5" gutterBottom>
                 {t('certificates.recentCertificates')}
               </Typography>
               <Box sx={{ mt: 2 }}>
@@ -299,7 +299,7 @@ export const CertificateDashboard = () => {
         <Grid item xs={12}>
           <Card sx={{ ...S.GLASS }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" component="h5" gutterBottom>
                 {t('certificates.quickActions')}
               </Typography>
               <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>

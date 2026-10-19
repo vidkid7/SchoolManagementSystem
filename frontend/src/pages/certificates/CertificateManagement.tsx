@@ -59,6 +59,7 @@ import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import apiClient from '../../services/apiClient';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { useTranslation } from 'react-i18next';
+import { extractTemplateVariables } from './certificateTemplateUtils';
 
 // Certificate types
 const CERTIFICATE_TYPES = [
@@ -249,13 +250,25 @@ const fetchCertificates = useCallback(async () => {
   }, [fetchCertificates]);
 
 const handleCreateTemplate = async () => {
+    const variables = extractTemplateVariables(templateForm.templateHtml);
+    if (templateForm.name.trim().length < 3 || !templateForm.type || templateForm.templateHtml.trim().length < 10 || variables.length === 0) {
+      setSnackbar({ open: true, message: t('certificates.templateFormRequired'), severity: 'error' });
+      return;
+    }
+
     try {
-      await apiClient.post('/api/v1/certificate-templates', templateForm);
+      await apiClient.post('/api/v1/certificate-templates', { ...templateForm, variables });
       setTemplateDialogOpen(false);
       setTemplateForm({ name: '', type: '', templateHtml: '' });
       fetchTemplates();
-    } catch (error) {
+      setSnackbar({ open: true, message: t('certificates.templateCreated'), severity: 'success' });
+    } catch (error: any) {
       console.error('Failed to create template:', error);
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.error?.message || t('certificates.templateCreateFailed'),
+        severity: 'error',
+      });
     }
   };
 
@@ -400,8 +413,9 @@ const handleRevokeCertificate = async (certificateId: number) => {
               }}
             />
             <FormControl size="small" sx={{ minWidth: 200 }}>
-              <InputLabel>{t('common.type')}</InputLabel>
+              <InputLabel id="template-type-filter-label">{t('common.type')}</InputLabel>
               <Select
+                labelId="template-type-filter-label"
                 value={templateTypeFilter}
                 label={t('common.type')}
                 onChange={(e) => {
@@ -513,8 +527,9 @@ const handleRevokeCertificate = async (certificateId: number) => {
               }}
             />
             <FormControl size="small" sx={{ minWidth: 200 }}>
-              <InputLabel>{t('common.type')}</InputLabel>
+              <InputLabel id="certificate-type-filter-label">{t('common.type')}</InputLabel>
               <Select
+                labelId="certificate-type-filter-label"
                 value={certTypeFilter}
                 label={t('common.type')}
                 onChange={(e) => {
@@ -531,8 +546,9 @@ const handleRevokeCertificate = async (certificateId: number) => {
               </Select>
             </FormControl>
             <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>{t('common.status')}</InputLabel>
+              <InputLabel id="certificate-status-filter-label">{t('common.status')}</InputLabel>
               <Select
+                labelId="certificate-status-filter-label"
                 value={certStatusFilter}
                 label={t('common.status')}
                 onChange={(e) => {
@@ -704,12 +720,14 @@ const handleRevokeCertificate = async (certificateId: number) => {
             <TextField
               label={t('certificates.templateName')}
               fullWidth
+              required
               value={templateForm.name}
               onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })}
             />
             <FormControl fullWidth>
-              <InputLabel>{t('certificates.certificateType')}</InputLabel>
+              <InputLabel id="create-template-type-label" required>{t('certificates.certificateType')}</InputLabel>
               <Select
+                labelId="create-template-type-label"
                 value={templateForm.type}
                 label={t('certificates.certificateType')}
                 onChange={(e) => setTemplateForm({ ...templateForm, type: e.target.value })}
@@ -724,12 +742,13 @@ const handleRevokeCertificate = async (certificateId: number) => {
             <TextField
               label={t('certificates.templateHtml')}
               fullWidth
+              required
               multiline
               rows={6}
               value={templateForm.templateHtml}
               onChange={(e) => setTemplateForm({ ...templateForm, templateHtml: e.target.value })}
               placeholder="<div class='certificate'>{{student_name}}...</div>"
-              helperText="Use {{variable_name}} for dynamic fields"
+              helperText={t('certificates.availableVarsNote')}
             />
           </Box>
         </DialogContent>
@@ -820,8 +839,9 @@ const handleRevokeCertificate = async (certificateId: number) => {
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth required>
-                  <InputLabel>{t('certificates.template')}</InputLabel>
+                  <InputLabel id="generate-template-label">{t('certificates.template')}</InputLabel>
                   <Select
+                    labelId="generate-template-label"
                     value={generateForm.templateId}
                     label={t('certificates.template')}
                     onChange={(e) => setGenerateForm({ ...generateForm, templateId: e.target.value })}
@@ -836,8 +856,9 @@ const handleRevokeCertificate = async (certificateId: number) => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth required>
-                  <InputLabel>{t('certificates.student')}</InputLabel>
+                  <InputLabel id="generate-student-label">{t('certificates.student')}</InputLabel>
                   <Select
+                    labelId="generate-student-label"
                     value={generateForm.studentId}
                     label={t('certificates.student')}
                     onChange={(e) => {
@@ -934,8 +955,9 @@ const handleRevokeCertificate = async (certificateId: number) => {
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth required>
-                  <InputLabel>{t('certificates.template')}</InputLabel>
+                  <InputLabel id="bulk-generate-template-label">{t('certificates.template')}</InputLabel>
                   <Select
+                    labelId="bulk-generate-template-label"
                     value={bulkForm.templateId}
                     label={t('certificates.template')}
                     onChange={(e) => setBulkForm({ ...bulkForm, templateId: e.target.value })}
