@@ -50,15 +50,21 @@ interface FeeStructure {
 interface Student {
   studentId: number;
   firstNameEn: string;
-  lastNameEn: string;
-  classId: number;
-  className: string;
+  lastNameEn: string | null;
+  currentClassId?: number | null;
+  classId?: number | null;
+  className?: string | null;
+  class?: {
+    classId?: number;
+    gradeLevel?: number;
+    section?: string;
+  } | null;
 }
 
 interface Class {
   classId: number;
-  name: string;
   gradeLevel: number;
+  section: string;
 }
 
 export function InvoiceGeneration() {
@@ -167,8 +173,30 @@ export function InvoiceGeneration() {
   };
 
   const filteredStudents = bulkForm.classId
-    ? students.filter((s) => s.classId === Number(bulkForm.classId))
+    ? students.filter((s) => (s.currentClassId ?? s.class?.classId ?? s.classId) === Number(bulkForm.classId))
     : students;
+
+  const getClassLabel = (studentClass: Class) =>
+    t('academic.classSection', { grade: studentClass.gradeLevel, section: studentClass.section });
+
+  const getStudentClassLabel = (student: Student) => {
+    const classId = student.currentClassId ?? student.class?.classId ?? student.classId;
+    const studentClass = classes.find((item) => item.classId === classId);
+    if (studentClass) {
+      return getClassLabel(studentClass);
+    }
+    if (student.class?.gradeLevel != null) {
+      return t('academic.classSection', {
+        grade: student.class.gradeLevel,
+        section: student.class.section || '—',
+      });
+    }
+    return t('finance.classNotAssigned');
+  };
+
+  const getStudentOptionLabel = (student: Student) =>
+    `${student.firstNameEn} ${student.lastNameEn || ''} - ${getStudentClassLabel(student)}`.trim();
+  const selectedClass = classes.find((item) => item.classId === Number(bulkForm.classId));
 
   return (
     <Box>
@@ -226,15 +254,17 @@ export function InvoiceGeneration() {
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth required>
-                <InputLabel>{t('finance.student')}</InputLabel>
+                <InputLabel id="invoice-student-label">{t('finance.student')}</InputLabel>
                 <Select
+                  labelId="invoice-student-label"
+                  id="invoice-student-select"
                   value={singleForm.studentId}
                   label={t('finance.student')}
                   onChange={(e) => setSingleForm({ ...singleForm, studentId: e.target.value })}
                 >
                   {students.map((student) => (
                     <MenuItem key={student.studentId} value={student.studentId}>
-                      {student.firstNameEn} {student.lastNameEn} - {student.className}
+                      {getStudentOptionLabel(student)}
                     </MenuItem>
                   ))}
                 </Select>
@@ -243,8 +273,10 @@ export function InvoiceGeneration() {
 
             <Grid item xs={12} md={6}>
               <FormControl fullWidth required>
-                <InputLabel>{t('finance.feeStructure')}</InputLabel>
+                <InputLabel id="invoice-fee-structure-label">{t('finance.feeStructure')}</InputLabel>
                 <Select
+                  labelId="invoice-fee-structure-label"
+                  id="invoice-fee-structure-select"
                   value={singleForm.feeStructureId}
                   label={t('finance.feeStructure')}
                   onChange={(e) => setSingleForm({ ...singleForm, feeStructureId: e.target.value })}
@@ -323,8 +355,10 @@ export function InvoiceGeneration() {
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
-                <InputLabel>{t('finance.selectClassOptional')}</InputLabel>
+                <InputLabel id="bulk-invoice-class-label">{t('finance.selectClassOptional')}</InputLabel>
                 <Select
+                  labelId="bulk-invoice-class-label"
+                  id="bulk-invoice-class-select"
                   value={bulkForm.classId}
                   label={t('finance.selectClassOptional')}
                   onChange={(e) => setBulkForm({ ...bulkForm, classId: e.target.value, studentIds: [] })}
@@ -332,7 +366,7 @@ export function InvoiceGeneration() {
                   <MenuItem value="">{t('finance.allClasses')}</MenuItem>
                   {classes.map((cls) => (
                     <MenuItem key={cls.classId} value={cls.classId}>
-                      {cls.name}
+                      {getClassLabel(cls)}
                     </MenuItem>
                   ))}
                 </Select>
@@ -341,8 +375,10 @@ export function InvoiceGeneration() {
 
             <Grid item xs={12} md={6}>
               <FormControl fullWidth required>
-                <InputLabel>{t('finance.feeStructure')}</InputLabel>
+                <InputLabel id="bulk-invoice-fee-structure-label">{t('finance.feeStructure')}</InputLabel>
                 <Select
+                  labelId="bulk-invoice-fee-structure-label"
+                  id="bulk-invoice-fee-structure-select"
                   value={bulkForm.feeStructureId}
                   label={t('finance.feeStructure')}
                   onChange={(e) => setBulkForm({ ...bulkForm, feeStructureId: e.target.value })}
@@ -371,7 +407,7 @@ export function InvoiceGeneration() {
               <Autocomplete
                 multiple
                 options={filteredStudents}
-                getOptionLabel={(option) => `${option.firstNameEn} ${option.lastNameEn} - ${option.className}`}
+                getOptionLabel={getStudentOptionLabel}
                 value={filteredStudents.filter((s) => bulkForm.studentIds.includes(s.studentId))}
                 onChange={(_, newValue) => {
                   setBulkForm({ ...bulkForm, studentIds: newValue.map((s) => s.studentId) });
@@ -380,13 +416,13 @@ export function InvoiceGeneration() {
                   <TextField
                     {...params}
                     label={t('finance.selectStudent')}
-                    helperText={t('finance.pleaseWait')}
+                    helperText={t('finance.studentSelectionHint')}
                   />
                 )}
                 renderTags={(value, getTagProps) =>
                   value.map((option, index) => (
                     <Chip
-                      label={`${option.firstNameEn} ${option.lastNameEn}`}
+                      label={`${option.firstNameEn} ${option.lastNameEn || ''}`.trim()}
                       {...getTagProps({ index })}
                       size="small"
                     />
@@ -403,11 +439,11 @@ export function InvoiceGeneration() {
                   </Typography>
                   <Typography variant="body1">
                     {bulkForm.classId
-                      ? `${t('finance.className')}: ${classes.find((c) => c.classId === Number(bulkForm.classId))?.name}`
+                      ? `${t('finance.className')}: ${selectedClass ? getClassLabel(selectedClass) : t('finance.classNotAssigned')}`
                       : t('finance.allClasses')}
                   </Typography>
                   <Typography variant="body1">
-                    {t('finance.studentName')}: {bulkForm.studentIds.length > 0 ? bulkForm.studentIds.length : t('finance.allClasses')}
+                    {t('finance.studentName')}: {bulkForm.studentIds.length > 0 ? bulkForm.studentIds.length : t('finance.allMatchingStudents')}
                   </Typography>
                 </CardContent>
               </Card>
