@@ -64,11 +64,18 @@ interface GradingScheme {
 interface AttendanceRule {
   id: string;
   name: string;
-  presentWeight: number;
-  absentWeight: number;
-  lateWeight: number;
-  excusedWeight: number;
-  minAttendance: number;
+  minimumAttendancePercentage: number;
+  lowAttendanceThreshold: number;
+  criticalAttendanceThreshold: number;
+  correctionWindowHours: number;
+  allowTeacherCorrection: boolean;
+  allowAdminCorrection: boolean;
+  maxLeaveDaysPerMonth: number;
+  maxLeaveDaysPerYear: number;
+  requireLeaveApproval: boolean;
+  enableLowAttendanceAlerts: boolean;
+  alertParents: boolean;
+  alertAdmins: boolean;
   isActive: boolean;
 }
 
@@ -364,8 +371,9 @@ export const SystemSettings = () => {
                     <TableHead>
                       <TableRow sx={{ backgroundColor: S.TH_BG }}>
                         <TableCell sx={{ fontWeight: 600 }}>{t('systemSettings.ruleName')}</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>{t('systemSettings.presentWeight')}</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>{t('systemSettings.minAttendance')}</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>{t('systemSettings.lowAttendanceThreshold')}</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>{t('systemSettings.criticalAttendanceThreshold')}</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>{t('roles.active')}</TableCell>
                         <TableCell align="right" sx={{ fontWeight: 600 }}>{t('staff.actions')}</TableCell>
                       </TableRow>
@@ -374,8 +382,9 @@ export const SystemSettings = () => {
                       {attendanceRules.map((rule) => (
                         <TableRow key={rule.id} hover>
                           <TableCell>{rule.name}</TableCell>
-                          <TableCell>{rule.presentWeight}%</TableCell>
-                          <TableCell>{rule.minAttendance}%</TableCell>
+                          <TableCell>{rule.minimumAttendancePercentage}%</TableCell>
+                          <TableCell>{rule.lowAttendanceThreshold}%</TableCell>
+                          <TableCell>{rule.criticalAttendanceThreshold}%</TableCell>
                           <TableCell>
                             <Chip
                               label={rule.isActive ? t('roles.active') : t('roles.inactive')}
@@ -685,34 +694,52 @@ const AttendanceRuleDialog = ({ open, mode, data, onClose, onSave }: AttendanceR
   const S = useAdminStyles(theme);
   const [formData, setFormData] = useState({
     name: '',
-    presentWeight: 100,
-    absentWeight: 0,
-    lateWeight: 75,
-    excusedWeight: 100,
-    minAttendance: 75,
-    isActive: true,
+    minimumAttendancePercentage: 75,
+    lowAttendanceThreshold: 75,
+    criticalAttendanceThreshold: 60,
+    correctionWindowHours: 24,
+    allowTeacherCorrection: true,
+    allowAdminCorrection: true,
+    maxLeaveDaysPerMonth: 5,
+    maxLeaveDaysPerYear: 30,
+    requireLeaveApproval: true,
+    enableLowAttendanceAlerts: true,
+    alertParents: true,
+    alertAdmins: true,
   });
 
   useEffect(() => {
     if (data) {
       setFormData({
         name: data.name,
-        presentWeight: data.presentWeight,
-        absentWeight: data.absentWeight,
-        lateWeight: data.lateWeight,
-        excusedWeight: data.excusedWeight,
-        minAttendance: data.minAttendance,
-        isActive: data.isActive,
+        minimumAttendancePercentage: data.minimumAttendancePercentage,
+        lowAttendanceThreshold: data.lowAttendanceThreshold,
+        criticalAttendanceThreshold: data.criticalAttendanceThreshold,
+        correctionWindowHours: data.correctionWindowHours,
+        allowTeacherCorrection: data.allowTeacherCorrection,
+        allowAdminCorrection: data.allowAdminCorrection,
+        maxLeaveDaysPerMonth: data.maxLeaveDaysPerMonth,
+        maxLeaveDaysPerYear: data.maxLeaveDaysPerYear,
+        requireLeaveApproval: data.requireLeaveApproval,
+        enableLowAttendanceAlerts: data.enableLowAttendanceAlerts,
+        alertParents: data.alertParents,
+        alertAdmins: data.alertAdmins,
       });
     } else {
       setFormData({
         name: '',
-        presentWeight: 100,
-        absentWeight: 0,
-        lateWeight: 75,
-        excusedWeight: 100,
-        minAttendance: 75,
-        isActive: true,
+        minimumAttendancePercentage: 75,
+        lowAttendanceThreshold: 75,
+        criticalAttendanceThreshold: 60,
+        correctionWindowHours: 24,
+        allowTeacherCorrection: true,
+        allowAdminCorrection: true,
+        maxLeaveDaysPerMonth: 5,
+        maxLeaveDaysPerYear: 30,
+        requireLeaveApproval: true,
+        enableLowAttendanceAlerts: true,
+        alertParents: true,
+        alertAdmins: true,
       });
     }
   }, [data, open]);
@@ -728,54 +755,78 @@ const AttendanceRuleDialog = ({ open, mode, data, onClose, onSave }: AttendanceR
             <TextField
               label={t('systemSettings.ruleName')}
               fullWidth
+              required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             />
           </Grid>
           <Grid item xs={6}>
             <TextField
-              label={t('systemSettings.presentWeight')}
-              type="number"
-              fullWidth
-              value={formData.presentWeight}
-              onChange={(e) => setFormData({ ...formData, presentWeight: parseFloat(e.target.value) })}
-            />
-          </Grid>
-          <Grid item xs={6}>
-            <TextField
-              label={t('systemSettings.absentWeight')}
-              type="number"
-              fullWidth
-              value={formData.absentWeight}
-              onChange={(e) => setFormData({ ...formData, absentWeight: parseFloat(e.target.value) })}
-            />
-          </Grid>
-          <Grid item xs={6}>
-            <TextField
-              label={t('systemSettings.lateWeight')}
-              type="number"
-              fullWidth
-              value={formData.lateWeight}
-              onChange={(e) => setFormData({ ...formData, lateWeight: parseFloat(e.target.value) })}
-            />
-          </Grid>
-          <Grid item xs={6}>
-            <TextField
-              label={t('systemSettings.excusedWeight')}
-              type="number"
-              fullWidth
-              value={formData.excusedWeight}
-              onChange={(e) => setFormData({ ...formData, excusedWeight: parseFloat(e.target.value) })}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
               label={t('systemSettings.minAttendance')}
               type="number"
               fullWidth
-              value={formData.minAttendance}
-              onChange={(e) => setFormData({ ...formData, minAttendance: parseFloat(e.target.value) })}
+              inputProps={{ min: 0, max: 100, step: 0.1 }}
+              value={formData.minimumAttendancePercentage}
+              onChange={(e) => setFormData({ ...formData, minimumAttendancePercentage: Number(e.target.value) })}
             />
+          </Grid>
+          <Grid item xs={6}>
+            <TextField
+              label={t('systemSettings.lowAttendanceThreshold')}
+              type="number"
+              fullWidth
+              inputProps={{ min: 0, max: 100, step: 0.1 }}
+              value={formData.lowAttendanceThreshold}
+              onChange={(e) => setFormData({ ...formData, lowAttendanceThreshold: Number(e.target.value) })}
+            />
+          </Grid>
+          <Grid item xs={6}>
+            <TextField
+              label={t('systemSettings.criticalAttendanceThreshold')}
+              type="number"
+              fullWidth
+              inputProps={{ min: 0, max: 100, step: 0.1 }}
+              value={formData.criticalAttendanceThreshold}
+              onChange={(e) => setFormData({ ...formData, criticalAttendanceThreshold: Number(e.target.value) })}
+            />
+          </Grid>
+          <Grid item xs={6}>
+            <TextField
+              label={t('systemSettings.correctionWindowHours')}
+              type="number"
+              fullWidth
+              inputProps={{ min: 0, step: 1 }}
+              value={formData.correctionWindowHours}
+              onChange={(e) => setFormData({ ...formData, correctionWindowHours: Number(e.target.value) })}
+            />
+          </Grid>
+          <Grid item xs={6}>
+            <TextField
+              label={t('systemSettings.maxLeaveDaysPerMonth')}
+              type="number"
+              fullWidth
+              inputProps={{ min: 0, step: 1 }}
+              value={formData.maxLeaveDaysPerMonth}
+              onChange={(e) => setFormData({ ...formData, maxLeaveDaysPerMonth: Number(e.target.value) })}
+            />
+          </Grid>
+          <Grid item xs={6}>
+            <TextField
+              label={t('systemSettings.maxLeaveDaysPerYear')}
+              type="number"
+              fullWidth
+              inputProps={{ min: 0, step: 1 }}
+              value={formData.maxLeaveDaysPerYear}
+              onChange={(e) => setFormData({ ...formData, maxLeaveDaysPerYear: Number(e.target.value) })}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <FormControlLabel control={<Checkbox checked={formData.allowTeacherCorrection} onChange={(e) => setFormData({ ...formData, allowTeacherCorrection: e.target.checked })} />} label={t('systemSettings.allowTeacherCorrection')} />
+            <FormControlLabel control={<Checkbox checked={formData.allowAdminCorrection} onChange={(e) => setFormData({ ...formData, allowAdminCorrection: e.target.checked })} />} label={t('systemSettings.allowAdminCorrection')} />
+            <FormControlLabel control={<Checkbox checked={formData.requireLeaveApproval} onChange={(e) => setFormData({ ...formData, requireLeaveApproval: e.target.checked })} />} label={t('systemSettings.requireLeaveApproval')} />
+            <FormControlLabel control={<Checkbox checked={formData.enableLowAttendanceAlerts} onChange={(e) => setFormData({ ...formData, enableLowAttendanceAlerts: e.target.checked })} />} label={t('systemSettings.enableLowAttendanceAlerts')} />
+            <FormControlLabel control={<Checkbox checked={formData.alertParents} onChange={(e) => setFormData({ ...formData, alertParents: e.target.checked })} />} label={t('systemSettings.alertParents')} />
+            <FormControlLabel control={<Checkbox checked={formData.alertAdmins} onChange={(e) => setFormData({ ...formData, alertAdmins: e.target.checked })} />} label={t('systemSettings.alertAdmins')} />
           </Grid>
         </Grid>
       </DialogContent>
