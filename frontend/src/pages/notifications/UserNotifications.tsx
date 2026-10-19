@@ -193,6 +193,7 @@ export function UserNotifications() {
                         {!n.isRead && persistedId && (
                           <IconButton
                             size="small"
+                            aria-label={t('notifications.markRead')}
                             onClick={(e) => { e.stopPropagation(); markRead(persistedId); }}
                             sx={{ opacity: 0.5, '&:hover': { opacity: 1, color: C.success } }}
                           >
@@ -202,6 +203,7 @@ export function UserNotifications() {
                         {persistedId && (
                           <IconButton
                             size="small"
+                            aria-label={t('notifications.deleteNotification')}
                             onClick={(e) => { e.stopPropagation(); deleteNotification(persistedId); }}
                             sx={{ opacity: 0.4, '&:hover': { opacity: 1, color: C.danger } }}
                           >

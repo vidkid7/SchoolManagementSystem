@@ -3606,6 +3606,7 @@
     "read": "Read",
     "markRead": "Mark as Read",
     "delete": "Delete",
+    "deleteNotification": "Delete notification",
     "type": "Type",
     "message": "Message",
     "date": "Date",

@@ -43,6 +43,7 @@ import {
   Circle as GeneralIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useNotifications, Notification } from '../../hooks/useNotifications';
 import { formatDistanceToNow } from '../../utils/dateUtils';
 
@@ -79,6 +80,7 @@ function typeIcon(type: Notification['type']) {
 
 export function NotificationBell() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
   const anchorRef = useRef<HTMLButtonElement | null>(null);
@@ -120,7 +122,7 @@ export function NotificationBell() {
 
   return (
     <>
-      <Tooltip title="Notifications" arrow>
+      <Tooltip title={t('notifications.title')} arrow>
         <IconButton
           ref={anchorRef}
           onClick={handleOpen}
@@ -259,6 +261,7 @@ export function NotificationBell() {
                         <IconButton
                           edge="end"
                           size="small"
+                          aria-label={t('notifications.deleteNotification')}
                           onClick={(e) => { e.stopPropagation(); deleteNotification(persistedId); }}
                           sx={{ opacity: 0.4, '&:hover': { opacity: 1, color: '#FF3B30' } }}
                         >
