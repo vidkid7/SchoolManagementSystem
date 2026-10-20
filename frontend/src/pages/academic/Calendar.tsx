@@ -65,6 +65,7 @@ export const Calendar = () => {
   const [editMode, setEditMode] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({ title: false, startDate: false });
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
@@ -102,6 +103,8 @@ export const Calendar = () => {
 
   const handleOpenDialog = (event?: Event, trigger?: HTMLElement) => {
     dialogTriggerRef.current = trigger ?? null;
+    setError('');
+    setFieldErrors({ title: false, startDate: false });
     setEditMode(!!event);
     if (event) {
       setEditId(event.eventId);
@@ -123,6 +126,8 @@ export const Calendar = () => {
     setDialogOpen(false);
     setEditMode(false);
     setEditId(null);
+    setError('');
+    setFieldErrors({ title: false, startDate: false });
     setEventForm({
       title: '',
       description: '',
@@ -136,11 +141,22 @@ export const Calendar = () => {
   };
 
   const handleSaveEvent = async () => {
+    const title = eventForm.title.trim();
+    const missingTitle = !title;
+    const missingStartDate = !eventForm.startDate;
+    setFieldErrors({ title: missingTitle, startDate: missingStartDate });
+    if (missingTitle || missingStartDate) {
+      setError('Please fill all required fields');
+      return;
+    }
+
     try {
+      setError('');
+      const payload = { ...eventForm, title };
       if (editMode && editId) {
-        await apiClient.put(`/calendar/events/${editId}`, eventForm);
+        await apiClient.put(`/calendar/events/${editId}`, payload);
       } else {
-        await apiClient.post('/calendar/events', eventForm);
+        await apiClient.post('/calendar/events', payload);
       }
       handleCloseDialog();
       fetchEvents();
@@ -194,7 +210,7 @@ export const Calendar = () => {
         </Button>
       </Box>
 
-      {error && (
+      {error && !dialogOpen && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
           {error}
         </Alert>
@@ -393,13 +409,25 @@ export const Calendar = () => {
           {editMode ? 'Edit Event' : 'Add Event'}
         </DialogTitle>
         <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+              {error}
+            </Alert>
+          )}
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField
                 label="Event Title"
                 fullWidth
+                required
+                error={fieldErrors.title}
+                helperText={fieldErrors.title ? 'This field is required' : undefined}
                 value={eventForm.title}
-                onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
+                onChange={(e) => {
+                  setEventForm({ ...eventForm, title: e.target.value });
+                  if (e.target.value.trim()) setFieldErrors((previous) => ({ ...previous, title: false }));
+                  setError('');
+                }}
               />
             </Grid>
             <Grid item xs={12}>
@@ -415,8 +443,15 @@ export const Calendar = () => {
             <Grid item xs={6}>
               <YearSelectableDatePicker
                 label="Start Date"
+                required
+                error={fieldErrors.startDate}
+                helperText={fieldErrors.startDate ? 'This field is required' : undefined}
                 value={parseDateOnly(eventForm.startDate)}
-                onChange={(date) => setEventForm({ ...eventForm, startDate: formatDateOnly(date) })}
+                onChange={(date) => {
+                  setEventForm({ ...eventForm, startDate: formatDateOnly(date) });
+                  if (date) setFieldErrors((previous) => ({ ...previous, startDate: false }));
+                  setError('');
+                }}
               />
             </Grid>
             <Grid item xs={6}>

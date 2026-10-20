@@ -5,7 +5,7 @@ import apiClient from '../../services/apiClient';
 
 jest.mock('../../services/apiClient', () => ({
   __esModule: true,
-  default: { get: jest.fn() },
+  default: { get: jest.fn(), post: jest.fn(), put: jest.fn(), delete: jest.fn() },
 }));
 
 jest.mock('react-i18next', () => ({
@@ -40,6 +40,17 @@ describe('calendar event dialog focus restoration', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
 
     await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it('blocks an empty Academic Calendar event and shows required field errors', async () => {
+    render(<AcademicCalendar />);
+    await screen.findByText('No events found for this month');
+    fireEvent.click(screen.getByRole('button', { name: 'Add Event' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Save' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Please fill all required fields');
+    expect(screen.getAllByText('This field is required')).toHaveLength(2);
+    expect(mockedApiClient.post).not.toHaveBeenCalled();
   });
 
   it('restores focus to the Event Management opener after the dialog exits', async () => {
