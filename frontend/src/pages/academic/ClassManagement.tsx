@@ -200,6 +200,7 @@ export const ClassManagement = () => {
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
+    setError('');
     setEditMode(false);
     setEditId(null);
     setClassErrors({});
@@ -332,7 +333,7 @@ export const ClassManagement = () => {
         </Button>
       </Paper>
 
-      {error && (
+      {error && !dialogOpen && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
           {error}
         </Alert>
@@ -652,6 +653,11 @@ export const ClassManagement = () => {
           }
         </DialogTitle>
         <DialogContent>
+          {error && dialogOpen && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+              {error}
+            </Alert>
+          )}
           {dialogType === 'class' ? (
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12}>
@@ -718,6 +724,7 @@ export const ClassManagement = () => {
                 <TextField
                   label={t('academic.subjectCode')}
                   fullWidth
+                  required
                   value={subjectForm.code}
                   onChange={(e) => setSubjectForm({ ...subjectForm, code: e.target.value })}
                 />
@@ -726,6 +733,7 @@ export const ClassManagement = () => {
                 <TextField
                   label={t('academic.subjectNameEnglish')}
                   fullWidth
+                  required
                   value={subjectForm.name_en}
                   onChange={(e) => setSubjectForm({ ...subjectForm, name_en: e.target.value })}
                 />
@@ -734,14 +742,18 @@ export const ClassManagement = () => {
                 <TextField
                   label={t('academic.subjectNameNepali')}
                   fullWidth
+                  required
                   value={subjectForm.name_np}
                   onChange={(e) => setSubjectForm({ ...subjectForm, name_np: e.target.value })}
                 />
               </Grid>
               <Grid item xs={12}>
                 <FormControl fullWidth>
-                  <InputLabel>{t('academic.subjectType')}</InputLabel>
+                  <InputLabel id="subject-type-label">{t('academic.subjectType')}</InputLabel>
                   <Select
+                    id="subject-type"
+                    labelId="subject-type-label"
+                    name="type"
                     value={subjectForm.type}
                     label={t('academic.subjectType')}
                     onChange={(e) => setSubjectForm({ ...subjectForm, type: e.target.value as 'compulsory' | 'optional' })}
@@ -756,6 +768,7 @@ export const ClassManagement = () => {
                   label={t('academic.creditHours')}
                   type="number"
                   fullWidth
+                  required
                   value={subjectForm.credit_hours}
                   onChange={(e) => setSubjectForm({ ...subjectForm, credit_hours: e.target.value })}
                 />
@@ -765,6 +778,7 @@ export const ClassManagement = () => {
                   label={t('academic.fullMarks')}
                   type="number"
                   fullWidth
+                  required
                   value={subjectForm.full_marks}
                   onChange={(e) => setSubjectForm({ ...subjectForm, full_marks: e.target.value })}
                 />
