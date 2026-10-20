@@ -482,7 +482,7 @@ export function CreateExam() {
                 {termsLoading ? (
                   <MenuItem value="" disabled>{t('common.loading')}...</MenuItem>
                 ) : terms.length === 0 ? (
-                  <MenuItem value="" disabled>{t('academic.noTermsFound')}</MenuItem>
+                  <MenuItem value="" disabled>{t('examinations.noTermsConfigured')}</MenuItem>
                 ) : terms.map((term) => (
                     <MenuItem key={term.termId} value={String(term.termId)}>
                       {term.name}
