@@ -200,7 +200,11 @@ export const BSDatePicker: React.FC<BSDatePickerProps> = ({
         InputProps={{
           readOnly: true,
           endAdornment: (
-            <IconButton size="small" disabled={disabled}>
+            <IconButton
+              size="small"
+              disabled={disabled}
+              aria-label={label ? `Open ${label} calendar` : 'Open calendar'}
+            >
               <CalendarToday />
             </IconButton>
           )
@@ -418,7 +422,7 @@ const BSCalendarView: React.FC<BSCalendarViewProps> = ({
 
       {/* Calendar header */}
       <CalendarHeader>
-        <IconButton size="small" onClick={handlePreviousMonth}>
+        <IconButton size="small" onClick={handlePreviousMonth} aria-label="Previous month">
           <ChevronLeft />
         </IconButton>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -442,7 +446,7 @@ const BSCalendarView: React.FC<BSCalendarViewProps> = ({
             ))}
           </Select>
         </Box>
-        <IconButton size="small" onClick={handleNextMonth}>
+        <IconButton size="small" onClick={handleNextMonth} aria-label="Next month">
           <ChevronRight />
         </IconButton>
       </CalendarHeader>

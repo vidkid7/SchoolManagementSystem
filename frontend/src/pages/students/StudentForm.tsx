@@ -819,7 +819,7 @@ export const StudentForm = () => {
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                   <PersonIcon sx={{ color: theme.palette.primary.main }} />
-                  <Typography variant="h6" fontWeight={700}>
+                  <Typography variant="h6" component="h5" fontWeight={700}>
                     {t('students.personalInfo')}
                   </Typography>
                 </Box>
@@ -1013,7 +1013,7 @@ export const StudentForm = () => {
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2, mt: 2 }}>
                   <SchoolIcon sx={{ color: theme.palette.primary.main }} />
-                  <Typography variant="h6" fontWeight={700}>
+                  <Typography variant="h6" component="h5" fontWeight={700}>
                     {t('students.academicInfo')}
                   </Typography>
                 </Box>
@@ -1152,7 +1152,7 @@ export const StudentForm = () => {
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2, mt: 2 }}>
                   <ContactIcon sx={{ color: theme.palette.primary.main }} />
-                  <Typography variant="h6" fontWeight={700}>
+                  <Typography variant="h6" component="h5" fontWeight={700}>
                     {t('students.contactInfo')}
                   </Typography>
                 </Box>
@@ -1280,7 +1280,7 @@ export const StudentForm = () => {
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2, mt: 2 }}>
                   <GuardianIcon sx={{ color: theme.palette.primary.main }} />
-                  <Typography variant="h6" fontWeight={700}>
+                  <Typography variant="h6" component="h5" fontWeight={700}>
                     {t('students.guardianInfo')}
                   </Typography>
                 </Box>
@@ -1466,7 +1466,7 @@ export const StudentForm = () => {
               {/* Medical Information */}
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2, mt: 2 }}>
-                  <Typography variant="h6" fontWeight={700}>
+                  <Typography variant="h6" component="h5" fontWeight={700}>
                     {t('students.medicalInformation')}
                   </Typography>
                 </Box>

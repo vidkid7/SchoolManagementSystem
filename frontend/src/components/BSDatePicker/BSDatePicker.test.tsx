@@ -28,6 +28,7 @@ describe('BSDatePicker', () => {
       render(<BSDatePicker label="Birth Date" onChange={handleChange} />);
 
       expect(screen.getByLabelText('Birth Date')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Open Birth Date calendar' })).toBeInTheDocument();
     });
 
     it('should render with required indicator', () => {
@@ -36,7 +37,7 @@ describe('BSDatePicker', () => {
         <BSDatePicker label="Birth Date" required onChange={handleChange} />
       );
 
-      const input = screen.getByLabelText(/Birth Date/);
+      const input = screen.getByRole('textbox', { name: /Birth Date/ });
       expect(input).toBeRequired();
     });
 
@@ -605,13 +606,13 @@ describe('BSDatePicker', () => {
     it('should integrate with React Hook Form', () => {
       render(<TestFormComponent />);
 
-      expect(screen.getByLabelText(/Birth Date/)).toBeInTheDocument();
+      expect(screen.getByRole('textbox', { name: /Birth Date/ })).toBeInTheDocument();
     });
 
     it('should update form value when date is selected', async () => {
       const { container } = render(<TestFormComponent />);
 
-      const input = screen.getByLabelText(/Birth Date/);
+      const input = screen.getByRole('textbox', { name: /Birth Date/ });
       await userEvent.click(input);
 
       await waitFor(() => {
@@ -628,7 +629,7 @@ describe('BSDatePicker', () => {
         await userEvent.click(dayButtons[0]);
 
         await waitFor(() => {
-          const inputElement = screen.getByLabelText(/Birth Date/) as HTMLInputElement;
+          const inputElement = screen.getByRole('textbox', { name: /Birth Date/ }) as HTMLInputElement;
           expect(inputElement.value).not.toBe('');
         });
       }
