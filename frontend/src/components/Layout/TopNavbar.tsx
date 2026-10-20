@@ -93,7 +93,7 @@ export function TopNavbar({ sidebarWidth, onMobileMenu }: TopNavbarProps) {
           <Typography variant="caption" className="dashboard-topbar__eyebrow" sx={{ display: { xs: 'none', sm: 'block' } }}>
             {isDashboardPath(location.pathname) ? 'Welcome back,' : 'School Management System'}
           </Typography>
-          <Typography variant="h6" className="dashboard-topbar__title">
+          <Typography component="div" variant="h6" className="dashboard-topbar__title">
             {isDashboardPath(location.pathname)
               ? compact
                 ? (user?.firstName || userName.split(' ')[0] || 'Dashboard')

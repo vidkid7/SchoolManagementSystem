@@ -59,6 +59,13 @@ describe('ReportsAnalytics', () => {
     expect(await screen.findByRole('heading', { name: 'Reports & Analytics' })).toBeInTheDocument();
   });
 
+  it('uses a page-level heading and keeps metric values out of the heading outline', async () => {
+    renderReports();
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Reports & Analytics' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 3, name: '23' })).not.toBeInTheDocument();
+  });
+
   it('should render all tabs', async () => {
     renderReports();
     await screen.findByRole('heading', { name: 'Reports & Analytics' });

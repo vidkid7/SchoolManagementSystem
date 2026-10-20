@@ -659,6 +659,7 @@ interface TeacherPerformanceData {
                 }}
               />
               <Typography
+                component="h1"
                 variant="h3"
                 fontWeight={900}
                 sx={{
@@ -723,7 +724,7 @@ interface TeacherPerformanceData {
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 800 }}>
                       {item.label}
                     </Typography>
-                    <Typography variant="h5" sx={{ mt: 0.25, fontWeight: 900, color: item.color, lineHeight: 1.1 }}>
+                    <Typography component="div" variant="h5" sx={{ mt: 0.25, fontWeight: 900, color: item.color, lineHeight: 1.1 }}>
                       {item.value}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
@@ -1030,7 +1031,7 @@ interface TeacherPerformanceData {
         <TabPanel value={tabValue} index={0}>
           <motion.div variants={containerVariants} initial="hidden" animate="visible">
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-              <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography component="h2" variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <People sx={{ color: C.primary }} />
                 {t('reports.enrollment')} {t('reports.overview')}
               </Typography>
@@ -1095,7 +1096,7 @@ interface TeacherPerformanceData {
                       <People sx={{ fontSize: 20 }} />
                       <Typography variant="body2" fontWeight={500}>{t('reports.totalStudentsCount')}</Typography>
                     </Box>
-                    <Typography variant="h3" fontWeight={800}>{formatWithSeparators(enrollmentData?.totalStudents || 0)}</Typography>
+                    <Typography component="div" variant="h3" fontWeight={800}>{formatWithSeparators(enrollmentData?.totalStudents || 0)}</Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
                       <TrendingUp sx={{ fontSize: 16 }} />
                       <Typography variant="caption" sx={{ opacity: 0.9 }}>{t('reports.yearGrowth')}</Typography>
@@ -1129,7 +1130,7 @@ interface TeacherPerformanceData {
                       <School sx={{ fontSize: 20 }} />
                       <Typography variant="body2" fontWeight={500}>{t('reports.activeClasses')}</Typography>
                     </Box>
-                    <Typography variant="h3" fontWeight={800}>{formatNumber(enrollmentData?.byClass?.length || 0)}</Typography>
+                    <Typography component="div" variant="h3" fontWeight={800}>{formatNumber(enrollmentData?.byClass?.length || 0)}</Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
                       <TrendingUp sx={{ fontSize: 16 }} />
                       <Typography variant="caption" sx={{ opacity: 0.9 }}>{t('reports.currentlyRunning')}</Typography>
@@ -1163,7 +1164,7 @@ interface TeacherPerformanceData {
                       <People sx={{ fontSize: 20 }} />
                       <Typography variant="body2" fontWeight={500}>{t('reports.averagePerClass')}</Typography>
                     </Box>
-                    <Typography variant="h3" fontWeight={800}>
+                    <Typography component="div" variant="h3" fontWeight={800}>
                       {formatNumber(enrollmentData?.byClass?.length ? Math.round(enrollmentData.totalStudents / enrollmentData.byClass.length) : 0)}
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
@@ -1190,7 +1191,7 @@ interface TeacherPerformanceData {
                   }}
                 >
                   <CardContent>
-                    <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography component="h2" variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <School sx={{ color: C.neutral, fontSize: 20 }} />
                       {t('reports.enrollmentByClass')}
                     </Typography>
@@ -1234,7 +1235,7 @@ interface TeacherPerformanceData {
                   }}
                 >
                   <CardContent>
-                    <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography component="h2" variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <People sx={{ color: C.danger, fontSize: 20 }} />
                       {t('dashboard.genderDistribution')}
                     </Typography>
@@ -1274,7 +1275,7 @@ interface TeacherPerformanceData {
         <TabPanel value={tabValue} index={1}>
           <motion.div variants={containerVariants} initial="hidden" animate="visible">
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-              <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography component="h2" variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <CheckCircle sx={{ color: C.neutral }} />
                 {t('reports.attendance')} {t('reports.overview')}
               </Typography>
@@ -1314,7 +1315,7 @@ interface TeacherPerformanceData {
                       <CheckCircle sx={{ fontSize: 20 }} />
                       <Typography variant="body2" fontWeight={500}>{t('reports.averageAttendance')}</Typography>
                     </Box>
-                    <Typography variant="h3" fontWeight={800}>{formatPercentage(attendanceData?.averageAttendance || 0)}</Typography>
+                    <Typography component="div" variant="h3" fontWeight={800}>{formatPercentage(attendanceData?.averageAttendance || 0)}</Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
                       <TrendingUp sx={{ fontSize: 16 }} />
                       <Typography variant="caption" sx={{ opacity: 0.9 }}>{t('reports.improvement')}</Typography>
@@ -1337,7 +1338,7 @@ interface TeacherPerformanceData {
                   }}
                 >
                   <CardContent>
-                    <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography component="h2" variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <CalendarMonth sx={{ color: C.neutral, fontSize: 20 }} />
                       {t('reports.attendanceTrend')}
                     </Typography>
@@ -1376,7 +1377,7 @@ interface TeacherPerformanceData {
         <TabPanel value={tabValue} index={2}>
           <motion.div variants={containerVariants} initial="hidden" animate="visible">
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-              <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography component="h2" variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <AttachMoney sx={{ color: C.neutral }} />
                 {t('reports.feeCollection')} {t('reports.overview')}
               </Typography>
@@ -1416,7 +1417,7 @@ interface TeacherPerformanceData {
                       <AttachMoney sx={{ fontSize: 20 }} />
                       <Typography variant="body2" fontWeight={500}>{t('reports.totalExpected')}</Typography>
                     </Box>
-                    <Typography variant="h4" fontWeight={800}>{t('common.currency')} {formatWithSeparators(feeData?.totalExpected || 0)}</Typography>
+                    <Typography component="div" variant="h4" fontWeight={800}>{t('common.currency')} {formatWithSeparators(feeData?.totalExpected || 0)}</Typography>
                   </CardContent>
                 </MotionCard>
               </Grid>
@@ -1446,7 +1447,7 @@ interface TeacherPerformanceData {
                       <CheckCircle sx={{ fontSize: 20 }} />
                       <Typography variant="body2" fontWeight={500}>{t('reports.totalCollected')}</Typography>
                     </Box>
-                    <Typography variant="h4" fontWeight={800}>{t('common.currency')} {formatWithSeparators(feeData?.totalCollected || 0)}</Typography>
+                    <Typography component="div" variant="h4" fontWeight={800}>{t('common.currency')} {formatWithSeparators(feeData?.totalCollected || 0)}</Typography>
                   </CardContent>
                 </MotionCard>
               </Grid>
@@ -1476,7 +1477,7 @@ interface TeacherPerformanceData {
                       <CalendarMonth sx={{ fontSize: 20 }} />
                       <Typography variant="body2" fontWeight={500}>{t('reports.totalPending')}</Typography>
                     </Box>
-                    <Typography variant="h4" fontWeight={800}>{t('common.currency')} {formatWithSeparators(feeData?.totalPending || 0)}</Typography>
+                    <Typography component="div" variant="h4" fontWeight={800}>{t('common.currency')} {formatWithSeparators(feeData?.totalPending || 0)}</Typography>
                   </CardContent>
                 </MotionCard>
               </Grid>
@@ -1497,7 +1498,7 @@ interface TeacherPerformanceData {
                   }}
                 >
                   <CardContent>
-                    <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography component="h2" variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <TrendingUp sx={{ color: C.neutral, fontSize: 20 }} />
                       {t('reports.collectionRate')}
                     </Typography>
@@ -1534,7 +1535,7 @@ interface TeacherPerformanceData {
                   }}
                 >
                   <CardContent>
-                    <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography component="h2" variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <AttachMoney sx={{ color: C.neutral, fontSize: 20 }} />
                       {t('reports.feeCollectionTrend')}
                     </Typography>
@@ -1566,7 +1567,7 @@ interface TeacherPerformanceData {
         <TabPanel value={tabValue} index={3}>
           <motion.div variants={containerVariants} initial="hidden" animate="visible">
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-              <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography component="h2" variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Assessment sx={{ color: C.neutral }} />
                 {t('reports.examination')} {t('reports.overview')}
               </Typography>
@@ -1606,7 +1607,7 @@ interface TeacherPerformanceData {
                       <Assessment sx={{ fontSize: 20 }} />
                       <Typography variant="body2" fontWeight={500}>{t('reports.averageMarks')}</Typography>
                     </Box>
-                    <Typography variant="h3" fontWeight={800}>{formatNumber(examData?.averageMarks || 0)}</Typography>
+                    <Typography component="div" variant="h3" fontWeight={800}>{formatNumber(examData?.averageMarks || 0)}</Typography>
                   </CardContent>
                 </MotionCard>
               </Grid>
@@ -1636,7 +1637,7 @@ interface TeacherPerformanceData {
                       <School sx={{ fontSize: 20 }} />
                       <Typography variant="body2" fontWeight={500}>{t('reports.averageGPA')}</Typography>
                     </Box>
-                    <Typography variant="h3" fontWeight={800}>{formatNumber((examData?.averageGPA || 0).toFixed(1))}</Typography>
+                    <Typography component="div" variant="h3" fontWeight={800}>{formatNumber((examData?.averageGPA || 0).toFixed(1))}</Typography>
                   </CardContent>
                 </MotionCard>
               </Grid>
@@ -1666,7 +1667,7 @@ interface TeacherPerformanceData {
                       <CheckCircle sx={{ fontSize: 20 }} />
                       <Typography variant="body2" fontWeight={500}>{t('reports.passRate')}</Typography>
                     </Box>
-                    <Typography variant="h3" fontWeight={800}>{formatPercentage(examData?.passRate || 0)}</Typography>
+                    <Typography component="div" variant="h3" fontWeight={800}>{formatPercentage(examData?.passRate || 0)}</Typography>
                   </CardContent>
                 </MotionCard>
               </Grid>
@@ -1687,7 +1688,7 @@ interface TeacherPerformanceData {
                   }}
                 >
                   <CardContent>
-                    <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography component="h2" variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Assessment sx={{ color: C.neutral, fontSize: 20 }} />
                       {t('reports.subjectPerformance')}
                     </Typography>
@@ -1727,7 +1728,7 @@ interface TeacherPerformanceData {
                   }}
                 >
                   <CardContent>
-                    <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography component="h2" variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <School sx={{ color: C.neutral, fontSize: 20 }} />
                       {t('dashboard.gradeDistribution')}
                     </Typography>
@@ -1761,7 +1762,7 @@ interface TeacherPerformanceData {
         <TabPanel value={tabValue} index={4}>
           <motion.div variants={containerVariants} initial="hidden" animate="visible">
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-              <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography component="h2" variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <LibraryBooks sx={{ color: C.neutral }} />
                 {t('reports.library')} {t('reports.overview')}
               </Typography>
@@ -1794,8 +1795,8 @@ interface TeacherPerformanceData {
                     <Box sx={{ p: 1.5, borderRadius: R.lg, bgcolor: alpha(C.neutral, 0.1), display: 'inline-flex', mb: 2 }}>
                       <LibraryBooks sx={{ fontSize: 28, color: C.neutral }} />
                     </Box>
-                    <Typography variant="h6" color="text.secondary" fontWeight={500}>{t('reports.totalBooks')}</Typography>
-                    <Typography variant="h3" fontWeight={800} color="primary">{formatWithSeparators(libraryData?.totalBooks || 0)}</Typography>
+                    <Typography component="h2" variant="h6" color="text.secondary" fontWeight={500}>{t('reports.totalBooks')}</Typography>
+                    <Typography component="div" variant="h3" fontWeight={800} color="primary">{formatWithSeparators(libraryData?.totalBooks || 0)}</Typography>
                   </CardContent>
                 </MotionCard>
               </Grid>
@@ -1818,8 +1819,8 @@ interface TeacherPerformanceData {
                     <Box sx={{ p: 1.5, borderRadius: R.lg, bgcolor: alpha(C.neutral, 0.1), display: 'inline-flex', mb: 2 }}>
                       <School sx={{ fontSize: 28, color: C.neutral }} />
                     </Box>
-                    <Typography variant="h6" color="text.secondary" fontWeight={500}>{t('reports.booksIssued')}</Typography>
-                    <Typography variant="h3" fontWeight={800} color="info.main">{formatNumber(libraryData?.totalIssued || 0)}</Typography>
+                    <Typography component="h2" variant="h6" color="text.secondary" fontWeight={500}>{t('reports.booksIssued')}</Typography>
+                    <Typography component="div" variant="h3" fontWeight={800} color="info.main">{formatNumber(libraryData?.totalIssued || 0)}</Typography>
                   </CardContent>
                 </MotionCard>
               </Grid>
@@ -1842,8 +1843,8 @@ interface TeacherPerformanceData {
                     <Box sx={{ p: 1.5, borderRadius: R.lg, bgcolor: alpha(C.neutral, 0.1), display: 'inline-flex', mb: 2 }}>
                       <CheckCircle sx={{ fontSize: 28, color: C.neutral }} />
                     </Box>
-                    <Typography variant="h6" color="text.secondary" fontWeight={500}>{t('reports.returned')}</Typography>
-                    <Typography variant="h3" fontWeight={800} color="success.main">{formatNumber(libraryData?.totalReturned || 0)}</Typography>
+                    <Typography component="h2" variant="h6" color="text.secondary" fontWeight={500}>{t('reports.returned')}</Typography>
+                    <Typography component="div" variant="h3" fontWeight={800} color="success.main">{formatNumber(libraryData?.totalReturned || 0)}</Typography>
                   </CardContent>
                 </MotionCard>
               </Grid>
@@ -1866,8 +1867,8 @@ interface TeacherPerformanceData {
                     <Box sx={{ p: 1.5, borderRadius: R.lg, bgcolor: alpha(C.danger, 0.1), display: 'inline-flex', mb: 2 }}>
                       <CalendarMonth sx={{ fontSize: 28, color: C.danger }} />
                     </Box>
-                    <Typography variant="h6" color="text.secondary" fontWeight={500}>{t('reports.overdue')}</Typography>
-                    <Typography variant="h3" fontWeight={800} color="error.main">{formatNumber(libraryData?.overdueBooks || 0)}</Typography>
+                    <Typography component="h2" variant="h6" color="text.secondary" fontWeight={500}>{t('reports.overdue')}</Typography>
+                    <Typography component="div" variant="h3" fontWeight={800} color="error.main">{formatNumber(libraryData?.overdueBooks || 0)}</Typography>
                   </CardContent>
                 </MotionCard>
               </Grid>
@@ -1888,7 +1889,7 @@ interface TeacherPerformanceData {
                   }}
                 >
                   <CardContent>
-                    <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography component="h2" variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <LibraryBooks sx={{ color: C.neutral, fontSize: 20 }} />
                       {t('reports.bookCategories')}
                     </Typography>
@@ -1932,7 +1933,7 @@ interface TeacherPerformanceData {
                   }}
                 >
                   <CardContent>
-                    <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography component="h2" variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <TrendingUp sx={{ color: C.neutral, fontSize: 20 }} />
                       {t('reports.monthlyCirculation')}
                     </Typography>
@@ -1952,7 +1953,7 @@ interface TeacherPerformanceData {
         <TabPanel value={tabValue} index={5}>
           <motion.div variants={containerVariants} initial="hidden" animate="visible">
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-              <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography component="h2" variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <SportsScore sx={{ color: C.danger }} />
                 {t('reports.ecaSports')} {t('reports.overview')}
               </Typography>
@@ -1983,7 +1984,7 @@ interface TeacherPerformanceData {
                 >
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                      <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography component="h2" variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <People sx={{ color: C.neutral, fontSize: 20 }} />
                         {t('reports.ecaSports')}
                       </Typography>
@@ -2029,7 +2030,7 @@ interface TeacherPerformanceData {
                 >
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                      <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography component="h2" variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <SportsScore sx={{ color: C.neutral, fontSize: 20 }} />
                         {t('reports.sports')}
                       </Typography>
@@ -2078,32 +2079,32 @@ interface TeacherPerformanceData {
                   }}
                 >
                   <CardContent>
-                    <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography component="h2" variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Analytics sx={{ color: theme.palette.primary.main, fontSize: 20 }} />
                       {t('reports.summary')}
                     </Typography>
                     <Grid container spacing={2}>
                       <Grid item xs={6} sm={3}>
                         <Box sx={{ p: 2.5, bgcolor: alpha(C.neutral, 0.1), borderRadius: R.lg, textAlign: 'center', transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-2px)', bgcolor: alpha(C.neutral, 0.15) } }}>
-                          <Typography variant="h4" fontWeight={800} color="primary">{formatNumber(ecaData?.totalActivities || 0)}</Typography>
+                          <Typography component="div" variant="h4" fontWeight={800} color="primary">{formatNumber(ecaData?.totalActivities || 0)}</Typography>
                           <Typography variant="body2" color="text.secondary" fontWeight={500}>{t('reports.ecaActivities')}</Typography>
                         </Box>
                       </Grid>
                       <Grid item xs={6} sm={3}>
                         <Box sx={{ p: 2.5, bgcolor: alpha(C.neutral, 0.1), borderRadius: R.lg, textAlign: 'center', transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-2px)', bgcolor: alpha(C.neutral, 0.15) } }}>
-                          <Typography variant="h4" fontWeight={800} color="success.main">{formatNumber(ecaData?.totalParticipants || 0)}</Typography>
+                          <Typography component="div" variant="h4" fontWeight={800} color="success.main">{formatNumber(ecaData?.totalParticipants || 0)}</Typography>
                           <Typography variant="body2" color="text.secondary" fontWeight={500}>{t('reports.ecaParticipants')}</Typography>
                         </Box>
                       </Grid>
                       <Grid item xs={6} sm={3}>
                         <Box sx={{ p: 2.5, bgcolor: alpha(C.neutral, 0.1), borderRadius: R.lg, textAlign: 'center', transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-2px)', bgcolor: alpha(C.neutral, 0.15) } }}>
-                          <Typography variant="h4" fontWeight={800} color="warning.main">{formatNumber(sportsData?.totalSports || 0)}</Typography>
+                          <Typography component="div" variant="h4" fontWeight={800} color="warning.main">{formatNumber(sportsData?.totalSports || 0)}</Typography>
                           <Typography variant="body2" color="text.secondary" fontWeight={500}>{t('reports.sportsActivities')}</Typography>
                         </Box>
                       </Grid>
                       <Grid item xs={6} sm={3}>
                         <Box sx={{ p: 2.5, bgcolor: alpha(C.danger, 0.1), borderRadius: R.lg, textAlign: 'center', transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-2px)', bgcolor: alpha(C.danger, 0.15) } }}>
-                          <Typography variant="h4" fontWeight={800} color="secondary.main">{formatNumber(sportsData?.totalParticipants || 0)}</Typography>
+                          <Typography component="div" variant="h4" fontWeight={800} color="secondary.main">{formatNumber(sportsData?.totalParticipants || 0)}</Typography>
                           <Typography variant="body2" color="text.secondary" fontWeight={500}>{t('reports.sportsParticipants')}</Typography>
                         </Box>
                       </Grid>
@@ -2119,7 +2120,7 @@ interface TeacherPerformanceData {
         <TabPanel value={tabValue} index={6}>
           <motion.div variants={containerVariants} initial="hidden" animate="visible">
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-              <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography component="h2" variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <School sx={{ color: C.neutral }} />
                 {t('reports.teacherPerformance') || 'Teacher performance'} {t('reports.overview')}
               </Typography>
@@ -2139,7 +2140,7 @@ interface TeacherPerformanceData {
                   <Card sx={{ borderRadius: R.lg, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
                     <CardContent sx={{ textAlign: 'center' }}>
                       <Typography variant="body2" color="text.secondary">{t('reports.teacher') || 'Teacher'}</Typography>
-                      <Typography variant="h6" fontWeight={700}>{teacherPerformanceData.teacherName}</Typography>
+                      <Typography component="h2" variant="h6" fontWeight={700}>{teacherPerformanceData.teacherName}</Typography>
                     </CardContent>
                   </Card>
                 </Grid>
@@ -2147,7 +2148,7 @@ interface TeacherPerformanceData {
                   <Card sx={{ borderRadius: R.lg, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
                     <CardContent sx={{ textAlign: 'center' }}>
                       <Typography variant="body2" color="text.secondary">{t('reports.attendanceRate') || 'Attendance rate'}</Typography>
-                      <Typography variant="h5" fontWeight={700} color="primary">{formatPercentage(teacherPerformanceData.attendanceRate ?? 0)}</Typography>
+                      <Typography component="div" variant="h5" fontWeight={700} color="primary">{formatPercentage(teacherPerformanceData.attendanceRate ?? 0)}</Typography>
                     </CardContent>
                   </Card>
                 </Grid>
@@ -2155,7 +2156,7 @@ interface TeacherPerformanceData {
                   <Card sx={{ borderRadius: R.lg, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
                     <CardContent sx={{ textAlign: 'center' }}>
                       <Typography variant="body2" color="text.secondary">{t('reports.classesAttended') || 'Classes attended'}</Typography>
-                      <Typography variant="h5" fontWeight={700}>{teacherPerformanceData.classesAttended ?? 0} / {teacherPerformanceData.totalClasses ?? 0}</Typography>
+                      <Typography component="div" variant="h5" fontWeight={700}>{teacherPerformanceData.classesAttended ?? 0} / {teacherPerformanceData.totalClasses ?? 0}</Typography>
                     </CardContent>
                   </Card>
                 </Grid>
@@ -2163,7 +2164,7 @@ interface TeacherPerformanceData {
                   <Card sx={{ borderRadius: R.lg, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
                     <CardContent sx={{ textAlign: 'center' }}>
                       <Typography variant="body2" color="text.secondary">{t('reports.syllabusCompletion') || 'Syllabus completion'}</Typography>
-                      <Typography variant="h5" fontWeight={700} color="success.main">{formatPercentage(teacherPerformanceData.syllabusCompletion ?? 0)}</Typography>
+                      <Typography component="div" variant="h5" fontWeight={700} color="success.main">{formatPercentage(teacherPerformanceData.syllabusCompletion ?? 0)}</Typography>
                     </CardContent>
                   </Card>
                 </Grid>
