@@ -647,6 +647,7 @@ export const DocumentManagement = () => {
               <InputLabel id="document-category-filter-label">{t('documents.category')}</InputLabel>
               <Select
                 labelId="document-category-filter-label"
+                name="document-category-filter"
                 value={filters.category}
                 label={t('documents.category')}
                 onChange={(e) => handleFilterChange('category', e.target.value)}
@@ -665,6 +666,7 @@ export const DocumentManagement = () => {
               <InputLabel id="document-status-filter-label">{t('documents.status')}</InputLabel>
               <Select
                 labelId="document-status-filter-label"
+                name="document-status-filter"
                 value={filters.status}
                 label={t('documents.status')}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
@@ -682,6 +684,7 @@ export const DocumentManagement = () => {
               <InputLabel id="document-access-level-filter-label">{t('documents.accessLevel')}</InputLabel>
               <Select
                 labelId="document-access-level-filter-label"
+                name="document-access-level-filter"
                 value={filters.accessLevel}
                 label={t('documents.accessLevel')}
                 onChange={(e) => handleFilterChange('accessLevel', e.target.value)}
@@ -823,6 +826,7 @@ export const DocumentManagement = () => {
           rowsPerPage={rowsPerPage}
           onRowsPerPageChange={handleRowsPerPageChange}
           rowsPerPageOptions={[5, 10, 25, 50]}
+          SelectProps={{ name: 'document-rows-per-page' }}
         />
       </Paper>
 
