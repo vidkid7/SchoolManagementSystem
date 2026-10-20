@@ -1,4 +1,5 @@
 import User from '../../../models/User.model';
+import AuditLog from '../../../models/AuditLog.model';
 import { UserService } from '../user.service';
 
 describe('UserService school scope', () => {
@@ -33,6 +34,32 @@ describe('UserService school scope', () => {
       .rejects.toThrow('User not found');
 
     expect(findOne).toHaveBeenCalledWith({ where: { userId: 22, schoolConfigId: 'school-1' } });
+  });
+
+  it('does not delete a user from a different school', async () => {
+    const findOne = jest.spyOn(User, 'findOne').mockResolvedValue(null);
+
+    await expect(service.deleteUser(22, 'school-1')).rejects.toThrow('User not found');
+
+    expect(findOne).toHaveBeenCalledWith({ where: { userId: 22, schoolConfigId: 'school-1' } });
+  });
+
+  it('does not reset the password for a user from a different school', async () => {
+    const findOne = jest.spyOn(User, 'findOne').mockResolvedValue(null);
+
+    await expect(service.resetPassword(22, 'school-1')).rejects.toThrow('User not found');
+
+    expect(findOne).toHaveBeenCalledWith({ where: { userId: 22, schoolConfigId: 'school-1' } });
+  });
+
+  it('does not query activity logs for a user from a different school', async () => {
+    const findOne = jest.spyOn(User, 'findOne').mockResolvedValue(null);
+    const findAll = jest.spyOn(AuditLog, 'findAll').mockResolvedValue([] as any);
+
+    await expect(service.getUserActivity(22, 'school-1')).rejects.toThrow('User not found');
+
+    expect(findOne).toHaveBeenCalledWith({ where: { userId: 22, schoolConfigId: 'school-1' } });
+    expect(findAll).not.toHaveBeenCalled();
   });
 
   it('saves first and last names during a scoped user update', async () => {
