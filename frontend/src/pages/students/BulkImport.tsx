@@ -37,6 +37,7 @@ import { apiClient } from '../../services/apiClient';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { motion } from 'framer-motion';
 import { useNepaliNumbers } from '../../hooks/useNepaliNumbers';
+import { isSupportedStudentImportFile } from './studentImportFile';
 
 const MotionCard = motion.create(Card);
 
@@ -63,8 +64,7 @@ export const BulkImport = () => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
-      if (selectedFile.type !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' &&
-          selectedFile.type !== 'application/vnd.ms-excel') {
+      if (!isSupportedStudentImportFile(selectedFile.name, selectedFile.type)) {
         setError(t('bulkImport.invalidFile'));
         return;
       }
@@ -284,7 +284,7 @@ export const BulkImport = () => {
             bgcolor: C.primaryBg,
           }}>
             <input
-              accept=".xlsx,.xls"
+              accept=".xlsx,.xls,.csv"
               style={{ display: 'none' }}
               id="file-upload"
               type="file"
