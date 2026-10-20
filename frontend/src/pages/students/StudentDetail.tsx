@@ -152,7 +152,7 @@ const InfoCard = ({ icon, title, children, color = 'primary' }: { icon: React.Re
       }}
     >
       <CardContent sx={{ p: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, mb: 2.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Typography variant="h6" component="h5" sx={{ fontWeight: 700, mb: 2.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box sx={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -480,7 +480,11 @@ export const StudentDetail = () => {
                   <Chip 
                     label={student.status ? t(`students.${student.status}`) : '-'}
                     color={student.status === 'active' ? 'success' : 'default'}
-                    sx={{ fontWeight: 600, borderRadius: R.lg }}
+                    sx={{
+                      fontWeight: 600,
+                      borderRadius: R.lg,
+                      ...(student.status === 'active' ? { bgcolor: '#15803d', color: '#fff' } : {}),
+                    }}
                   />
                 </Box>
               </Box>
@@ -682,7 +686,7 @@ export const StudentDetail = () => {
                 <StatCard value={formatNumber(attendance.summary?.late || 0)} label={t('attendance.late')} color={theme.palette.warning.main} />
               </Grid>
               <Grid item xs={12}>
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+                <Typography variant="h6" component="h5" sx={{ fontWeight: 700, mb: 2 }}>
                   {t('attendance.title')}
                 </Typography>
                 <TableContainer component={Paper} sx={{ borderRadius: R.md, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
@@ -731,7 +735,7 @@ export const StudentDetail = () => {
                 <StatCard value={formatNumber(grades.summary?.totalMarks || 0)} label={t('reports.totalCollected')} color={theme.palette.info.main} />
               </Grid>
               <Grid item xs={12}>
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+                <Typography variant="h6" component="h5" sx={{ fontWeight: 700, mb: 2 }}>
                   {t('examinations.gradeEntry')}
                 </Typography>
                 <TableContainer component={Paper} sx={{ borderRadius: R.md, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
@@ -781,7 +785,7 @@ export const StudentDetail = () => {
                 <StatCard value={`रू ${formatNumber(fees.summary?.pendingAmount || 0)}`} label={t('finance.unpaid')} color={theme.palette.error.main} />
               </Grid>
               <Grid item xs={12}>
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+                <Typography variant="h6" component="h5" sx={{ fontWeight: 700, mb: 2 }}>
                   {t('finance.invoices')}
                 </Typography>
                 <TableContainer component={Paper} sx={{ borderRadius: R.md, border: `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
@@ -834,7 +838,7 @@ export const StudentDetail = () => {
                     <CardContent>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
                         <EmojiEvents sx={{ color: theme.palette.success.main, fontSize: 28 }} />
-                        <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.success.main }}>
+                        <Typography variant="h6" component="h5" sx={{ fontWeight: 700, color: theme.palette.success.main }}>
                           {t('students.achievements')}
                         </Typography>
                       </Box>
@@ -935,7 +939,7 @@ export const StudentDetail = () => {
           {certificates ? (
             <Grid container spacing={3}>
               <Grid item xs={12}>
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+                <Typography variant="h6" component="h5" sx={{ fontWeight: 700, mb: 2 }}>
                   {t('certificates.title')}
                 </Typography>
                 {certificates.certificates?.length > 0 ? (
@@ -989,7 +993,7 @@ export const StudentDetail = () => {
                 <StatCard value={formatNumber(remarks.summary?.badRemarks || 0)} label={t('students.needsImprovement')} color={theme.palette.error.main} />
               </Grid>
               <Grid item xs={12}>
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+                <Typography variant="h6" component="h5" sx={{ fontWeight: 700, mb: 2 }}>
                   {t('students.remarks')}
                 </Typography>
                 <Box>
