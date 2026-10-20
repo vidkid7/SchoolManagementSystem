@@ -2041,6 +2041,8 @@
     "actions": "Actions",
     "loading": "Loading...",
     "noBooksFound": "No books found",
+    "noAvailableBooks": "No available books found",
+    "noStudentsFound": "No students found matching your search",
     "noIssuedBooks": "No issued books",
     "student": "Student",
     "book": "Book",
@@ -2134,6 +2136,8 @@
     "confirmDeleteBook": "Are you sure you want to delete this book?",
     "enterStudentId": "Enter student ID",
     "enterAccessionNumber": "Enter accession number",
+    "searchStudentsByCodeOrName": "Search by student name or code",
+    "searchBooksByAccessionOrTitle": "Search by accession number or title",
     "enterBookId": "Enter book ID",
     "subtitle": "Manage books, circulation, and library members"
   },

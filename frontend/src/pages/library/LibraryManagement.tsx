@@ -33,6 +33,7 @@ import {
   Tab,
   Alert,
   IconButton,
+  Autocomplete,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -44,6 +45,7 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -69,6 +71,13 @@ interface Book {
   category: string;
   total_copies: number;
   available_copies: number;
+}
+
+interface StudentOption {
+  studentId: number;
+  studentCode: string;
+  firstNameEn: string;
+  lastNameEn: string;
 }
 
 interface Circulation {
@@ -145,6 +154,73 @@ export const LibraryManagement = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [selectedBookId, setSelectedBookId] = useState('');
+  const [studentSearch, setStudentSearch] = useState('');
+  const [bookSearch, setBookSearch] = useState('');
+  const [studentOptions, setStudentOptions] = useState<StudentOption[]>([]);
+  const [bookOptions, setBookOptions] = useState<Book[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<StudentOption | null>(null);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [studentLookupLoading, setStudentLookupLoading] = useState(false);
+  const [bookLookupLoading, setBookLookupLoading] = useState(false);
+  const debouncedStudentSearch = useDebouncedValue(studentSearch, 300);
+  const debouncedBookSearch = useDebouncedValue(bookSearch, 300);
+
+  useEffect(() => {
+    if (!dialogOpen || debouncedStudentSearch.trim().length < 2) {
+      setStudentOptions([]);
+      return;
+    }
+
+    let active = true;
+    setStudentLookupLoading(true);
+    apiClient.get('/students', {
+      params: { search: debouncedStudentSearch.trim(), limit: 10, status: 'active' },
+    }).then((response) => {
+      if (!active) return;
+      const result = response.data?.data;
+      const list = Array.isArray(result) ? result : (result?.students || []);
+      setStudentOptions(list.filter((student: any) => Number(student?.studentId ?? student?.id) > 0)
+        .map((student: any) => ({
+          studentId: toNumber(student.studentId ?? student.id),
+          studentCode: student.studentCode ?? student.student_code ?? String(student.studentId ?? student.id),
+          firstNameEn: student.firstNameEn ?? student.first_name ?? '',
+          lastNameEn: student.lastNameEn ?? student.last_name ?? '',
+        })));
+    }).catch((lookupError) => {
+      console.error('Failed to search students for book issue:', lookupError);
+      if (active) setStudentOptions([]);
+    }).finally(() => {
+      if (active) setStudentLookupLoading(false);
+    });
+
+    return () => { active = false; };
+  }, [dialogOpen, debouncedStudentSearch]);
+
+  useEffect(() => {
+    if (!dialogOpen) return;
+    const searchTerm = debouncedBookSearch.trim();
+    if (searchTerm.length < 2) {
+      setBookOptions(books.filter((book) => book.available_copies > 0));
+      return;
+    }
+
+    let active = true;
+    setBookLookupLoading(true);
+    apiClient.get('/library/books', { params: { search: searchTerm, limit: 10 } })
+      .then((response) => {
+        if (!active) return;
+        const result = response.data?.data;
+        const list = Array.isArray(result) ? result : (result?.books || []);
+        setBookOptions(list.map(normalizeBook).filter((book: Book) => book.available_copies > 0));
+      }).catch((lookupError) => {
+        console.error('Failed to search books for issue:', lookupError);
+        if (active) setBookOptions([]);
+      }).finally(() => {
+        if (active) setBookLookupLoading(false);
+      });
+
+    return () => { active = false; };
+  }, [dialogOpen, debouncedBookSearch, books]);
 
   useEffect(() => {
     if (tabValue === 0) {
@@ -210,6 +286,13 @@ export const LibraryManagement = () => {
   };
 
   const handleOpenDialog = () => {
+    setError('');
+    setStudentSearch('');
+    setBookSearch('');
+    setSelectedStudent(null);
+    setSelectedBook(null);
+    setSelectedStudentId('');
+    setSelectedBookId('');
     setDialogOpen(true);
   };
 
@@ -217,13 +300,19 @@ export const LibraryManagement = () => {
     setDialogOpen(false);
     setSelectedStudentId('');
     setSelectedBookId('');
+    setStudentSearch('');
+    setBookSearch('');
+    setSelectedStudent(null);
+    setSelectedBook(null);
+    setStudentOptions([]);
+    setBookOptions([]);
   };
 
   const handleIssueBook = async () => {
     try {
       await apiClient.post('/library/issue', {
-        student_id: selectedStudentId,
-        book_id: selectedBookId,
+        studentId: Number(selectedStudentId),
+        bookId: Number(selectedBookId),
       });
 
       setSuccess(t('library.bookIssuedSuccess'));
@@ -536,21 +625,53 @@ export const LibraryManagement = () => {
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
-              <TextField
-                label={t('library.studentId')}
-                fullWidth
-                value={selectedStudentId}
-                onChange={(e) => setSelectedStudentId(e.target.value)}
-                placeholder={t('library.enterStudentId')}
+              <Autocomplete
+                options={studentOptions}
+                value={selectedStudent}
+                onChange={(_, student) => {
+                  setSelectedStudent(student);
+                  setSelectedStudentId(student ? String(student.studentId) : '');
+                }}
+                onInputChange={(_, value, reason) => {
+                  if (reason === 'input' || reason === 'clear') setStudentSearch(value);
+                }}
+                getOptionLabel={(student) => `${student.studentCode} — ${[student.firstNameEn, student.lastNameEn].filter(Boolean).join(' ')}`}
+                isOptionEqualToValue={(option, value) => option.studentId === value.studentId}
+                loading={studentLookupLoading}
+                noOptionsText={studentSearch.trim().length < 2 ? t('library.searchStudentsByCodeOrName') : t('library.noStudentsFound')}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={t('library.studentId')}
+                    placeholder={t('library.searchStudentsByCodeOrName')}
+                    required
+                  />
+                )}
               />
             </Grid>
             <Grid item xs={12}>
-              <TextField
-                label={t('library.bookAccessionNumber')}
-                fullWidth
-                value={selectedBookId}
-                onChange={(e) => setSelectedBookId(e.target.value)}
-                placeholder={t('library.enterAccessionNumber')}
+              <Autocomplete
+                options={bookOptions}
+                value={selectedBook}
+                onChange={(_, book) => {
+                  setSelectedBook(book);
+                  setSelectedBookId(book ? String(book.id) : '');
+                }}
+                onInputChange={(_, value, reason) => {
+                  if (reason === 'input' || reason === 'clear') setBookSearch(value);
+                }}
+                getOptionLabel={(book) => `${book.accession_number} — ${book.title}`}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                loading={bookLookupLoading}
+                noOptionsText={bookSearch.trim().length < 2 ? t('library.searchBooksByAccessionOrTitle') : t('library.noAvailableBooks')}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={t('library.bookAccessionNumber')}
+                    placeholder={t('library.searchBooksByAccessionOrTitle')}
+                    required
+                  />
+                )}
               />
             </Grid>
           </Grid>

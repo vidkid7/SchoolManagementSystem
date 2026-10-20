@@ -1886,6 +1886,8 @@
     "actions": "कार्यहरू",
     "loading": "लोड हुँदैछ...",
     "noBooksFound": "कुनै पुस्तक फेला परेन",
+    "noAvailableBooks": "उपलब्ध पुस्तक फेला परेन",
+    "noStudentsFound": "तपाईंको खोजसँग मिल्ने विद्यार्थी फेला परेन",
     "noIssuedBooks": "कुनै जारी पुस्तक छैन",
     "student": "विद्यार्थी",
     "book": "पुस्तक",
@@ -1979,6 +1981,8 @@
     "confirmDeleteBook": "के तपाईं यो पुस्तक मेटाउन निश्चित हुनुहुन्छ?",
     "enterStudentId": "विद्यार्थी ID हाल्नुहोस्",
     "enterAccessionNumber": "प्रवेश नम्बर हाल्नुहोस्",
+    "searchStudentsByCodeOrName": "विद्यार्थीको नाम वा कोडले खोज्नुहोस्",
+    "searchBooksByAccessionOrTitle": "प्रवेश नम्बर वा शीर्षकले पुस्तक खोज्नुहोस्",
     "enterBookId": "पुस्तक ID हाल्नुहोस्",
     "subtitle": "Manage books, circulation, and library members"
   },
