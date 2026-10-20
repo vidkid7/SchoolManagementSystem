@@ -15,6 +15,7 @@ jest.mock('react-i18next', () => ({
       'userManagement.activeUsers': 'Active Users',
       'userManagement.inactiveUsers': 'Inactive Users',
       'userManagement.suspended': 'Suspended',
+      'userManagement.addUser': 'Add User',
       'userManagement.user': 'User',
       'userManagement.email': 'Email',
       'userManagement.role': 'Role',
@@ -76,5 +77,18 @@ describe('UserManagement', () => {
 
     expect(mockedApiClient.get.mock.calls.filter(([url]) => url === '/api/v1/users/stats')).toHaveLength(1);
     expect(await screen.findByText('@qaTeacher')).toBeInTheDocument();
+  });
+
+  it('labels role and status selectors in filters and the user form', async () => {
+    const user = userEvent.setup();
+    render(<UserManagement />);
+
+    await screen.findByText('@qaTeacher');
+    expect(screen.getAllByRole('combobox', { name: 'Role' })).toHaveLength(1);
+    expect(screen.getAllByRole('combobox', { name: 'Status' })).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: 'Add User' }));
+    expect(screen.getByRole('combobox', { name: 'Role' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Status' })).toBeInTheDocument();
   });
 });

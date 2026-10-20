@@ -409,8 +409,10 @@ export const UserManagement = () => {
             }}
           />
           <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>{t('userManagement.role')}</InputLabel>
+            <InputLabel id="user-role-filter-label">{t('userManagement.role')}</InputLabel>
             <Select
+              id="user-role-filter"
+              labelId="user-role-filter-label"
               value={roleFilter}
               label={t('userManagement.role')}
               onChange={(e) => setRoleFilter(e.target.value)}
@@ -424,8 +426,10 @@ export const UserManagement = () => {
             </Select>
           </FormControl>
           <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>{t('userManagement.status')}</InputLabel>
+            <InputLabel id="user-status-filter-label">{t('userManagement.status')}</InputLabel>
             <Select
+              id="user-status-filter"
+              labelId="user-status-filter-label"
               value={statusFilter}
               label={t('userManagement.status')}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -640,8 +644,10 @@ export const UserManagement = () => {
               />
             )}
             <FormControl fullWidth required>
-              <InputLabel>{t('userManagement.role')}</InputLabel>
+              <InputLabel id="user-form-role-label">{t('userManagement.role')}</InputLabel>
               <Select
+                id="user-form-role"
+                labelId="user-form-role-label"
                 value={userForm.roleId}
                 label={t('userManagement.role')}
                 onChange={(e) => setUserForm({ ...userForm, roleId: e.target.value })}
@@ -654,8 +660,10 @@ export const UserManagement = () => {
               </Select>
             </FormControl>
             <FormControl fullWidth>
-              <InputLabel>{t('userManagement.status')}</InputLabel>
+              <InputLabel id="user-form-status-label">{t('userManagement.status')}</InputLabel>
               <Select
+                id="user-form-status"
+                labelId="user-form-status-label"
                 value={userForm.status}
                 label={t('userManagement.status')}
                 onChange={(e) => setUserForm({ ...userForm, status: e.target.value as any })}
