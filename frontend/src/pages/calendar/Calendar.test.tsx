@@ -17,6 +17,9 @@ import axios from 'axios';
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
+const localDateOnly = (date = new Date()) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
 // Keep this page test independent of Vite's import.meta.env runtime syntax.
 jest.mock('../../services/apiClient', () => {
   const mockedAxiosModule = jest.requireMock('axios');
@@ -608,7 +611,7 @@ describe('Calendar Component', () => {
       title: 'Annual Sports Day',
       description: 'School annual sports competition',
       category: 'sports',
-      startDate: new Date().toISOString().split('T')[0],
+      startDate: localDateOnly(),
       startTime: '09:00',
       endTime: '16:00',
       venue: 'School Ground',
@@ -644,7 +647,7 @@ describe('Calendar Component', () => {
       eventId: 1,
       title: 'Weekly Staff Meeting',
       category: 'meeting',
-      startDate: new Date().toISOString().split('T')[0],
+      startDate: localDateOnly(),
       startTime: '09:00',
       endTime: '10:00',
       isRecurring: true,
@@ -679,7 +682,7 @@ describe('Calendar Component', () => {
       eventId: 2,
       title: 'Morning Assembly',
       category: 'academic',
-      startDate: new Date().toISOString().split('T')[0],
+      startDate: localDateOnly(),
       startTime: '08:00',
       endTime: '08:30',
       isRecurring: true,
@@ -706,7 +709,7 @@ describe('Calendar Component', () => {
       eventId: 3,
       title: 'Monthly Parent Meeting',
       category: 'meeting',
-      startDate: new Date().toISOString().split('T')[0],
+      startDate: localDateOnly(),
       startTime: '14:00',
       endTime: '16:00',
       isRecurring: true,
