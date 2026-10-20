@@ -8,6 +8,7 @@
 
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
+import PDFDocument from 'pdfkit';
 import sequelize from '../../config/database';
 import { LibraryFine } from '../../models/LibraryFine.model';
 import { LibraryCategory } from '../../models/LibraryCategory.model';
@@ -726,8 +727,26 @@ export class LibraryController {
    * Get library statistics
    * GET /api/v1/library/reports
    */
-  async getLibraryReports(_req: Request, res: Response): Promise<void> {
+  async getLibraryReports(req: Request, res: Response): Promise<void> {
     try {
+      const reportType = typeof req.query.type === 'string' ? req.query.type : '';
+      if (reportType) {
+        const startDate = typeof req.query.startDate === 'string' ? req.query.startDate : '';
+        const endDate = typeof req.query.endDate === 'string' ? req.query.endDate : '';
+        const validDate = (value: string) => {
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+          const parsed = new Date(`${value}T00:00:00Z`);
+          return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+        };
+        const allowedTypes = ['circulation', 'overdue', 'popular', 'fines', 'inventory', 'member'];
+        if (!allowedTypes.includes(reportType) || !validDate(startDate) || !validDate(endDate) || startDate > endDate) {
+          res.status(400).json({ success: false, message: 'A supported report type and valid start/end dates are required.' });
+          return;
+        }
+        await this.downloadLibraryReport(reportType, startDate, endDate, res);
+        return;
+      }
+
       console.log('Fetching library stats...');
       const libraryStats = await libraryService.getLibraryStats();
       console.log('Library stats:', libraryStats);
@@ -780,6 +799,80 @@ export class LibraryController {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
+  }
+
+  private async downloadLibraryReport(reportType: string, startDate: string, endDate: string, res: Response): Promise<void> {
+    const range = { [Op.between]: [startDate, endDate] };
+    let lines: string[] = [];
+    const title = reportType.replace(/^./, (letter) => letter.toUpperCase());
+
+    if (reportType === 'inventory') {
+      const books = await Book.findAll({ order: [['title', 'ASC']], limit: 10000 });
+      lines = books.map((book) => `${book.accessionNumber} | ${book.title} | ${book.author} | ${book.category} | ${book.availableCopies}/${book.copies} available | ${book.status}`);
+    } else if (reportType === 'fines') {
+      const fines = await LibraryFine.findAll({
+        where: { createdAt: range },
+        order: [['createdAt', 'DESC']],
+        limit: 10000,
+      });
+      lines = fines.map((fine) => `Fine #${fine.fineId} | Student #${fine.studentId} | ${fine.fineReason} | Amount: NPR ${fine.fineAmount} | Paid: NPR ${fine.paidAmount} | Balance: NPR ${fine.balance} | ${fine.status}`);
+    } else {
+      const where: any = { issueDate: range };
+      if (reportType === 'overdue') {
+        where.dueDate = { [Op.between]: [startDate, endDate] };
+        where.status = { [Op.in]: ['borrowed', 'overdue'] };
+      }
+      const circulations = await Circulation.findAll({
+        where,
+        include: [
+          { model: Book, as: 'book', attributes: ['title', 'accessionNumber'] },
+          { model: Student, as: 'student', attributes: ['studentCode', 'firstNameEn', 'lastNameEn'] },
+        ],
+        order: [['issueDate', 'DESC']],
+        limit: 10000,
+      });
+      const rows = circulations.map((circulation) => {
+        const book = circulation.get('book') as Book | undefined;
+        const student = circulation.get('student') as Student | undefined;
+        const studentName = student ? `${student.firstNameEn} ${student.lastNameEn}` : `Student #${circulation.studentId}`;
+        return { circulation, book, studentName };
+      });
+
+      if (reportType === 'popular') {
+        const counts = new Map<string, number>();
+        rows.forEach(({ book }) => {
+          const key = book?.title || 'Unknown book';
+          counts.set(key, (counts.get(key) || 0) + 1);
+        });
+        lines = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([book, count]) => `${book} | Issues: ${count}`);
+      } else if (reportType === 'member') {
+        const counts = new Map<string, number>();
+        rows.forEach(({ circulation, studentName }) => {
+          const key = `${studentName} (ID ${circulation.studentId})`;
+          counts.set(key, (counts.get(key) || 0) + 1);
+        });
+        lines = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([student, count]) => `${student} | Circulations: ${count}`);
+      } else {
+        lines = rows.map(({ circulation, book, studentName }) => `${circulation.issueDate} | ${book?.accessionNumber || `Book #${circulation.bookId}`} ${book?.title || ''} | ${studentName} | Due ${circulation.dueDate} | ${circulation.status}`);
+      }
+    }
+
+    const filename = `library_${reportType}_${startDate}_${endDate}.pdf`;
+    res.status(200);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    const doc = new PDFDocument({ size: 'A4', margin: 48 });
+    doc.pipe(res);
+    doc.fontSize(18).text(`${title} Library Report`, { align: 'center' });
+    doc.moveDown(0.5).fontSize(10).text(`Date range: ${startDate} to ${endDate}`);
+    doc.moveDown();
+    doc.fontSize(9);
+    if (!lines.length) {
+      doc.text('No records found for this report.');
+    } else {
+      lines.forEach((line, index) => doc.text(`${index + 1}. ${line}`, { width: 500 }));
+    }
+    doc.end();
   }
 
   /**
