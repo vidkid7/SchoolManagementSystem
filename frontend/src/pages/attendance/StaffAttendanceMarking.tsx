@@ -43,8 +43,14 @@ interface Staff {
   lastNameEn: string;
   designation: string;
   department: string;
-  attendance_status?: 'present' | 'absent' | 'late' | 'on_leave';
+  attendance_status?: 'present' | 'absent' | 'late' | 'on_leave' | 'half_day';
   remarks?: string;
+}
+
+interface StaffAttendanceRecord {
+  staffId: number;
+  status: NonNullable<Staff['attendance_status']>;
+  remarks?: string | null;
 }
 
 export function StaffAttendanceMarking() {
@@ -62,23 +68,36 @@ export function StaffAttendanceMarking() {
 
   useEffect(() => {
     fetchStaff();
-  }, [department]);
+  }, [department, selectedDate]);
 
   const fetchStaff = async () => {
     try {
       setLoading(true);
+      setError('');
       const params: any = { status: 'active' };
       if (department !== 'all') params.department = department;
 
-      const response = await apiClient.get('/staff', { params });
+      const [response, attendanceResponse] = await Promise.all([
+        apiClient.get('/staff', { params }),
+        apiClient.get('/attendance/staff/report', {
+          params: { dateFrom: selectedDate, dateTo: selectedDate, limit: 1000 },
+        }),
+      ]);
       const staffData = response.data?.data || response.data || [];
-      
+      const attendanceRecords: StaffAttendanceRecord[] = attendanceResponse.data?.data?.records || [];
+      const attendanceByStaffId = new Map<number, StaffAttendanceRecord>(
+        attendanceRecords.map((record) => [record.staffId, record]),
+      );
+
       const staffWithStatus = Array.isArray(staffData)
-        ? staffData.map((s: Staff) => ({
-            ...s,
-            attendance_status: 'present' as const,
-            remarks: '',
-          }))
+        ? staffData.map((s: Staff) => {
+            const existing = attendanceByStaffId.get(s.staffId);
+            return {
+              ...s,
+              attendance_status: existing?.status || 'present',
+              remarks: existing?.remarks || '',
+            };
+          })
         : [];
       
       setStaff(staffWithStatus);
@@ -89,7 +108,7 @@ export function StaffAttendanceMarking() {
       }
     } catch (error) {
       console.error('Failed to fetch staff:', error);
-      setError(t('attendance.noStaffFound'));
+      setError(t('attendance.failedToLoadStaffAttendance'));
       setStaff([]);
     } finally {
       setLoading(false);
@@ -210,11 +229,13 @@ export function StaffAttendanceMarking() {
           <CircularProgress />
         </Box>
       ) : staff.length === 0 ? (
-        <Paper sx={{ ...S.GLASS, p: 4, textAlign: 'center' }}>
-          <Typography color="text.secondary">
-            {t('attendance.noStaffFound')}
-          </Typography>
-        </Paper>
+        error ? null : (
+          <Paper sx={{ ...S.GLASS, p: 4, textAlign: 'center' }}>
+            <Typography color="text.secondary">
+              {t('attendance.noStaffFound')}
+            </Typography>
+          </Paper>
+        )
       ) : (
         <>
           <TableContainer component={Paper} sx={S.GLASS}>
@@ -248,6 +269,7 @@ export function StaffAttendanceMarking() {
                           <MenuItem value="absent">{t('attendance.absent')}</MenuItem>
                           <MenuItem value="late">{t('attendance.late')}</MenuItem>
                           <MenuItem value="on_leave">{t('attendance.onLeave')}</MenuItem>
+                          <MenuItem value="half_day">{t('attendance.halfDay')}</MenuItem>
                         </Select>
                       </FormControl>
                     </TableCell>
