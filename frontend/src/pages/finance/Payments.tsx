@@ -272,6 +272,7 @@ export function Payments() {
           onPageChange={(_, newPage) => setPage(newPage)}
           rowsPerPage={rowsPerPage}
           rowsPerPageOptions={[10, 20, 50, 100]}
+          SelectProps={{ name: 'rowsPerPage' }}
           onRowsPerPageChange={(e) => {
             setRowsPerPage(parseInt(e.target.value, 10));
             setPage(0);
@@ -311,6 +312,8 @@ export function Payments() {
             <TextField
               label={t('finance.paymentMethod')}
               select
+              InputLabelProps={{ htmlFor: undefined, id: 'payment-method-label' }}
+              SelectProps={{ labelId: 'payment-method-label', name: 'paymentMethod' }}
               value={formData.paymentMethod}
               onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
               required

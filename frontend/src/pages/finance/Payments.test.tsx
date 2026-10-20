@@ -92,4 +92,15 @@ describe('Payments form validation', () => {
     expect(screen.getByRole('spinbutton', { name: 'finance.amount' })).toHaveAttribute('min', '0.01');
     expect(screen.getByRole('spinbutton', { name: 'finance.amount' })).toHaveAttribute('step', '0.01');
   });
+
+  it('names the payment method and page-size select inputs without breaking accessible labels', async () => {
+    renderPayments();
+    await openRecordPayment();
+
+    expect(screen.getByRole('combobox', { name: 'finance.paymentMethod' })).toBeInTheDocument();
+    expect(document.getElementById('payment-method-label')).not.toHaveAttribute('for');
+    const selectInputNames = [...document.querySelectorAll<HTMLInputElement>('input.MuiSelect-nativeInput')]
+      .map((input) => input.name);
+    expect(selectInputNames).toEqual(expect.arrayContaining(['rowsPerPage', 'paymentMethod']));
+  });
 });
