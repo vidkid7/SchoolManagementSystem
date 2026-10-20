@@ -148,7 +148,17 @@ class ReportService {
 
     if (params.studentId) whereClause.studentId = params.studentId;
     if (params.classId) whereClause.classId = params.classId;
-    if (params.section) whereClause.section = params.section;
+    if (params.section) {
+      const classes = await Class.findAll({
+        where: {
+          section: params.section,
+          ...(params.classId && { classId: params.classId }),
+        },
+        attributes: ['classId'],
+        raw: true,
+      }) as Array<{ classId: number }>;
+      whereClause.classId = { [Op.in]: classes.map(({ classId }) => classId) };
+    }
 
     const totalRecords = await AttendanceRecord.count({ where: whereClause });
     const presentRecords = await AttendanceRecord.count({

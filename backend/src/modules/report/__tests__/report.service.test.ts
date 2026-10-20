@@ -1,4 +1,5 @@
 import reportService from '../report.service';
+import { Op } from 'sequelize';
 import Student from '../../../models/Student.model';
 import AttendanceRecord from '../../../models/AttendanceRecord.model';
 import Invoice from '../../../models/Invoice.model';
@@ -72,6 +73,28 @@ describe('ReportService', () => {
   });
 
   describe('generateAttendanceReport', () => {
+    it('resolves section filters to class IDs before querying attendance records', async () => {
+      jest.spyOn(Class, 'findAll').mockResolvedValue([{ classId: 1 }] as any);
+      (AttendanceRecord.count as jest.Mock).mockResolvedValue(0);
+      (AttendanceRecord.findAll as jest.Mock).mockResolvedValue([]);
+
+      await reportService.generateAttendanceReport({
+        startDate: '2026-01-01',
+        endDate: '2026-12-31',
+        classId: '1',
+        section: 'K',
+      });
+
+      expect(Class.findAll).toHaveBeenCalledWith({
+        where: { classId: '1', section: 'K' },
+        attributes: ['classId'],
+        raw: true,
+      });
+      expect(AttendanceRecord.count).toHaveBeenCalledWith({
+        where: expect.objectContaining({ classId: { [Op.in]: [1] } }),
+      });
+    });
+
     it('should calculate average attendance correctly', async () => {
       (AttendanceRecord.count as jest.Mock)
         .mockResolvedValueOnce(100) // total records
