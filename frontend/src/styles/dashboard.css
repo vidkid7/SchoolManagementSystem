@@ -11,6 +11,7 @@
   --sms-text-strong: #020617;
   --sms-muted: #64748b;
   --sms-muted-soft: #94a3b8;
+  --sms-table-header-color: #475569;
   --sms-border: rgba(226, 232, 240, 0.92);
   --sms-border-soft: rgba(226, 232, 240, 0.72);
   --sms-card-border: rgba(226, 232, 240, 0.88);
@@ -141,7 +142,7 @@
 }
 
 .sms-dashboard-shell #main-content > :not(.role-dashboard) .MuiTableCell-head {
-  color: var(--sms-muted);
+  color: var(--sms-table-header-color);
   font-size: 0.68rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -161,6 +162,7 @@
   --sms-text-strong: #ffffff;
   --sms-muted: #94a3b8;
   --sms-muted-soft: #64748b;
+  --sms-table-header-color: #cbd5e1;
   --sms-border: rgba(148, 163, 184, 0.24);
   --sms-border-soft: rgba(148, 163, 184, 0.16);
   --sms-card-border: rgba(148, 163, 184, 0.22);
