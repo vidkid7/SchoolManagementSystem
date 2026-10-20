@@ -114,6 +114,18 @@ describe('Calendar Component', () => {
     expect(screen.getByRole('button', { name: 'Previous Month' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Next Month' })).toBeInTheDocument();
   });
+
+  it('updates navigation button names to match day view', () => {
+    mockedAxios.get.mockResolvedValue({
+      data: { success: true, data: [] },
+    });
+
+    renderCalendar();
+    fireEvent.click(screen.getByRole('button', { name: 'Day' }));
+
+    expect(screen.getByRole('button', { name: 'Previous Day' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Next Day' })).toBeInTheDocument();
+  });
   it('should display view toggle buttons', () => {
     mockedAxios.get.mockResolvedValue({
       data: { success: true, data: [] },

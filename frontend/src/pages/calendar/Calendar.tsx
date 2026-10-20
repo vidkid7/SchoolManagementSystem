@@ -852,7 +852,7 @@ const Calendar = () => {
             <IconButton
               onClick={handlePrevious}
               size="small"
-              aria-label={`${t('common.previous')} ${t('calendar.month')}`}
+              aria-label={`${t('common.previous')} ${t(view === 'day' ? 'calendar.day' : 'calendar.month')}`}
             >
               <ChevronLeftIcon />
             </IconButton>
@@ -867,7 +867,7 @@ const Calendar = () => {
             <IconButton
               onClick={handleNext}
               size="small"
-              aria-label={`${t('common.next')} ${t('calendar.month')}`}
+              aria-label={`${t('common.next')} ${t(view === 'day' ? 'calendar.day' : 'calendar.month')}`}
             >
               <ChevronRightIcon />
             </IconButton>
