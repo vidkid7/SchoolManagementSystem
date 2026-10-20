@@ -60,6 +60,7 @@ import {
 import apiClient from '../../services/apiClient';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { useTranslation } from 'react-i18next';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 
 interface User {
   userId: number;
@@ -109,6 +110,7 @@ export const UserManagement = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search);
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
@@ -141,8 +143,11 @@ export const UserManagement = () => {
 
   useEffect(() => {
     fetchUsers();
+  }, [page, rowsPerPage, debouncedSearch, roleFilter, statusFilter]);
+
+  useEffect(() => {
     fetchStats();
-  }, [page, rowsPerPage, search, roleFilter, statusFilter]);
+  }, []);
 
   const fetchUsers = async () => {
     try {
@@ -150,7 +155,7 @@ export const UserManagement = () => {
       const params = new URLSearchParams({
         page: (page + 1).toString(),
         limit: rowsPerPage.toString(),
-        ...(search && { search }),
+        ...(debouncedSearch && { search: debouncedSearch }),
         ...(roleFilter && { role: roleFilter }),
         ...(statusFilter && { status: statusFilter }),
       });
@@ -510,6 +515,7 @@ export const UserManagement = () => {
                   <TableCell align="right" sx={S.TD}>
                     <IconButton
                       size="small"
+                      aria-label={t('userManagement.actions')}
                       onClick={(e) => {
                         setSelectedUser(user);
                         setAnchorEl(e.currentTarget);
