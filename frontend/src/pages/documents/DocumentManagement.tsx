@@ -504,6 +504,11 @@ export const DocumentManagement = () => {
       if (response.data.success) {
         setSelectedDocument(document);
         setSelectedVersions(response.data.data);
+        // The versions request resolves after the actions menu has closed. Blur
+        // its restored trigger before the dialog hides the application root.
+        if (window.document.activeElement instanceof HTMLElement) {
+          window.document.activeElement.blur();
+        }
         setVersionsDialogOpen(true);
       }
     } catch (err: any) {

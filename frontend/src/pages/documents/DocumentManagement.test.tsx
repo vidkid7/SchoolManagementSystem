@@ -202,6 +202,32 @@ describe('DocumentManagement Page', () => {
       });
     });
 
+    it('should move focus into Version History without hiding the focused trigger', async () => {
+      (apiClient.get as jest.Mock).mockImplementation((url: string) => {
+        if (url === '/documents/1/versions') {
+          return Promise.resolve({ data: { success: true, data: [{
+            version: 1,
+            name: 'Sample Document',
+            size: 1024000,
+            createdAt: '2024-01-15T10:00:00Z',
+          }] } });
+        }
+        return Promise.resolve({ data: { success: true, data: mockDocuments, meta: { total: 2 } } });
+      });
+
+      renderComponent();
+      const row = await screen.findByRole('row', { name: /Sample Document/ });
+      const actions = within(row).getByRole('button', { name: 'Actions' });
+      fireEvent.click(actions);
+      fireEvent.click(await screen.findByRole('menuitem', { name: 'Version History' }));
+      const blurSpy = jest.spyOn(HTMLElement.prototype, 'blur');
+      const blurCallsAfterMenuClose = blurSpy.mock.calls.length;
+
+      await screen.findByRole('dialog', { name: /Version History/ });
+      await waitFor(() => expect(blurSpy.mock.calls.length).toBeGreaterThan(blurCallsAfterMenuClose));
+      blurSpy.mockRestore();
+    });
+
     it('should fetch and render an authenticated PDF preview and release it on close', async () => {
       const previewBlob = new Blob(['%PDF-1.4 synthetic QA preview'], { type: 'application/pdf' });
       (global.URL.createObjectURL as jest.Mock).mockReturnValue('blob:qa-preview');
