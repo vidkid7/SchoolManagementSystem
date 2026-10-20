@@ -393,8 +393,10 @@ export const GradeEntry = () => {
         <Grid container spacing={2}>
           <Grid item xs={12} md={3}>
             <FormControl fullWidth size="small">
-              <InputLabel>{t('examinations.exam')}</InputLabel>
+              <InputLabel id="grade-entry-exam-label">{t('examinations.exam')}</InputLabel>
               <Select
+                id="grade-entry-exam"
+                labelId="grade-entry-exam-label"
                 value={selectedExam}
                 label={t('examinations.exam')}
                 onChange={(e) => setSelectedExam(e.target.value)}
@@ -415,8 +417,10 @@ export const GradeEntry = () => {
 
           <Grid item xs={12} md={2}>
             <FormControl fullWidth size="small">
-              <InputLabel>{t('common.class')}</InputLabel>
+              <InputLabel id="grade-entry-class-label">{t('common.class')}</InputLabel>
               <Select
+                id="grade-entry-class"
+                labelId="grade-entry-class-label"
                 value={selectedClass}
                 label={t('common.class')}
                 onChange={(e) => setSelectedClass(e.target.value)}
@@ -441,8 +445,10 @@ export const GradeEntry = () => {
 
           <Grid item xs={12} md={2}>
             <FormControl fullWidth size="small">
-              <InputLabel>{t('common.section')}</InputLabel>
+              <InputLabel id="grade-entry-section-label">{t('common.section')}</InputLabel>
               <Select
+                id="grade-entry-section"
+                labelId="grade-entry-section-label"
                 value={selectedSection}
                 label={t('common.section')}
                 onChange={(e) => setSelectedSection(e.target.value)}
@@ -457,8 +463,10 @@ export const GradeEntry = () => {
 
           <Grid item xs={12} md={3}>
             <FormControl fullWidth size="small">
-              <InputLabel>{t('common.subject')}</InputLabel>
+              <InputLabel id="grade-entry-subject-label">{t('common.subject')}</InputLabel>
               <Select
+                id="grade-entry-subject"
+                labelId="grade-entry-subject-label"
                 value={selectedSubject}
                 label={t('common.subject')}
                 onChange={(e) => setSelectedSubject(e.target.value)}
