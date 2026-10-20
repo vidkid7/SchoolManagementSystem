@@ -308,7 +308,13 @@ export const RoleManagement = () => {
                 <Fragment key={role.id}>
                   <TableRow key={role.id} hover>
                     <TableCell>
-                      <IconButton size="small" onClick={() => toggleRoleExpand(role.id)}>
+                      <IconButton
+                        size="small"
+                        aria-label={t(expandedRoles.has(role.id) ? 'roles.collapseRole' : 'roles.expandRole', { roleName: role.name })}
+                        aria-expanded={expandedRoles.has(role.id)}
+                        aria-controls={`role-permissions-${role.id}`}
+                        onClick={() => toggleRoleExpand(role.id)}
+                      >
                         {expandedRoles.has(role.id) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                       </IconButton>
                     </TableCell>
@@ -345,6 +351,9 @@ export const RoleManagement = () => {
                         onChange={() => handleToggleRoleStatus(role)}
                         disabled={role.isSystem}
                         size="small"
+                        inputProps={{
+                          'aria-label': t(role.isActive ? 'roles.deactivateRole' : 'roles.activateRole', { roleName: role.name }),
+                        }}
                       />
                     </TableCell>
                     <TableCell align="right">
@@ -369,7 +378,7 @@ export const RoleManagement = () => {
                   </TableRow>
                   <TableRow>
                     <TableCell colSpan={8} sx={{ py: 0 }}>
-                      <Collapse in={expandedRoles.has(role.id)} timeout="auto" unmountOnExit>
+                      <Collapse id={`role-permissions-${role.id}`} in={expandedRoles.has(role.id)} timeout="auto" unmountOnExit>
                         <Box sx={{ py: 2 }}>
                           <Typography variant="subtitle2" sx={{ mb: 1 }}>
                             {t('roles.permissions')}:
@@ -539,8 +548,11 @@ const PermissionMatrix = ({ permissions, rolePermissions, onSave }: PermissionMa
 
   return (
     <Box>
+      {permissions.length === 0 && (
+        <Alert severity="info" sx={{ mb: 2 }}>{t('roles.noPermissionsAvailable')}</Alert>
+      )}
       <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
-        <Button sx={S.BTN_PRIMARY} onClick={handleSave}>
+        <Button sx={S.BTN_PRIMARY} onClick={handleSave} disabled={permissions.length === 0}>
           {t('common.save')}
         </Button>
       </Box>
@@ -551,6 +563,7 @@ const PermissionMatrix = ({ permissions, rolePermissions, onSave }: PermissionMa
             <Button
               size="small"
               variant="outlined" sx={S.BTN_OUTLINE}
+              disabled={permissions.length === 0}
               onClick={() => {
                 const allIds = permissions.map(p => p.id);
                 setSelectedPermissions(new Set(allIds));
@@ -561,6 +574,7 @@ const PermissionMatrix = ({ permissions, rolePermissions, onSave }: PermissionMa
             <Button
               size="small"
               variant="outlined" sx={S.BTN_OUTLINE}
+              disabled={permissions.length === 0}
               onClick={() => setSelectedPermissions(new Set())}
             >
               {t('roles.deselectAll')}

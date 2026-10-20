@@ -2313,7 +2313,12 @@
     "noPermissionsAssigned": "कुनै अनुमति तोकिएको छैन",
     "deselectAll": "सबै हटाउनुहोस्",
     "selectAll": "सबै चयन गर्नुहोस्",
-    "selectPermissionsHint": "यो भूमिकालाई अनुमतिहरू तोक्न चयन गर्नुहोस्।"
+    "selectPermissionsHint": "यो भूमिकालाई अनुमतिहरू तोक्न चयन गर्नुहोस्।",
+    "noPermissionsAvailable": "यो भूमिकालाई तोक्न कुनै अनुमति उपलब्ध छैन।",
+    "expandRole": "{{roleName}} विवरण विस्तार गर्नुहोस्",
+    "collapseRole": "{{roleName}} विवरण संकुचन गर्नुहोस्",
+    "activateRole": "{{roleName}} सक्रिय गर्नुहोस्",
+    "deactivateRole": "{{roleName}} निष्क्रिय गर्नुहोस्"
   },
   "systemSettings": {
     "title": "प्रणाली सेटिङ",

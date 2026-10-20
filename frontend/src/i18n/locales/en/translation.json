@@ -2497,7 +2497,12 @@
     "deselectAll": "Deselect All",
     "selectAll": "Select All",
     "selectPermissionsHint": "Select permissions to assign to this role.",
-    "noPermissionsAssigned": "No permissions assigned"
+    "noPermissionsAssigned": "No permissions assigned",
+    "noPermissionsAvailable": "No permissions are available to assign to this role.",
+    "expandRole": "Expand details for {{roleName}}",
+    "collapseRole": "Collapse details for {{roleName}}",
+    "activateRole": "Activate {{roleName}}",
+    "deactivateRole": "Deactivate {{roleName}}"
   },
   "systemSettings": {
     "title": "System Settings",
