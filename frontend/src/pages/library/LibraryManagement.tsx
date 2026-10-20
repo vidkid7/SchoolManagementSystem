@@ -168,6 +168,7 @@ export const LibraryManagement = () => {
   useEffect(() => {
     if (!dialogOpen || debouncedStudentSearch.trim().length < 2) {
       setStudentOptions([]);
+      setStudentLookupLoading(false);
       return;
     }
 
@@ -197,10 +198,14 @@ export const LibraryManagement = () => {
   }, [dialogOpen, debouncedStudentSearch]);
 
   useEffect(() => {
-    if (!dialogOpen) return;
+    if (!dialogOpen) {
+      setBookLookupLoading(false);
+      return;
+    }
     const searchTerm = debouncedBookSearch.trim();
     if (searchTerm.length < 2) {
       setBookOptions(books.filter((book) => book.available_copies > 0));
+      setBookLookupLoading(false);
       return;
     }
 
