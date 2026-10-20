@@ -59,6 +59,7 @@ import {
   FileDownload as FileDownloadIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import apiClient from '../../services/apiClient';
@@ -108,6 +109,7 @@ const NEPALI_MONTHS = [
 
 const Calendar = () => {
   const { i18n, t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isNepali = i18n.language === 'ne';
   const user = useSelector((state: RootState) => state.auth.user);
   const theme = useTheme();
@@ -352,7 +354,7 @@ const Calendar = () => {
   };
 
   // Handle opening add event dialog
-  const handleOpenAddEvent = () => {
+  const handleOpenAddEvent = (initialDate = currentDate) => {
     setSelectedEvent(null);
     setEventForm({
       title: '',
@@ -360,7 +362,7 @@ const Calendar = () => {
       description: '',
       descriptionNp: '',
       category: 'academic',
-      startDate: currentDate.toISOString().split('T')[0],
+      startDate: initialDate.toISOString().split('T')[0],
       endDate: '',
       startTime: '',
       endTime: '',
@@ -370,6 +372,33 @@ const Calendar = () => {
     });
     setShowEventDialog(true);
   };
+
+  useEffect(() => {
+    const action = searchParams.get('action');
+    const date = parseDateOnly(searchParams.get('date'));
+    const filter = searchParams.get('filter');
+    const validCategories = ['all', 'academic', 'sports', 'cultural', 'holiday', 'exam', 'meeting', 'other'];
+    let shouldReplaceQuery = false;
+
+    if (date) {
+      setCurrentDate(date);
+      searchParams.delete('date');
+      shouldReplaceQuery = true;
+    }
+    if (filter && validCategories.includes(filter)) {
+      setSelectedCategory(filter);
+      searchParams.delete('filter');
+      shouldReplaceQuery = true;
+    }
+    if (action === 'create') {
+      handleOpenAddEvent(date ?? currentDate);
+      searchParams.delete('action');
+      shouldReplaceQuery = true;
+    }
+    if (shouldReplaceQuery) {
+      setSearchParams(new URLSearchParams(searchParams), { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   // Export personal calendar to iCal format
   const handleExportCalendar = async () => {
@@ -386,6 +415,7 @@ const Calendar = () => {
       // Map user role to target audience
       let targetAudience = 'student';
       if (user?.role) {
+        const normalizedRole = user.role.toLowerCase();
         const roleMap: Record<string, string> = {
           'student': 'student',
           'parent': 'parent',
@@ -394,7 +424,7 @@ const Calendar = () => {
           'school_admin': 'staff',
           'non_teaching_staff': 'staff',
         };
-        targetAudience = roleMap[user.role] || 'student';
+        targetAudience = roleMap[normalizedRole] || 'student';
       }
 
       const params = {

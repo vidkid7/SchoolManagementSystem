@@ -8,7 +8,7 @@
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { configureStore } from '@reduxjs/toolkit';
 import Calendar from './Calendar';
 import axios from 'axios';
@@ -41,7 +41,7 @@ jest.mock('react-i18next', () => ({
 const createMockStore = () => {
   return configureStore({
     reducer: {
-      auth: (state = { user: { role: 'school_admin' } }) => state,
+      auth: (state = { user: { role: 'School_Admin' } }) => state,
     },
   });
 };
@@ -55,13 +55,13 @@ describe('Calendar Component', () => {
     jest.restoreAllMocks();
   });
 
-  const renderCalendar = () => {
+  const renderCalendar = (initialEntry = '/') => {
     const store = createMockStore();
     return render(
       <Provider store={store}>
-        <BrowserRouter>
+        <MemoryRouter initialEntries={[initialEntry]}>
           <Calendar />
-        </BrowserRouter>
+        </MemoryRouter>
       </Provider>
     );
   };
@@ -498,6 +498,44 @@ describe('Calendar Component', () => {
     await waitFor(() => {
       expect(screen.getByText('Add New Event')).toBeInTheDocument();
     });
+  });
+
+  it('opens the event dialog for the dashboard create-event route', async () => {
+    mockedAxios.get.mockResolvedValue({
+      data: { success: true, data: [] },
+    });
+
+    renderCalendar('/calendar?action=create');
+
+    expect(await screen.findByText('Add New Event')).toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('applies the holiday filter from the dashboard quick action route', async () => {
+    mockedAxios.get.mockResolvedValue({
+      data: { success: true, data: [] },
+    });
+
+    renderCalendar('/calendar?filter=holiday');
+
+    await waitFor(() => {
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        '/api/v1/calendar/events',
+        expect.objectContaining({
+          params: expect.objectContaining({ category: 'holiday' }),
+        }),
+      );
+    });
+  });
+
+  it('opens the selected day from a dashboard event date route', async () => {
+    mockedAxios.get.mockResolvedValue({
+      data: { success: true, data: [] },
+    });
+
+    renderCalendar('/calendar?date=2026-10-21');
+
+    expect(await screen.findByText(/October 21, 2026/)).toBeInTheDocument();
   });
 
   it('should close event dialog when Close button is clicked', async () => {
