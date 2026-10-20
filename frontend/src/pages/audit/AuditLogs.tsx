@@ -107,7 +107,7 @@ const AuditLogs: React.FC = () => {
     fetchStats();
   }, [page, rowsPerPage]);
 
-  const fetchAuditLogs = async () => {
+  const fetchAuditLogs = async (activeFilters = filters) => {
     const requestSequence = ++auditLogRequestSequence.current;
     setLoading(true);
     setError(null);
@@ -118,14 +118,14 @@ const AuditLogs: React.FC = () => {
         limit: rowsPerPage,
       };
 
-      if (filters.userId) params.userId = filters.userId;
-      if (filters.entityType) params.entityType = filters.entityType;
-      if (filters.entityId) params.entityId = filters.entityId;
-      if (filters.action) params.action = filters.action;
-      if (filters.startDate) params.startDate = filters.startDate.toISOString();
-      if (filters.endDate) params.endDate = filters.endDate.toISOString();
-      if (filters.ipAddress) params.ipAddress = filters.ipAddress;
-      if (filters.search) params.search = filters.search;
+      if (activeFilters.userId) params.userId = activeFilters.userId;
+      if (activeFilters.entityType) params.entityType = activeFilters.entityType;
+      if (activeFilters.entityId) params.entityId = activeFilters.entityId;
+      if (activeFilters.action) params.action = activeFilters.action;
+      if (activeFilters.startDate) params.startDate = activeFilters.startDate.toISOString();
+      if (activeFilters.endDate) params.endDate = activeFilters.endDate.toISOString();
+      if (activeFilters.ipAddress) params.ipAddress = activeFilters.ipAddress;
+      if (activeFilters.search) params.search = activeFilters.search;
 
       const response = await apiClient.get('/api/v1/audit/logs', { params });
 
@@ -165,7 +165,7 @@ const AuditLogs: React.FC = () => {
   };
 
   const handleClearFilters = () => {
-    setFilters({
+    const clearedFilters = {
       userId: '',
       entityType: '',
       entityId: '',
@@ -174,8 +174,13 @@ const AuditLogs: React.FC = () => {
       endDate: null,
       ipAddress: '',
       search: '',
-    });
-    setPage(0);
+    };
+    setFilters(clearedFilters);
+    if (page !== 0) {
+      setPage(0);
+      return;
+    }
+    fetchAuditLogs(clearedFilters);
   };
 
   const handleExport = async () => {
@@ -294,7 +299,7 @@ const AuditLogs: React.FC = () => {
           </Box>
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             <Tooltip title={t('audit.refresh')}>
-              <Button variant="outlined" startIcon={<RefreshIcon />} onClick={fetchAuditLogs} sx={S.BTN_OUTLINE}>
+              <Button variant="outlined" startIcon={<RefreshIcon />} onClick={() => fetchAuditLogs()} sx={S.BTN_OUTLINE}>
                 {t('audit.refresh')}
               </Button>
             </Tooltip>
@@ -410,8 +415,10 @@ const AuditLogs: React.FC = () => {
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
                   <FormControl fullWidth sx={S.TF}>
-                    <InputLabel>{t('audit.action')}</InputLabel>
+                    <InputLabel id="audit-action-label">{t('audit.action')}</InputLabel>
                     <Select
+                      id="audit-action"
+                      labelId="audit-action-label"
                       value={filters.action}
                       onChange={(e) => handleFilterChange('action', e.target.value)}
                       label={t('audit.action')}

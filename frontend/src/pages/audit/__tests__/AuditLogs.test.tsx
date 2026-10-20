@@ -190,6 +190,8 @@ describe('AuditLogs Component', () => {
     const filterButton = screen.getByRole('button', { name: 'Filters' });
     fireEvent.click(filterButton);
 
+    expect(screen.getByRole('combobox', { name: 'Action' })).toBeInTheDocument();
+
     // Fill in entity type filter
     const entityTypeInput = screen.getByLabelText('Entity Type');
     fireEvent.change(entityTypeInput, { target: { value: 'student' } });
@@ -277,12 +279,24 @@ describe('AuditLogs Component', () => {
     const entityTypeInput = screen.getByLabelText('Entity Type');
     fireEvent.change(entityTypeInput, { target: { value: 'student' } });
 
+    fireEvent.click(screen.getByRole('button', { name: 'Apply Filters' }));
+    await waitFor(() => {
+      expect(mockedApiClient.get).toHaveBeenCalledWith('/api/v1/audit/logs', expect.objectContaining({
+        params: expect.objectContaining({ entityType: 'student' }),
+      }));
+    });
+
     // Click clear filters
-    const clearButton = screen.getByText('Clear Filters');
+    const clearButton = screen.getByRole('button', { name: 'Clear Filters' });
     fireEvent.click(clearButton);
 
-    // Verify input is cleared
+    // Clearing controls also reloads the unfiltered first page immediately.
     expect(entityTypeInput).toHaveValue('');
+    await waitFor(() => {
+      expect(mockedApiClient.get).toHaveBeenLastCalledWith('/api/v1/audit/logs', {
+        params: { page: 1, limit: 20 },
+      });
+    });
   });
 
   it('should refresh audit logs', async () => {
