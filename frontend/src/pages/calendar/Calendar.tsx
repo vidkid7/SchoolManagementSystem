@@ -187,8 +187,8 @@ const Calendar = () => {
       const endDate = getEndDate();
 
       const params: any = {
-        startDateFrom: startDate.toISOString().split('T')[0],
-        startDateTo: endDate.toISOString().split('T')[0],
+        startDateFrom: formatDateOnly(startDate),
+        startDateTo: formatDateOnly(endDate),
       };
 
       if (selectedCategory !== 'all') {
@@ -362,7 +362,7 @@ const Calendar = () => {
       description: '',
       descriptionNp: '',
       category: 'academic',
-      startDate: initialDate.toISOString().split('T')[0],
+      startDate: formatDateOnly(initialDate),
       endDate: '',
       startTime: '',
       endTime: '',
@@ -428,8 +428,8 @@ const Calendar = () => {
       }
 
       const params = {
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0],
+        startDate: formatDateOnly(startDate),
+        endDate: formatDateOnly(endDate),
         targetAudience,
       };
 
@@ -442,7 +442,7 @@ const Calendar = () => {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `school-calendar-${new Date().toISOString().split('T')[0]}.ics`);
+      link.setAttribute('download', `school-calendar-${formatDateOnly(new Date())}.ics`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -457,7 +457,7 @@ const Calendar = () => {
 
   // Get events for a specific date
   const getEventsForDate = (date: Date): CalendarEvent[] => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = formatDateOnly(date);
     return events.filter(event => {
       const eventStart = event.startDate.split('T')[0];
       const eventEnd = event.endDate ? event.endDate.split('T')[0] : eventStart;

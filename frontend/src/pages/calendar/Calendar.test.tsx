@@ -104,6 +104,36 @@ describe('Calendar Component', () => {
 
   }, 15000);
 
+  it('keeps AD event API ranges on the selected local calendar month', async () => {
+    const originalTimezone = process.env.TZ;
+    process.env.TZ = 'Asia/Kathmandu';
+    mockedAxios.get.mockResolvedValue({
+      data: { success: true, data: [] },
+    });
+
+    try {
+      renderCalendar();
+      await waitFor(() => expect(mockedAxios.get).toHaveBeenCalled());
+
+      fireEvent.click(screen.getByRole('button', { name: 'AD' }));
+      const yearSelector = screen.getByRole('combobox', { name: 'Select year' });
+      fireEvent.mouseDown(yearSelector);
+      fireEvent.click(await screen.findByRole('option', { name: '2031' }));
+
+      await waitFor(() => {
+        expect(mockedAxios.get).toHaveBeenLastCalledWith(
+          '/api/v1/calendar/events',
+          expect.objectContaining({
+            params: { startDateFrom: '2031-10-01', startDateTo: '2031-10-31' },
+          }),
+        );
+      });
+    } finally {
+      if (originalTimezone === undefined) delete process.env.TZ;
+      else process.env.TZ = originalTimezone;
+    }
+  }, 15000);
+
   it('should give month navigation buttons accessible names', () => {
     mockedAxios.get.mockResolvedValue({
       data: { success: true, data: [] },
