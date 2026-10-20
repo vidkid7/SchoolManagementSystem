@@ -71,7 +71,8 @@ describe('BookCatalog search', () => {
 
     fireEvent.change(screen.getByPlaceholderText(/search/i), { target: { value: 'QA-20261019-001' } });
     await waitFor(() => expect(bookRequests()).toHaveLength(2));
-    await waitFor(() => expect(screen.getByText('library.noBooksFoundAdd')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('library.noBooksFound')).toBeInTheDocument());
+    expect(screen.queryByText('library.noBooksFoundAdd')).not.toBeInTheDocument();
 
     await act(async () => {
       initialResponse.resolve({
@@ -86,7 +87,7 @@ describe('BookCatalog search', () => {
     });
 
     expect(screen.queryByText('Stale search result')).not.toBeInTheDocument();
-    expect(screen.getByText('library.noBooksFoundAdd')).toBeInTheDocument();
+    expect(screen.getByText('library.noBooksFound')).toBeInTheDocument();
   });
 });
 

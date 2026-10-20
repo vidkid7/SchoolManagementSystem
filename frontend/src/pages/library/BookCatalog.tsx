@@ -369,7 +369,7 @@ export function BookCatalog({ initialAddDialogOpen = false }: { initialAddDialog
               ) : books.length === 0 ? (
                 <TableRow sx={S.TR_HOVER}>
                   <TableCell colSpan={8} align="center" sx={S.TD}>
-                    {t('library.noBooksFoundAdd')}
+                    {search.trim() || categoryFilter ? t('library.noBooksFound') : t('library.noBooksFoundAdd')}
                   </TableCell>
                 </TableRow>
               ) : (
