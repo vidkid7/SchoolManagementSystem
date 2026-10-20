@@ -210,6 +210,58 @@ describe('AuditLogs Component', () => {
     });
   });
 
+  it('applies filters from later pages using first-page results', async () => {
+    const filteredLog = {
+      ...mockAuditLogs[0],
+      auditLogId: 3,
+      entityType: 'grading_scheme',
+      newValue: { name: 'Synthetic Grading Scheme' },
+    };
+
+    mockedApiClient.get.mockImplementation((url, config: any) => {
+      if (url === '/api/v1/audit/stats') {
+        return Promise.resolve({ data: { data: mockStats } });
+      }
+      const params = config?.params ?? {};
+      if (url === '/api/v1/audit/logs' && params.search && params.page === 1) {
+        return Promise.resolve({
+          data: { data: [filteredLog], pagination: { page: 1, limit: 20, total: 1, totalPages: 1 } },
+        });
+      }
+      if (url === '/api/v1/audit/logs') {
+        return Promise.resolve({
+          data: { data: mockAuditLogs, pagination: { page: params.page ?? 1, limit: 20, total: 22, totalPages: 2 } },
+        });
+      }
+      return Promise.reject(new Error('Unknown URL'));
+    });
+
+    renderComponent();
+    await screen.findAllByText('student #100');
+    fireEvent.click(screen.getByRole('button', { name: 'Go to next page' }));
+    await waitFor(() => {
+      expect(mockedApiClient.get).toHaveBeenCalledWith('/api/v1/audit/logs', expect.objectContaining({
+        params: expect.objectContaining({ page: 2 }),
+      }));
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filters' }));
+    fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'grading_scheme' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply Filters' }));
+
+    expect(await screen.findByText('grading_scheme #100')).toBeInTheDocument();
+    expect(mockedApiClient.get).toHaveBeenCalledWith('/api/v1/audit/logs', expect.objectContaining({
+      params: expect.objectContaining({ page: 1, search: 'grading_scheme' }),
+    }));
+    expect(mockedApiClient.get.mock.calls.some(([url, config]: any[]) =>
+      url === '/api/v1/audit/logs' && config?.params?.page === 2 && config?.params?.search === 'grading_scheme'
+    )).toBe(false);
+
+    await waitFor(() => expect(screen.getByText('grading_scheme #100')).toBeInTheDocument());
+    expect(screen.queryByText('No audit logs found')).not.toBeInTheDocument();
+    expect(screen.getByText('1–1 of 1')).toBeInTheDocument();
+  });
+
   it('should clear filters', async () => {
     renderComponent();
 

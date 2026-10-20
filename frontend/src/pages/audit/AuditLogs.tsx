@@ -88,6 +88,7 @@ const AuditLogs: React.FC = () => {
   const [totalLogs, setTotalLogs] = useState(0);
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const auditLogRequestSequence = React.useRef(0);
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -107,6 +108,7 @@ const AuditLogs: React.FC = () => {
   }, [page, rowsPerPage]);
 
   const fetchAuditLogs = async () => {
+    const requestSequence = ++auditLogRequestSequence.current;
     setLoading(true);
     setError(null);
 
@@ -127,12 +129,17 @@ const AuditLogs: React.FC = () => {
 
       const response = await apiClient.get('/api/v1/audit/logs', { params });
 
+      if (requestSequence !== auditLogRequestSequence.current) return;
       setLogs(response.data.data);
       setTotalLogs(response.data.pagination.total);
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || t('audit.failedToFetch'));
+      if (requestSequence === auditLogRequestSequence.current) {
+        setError(err.response?.data?.error?.message || t('audit.failedToFetch'));
+      }
     } finally {
-      setLoading(false);
+      if (requestSequence === auditLogRequestSequence.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -150,7 +157,10 @@ const AuditLogs: React.FC = () => {
   };
 
   const handleApplyFilters = () => {
-    setPage(0);
+    if (page !== 0) {
+      setPage(0);
+      return;
+    }
     fetchAuditLogs();
   };
 
