@@ -500,6 +500,11 @@ export function setupSportsAssociations(): void {
       as: 'student'
     });
 
+    SportsEnrollment.belongsTo(Team, {
+      foreignKey: 'teamId',
+      as: 'team'
+    });
+
     // Sport has many SportsEnrollments
     Sport.hasMany(SportsEnrollment, {
       foreignKey: 'sportId',
@@ -510,6 +515,11 @@ export function setupSportsAssociations(): void {
     Student.hasMany(SportsEnrollment, {
       foreignKey: 'studentId',
       as: 'sportsEnrollments'
+    });
+
+    Team.hasMany(SportsEnrollment, {
+      foreignKey: 'teamId',
+      as: 'enrollments'
     });
 
     Team.belongsTo(Sport, {
