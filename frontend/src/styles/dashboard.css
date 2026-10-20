@@ -68,6 +68,15 @@
   box-shadow: var(--sms-shadow) !important;
 }
 
+.sms-dashboard-shell #main-content > :not(.role-dashboard) .student-detail-header.MuiCard-root {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%) !important;
+  color: #fff !important;
+}
+
+.sms-dashboard-shell #main-content > :not(.role-dashboard) .student-detail-header.MuiCard-root .MuiTypography-root {
+  color: #fff;
+}
+
 .sms-dashboard-shell #main-content > :not(.role-dashboard) .MuiCard-root,
 .sms-dashboard-shell #main-content > :not(.role-dashboard) .MuiPaper-root {
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
