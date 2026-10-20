@@ -4,7 +4,7 @@ import { YearSelectableDateField } from '../../components/YearSelectableDatePick
  */
 
 import { useState, useEffect } from 'react';
-import { Box, Paper, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip, Alert, Grid,
+import { Box, Paper, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Chip, Alert, Grid,
   useTheme,
 } from '@mui/material';
 import { Add as AddIcon, EmojiEvents as TrophyIcon } from '@mui/icons-material';
@@ -17,6 +17,11 @@ import { useSearchParams } from 'react-router-dom';
 import { EnrollmentFormErrors, validateEnrollmentForm } from './enrollmentValidation';
 function TabPanel({ children, value, index }: any) {
   return <div hidden={value !== index}>{value === index && <Box sx={{ pt: 3 }}>{children}</Box>}</div>;
+}
+
+export function mapEcaEventFormData(formData: Record<string, any>) {
+  const { title, ...eventData } = formData;
+  return { ...eventData, ecaId: Number(formData.ecaId), name: String(title).trim() };
 }
 
 export function ECAManagement() {
@@ -34,6 +39,7 @@ export function ECAManagement() {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [formErrors, setFormErrors] = useState<EnrollmentFormErrors>({});
+  const [eventErrors, setEventErrors] = useState<{ ecaId?: boolean; title?: boolean; type?: boolean; eventDate?: boolean }>({});
   const [formData, setFormData] = useState<any>({});
   const ecaId = searchParams.get('ecaId');
 
@@ -61,9 +67,20 @@ export function ECAManagement() {
       setFormErrors(nextErrors);
       if (Object.keys(nextErrors).length > 0) return;
     }
+    if (tabValue === 2) {
+      const nextErrors = {
+        ecaId: !/^\d+$/.test(String(formData.ecaId || '')) || Number(formData.ecaId) <= 0,
+        title: !String(formData.title || '').trim(),
+        type: !['competition', 'performance', 'exhibition', 'workshop', 'other'].includes(formData.type),
+        eventDate: !/^\d{4}-\d{2}-\d{2}$/.test(String(formData.eventDate || '')),
+      };
+      setEventErrors(nextErrors);
+      if (Object.values(nextErrors).some(Boolean)) return;
+    }
     try {
       const endpoints = ['/eca/enrollments', '/eca/attendance', '/eca/events', '/eca/achievements'];
-      await apiClient.post(endpoints[tabValue], formData);
+      const payload = tabValue === 2 ? mapEcaEventFormData(formData) : formData;
+      await apiClient.post(endpoints[tabValue], payload);
       setSuccess(t('eca.operationSuccess'));
       setOpenDialog(false);
       fetchData();
@@ -86,7 +103,9 @@ export function ECAManagement() {
   };
 
   const openEventDialog = () => {
-    setFormData({ ecaId: '', title: '', description: '', eventDate: '', venue: '' });
+    setError('');
+    setEventErrors({});
+    setFormData({ ecaId: '', title: '', type: '', description: '', eventDate: '', venue: '' });
     setOpenDialog(true);
   };
 
@@ -97,7 +116,9 @@ export function ECAManagement() {
 
   useEffect(() => {
     if (searchParams.get('action') !== 'create' || tabValue !== 2) return;
-    setFormData({ ecaId: '', title: '', description: '', eventDate: '', venue: '' });
+    setFormData({ ecaId: '', title: '', type: '', description: '', eventDate: '', venue: '' });
+    setEventErrors({});
+    setError('');
     setOpenDialog(true);
     const nextParams = new URLSearchParams(searchParams);
     nextParams.delete('action');
@@ -244,6 +265,7 @@ export function ECAManagement() {
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
+            {error && <Grid item xs={12}><Alert severity="error" onClose={() => setError('')}>{error}</Alert></Grid>}
             {tabValue === 0 && (
               <>
                 <Grid item xs={12}><TextField label={t('eca.ecaId')} type="number" value={formData.ecaId} onChange={(e) => { setFormData({ ...formData, ecaId: e.target.value }); setFormErrors((current) => ({ ...current, ecaId: undefined })); }} error={Boolean(formErrors.ecaId)} helperText={formErrors.ecaId ? t(`eca.${formErrors.ecaId === 'required' ? 'ecaIdRequired' : 'positiveIdRequired'}`) : undefined} fullWidth /></Grid>
@@ -259,9 +281,12 @@ export function ECAManagement() {
             )}
             {tabValue === 2 && (
               <>
-                <Grid item xs={12}><TextField label={t('eca.ecaId')} type="number" value={formData.ecaId} onChange={(e) => setFormData({ ...formData, ecaId: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12}><TextField label={t('eca.eventTitle')} value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12}><YearSelectableDateField label={t('eca.eventDate')} value={formData.eventDate} onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
+                <Grid item xs={12}><TextField label={t('eca.ecaId')} type="number" value={formData.ecaId} onChange={(e) => { setFormData({ ...formData, ecaId: e.target.value }); setEventErrors((current) => ({ ...current, ecaId: false })); }} error={Boolean(eventErrors.ecaId)} helperText={eventErrors.ecaId ? t('eca.ecaIdRequired') : undefined} fullWidth /></Grid>
+                <Grid item xs={12}><TextField label={t('eca.eventTitle')} value={formData.title} onChange={(e) => { setFormData({ ...formData, title: e.target.value }); setEventErrors((current) => ({ ...current, title: false })); }} error={Boolean(eventErrors.title)} helperText={eventErrors.title ? t('eca.eventTitleRequired') : undefined} fullWidth /></Grid>
+                <Grid item xs={12}><TextField select label={t('eca.eventType')} value={formData.type} onChange={(e) => { setFormData({ ...formData, type: e.target.value }); setEventErrors((current) => ({ ...current, type: false })); }} error={Boolean(eventErrors.type)} helperText={eventErrors.type ? t('eca.eventTypeRequired') : undefined} fullWidth>
+                  {['competition', 'performance', 'exhibition', 'workshop', 'other'].map((type) => <MenuItem key={type} value={type}>{t(`eca.${type}`)}</MenuItem>)}
+                </TextField></Grid>
+                <Grid item xs={12}><YearSelectableDateField label={t('eca.eventDate')} value={formData.eventDate} onChange={(e) => { setFormData({ ...formData, eventDate: e.target.value }); setEventErrors((current) => ({ ...current, eventDate: false })); }} error={Boolean(eventErrors.eventDate)} helperText={eventErrors.eventDate ? t('eca.eventDateRequired') : undefined} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
                 <Grid item xs={12}><TextField label={t('eca.venue')} value={formData.venue} onChange={(e) => setFormData({ ...formData, venue: e.target.value })} fullWidth /></Grid>
                 <Grid item xs={12}><TextField label={t('eca.description')} multiline rows={3} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} fullWidth /></Grid>
               </>
