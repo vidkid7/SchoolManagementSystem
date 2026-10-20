@@ -240,10 +240,11 @@ export function AttendanceReports() {
         <Grid container spacing={2}>
           <Grid item xs={12} md={3}>
             <FormControl fullWidth>
-              <InputLabel>
+              <InputLabel id="attendance-report-type-label">
                 {t('common.reportType')}
               </InputLabel>
               <Select
+                labelId="attendance-report-type-label"
                 value={reportType}
                 label={t('common.reportType')}
                 onChange={(e) => setReportType(e.target.value)}
@@ -275,10 +276,11 @@ export function AttendanceReports() {
             <>
               <Grid item xs={12} md={2}>
                 <FormControl fullWidth>
-                  <InputLabel>
+                  <InputLabel id="attendance-report-class-label">
                     {t('common.class')} ({t('common.optional')})
                   </InputLabel>
                   <Select
+                    labelId="attendance-report-class-label"
                     value={selectedClass}
                     label={`${t('common.class')} (${t('common.optional')})`}
                     onChange={(e) => setSelectedClass(e.target.value)}
@@ -302,10 +304,11 @@ export function AttendanceReports() {
               </Grid>
               <Grid item xs={12} md={2}>
                 <FormControl fullWidth>
-                  <InputLabel>
+                  <InputLabel id="attendance-report-section-label">
                     {t('common.section')} ({t('common.optional')})
                   </InputLabel>
                   <Select
+                    labelId="attendance-report-section-label"
                     value={selectedSection}
                     label={`${t('common.section')} (${t('common.optional')})`}
                     onChange={(e) => setSelectedSection(e.target.value)}
