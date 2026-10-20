@@ -515,7 +515,7 @@ export const UserManagement = () => {
                   <TableCell align="right" sx={S.TD}>
                     <IconButton
                       size="small"
-                      aria-label={t('userManagement.actions')}
+                      aria-label={t('userManagement.actionsFor', { name: user.username })}
                       onClick={(e) => {
                         setSelectedUser(user);
                         setAnchorEl(e.currentTarget);

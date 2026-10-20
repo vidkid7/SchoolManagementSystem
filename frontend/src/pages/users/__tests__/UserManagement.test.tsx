@@ -10,7 +10,7 @@ jest.mock('react-i18next', () => ({
     t: (key: string) => ({
       'userManagement.title': 'User Management',
       'userManagement.subtitle': 'Manage user accounts, roles, and permissions',
-      'userManagement.actions': 'Actions',
+      'userManagement.actionsFor': 'Actions for qaTeacher',
       'userManagement.totalUsers': 'Total Users',
       'userManagement.activeUsers': 'Active Users',
       'userManagement.inactiveUsers': 'Inactive Users',
@@ -62,7 +62,7 @@ describe('UserManagement', () => {
     await waitFor(() => expect(mockedApiClient.get).toHaveBeenCalled());
     
     expect(await screen.findByText('@qaTeacher')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Actions' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Actions for qaTeacher' })).toBeInTheDocument();
 
     await user.type(screen.getByRole('textbox', { name: 'Search' }), 'QA Teacher');
 
