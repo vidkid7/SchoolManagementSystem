@@ -116,6 +116,7 @@ export const EventManagement = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({ title: false, startDate: false });
 
   const [formData, setFormData] = useState({
     title: '',
@@ -170,6 +171,7 @@ export const EventManagement = () => {
 
   const handleOpenDialog = (event?: Event, trigger?: HTMLElement) => {
     dialogTriggerRef.current = trigger ?? null;
+    setFieldErrors({ title: false, startDate: false });
     if (event) {
       setSelectedEvent(event);
       setFormData({
@@ -232,9 +234,20 @@ export const EventManagement = () => {
     setDialogOpen(false);
     setSelectedEvent(null);
     setError('');
+    setFieldErrors({ title: false, startDate: false });
   };
 
   const handleSubmit = async () => {
+    const requiredFieldErrors = {
+      title: !formData.title.trim(),
+      startDate: !formData.startDate,
+    };
+    setFieldErrors(requiredFieldErrors);
+    if (requiredFieldErrors.title || requiredFieldErrors.startDate) {
+      setError(t('calendar.fillRequiredFields'));
+      return;
+    }
+
     try {
       setError('');
       if (selectedEvent) {
@@ -249,7 +262,7 @@ export const EventManagement = () => {
       setTimeout(() => setSuccess(''), 3000);
     } catch (error: any) {
       console.error('Failed to save event:', error);
-      setError(error.response?.data?.error?.message || 'Failed to save event');
+      setError(error.response?.data?.error?.message || error.response?.data?.message || t('calendar.failedToSaveEvent'));
     }
   };
 
@@ -317,7 +330,7 @@ export const EventManagement = () => {
         </Alert>
       )}
 
-      {error && (
+      {error && !dialogOpen && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
           {error}
         </Alert>
@@ -493,6 +506,11 @@ export const EventManagement = () => {
             : t('calendar.addNewEvent')}
         </DialogTitle>
         <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mt: 1 }} onClose={() => setError('')}>
+              {error}
+            </Alert>
+          )}
           <Box sx={{ pt: 2 }}>
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
@@ -501,7 +519,12 @@ export const EventManagement = () => {
                   fullWidth
                   required
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  error={fieldErrors.title}
+                  helperText={fieldErrors.title ? t('validation.required') : undefined}
+                  onChange={(e) => {
+                    setFormData({ ...formData, title: e.target.value });
+                    if (fieldErrors.title) setFieldErrors((previous) => ({ ...previous, title: false }));
+                  }}
                 />
               </Grid>
               <Grid item xs={12} md={6}>
@@ -558,8 +581,13 @@ export const EventManagement = () => {
                 <YearSelectableDatePicker
                   label={t('calendar.form.startDate')}
                   value={parseDateOnly(formData.startDate)}
-                  onChange={(date) => setFormData({ ...formData, startDate: formatDateOnly(date) })}
+                  onChange={(date) => {
+                    setFormData({ ...formData, startDate: formatDateOnly(date) });
+                    if (date && fieldErrors.startDate) setFieldErrors((previous) => ({ ...previous, startDate: false }));
+                  }}
                   required
+                  error={fieldErrors.startDate}
+                  helperText={fieldErrors.startDate ? t('validation.required') : undefined}
                 />
               </Grid>
               <Grid item xs={12} md={6}>
