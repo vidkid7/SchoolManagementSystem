@@ -267,6 +267,23 @@ describe('DocumentManagement Page', () => {
       });
     });
 
+    it('debounces document search requests until typing pauses', async () => {
+      renderComponent();
+
+      await waitFor(() => expect(apiClient.get).toHaveBeenCalledTimes(1));
+      (apiClient.get as jest.Mock).mockClear();
+
+      const searchInput = screen.getByPlaceholderText('Search documents...');
+      fireEvent.change(searchInput, { target: { value: 'Q' } });
+      fireEvent.change(searchInput, { target: { value: 'QA' } });
+      fireEvent.change(searchInput, { target: { value: 'QA Audit' } });
+
+      expect(apiClient.get).not.toHaveBeenCalled();
+
+      await waitFor(() => expect(apiClient.get).toHaveBeenCalledTimes(1), { timeout: 2000 });
+      expect(apiClient.get).toHaveBeenCalledWith(expect.stringContaining('search=QA+Audit'));
+    });
+
     it('should clear search when clicking clear button', async () => {
       renderComponent();
       

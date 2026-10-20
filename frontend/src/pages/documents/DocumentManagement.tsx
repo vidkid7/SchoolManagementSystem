@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import {
   Box,
   Paper,
@@ -232,6 +233,7 @@ export const DocumentManagement = () => {
     startDate: '',
     endDate: '',
   });
+  const debouncedSearch = useDebouncedValue(filters.search);
 
   // State for dialogs
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -271,8 +273,12 @@ export const DocumentManagement = () => {
 
   // Fetch documents on mount and when filters change
   useEffect(() => {
+    if (filters.search !== debouncedSearch) {
+      setLoading(true);
+      return;
+    }
     fetchDocuments();
-  }, [page, rowsPerPage, filters]);
+  }, [page, rowsPerPage, filters.category, filters.status, filters.accessLevel, filters.startDate, filters.endDate, filters.search, debouncedSearch]);
 
   useEffect(() => () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -286,7 +292,7 @@ export const DocumentManagement = () => {
       const params = new URLSearchParams({
         page: (page + 1).toString(),
         limit: rowsPerPage.toString(),
-        ...(filters.search && { search: filters.search }),
+        ...(debouncedSearch && { search: debouncedSearch }),
         ...(filters.category && { category: filters.category }),
         ...(filters.status && { status: filters.status }),
         ...(filters.accessLevel && { accessLevel: filters.accessLevel }),
