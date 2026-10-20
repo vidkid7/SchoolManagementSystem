@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import apiClient from '../../services/apiClient';
 import { Payments } from './Payments';
@@ -67,6 +67,19 @@ describe('Payments form validation', () => {
 
     expect(screen.queryByText('finance.invalidAmount')).not.toBeInTheDocument();
     expect(apiClient.post).not.toHaveBeenCalled();
+  });
+
+  it('restores focus to the launch button after the dialog closes', async () => {
+    renderPayments();
+    await waitFor(() => expect(apiClient.get).toHaveBeenCalledWith('/finance/payments', expect.any(Object)));
+    const launchButton = screen.getByRole('button', { name: 'finance.recordPayment' });
+    act(() => launchButton.focus());
+    fireEvent.click(launchButton);
+
+    expect(screen.getByRole('dialog', { name: 'finance.recordPayment' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'common.cancel' }));
+
+    await waitFor(() => expect(launchButton).toHaveFocus());
   });
 
   it('explains the invoice ID field and constrains the numeric inputs', async () => {

@@ -4,7 +4,7 @@ import { YearSelectableDateField } from '../../components/YearSelectableDatePick
  * Record payments, view history, process refunds
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -60,6 +60,7 @@ export function Payments() {
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [total, setTotal] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
+  const recordPaymentButtonRef = useRef<HTMLButtonElement>(null);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
@@ -72,9 +73,16 @@ export function Payments() {
     remarks: '',
   });
 
-  const openPaymentDialog = () => {
+  const openPaymentDialog = (event: MouseEvent<HTMLButtonElement>) => {
     setError('');
+    // MUI hides the app root while the dialog is open. Blur the trigger first
+    // so it is not still focused when that aria-hidden state is applied.
+    event.currentTarget.blur();
     setOpenDialog(true);
+  };
+
+  const restorePaymentDialogFocus = () => {
+    recordPaymentButtonRef.current?.focus();
   };
 
   const closePaymentDialog = () => {
@@ -173,6 +181,7 @@ export function Payments() {
             {t('finance.payments')}
           </Typography>
           <Button
+            ref={recordPaymentButtonRef}
             variant="contained" sx={S.BTN_PRIMARY}
             startIcon={<AddIcon />}
             onClick={openPaymentDialog}
@@ -270,7 +279,13 @@ export function Payments() {
         />
       </Paper>
 
-      <Dialog open={openDialog} onClose={closePaymentDialog} maxWidth="sm" fullWidth>
+      <Dialog
+        open={openDialog}
+        onClose={closePaymentDialog}
+        maxWidth="sm"
+        fullWidth
+        TransitionProps={{ onExited: restorePaymentDialogFocus }}
+      >
         <DialogTitle>{t('finance.recordPayment')}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
