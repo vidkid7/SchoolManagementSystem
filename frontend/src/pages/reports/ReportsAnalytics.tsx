@@ -787,7 +787,7 @@ interface TeacherPerformanceData {
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
             <FilterList sx={{ color: theme.palette.primary.main }} />
-            <Typography variant="subtitle1" fontWeight={850}>
+            <Typography component="h2" variant="subtitle1" fontWeight={850}>
               {t('reports.filtersDateRange')}
             </Typography>
             <Chip

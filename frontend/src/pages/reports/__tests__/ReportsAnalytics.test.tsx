@@ -21,6 +21,7 @@ jest.mock('react-i18next', () => ({
       'reports.ecaSports': 'ECA & Sports',
       'reports.startDate': 'Start Date',
       'reports.endDate': 'End Date',
+      'reports.filtersDateRange': 'Filters & Date Range',
       'reports.class': 'Class',
       'reports.applyFilters': 'Apply Filters',
       'reports.all': 'All',
@@ -63,6 +64,7 @@ describe('ReportsAnalytics', () => {
     renderReports();
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Reports & Analytics' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Filters & Date Range' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { level: 3, name: '23' })).not.toBeInTheDocument();
   });
 
