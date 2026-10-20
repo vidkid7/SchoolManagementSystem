@@ -60,6 +60,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { apiClient } from '../../services/apiClient';
+import { formatLocalDate } from '../../utils/dateUtils';
 import type { RootState } from '../../store';
 import { motion } from 'framer-motion';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
@@ -467,7 +468,7 @@ export const StudentCV = () => {
       
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.setAttribute('download', `CV_${id}_${new Date().toISOString().split('T')[0]}.pdf`);
+      link.setAttribute('download', `CV_${id}_${formatLocalDate(new Date())}.pdf`);
       
       if (token) {
         const response = await fetch(downloadUrl, {
@@ -534,7 +535,7 @@ export const StudentCV = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `CV_${id}_${new Date().toISOString().split('T')[0]}.pdf`);
+      link.setAttribute('download', `CV_${id}_${formatLocalDate(new Date())}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();

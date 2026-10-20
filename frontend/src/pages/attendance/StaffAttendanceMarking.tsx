@@ -34,6 +34,7 @@ import {
   PersonAdd as StaffIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { formatLocalDate } from '../../utils/dateUtils';
 
 interface Staff {
   staffId: number;
@@ -54,7 +55,7 @@ export function StaffAttendanceMarking() {
   const [saving, setSaving] = useState(false);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [availableDepartments, setAvailableDepartments] = useState<string[]>([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(formatLocalDate(new Date()));
   const [department, setDepartment] = useState('all');
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');

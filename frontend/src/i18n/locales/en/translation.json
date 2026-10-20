@@ -1373,6 +1373,8 @@
     "payments": "Payments",
     "paymentsLoaded": "payments loaded",
     "paymentGateways": "Payment Gateways",
+    "enableGateway": "Enable {{name}}",
+    "gatewayTestMode": "Test mode for {{name}}",
     "refunds": "Refunds",
     "reports": "Reports",
     "quickActions": "Quick Actions",

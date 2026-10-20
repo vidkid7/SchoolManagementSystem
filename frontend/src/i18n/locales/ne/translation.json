@@ -1373,6 +1373,8 @@
     "payments": "भुक्तानीहरू",
     "paymentsLoaded": "भुक्तानी लोड भयो",
     "paymentGateways": "भुक्तानी गेटवे",
+    "enableGateway": "{{name}} सक्षम गर्नुहोस्",
+    "gatewayTestMode": "{{name}} का लागि परीक्षण मोड",
     "refunds": "रिफंडहरू",
     "reports": "प्रतिवेदनहरू",
     "quickActions": "छिटो कार्यहरू",

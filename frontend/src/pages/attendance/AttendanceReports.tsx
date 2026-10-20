@@ -39,6 +39,7 @@ import {
   BarChart as ChartIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { formatLocalDate } from '../../utils/dateUtils';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface AttendanceRecord {
@@ -227,7 +228,7 @@ export function AttendanceReports() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `attendance-report-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `attendance-report-${formatLocalDate(new Date())}.csv`;
     a.click();
   };
 

@@ -93,6 +93,14 @@ describe('Payments form validation', () => {
     expect(screen.getByRole('spinbutton', { name: 'finance.amount' })).toHaveAttribute('step', '0.01');
   });
 
+  it('defaults the payment date to the current local calendar day', async () => {
+    renderPayments();
+    await openRecordPayment();
+
+    const today = new Date();
+    expect(screen.getByPlaceholderText('MM/DD/YYYY')).toHaveValue(today.toLocaleDateString('en-US'));
+  });
+
   it('names the payment method and page-size select inputs without breaking accessible labels', async () => {
     renderPayments();
     await openRecordPayment();

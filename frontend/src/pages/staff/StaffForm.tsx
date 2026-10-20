@@ -45,6 +45,7 @@ import {
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import apiClient from '../../services/apiClient';
+import { formatLocalDate } from '../../utils/dateUtils';
 import { toNepalDateOnly } from './staffDateUtils';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { motion } from 'framer-motion';
@@ -262,7 +263,7 @@ export const StaffForm = () => {
         department: data.department,
         highestQualification: data.qualification,
         specialization: data.specialization || null,
-        joinDate: data.joining_date_bs || new Date().toISOString().split('T')[0],
+        joinDate: data.joining_date_bs || formatLocalDate(new Date()),
         phone: data.contact_number,
         email: data.email,
         addressEn: `${data.address}, ${data.city}, ${data.district}`,

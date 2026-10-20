@@ -186,6 +186,7 @@ export function PaymentGateways() {
                   <Switch
                     checked={gateway.enabled}
                     onChange={() => handleToggleGateway(key)}
+                    inputProps={{ 'aria-label': t('finance.enableGateway', { name: gateway.name }) }}
                     color="primary"
                   />
                 </Box>
@@ -215,6 +216,7 @@ export function PaymentGateways() {
                     <Switch
                       checked={gateway.testMode}
                       onChange={(e) => handleUpdateConfig(key, 'testMode', e.target.checked)}
+                      inputProps={{ 'aria-label': t('finance.gatewayTestMode', { name: gateway.name }) }}
                       disabled={!gateway.enabled}
                       size="small"
                     />

@@ -10,6 +10,7 @@ import { Box, Paper, Typography, Button, Table, TableBody, TableCell, TableConta
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, EmojiEvents as TrophyIcon, Groups as TeamIcon, PersonAdd as EnrollIcon, HowToReg as AttendanceIcon, History as HistoryIcon } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { formatLocalDate } from '../../utils/dateUtils';
 
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { useTranslation } from 'react-i18next';
@@ -259,7 +260,7 @@ export function SportsManagement() {
       if (tabValue === 0) setFormData({ name: '', category: 'team', coordinatorId: defaultCoordinatorId(), status: 'active', description: '' });
       else if (tabValue === 1) setFormData({ name: '', sportId: '', coachId: '', captainId: '', status: 'active', remarks: '' });
       else if (tabValue === 2) setFormData({ name: '', sportId: '', type: 'intra_school', startDate: '', endDate: '', venue: '', remarks: '' });
-      else setFormData({ studentId: '', sportId: '', title: '', type: 'medal', level: 'school', achievementDate: new Date().toISOString().split('T')[0] });
+      else setFormData({ studentId: '', sportId: '', title: '', type: 'medal', level: 'school', achievementDate: formatLocalDate(new Date()) });
     }
     setError('');
     setOpenDialog(true);
@@ -347,7 +348,7 @@ export function SportsManagement() {
       title: formData.title.trim(),
       type: formData.type || 'medal',
       level: formData.level || 'school',
-      achievementDate: formData.achievementDate || new Date().toISOString().split('T')[0],
+      achievementDate: formData.achievementDate || formatLocalDate(new Date()),
     };
   };
 

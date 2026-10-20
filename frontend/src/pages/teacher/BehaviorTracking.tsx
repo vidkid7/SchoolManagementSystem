@@ -38,6 +38,7 @@ import {
   TrendingDown as TrendingDownIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { formatLocalDate } from '../../utils/dateUtils';
 import { useTheme } from '@mui/material';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 
@@ -77,7 +78,7 @@ export function BehaviorTracking() {
     category: '',
     description: '',
     actionTaken: '',
-    date: new Date().toISOString().split('T')[0],
+    date: formatLocalDate(new Date()),
   });
 
   useEffect(() => {
@@ -113,7 +114,7 @@ export function BehaviorTracking() {
         category: '',
         description: '',
         actionTaken: '',
-        date: new Date().toISOString().split('T')[0],
+        date: formatLocalDate(new Date()),
       });
     } catch (err: any) {
       setError(t('portal.failedToLoadData'));

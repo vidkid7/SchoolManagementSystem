@@ -35,6 +35,7 @@ import {
   Print as PrintIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { formatLocalDate } from '../../utils/dateUtils';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface Payment {
@@ -69,7 +70,7 @@ export function Payments() {
     amount: '',
     paymentMethod: 'cash',
     transactionId: '',
-    paymentDate: new Date().toISOString().split('T')[0],
+    paymentDate: formatLocalDate(new Date()),
     remarks: '',
   });
 
@@ -116,7 +117,13 @@ export function Payments() {
   const handleRecordPayment = async () => {
     const invoiceId = Number(formData.invoiceId);
     const amount = Number(formData.amount);
-    const paymentDate = new Date(`${formData.paymentDate}T00:00:00`);
+    const [year, month, day] = formData.paymentDate.split('-').map(Number);
+    const paymentDate = new Date(year, month - 1, day);
+    const isValidPaymentDate =
+      /^\d{4}-\d{2}-\d{2}$/.test(formData.paymentDate) &&
+      paymentDate.getFullYear() === year &&
+      paymentDate.getMonth() === month - 1 &&
+      paymentDate.getDate() === day;
 
     if (!formData.invoiceId.trim() || !Number.isInteger(invoiceId) || invoiceId <= 0) {
       setError(t('validation.required'));
@@ -129,9 +136,7 @@ export function Payments() {
     }
 
     if (
-      !formData.paymentDate ||
-      Number.isNaN(paymentDate.getTime()) ||
-      paymentDate.toISOString().slice(0, 10) !== formData.paymentDate
+      !isValidPaymentDate
     ) {
       setError(t('validation.required'));
       return;
@@ -148,7 +153,7 @@ export function Payments() {
         amount: '',
         paymentMethod: 'cash',
         transactionId: '',
-        paymentDate: new Date().toISOString().split('T')[0],
+        paymentDate: formatLocalDate(new Date()),
         remarks: '',
       });
     } catch (err: any) {

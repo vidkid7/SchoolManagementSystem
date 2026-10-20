@@ -9,6 +9,7 @@ import { Box, Paper, Typography, Button, Table, TableBody, TableCell, TableConta
 } from '@mui/material';
 import { Add as AddIcon, EmojiEvents as TrophyIcon } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { formatLocalDate } from '../../utils/dateUtils';
 
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { useTranslation } from 'react-i18next';
@@ -75,12 +76,12 @@ export function ECAManagement() {
   const openEnrollDialog = () => {
     setFormErrors({});
     setError('');
-    setFormData({ ecaId: '', studentId: '', enrollmentDate: new Date().toISOString().split('T')[0] });
+    setFormData({ ecaId: '', studentId: '', enrollmentDate: formatLocalDate(new Date()) });
     setOpenDialog(true);
   };
 
   const openAttendanceDialog = () => {
-    setFormData({ ecaId: '', date: new Date().toISOString().split('T')[0], students: [] });
+    setFormData({ ecaId: '', date: formatLocalDate(new Date()), students: [] });
     setOpenDialog(true);
   };
 
@@ -90,7 +91,7 @@ export function ECAManagement() {
   };
 
   const openAchievementDialog = () => {
-    setFormData({ studentId: '', ecaId: '', achievement: '', date: new Date().toISOString().split('T')[0], description: '' });
+    setFormData({ studentId: '', ecaId: '', achievement: '', date: formatLocalDate(new Date()), description: '' });
     setOpenDialog(true);
   };
 
