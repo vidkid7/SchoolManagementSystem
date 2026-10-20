@@ -51,6 +51,7 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import apiClient from '../../services/apiClient';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 
 const EVENT_CATEGORIES = [
   { value: 'academic', label: 'Academic' },
@@ -109,6 +110,7 @@ export const EventManagement = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -146,7 +148,7 @@ export const EventManagement = () => {
 
   useEffect(() => {
     fetchEvents();
-  }, [page, rowsPerPage, search, categoryFilter, statusFilter]);
+  }, [page, rowsPerPage, debouncedSearch, categoryFilter, statusFilter]);
 
   const fetchEvents = async () => {
     try {
@@ -154,7 +156,7 @@ export const EventManagement = () => {
       const params = new URLSearchParams({
         page: (page + 1).toString(),
         limit: rowsPerPage.toString(),
-        ...(search && { search }),
+        ...(debouncedSearch && { search: debouncedSearch }),
         ...(categoryFilter && { category: categoryFilter }),
         ...(statusFilter && { status: statusFilter }),
       });
