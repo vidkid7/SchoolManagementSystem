@@ -6,7 +6,7 @@
  * Requirements: 31.1, 31.2, 31.3, 31.4, 31.5, 31.6
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -112,6 +112,7 @@ export const EventManagement = () => {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const dialogTriggerRef = useRef<HTMLElement | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -167,7 +168,8 @@ export const EventManagement = () => {
     }
   };
 
-  const handleOpenDialog = (event?: Event) => {
+  const handleOpenDialog = (event?: Event, trigger?: HTMLElement) => {
+    dialogTriggerRef.current = trigger ?? null;
     if (event) {
       setSelectedEvent(event);
       setFormData({
@@ -302,7 +304,7 @@ export const EventManagement = () => {
           <Button
             sx={S.BTN_PRIMARY}
             startIcon={<AddIcon />}
-            onClick={() => handleOpenDialog()}
+            onClick={(clickEvent) => handleOpenDialog(undefined, clickEvent.currentTarget)}
           >
             {t('calendar.addEvent')}
           </Button>
@@ -444,7 +446,7 @@ export const EventManagement = () => {
                     <IconButton
                       size="small"
                       title="Edit"
-                      onClick={() => handleOpenDialog(event)}
+                      onClick={(clickEvent) => handleOpenDialog(event, clickEvent.currentTarget)}
                     >
                       <EditIcon />
                     </IconButton>
@@ -477,7 +479,14 @@ export const EventManagement = () => {
       </TableContainer>
 
       {/* Create/Edit Event Dialog */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        onTransitionExited={() => window.requestAnimationFrame(() => dialogTriggerRef.current?.focus())}
+        disableRestoreFocus
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>
           {selectedEvent
             ? t('calendar.editEvent')

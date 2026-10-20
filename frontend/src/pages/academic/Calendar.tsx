@@ -4,7 +4,7 @@
  * View and manage school events and holidays
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -61,6 +61,7 @@ export const Calendar = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const dialogTriggerRef = useRef<HTMLElement | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [error, setError] = useState('');
@@ -99,7 +100,8 @@ export const Calendar = () => {
     }
   };
 
-  const handleOpenDialog = (event?: Event) => {
+  const handleOpenDialog = (event?: Event, trigger?: HTMLElement) => {
+    dialogTriggerRef.current = trigger ?? null;
     setEditMode(!!event);
     if (event) {
       setEditId(event.eventId);
@@ -186,7 +188,7 @@ export const Calendar = () => {
         <Button
           sx={S.BTN_PRIMARY}
           startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
+          onClick={(event) => handleOpenDialog(undefined, event.currentTarget)}
         >
           Add Event
         </Button>
@@ -322,7 +324,7 @@ export const Calendar = () => {
                     <IconButton
                       size="small"
                       color="primary"
-                      onClick={() => handleOpenDialog(event)}
+                      onClick={(clickEvent) => handleOpenDialog(event, clickEvent.currentTarget)}
                     >
                       <EditIcon />
                     </IconButton>
@@ -379,7 +381,14 @@ export const Calendar = () => {
       </Paper>
 
       {/* Event Dialog */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        onTransitionExited={() => window.requestAnimationFrame(() => dialogTriggerRef.current?.focus())}
+        disableRestoreFocus
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle sx={{ fontWeight: 600 }}>
           {editMode ? 'Edit Event' : 'Add Event'}
         </DialogTitle>
