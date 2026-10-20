@@ -145,18 +145,10 @@ const Calendar = () => {
     isHoliday: false,
   });
 
-  // Auto-detect academic year based on Nepali calendar
-  // Academic year in Nepal typically runs from Baisakh (April/May) to Chaitra (March/April)
+  // Keep the academic-year label in sync with the displayed Nepali calendar year.
   useEffect(() => {
-    const nepaliDate = new NepaliDate();
-    const bsYear = nepaliDate.getYear();
-    const bsMonth = nepaliDate.getMonth(); // 0-indexed
-    
-    // If current month is Baisakh (0) to Chaitra (11), academic year is current BS year
-    // Academic year format: "2081" (starts in Baisakh 2081, ends in Chaitra 2082)
-    const academicYear = `${bsYear}`;
-    setCurrentAcademicYear(academicYear);
-  }, []);
+    setCurrentAcademicYear(`${currentNepaliDate.getYear()}`);
+  }, [currentNepaliDate]);
 
   // Sync Nepali date when AD date changes
   useEffect(() => {

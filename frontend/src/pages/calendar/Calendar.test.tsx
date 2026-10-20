@@ -98,6 +98,9 @@ describe('Calendar Component', () => {
     fireEvent.mouseDown(yearSelector);
     fireEvent.click(await screen.findByRole('option', { name: '2085' }));
     expect(yearSelector).toHaveTextContent('2085');
+    await waitFor(() => {
+      expect(screen.getByText(/Academic Year: 2085/)).toBeInTheDocument();
+    });
 
   }, 15000);
 
