@@ -96,8 +96,31 @@ export function Payments() {
   };
 
   const handleRecordPayment = async () => {
+    const invoiceId = Number(formData.invoiceId);
+    const amount = Number(formData.amount);
+    const paymentDate = new Date(`${formData.paymentDate}T00:00:00`);
+
+    if (!formData.invoiceId.trim() || !Number.isInteger(invoiceId) || invoiceId <= 0) {
+      setError(t('validation.required'));
+      return;
+    }
+
+    if (!formData.amount.trim() || !Number.isFinite(amount) || amount <= 0) {
+      setError(t('finance.invalidAmount'));
+      return;
+    }
+
+    if (
+      !formData.paymentDate ||
+      Number.isNaN(paymentDate.getTime()) ||
+      paymentDate.toISOString().slice(0, 10) !== formData.paymentDate
+    ) {
+      setError(t('validation.required'));
+      return;
+    }
+
     try {
-      await apiClient.post('/finance/payments', formData);
+      await apiClient.post('/finance/payments', { ...formData, invoiceId, amount });
       setSuccess(t('finance.paymentRecordedSuccess'));
       setOpenDialog(false);
       fetchPayments();
