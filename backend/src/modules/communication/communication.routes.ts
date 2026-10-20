@@ -9,9 +9,10 @@
 import { Router } from 'express';
 import { communicationController } from './communication.controller';
 import { communicationValidation } from './communication.validation';
-import { authenticate } from '../../middleware/auth';
+import { authenticate, authorize } from '../../middleware/auth';
 import { validate } from '../../middleware/validation';
 import { attachmentUpload } from './attachment.service';
+import { UserRole } from '../../models/User.model';
 
 const router = Router();
 
@@ -397,11 +398,13 @@ router.get(
 
 router.get(
   '/settings',
+  authorize(UserRole.SCHOOL_ADMIN),
   communicationController.getCommunicationSettings.bind(communicationController)
 );
 
 router.put(
   '/settings',
+  authorize(UserRole.SCHOOL_ADMIN),
   communicationController.saveCommunicationSettings.bind(communicationController)
 );
 
