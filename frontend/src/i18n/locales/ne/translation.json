@@ -1865,6 +1865,8 @@
     "reportDownloadedSuccessfully": "रिपोर्ट सफलतापूर्वक डाउनलोड भयो",
     "failedToGenerateReport": "रिपोर्ट उत्पन्न गर्न असफल भयो",
     "printFeatureComingSoon": "प्रिन्ट सुविधा चाँडै आउँदैछ",
+    "printPopupBlocked": "रिपोर्ट प्रिन्ट पूर्वावलोकन खोल्न पप-अप अनुमति दिनुहोस्",
+    "printPreviewOpened": "प्रिन्ट पूर्वावलोकन नयाँ ट्याबमा खोलियो",
     "dateRangeSet": "मिति दायरा सफलतापूर्वक सेट गरियो",
     "libraryDashboard": "पुस्तकालय ड्यासबोर्ड",
     "addBook": "पुस्तक थप्नुहोस्",

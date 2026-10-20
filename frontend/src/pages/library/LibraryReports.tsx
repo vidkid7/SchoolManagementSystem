@@ -29,6 +29,32 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 
+export function getQuickReportDateRange(period: string, now = new Date()) {
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const start = new Date(end);
+
+  switch (period) {
+    case 'today':
+      break;
+    case 'week':
+      start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+      break;
+    case 'month':
+      start.setDate(1);
+      break;
+    case 'year':
+      start.setMonth(0, 1);
+      break;
+    default:
+      throw new Error(`Unsupported quick report period: ${period}`);
+  }
+
+  const formatLocalDate = (date: Date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+  return { startDate: formatLocalDate(start), endDate: formatLocalDate(end) };
+}
+
 interface LibraryStats {
   booksIssuedMonth: number;
   booksReturned: number;
@@ -115,38 +141,48 @@ export function LibraryReports() {
     }
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     if (!startDate || !endDate) {
       setError(t('library.pleaseSelectDateRange'));
       return;
     }
-    
-    // For now, show a message that print feature is coming soon
-    setSuccess(t('library.printFeatureComingSoon'));
-    setTimeout(() => setSuccess(''), 3000);
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      setError(t('library.printPopupBlocked'));
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+      const response = await apiClient.get('/library/reports', {
+        params: { type: reportType, startDate, endDate },
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const revokePrintUrl = () => {
+        window.URL.revokeObjectURL(url);
+        window.removeEventListener('focus', revokePrintUrl);
+      };
+      window.addEventListener('focus', revokePrintUrl, { once: true });
+      printWindow.location.href = url;
+      printWindow.focus();
+      setSuccess(t('library.printPreviewOpened'));
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error: any) {
+      printWindow.close();
+      console.error('Failed to open library report print preview:', error);
+      setError(error.response?.data?.message || t('library.failedToGenerateReport'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleQuickReport = (period: string) => {
-    const today = new Date();
-    let start = new Date();
-    
-    switch (period) {
-      case 'today':
-        start = today;
-        break;
-      case 'week':
-        start.setDate(today.getDate() - 7);
-        break;
-      case 'month':
-        start.setMonth(today.getMonth() - 1);
-        break;
-      case 'year':
-        start.setFullYear(today.getFullYear() - 1);
-        break;
-    }
-    
-    setStartDate(start.toISOString().split('T')[0]);
-    setEndDate(today.toISOString().split('T')[0]);
+    const range = getQuickReportDateRange(period);
+    setStartDate(range.startDate);
+    setEndDate(range.endDate);
     setSuccess(t('library.dateRangeSet'));
     setTimeout(() => setSuccess(''), 2000);
   };

@@ -2020,6 +2020,8 @@
     "reportDownloadedSuccessfully": "Report downloaded successfully",
     "failedToGenerateReport": "Failed to generate report",
     "printFeatureComingSoon": "Print feature is coming soon",
+    "printPopupBlocked": "Allow pop-ups to open the report print preview",
+    "printPreviewOpened": "Print preview opened in a new tab",
     "dateRangeSet": "Date range set successfully",
     "libraryDashboard": "Library Dashboard",
     "addBook": "Add Book",
