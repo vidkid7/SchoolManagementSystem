@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import apiClient from '../../services/apiClient';
 import { BulkAdd } from './BulkAdd';
@@ -74,5 +74,37 @@ describe('BulkAdd', () => {
 
     expect(screen.getByRole('alert')).toHaveTextContent('Please select a valid Excel or CSV file');
     expect(apiClient.post).not.toHaveBeenCalled();
+  });
+
+  it('accepts a CSV file and exposes the file selector as a native button', () => {
+    (apiClient.post as jest.Mock).mockResolvedValue({ data: { data: [] } });
+    const { container } = render(
+      <MemoryRouter initialEntries={['/KMC/students/bulk-add']}>
+        <Routes>
+          <Route path="/:municipalitySlug/students/bulk-add" element={<BulkAdd />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('tab', { name: 'students.importFromExcel' }));
+
+    const selectFileButton = screen.getByRole('button', { name: 'students.selectFile' });
+    expect(selectFileButton.tagName).toBe('BUTTON');
+    expect(screen.getByRole('heading', { name: 'students.uploadExcelFile', level: 5 })).toBeInTheDocument();
+
+    const input = container.querySelector('input[type="file"]');
+    fireEvent.change(input!, {
+      target: { files: [new File(['firstName,lastName'], 'students.csv', { type: 'text/csv' })] },
+    });
+
+    return waitFor(() => {
+      expect(apiClient.post).toHaveBeenCalledWith(
+        '/students/parse-excel',
+        expect.any(FormData),
+        expect.objectContaining({ headers: { 'Content-Type': 'multipart/form-data' } }),
+      );
+      expect(apiClient.post).not.toHaveBeenCalledWith('/students/bulk-create', expect.anything());
+      expect(screen.getByText('students.csv')).toBeInTheDocument();
+    });
   });
 });

@@ -207,7 +207,7 @@ export const BulkImport = () => {
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
             <TemplateIcon sx={{ color: C.primary }} />
-            <Typography variant="h6" fontWeight={700}>
+            <Typography variant="h6" component="h5" fontWeight={700}>
               {t('bulkImport.instructions')}
             </Typography>
           </Box>

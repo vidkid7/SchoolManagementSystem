@@ -4,7 +4,7 @@ import { YearSelectableDateField } from '../../components/YearSelectableDatePick
  * Add multiple students at once using a form or import from Excel
  */
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
@@ -151,6 +151,7 @@ export const BulkAdd = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addStudentForm = () => {
     const newId = (Math.max(...students.map(s => parseInt(s.id))) + 1).toString();
@@ -466,7 +467,7 @@ export const BulkAdd = () => {
           }}
         >
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" fontWeight={700}>
+            <Typography variant="h6" component="h5" fontWeight={700}>
               {t('students.student')} {index + 1}
             </Typography>
             {students.length > 1 && (
@@ -872,7 +873,7 @@ export const BulkAdd = () => {
             }}
           >
             <CloudUploadIcon sx={{ fontSize: 64, color: theme.palette.primary.main, mb: 2 }} />
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" component="h5" gutterBottom>
               {t('students.uploadExcelFile')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -881,18 +882,19 @@ export const BulkAdd = () => {
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
               <Button
                 variant="contained"
-                component="label"
+                onClick={() => fileInputRef.current?.click()}
                 startIcon={<UploadIcon />}
                 sx={{ ...S.BTN_PRIMARY }}
               >
                 {t('students.selectFile')}
-                <input
-                  type="file"
-                  hidden
-                  accept=".xlsx,.xls,.csv"
-                  onChange={handleFileChange}
-                />
               </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                hidden
+                accept=".xlsx,.xls,.csv"
+                onChange={handleFileChange}
+              />
               <Button
                 variant="outlined"
                 startIcon={<DownloadIcon />}
@@ -943,7 +945,7 @@ export const BulkAdd = () => {
                     borderBottom: `1px solid ${S.dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
                   }}
                 >
-                  <Typography variant="h6" fontWeight={700}>
+                  <Typography variant="h6" component="h5" fontWeight={700}>
                     {t('students.previewData')} ({importedStudents.length} {t('students.title').toLowerCase()})
                   </Typography>
                 </Box>
