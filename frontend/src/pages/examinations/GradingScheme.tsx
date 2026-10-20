@@ -151,19 +151,25 @@ export function GradingScheme() {
   };
 
   const handleSave = async () => {
+    const schemeName = formData.name.trim();
+    if (!schemeName) {
+      setError(t('examinations.schemeNameRequired'));
+      return;
+    }
+
     try {
       setError('');
       
       if (editingScheme && editingScheme.id !== 'default') {
         await apiClient.put(`/system-settings/grading-schemes/${editingScheme.id}`, {
-          name: formData.name,
+          name: schemeName,
           description: formData.description,
           grades: formData.grades,
         });
         setSuccess(t('examinations.gradeSchemeUpdated'));
       } else {
         await apiClient.post('/system-settings/grading-schemes', {
-          name: formData.name || 'Custom Grading Scheme',
+          name: schemeName,
           description: formData.description,
           grades: formData.grades,
           isDefault: false,
@@ -353,6 +359,7 @@ export function GradingScheme() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
+                error={Boolean(error) && !formData.name.trim()}
                 placeholder={t('examinations.schemeNamePlaceholder')}
               />
             </Grid>

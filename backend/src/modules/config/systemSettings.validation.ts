@@ -2,8 +2,9 @@ import Joi from 'joi';
 
 // Grading Scheme Validation
 export const createGradingSchemeSchema = Joi.object({
-  name: Joi.string().max(100).required().messages({
+  name: Joi.string().trim().min(1).max(100).required().messages({
     'string.empty': 'Grading scheme name is required',
+    'string.min': 'Grading scheme name is required',
     'string.max': 'Name must not exceed 100 characters',
   }),
   description: Joi.string().optional().allow(''),
@@ -42,7 +43,10 @@ export const createGradingSchemeSchema = Joi.object({
 });
 
 export const updateGradingSchemeSchema = Joi.object({
-  name: Joi.string().max(100).optional(),
+  name: Joi.string().trim().min(1).max(100).optional().messages({
+    'string.empty': 'Grading scheme name is required',
+    'string.min': 'Grading scheme name is required',
+  }),
   description: Joi.string().optional().allow(''),
   isDefault: Joi.boolean().optional(),
   grades: Joi.array()
