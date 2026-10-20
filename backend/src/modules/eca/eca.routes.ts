@@ -11,8 +11,10 @@ import {
   enrollStudentValidation,
   directEnrollStudentValidation,
   markAttendanceValidation,
+  markAttendanceDirectValidation,
   createEventValidation,
   recordAchievementValidation,
+  recordAchievementDirectValidation,
   getStudentECAHistoryValidation
 } from './eca.validation';
 
@@ -143,7 +145,7 @@ router.get(
 router.post(
   '/attendance',
   authorize(...manageRoles),
-  markAttendanceValidation,
+  markAttendanceDirectValidation,
   ecaController.markAttendanceDirect
 );
 
@@ -166,7 +168,7 @@ router.get(
 router.post(
   '/achievements',
   authorize(...manageRoles),
-  recordAchievementValidation,
+  recordAchievementDirectValidation,
   ecaController.recordAchievementDirect
 );
 

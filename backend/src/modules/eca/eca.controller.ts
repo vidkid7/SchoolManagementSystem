@@ -770,16 +770,9 @@ class ECAController {
    */
   getAttendanceRecords(req: Request, res: Response, next: NextFunction): void {
     try {
-      // Mock data for now - can be enhanced with actual attendance tracking
-      const records = [
-        { id: 1, ecaName: 'Football Club', date: new Date(), presentCount: 18, absentCount: 2, totalStudents: 20 },
-        { id: 2, ecaName: 'Art Club', date: new Date(), presentCount: 15, absentCount: 3, totalStudents: 18 },
-        { id: 3, ecaName: 'Music Club', date: new Date(), presentCount: 12, absentCount: 1, totalStudents: 13 },
-      ];
-
       res.status(200).json({
         success: true,
-        data: records
+        data: []
       });
     } catch (error) {
       next(error);

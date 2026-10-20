@@ -239,16 +239,7 @@ export const directEnrollStudentValidation = [
     .trim()
 ];
 
-/**
- * Validation for marking attendance
- */
-export const markAttendanceValidation = [
-  param('ecaId')
-    .notEmpty()
-    .withMessage('ECA ID is required')
-    .isInt({ min: 1 })
-    .withMessage('ECA ID must be a positive integer'),
-
+const markAttendanceFields = [
   body('attendanceData')
     .isArray({ min: 1 })
     .withMessage('Attendance data must be a non-empty array'),
@@ -264,6 +255,26 @@ export const markAttendanceValidation = [
     .withMessage('Present status is required')
     .isBoolean()
     .withMessage('Present must be a boolean')
+];
+
+/** Validation for marking attendance through /:ecaId/mark-attendance. */
+export const markAttendanceValidation = [
+  param('ecaId')
+    .notEmpty()
+    .withMessage('ECA ID is required')
+    .isInt({ min: 1 })
+    .withMessage('ECA ID must be a positive integer'),
+  ...markAttendanceFields
+];
+
+/** Validation for marking attendance through /attendance, where ECA ID is in the body. */
+export const markAttendanceDirectValidation = [
+  body('ecaId')
+    .notEmpty()
+    .withMessage('ECA ID is required')
+    .isInt({ min: 1 })
+    .withMessage('ECA ID must be a positive integer'),
+  ...markAttendanceFields
 ];
 
 /**
@@ -349,16 +360,7 @@ export const getEventByIdValidation = [
     .withMessage('Event ID must be a positive integer')
 ];
 
-/**
- * Validation for recording achievement
- */
-export const recordAchievementValidation = [
-  param('ecaId')
-    .notEmpty()
-    .withMessage('ECA ID is required')
-    .isInt({ min: 1 })
-    .withMessage('ECA ID must be a positive integer'),
-
+const recordAchievementFields = [
   body('studentId')
     .notEmpty()
     .withMessage('Student ID is required')
@@ -424,6 +426,26 @@ export const recordAchievementValidation = [
   body('remarks')
     .optional()
     .trim()
+];
+
+/** Validation for recording achievement through /:ecaId/record-achievement. */
+export const recordAchievementValidation = [
+  param('ecaId')
+    .notEmpty()
+    .withMessage('ECA ID is required')
+    .isInt({ min: 1 })
+    .withMessage('ECA ID must be a positive integer'),
+  ...recordAchievementFields
+];
+
+/** Validation for recording achievement through /achievements, where the ECA ID is in the body. */
+export const recordAchievementDirectValidation = [
+  body('ecaId')
+    .notEmpty()
+    .withMessage('ECA ID is required')
+    .isInt({ min: 1 })
+    .withMessage('ECA ID must be a positive integer'),
+  ...recordAchievementFields
 ];
 
 /**

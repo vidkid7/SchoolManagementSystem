@@ -430,6 +430,39 @@ describe('ECA Routes', () => {
     });
   });
 
+  describe('GET /api/v1/eca/attendance', () => {
+    it('returns an empty list instead of fabricated attendance records', async () => {
+      const response = await request(app).get('/api/v1/eca/attendance');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ success: true, data: [] });
+    });
+  });
+
+  describe('POST /api/v1/eca/attendance', () => {
+    it('marks attendance from the direct endpoint contract', async () => {
+      (ecaEnrollmentService.bulkMarkAttendance as jest.Mock).mockResolvedValue([{ enrollmentId: 17, attendanceCount: 1 }]);
+
+      const response = await request(app)
+        .post('/api/v1/eca/attendance')
+        .send({ ecaId: 4, attendanceData: [{ enrollmentId: 17, present: true }] });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toHaveLength(1);
+      expect(ecaEnrollmentService.bulkMarkAttendance).toHaveBeenCalledWith([{ enrollmentId: 17, present: true }]);
+    });
+
+    it('rejects direct attendance without an ECA ID or attendance entries', async () => {
+      const response = await request(app)
+        .post('/api/v1/eca/attendance')
+        .send({ attendanceData: [] });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      expect(ecaEnrollmentService.bulkMarkAttendance).not.toHaveBeenCalled();
+    });
+  });
+
   describe('POST /api/v1/eca/events', () => {
     it('should create ECA event and notify students', async () => {
       const mockEvent = {
@@ -609,6 +642,45 @@ describe('ECA Routes', () => {
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
       expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    });
+  });
+
+  describe('POST /api/v1/eca/achievements', () => {
+    it('accepts the ECA ID from the body for the direct endpoint', async () => {
+      const mockAchievement = {
+        achievementId: 7,
+        ecaId: 2,
+        studentId: 100,
+        title: 'Art Showcase',
+        type: 'award',
+        level: 'school',
+        achievementDate: new Date('2026-10-30'),
+      };
+      (ECAAchievement.create as jest.Mock).mockResolvedValue(mockAchievement);
+
+      const response = await request(app)
+        .post('/api/v1/eca/achievements')
+        .send({
+          ecaId: 2,
+          studentId: 100,
+          title: 'Art Showcase',
+          type: 'award',
+          level: 'school',
+          achievementDate: '2026-10-30',
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.data.ecaId).toBe(2);
+      expect(ECAAchievement.create).toHaveBeenCalledWith(expect.objectContaining({ ecaId: 2, studentId: 100 }));
+    });
+
+    it('rejects a direct achievement request missing the required body ECA ID', async () => {
+      const response = await request(app)
+        .post('/api/v1/eca/achievements')
+        .send({ studentId: 100, title: 'Art Showcase', type: 'award', level: 'school', achievementDate: '2026-10-30' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.details.some((detail: { path: string }) => detail.path === 'ecaId')).toBe(true);
     });
   });
 

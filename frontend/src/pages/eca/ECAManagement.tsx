@@ -4,7 +4,7 @@ import { YearSelectableDateField } from '../../components/YearSelectableDatePick
  */
 
 import { useState, useEffect } from 'react';
-import { Box, Paper, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Chip, Alert, Grid,
+import { Box, Paper, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Chip, Alert, Grid, Checkbox, FormControlLabel,
   useTheme,
 } from '@mui/material';
 import { Add as AddIcon, EmojiEvents as TrophyIcon } from '@mui/icons-material';
@@ -24,6 +24,25 @@ export function mapEcaEventFormData(formData: Record<string, any>) {
   return { ...eventData, ecaId: Number(formData.ecaId), name: String(title).trim() };
 }
 
+export function mapEcaAchievementFormData(formData: Record<string, any>) {
+  return {
+    ecaId: Number(formData.ecaId),
+    studentId: Number(formData.studentId),
+    title: String(formData.achievement).trim(),
+    type: formData.type,
+    level: formData.level,
+    achievementDate: formData.date,
+    description: formData.description,
+  };
+}
+
+export function mapEcaAttendanceFormData(formData: Record<string, any>) {
+  return {
+    ecaId: Number(formData.ecaId),
+    attendanceData: formData.attendanceData,
+  };
+}
+
 export function ECAManagement() {
   const theme = useTheme();
   const S = useAdminStyles(theme);
@@ -40,6 +59,10 @@ export function ECAManagement() {
   const [error, setError] = useState('');
   const [formErrors, setFormErrors] = useState<EnrollmentFormErrors>({});
   const [eventErrors, setEventErrors] = useState<{ ecaId?: boolean; title?: boolean; type?: boolean; eventDate?: boolean }>({});
+  const [achievementErrors, setAchievementErrors] = useState<{ ecaId?: boolean; studentId?: boolean; title?: boolean; type?: boolean; level?: boolean; date?: boolean }>({});
+  const [attendanceErrors, setAttendanceErrors] = useState<{ ecaId?: boolean; attendanceData?: boolean }>({});
+  const [attendanceEnrollments, setAttendanceEnrollments] = useState<Array<{ enrollmentId: number; studentId: number; present: boolean }>>([]);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [formData, setFormData] = useState<any>({});
   const ecaId = searchParams.get('ecaId');
 
@@ -77,9 +100,35 @@ export function ECAManagement() {
       setEventErrors(nextErrors);
       if (Object.values(nextErrors).some(Boolean)) return;
     }
+    if (tabValue === 3) {
+      const nextErrors = {
+        ecaId: !/^\d+$/.test(String(formData.ecaId || '')) || Number(formData.ecaId) <= 0,
+        studentId: !/^\d+$/.test(String(formData.studentId || '')) || Number(formData.studentId) <= 0,
+        title: !String(formData.achievement || '').trim(),
+        type: !['award', 'medal', 'certificate', 'recognition', 'position'].includes(formData.type),
+        level: !['school', 'district', 'regional', 'national', 'international'].includes(formData.level),
+        date: !/^\d{4}-\d{2}-\d{2}$/.test(String(formData.date || '')),
+      };
+      setAchievementErrors(nextErrors);
+      if (Object.values(nextErrors).some(Boolean)) return;
+    }
+    if (tabValue === 1) {
+      const nextErrors = {
+        ecaId: !/^\d+$/.test(String(formData.ecaId || '')) || Number(formData.ecaId) <= 0,
+        attendanceData: !Array.isArray(formData.attendanceData) || formData.attendanceData.length === 0,
+      };
+      setAttendanceErrors(nextErrors);
+      if (Object.values(nextErrors).some(Boolean)) return;
+    }
     try {
       const endpoints = ['/eca/enrollments', '/eca/attendance', '/eca/events', '/eca/achievements'];
-      const payload = tabValue === 2 ? mapEcaEventFormData(formData) : formData;
+      const payload = tabValue === 2
+        ? mapEcaEventFormData(formData)
+        : tabValue === 3
+          ? mapEcaAchievementFormData(formData)
+          : tabValue === 1
+            ? mapEcaAttendanceFormData(formData)
+            : formData;
       await apiClient.post(endpoints[tabValue], payload);
       setSuccess(t('eca.operationSuccess'));
       setOpenDialog(false);
@@ -98,8 +147,43 @@ export function ECAManagement() {
   };
 
   const openAttendanceDialog = () => {
-    setFormData({ ecaId: '', date: formatLocalDate(new Date()), students: [] });
+    setError('');
+    setAttendanceErrors({});
+    setAttendanceEnrollments([]);
+    setFormData({ ecaId: '', attendanceData: [] });
     setOpenDialog(true);
+  };
+
+  const loadAttendanceEnrollments = async (ecaIdValue: string) => {
+    setAttendanceEnrollments([]);
+    setFormData((current: any) => ({ ...current, ecaId: ecaIdValue, attendanceData: [] }));
+    setAttendanceErrors((current) => ({ ...current, ecaId: false, attendanceData: false }));
+    if (!/^\d+$/.test(ecaIdValue) || Number(ecaIdValue) <= 0) return;
+
+    setAttendanceLoading(true);
+    try {
+      const response = await apiClient.get('/eca/enrollments', { params: { ecaId: Number(ecaIdValue), status: 'active', limit: 100 } });
+      const enrollments = (response.data?.data || []).map((item: any) => ({
+        enrollmentId: Number(item.enrollmentId),
+        studentId: Number(item.studentId),
+        present: true,
+      }));
+      setAttendanceEnrollments(enrollments);
+      setFormData((current: any) => ({ ...current, attendanceData: enrollments.map(({ enrollmentId, present }: { enrollmentId: number; present: boolean }) => ({ enrollmentId, present })) }));
+    } catch {
+      setError(t('eca.failedToLoadEnrollments'));
+    } finally {
+      setAttendanceLoading(false);
+    }
+  };
+
+  const toggleAttendance = (enrollmentId: number, present: boolean) => {
+    const nextEnrollments = attendanceEnrollments.map((enrollment) => enrollment.enrollmentId === enrollmentId ? { ...enrollment, present } : enrollment);
+    setAttendanceEnrollments(nextEnrollments);
+    setFormData((current: any) => ({
+      ...current,
+      attendanceData: nextEnrollments.map(({ enrollmentId: id, present: isPresent }) => ({ enrollmentId: id, present: isPresent })),
+    }));
   };
 
   const openEventDialog = () => {
@@ -110,7 +194,9 @@ export function ECAManagement() {
   };
 
   const openAchievementDialog = () => {
-    setFormData({ studentId: '', ecaId: '', achievement: '', date: formatLocalDate(new Date()), description: '' });
+    setError('');
+    setAchievementErrors({});
+    setFormData({ studentId: '', ecaId: '', achievement: '', type: '', level: '', date: formatLocalDate(new Date()), description: '' });
     setOpenDialog(true);
   };
 
@@ -134,7 +220,7 @@ export function ECAManagement() {
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
       <Paper sx={{ ...S.GLASS }}>
-        <Tabs value={tabValue} onChange={(_, v) => { setTabValue(v); setError(''); setEventErrors({}); setFormErrors({}); }}>
+        <Tabs value={tabValue} onChange={(_, v) => { setTabValue(v); setError(''); setEventErrors({}); setAchievementErrors({}); setAttendanceErrors({}); setFormErrors({}); }}>
           <Tab label={t('eca.enrollments')} />
           <Tab label={t('eca.attendance')} />
           <Tab label={t('eca.events')} />
@@ -256,7 +342,7 @@ export function ECAManagement() {
         </TabPanel>
       </Paper>
 
-      <Dialog open={openDialog} onClose={() => { setOpenDialog(false); setError(''); setEventErrors({}); setFormErrors({}); }} maxWidth="sm" fullWidth>
+      <Dialog open={openDialog} onClose={() => { setOpenDialog(false); setError(''); setEventErrors({}); setAchievementErrors({}); setAttendanceErrors({}); setFormErrors({}); }} maxWidth="sm" fullWidth>
         <DialogTitle>
           {tabValue === 0 && t('eca.enrollStudent')}
           {tabValue === 1 && t('eca.markAttendanceBtn')}
@@ -275,8 +361,11 @@ export function ECAManagement() {
             )}
             {tabValue === 1 && (
               <>
-                <Grid item xs={12}><TextField label={t('eca.ecaId')} type="number" value={formData.ecaId} onChange={(e) => setFormData({ ...formData, ecaId: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12}><YearSelectableDateField label={t('eca.date')} value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
+                <Grid item xs={12}><TextField label={t('eca.ecaId')} type="number" value={formData.ecaId} onChange={(e) => void loadAttendanceEnrollments(e.target.value)} error={Boolean(attendanceErrors.ecaId)} helperText={attendanceErrors.ecaId ? t('eca.ecaIdRequired') : undefined} fullWidth /></Grid>
+                {attendanceLoading && <Grid item xs={12}><Typography>{t('common.loading')}</Typography></Grid>}
+                {!attendanceLoading && formData.ecaId && attendanceEnrollments.length === 0 && <Grid item xs={12}><Alert severity="info">{t('eca.noActiveEnrollments')}</Alert></Grid>}
+                {attendanceEnrollments.map((enrollment) => <Grid item xs={12} key={enrollment.enrollmentId}><FormControlLabel control={<Checkbox checked={enrollment.present} onChange={(event) => toggleAttendance(enrollment.enrollmentId, event.target.checked)} />} label={`${t('eca.studentId')}: ${enrollment.studentId}`} /></Grid>)}
+                {attendanceErrors.attendanceData && <Grid item xs={12}><Alert severity="error">{t('eca.noActiveEnrollments')}</Alert></Grid>}
               </>
             )}
             {tabValue === 2 && (
@@ -293,17 +382,23 @@ export function ECAManagement() {
             )}
             {tabValue === 3 && (
               <>
-                <Grid item xs={12}><TextField label={t('eca.studentId')} type="number" value={formData.studentId} onChange={(e) => setFormData({ ...formData, studentId: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12}><TextField label={t('eca.ecaId')} type="number" value={formData.ecaId} onChange={(e) => setFormData({ ...formData, ecaId: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12}><TextField label={t('eca.achievements')} value={formData.achievement} onChange={(e) => setFormData({ ...formData, achievement: e.target.value })} fullWidth /></Grid>
-                <Grid item xs={12}><YearSelectableDateField label={t('eca.date')} value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
+                <Grid item xs={12}><TextField label={t('eca.studentId')} type="number" value={formData.studentId} onChange={(e) => { setFormData({ ...formData, studentId: e.target.value }); setAchievementErrors((current) => ({ ...current, studentId: false })); }} error={Boolean(achievementErrors.studentId)} helperText={achievementErrors.studentId ? t('eca.studentIdRequired') : undefined} fullWidth /></Grid>
+                <Grid item xs={12}><TextField label={t('eca.ecaId')} type="number" value={formData.ecaId} onChange={(e) => { setFormData({ ...formData, ecaId: e.target.value }); setAchievementErrors((current) => ({ ...current, ecaId: false })); }} error={Boolean(achievementErrors.ecaId)} helperText={achievementErrors.ecaId ? t('eca.ecaIdRequired') : undefined} fullWidth /></Grid>
+                <Grid item xs={12}><TextField label={t('eca.achievements')} value={formData.achievement} onChange={(e) => { setFormData({ ...formData, achievement: e.target.value }); setAchievementErrors((current) => ({ ...current, title: false })); }} error={Boolean(achievementErrors.title)} helperText={achievementErrors.title ? t('eca.achievementTitleRequired') : undefined} fullWidth /></Grid>
+                <Grid item xs={12}><TextField select label={t('eca.achievementType')} value={formData.type} onChange={(e) => { setFormData({ ...formData, type: e.target.value }); setAchievementErrors((current) => ({ ...current, type: false })); }} error={Boolean(achievementErrors.type)} helperText={achievementErrors.type ? t('eca.achievementTypeRequired') : undefined} fullWidth>
+                  {['award', 'medal', 'certificate', 'recognition', 'position'].map((type) => <MenuItem key={type} value={type}>{t(`eca.${type}`)}</MenuItem>)}
+                </TextField></Grid>
+                <Grid item xs={12}><TextField select label={t('eca.achievementLevel')} value={formData.level} onChange={(e) => { setFormData({ ...formData, level: e.target.value }); setAchievementErrors((current) => ({ ...current, level: false })); }} error={Boolean(achievementErrors.level)} helperText={achievementErrors.level ? t('eca.achievementLevelRequired') : undefined} fullWidth>
+                  {['school', 'district', 'regional', 'national', 'international'].map((level) => <MenuItem key={level} value={level}>{t(`eca.${level}`)}</MenuItem>)}
+                </TextField></Grid>
+                <Grid item xs={12}><YearSelectableDateField label={t('eca.date')} value={formData.date} onChange={(e) => { setFormData({ ...formData, date: e.target.value }); setAchievementErrors((current) => ({ ...current, date: false })); }} error={Boolean(achievementErrors.date)} helperText={achievementErrors.date ? t('eca.achievementDateRequired') : undefined} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
                 <Grid item xs={12}><TextField label={t('eca.description')} multiline rows={2} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} fullWidth /></Grid>
               </>
             )}
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setOpenDialog(false); setError(''); setEventErrors({}); setFormErrors({}); }}>{t('eca.cancel')}</Button>
+          <Button onClick={() => { setOpenDialog(false); setError(''); setEventErrors({}); setAchievementErrors({}); setAttendanceErrors({}); setFormErrors({}); }}>{t('eca.cancel')}</Button>
           <Button onClick={handleSubmit} variant="contained" sx={S.BTN_PRIMARY}>{t('eca.submit')}</Button>
         </DialogActions>
       </Dialog>
