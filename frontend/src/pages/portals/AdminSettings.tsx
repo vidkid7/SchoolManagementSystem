@@ -218,15 +218,8 @@ const AdminSettings: React.FC = () => {
           language: systemSettings.language,
           attendanceThreshold: systemSettings.attendanceThreshold,
           gradingSystem: systemSettings.gradingSystem,
-          maxLoginAttempts: systemSettings.maxLoginAttempts,
-          sessionTimeout: systemSettings.sessionTimeout,
           enableSMS: systemSettings.enableSMS,
           enableEmail: systemSettings.enableEmail,
-          enableOfflineMode: systemSettings.enableOfflineMode,
-          enablePaymentGateway: systemSettings.enablePaymentGateway,
-          backupEnabled: systemSettings.backupEnabled,
-          backupSchedule: systemSettings.backupSchedule,
-          backupRetention: systemSettings.backupRetention,
         },
       };
 
@@ -551,6 +544,7 @@ const AdminSettings: React.FC = () => {
                       </Typography>
                     </Box>
                     <Switch
+                      inputProps={{ 'aria-label': item.label }}
                       checked={item.checked}
                       onChange={(e) => item.onChange(e.target.checked)}
                       sx={{
@@ -568,11 +562,15 @@ const AdminSettings: React.FC = () => {
           {/* ── Tab 3: Security ───────────────────────────────────────────── */}
           <TabPanel value={tabValue} index={3}>
             <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Alert severity="info">{t('adminSettings.security.managedNotice')}</Alert>
+              </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
                   label={t('adminSettings.security.maxLoginAttempts')}
                   type="number"
+                  disabled
                   value={systemSettings.maxLoginAttempts}
                   onChange={(e) => setSystemSettings(prev => ({ ...prev, maxLoginAttempts: Number(e.target.value) }))}
                   sx={S.TF}
@@ -583,6 +581,7 @@ const AdminSettings: React.FC = () => {
                   fullWidth
                   label={t('adminSettings.security.sessionTimeout')}
                   type="number"
+                  disabled
                   value={systemSettings.sessionTimeout}
                   onChange={(e) => setSystemSettings(prev => ({ ...prev, sessionTimeout: Number(e.target.value) }))}
                   sx={S.TF}
@@ -594,6 +593,9 @@ const AdminSettings: React.FC = () => {
           {/* ── Tab 4: Backup ─────────────────────────────────────────────── */}
           <TabPanel value={tabValue} index={4}>
             <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Alert severity="info">{t('adminSettings.backup.managedNotice')}</Alert>
+              </Grid>
               <Grid item xs={12}>
                 <Box sx={{
                   ...S.GLASS,
@@ -627,6 +629,8 @@ const AdminSettings: React.FC = () => {
                     </Typography>
                   </Box>
                   <Switch
+                    inputProps={{ 'aria-label': t('adminSettings.backup.enableAutomated') }}
+                    disabled
                     checked={systemSettings.backupEnabled}
                     onChange={(e) => setSystemSettings(prev => ({ ...prev, backupEnabled: e.target.checked }))}
                     sx={{
@@ -641,6 +645,7 @@ const AdminSettings: React.FC = () => {
                 <FormControl fullWidth sx={S.TF}>
                   <InputLabel>{t('adminSettings.backup.schedule')}</InputLabel>
                   <Select
+                    disabled
                     value={systemSettings.backupSchedule}
                     onChange={(e) => setSystemSettings(prev => ({ ...prev, backupSchedule: e.target.value }))}
                     label={t('adminSettings.backup.schedule')}
@@ -656,6 +661,7 @@ const AdminSettings: React.FC = () => {
                   fullWidth
                   label={t('adminSettings.backup.retention')}
                   type="number"
+                  disabled
                   value={systemSettings.backupRetention}
                   onChange={(e) => setSystemSettings(prev => ({ ...prev, backupRetention: Number(e.target.value) }))}
                   sx={S.TF}
@@ -667,6 +673,9 @@ const AdminSettings: React.FC = () => {
           {/* ── Tab 5: Features ───────────────────────────────────────────── */}
           <TabPanel value={tabValue} index={5}>
             <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Alert severity="info">{t('adminSettings.features.managedNotice')}</Alert>
+              </Grid>
               {[
                 {
                   key: 'offline' as const,
@@ -727,6 +736,8 @@ const AdminSettings: React.FC = () => {
                       </Typography>
                     </Box>
                     <Switch
+                      inputProps={{ 'aria-label': item.label }}
+                      disabled
                       checked={item.checked}
                       onChange={(e) => item.onChange(e.target.checked)}
                       sx={{

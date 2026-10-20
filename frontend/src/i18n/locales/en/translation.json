@@ -3012,7 +3012,8 @@
     },
     "security": {
       "maxLoginAttempts": "Max Login Attempts",
-      "sessionTimeout": "Session Timeout (minutes)"
+      "sessionTimeout": "Session Timeout (minutes)",
+      "managedNotice": "Login lockout and session expiry are controlled by backend deployment settings. Values shown here do not change runtime behavior."
     },
     "backup": {
       "enableAutomated": "Enable Automated Backups",
@@ -3020,13 +3021,15 @@
       "scheduleDaily": "Daily (2:00 AM)",
       "scheduleWeekly": "Weekly (Sunday 2:00 AM)",
       "scheduleMonthly": "Monthly (1st, 2:00 AM)",
-      "retention": "Backup Retention (days)"
+      "retention": "Backup Retention (days)",
+      "managedNotice": "Backup scheduling and retention are controlled by backend deployment settings. Values shown here do not change the backup job."
     },
     "features": {
       "offlineMode": "Offline Mode (PWA)",
       "offlineModeDesc": "Allow attendance marking and grade entry when offline",
       "paymentGateway": "Payment Gateway (eSewa, Khalti, IME Pay)",
-      "paymentGatewayDesc": "Enable online fee payment for parents"
+      "paymentGatewayDesc": "Enable online fee payment for parents",
+      "managedNotice": "These switches do not control runtime behavior. Configure payment providers in Finance → Payment Gateways."
     }
   },
   "userManagement": {
