@@ -53,4 +53,19 @@ describe('Payments form validation', () => {
     expect(screen.getAllByText('finance.invalidAmount').length).toBeGreaterThan(0);
     expect(apiClient.post).not.toHaveBeenCalled();
   });
+
+  it('clears validation feedback when the payment dialog is canceled', async () => {
+    renderPayments();
+    await openRecordPayment();
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'finance.invoices' }), { target: { value: '123' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'finance.amount' }), { target: { value: '0' } });
+    const submitButtons = screen.getAllByRole('button', { name: 'finance.recordPayment' });
+    fireEvent.click(submitButtons[submitButtons.length - 1]);
+
+    expect(screen.getAllByText('finance.invalidAmount').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: 'common.cancel' }));
+
+    expect(screen.queryByText('finance.invalidAmount')).not.toBeInTheDocument();
+    expect(apiClient.post).not.toHaveBeenCalled();
+  });
 });

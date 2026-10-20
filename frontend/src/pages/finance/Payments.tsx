@@ -72,6 +72,16 @@ export function Payments() {
     remarks: '',
   });
 
+  const openPaymentDialog = () => {
+    setError('');
+    setOpenDialog(true);
+  };
+
+  const closePaymentDialog = () => {
+    setError('');
+    setOpenDialog(false);
+  };
+
   useEffect(() => {
     fetchPayments();
   }, [page, rowsPerPage]);
@@ -165,7 +175,7 @@ export function Payments() {
           <Button
             variant="contained" sx={S.BTN_PRIMARY}
             startIcon={<AddIcon />}
-            onClick={() => setOpenDialog(true)}
+            onClick={openPaymentDialog}
           >
             {t('finance.recordPayment')}
           </Button>
@@ -260,7 +270,7 @@ export function Payments() {
         />
       </Paper>
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
+      <Dialog open={openDialog} onClose={closePaymentDialog} maxWidth="sm" fullWidth>
         <DialogTitle>{t('finance.recordPayment')}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
@@ -323,7 +333,7 @@ export function Payments() {
           {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>{t('common.cancel')}</Button>
+          <Button onClick={closePaymentDialog}>{t('common.cancel')}</Button>
           <Button onClick={handleRecordPayment} variant="contained" sx={S.BTN_PRIMARY}>
             {t('finance.recordPayment')}
           </Button>
