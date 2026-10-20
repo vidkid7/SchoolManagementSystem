@@ -1368,6 +1368,7 @@
     "feeStructures": "Fee Structures",
     "feeStructuresSubtitle": "Manage fee structures for different classes and categories",
     "invoices": "Invoices",
+    "enterInvoiceId": "Enter the invoice ID for this payment",
     "invoicesFound": "invoices found",
     "payments": "Payments",
     "paymentsLoaded": "payments loaded",

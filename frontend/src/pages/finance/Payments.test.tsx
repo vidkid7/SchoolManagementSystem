@@ -45,7 +45,7 @@ describe('Payments form validation', () => {
   it('rejects a zero or negative amount before sending a payment request', async () => {
     renderPayments();
     await openRecordPayment();
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'finance.invoices' }), { target: { value: '123' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'finance.invoiceId' }), { target: { value: '123' } });
     fireEvent.change(screen.getByRole('spinbutton', { name: 'finance.amount' }), { target: { value: '0' } });
     const submitButtons = screen.getAllByRole('button', { name: 'finance.recordPayment' });
     fireEvent.click(submitButtons[submitButtons.length - 1]);
@@ -57,7 +57,7 @@ describe('Payments form validation', () => {
   it('clears validation feedback when the payment dialog is canceled', async () => {
     renderPayments();
     await openRecordPayment();
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'finance.invoices' }), { target: { value: '123' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'finance.invoiceId' }), { target: { value: '123' } });
     fireEvent.change(screen.getByRole('spinbutton', { name: 'finance.amount' }), { target: { value: '0' } });
     const submitButtons = screen.getAllByRole('button', { name: 'finance.recordPayment' });
     fireEvent.click(submitButtons[submitButtons.length - 1]);
@@ -67,5 +67,16 @@ describe('Payments form validation', () => {
 
     expect(screen.queryByText('finance.invalidAmount')).not.toBeInTheDocument();
     expect(apiClient.post).not.toHaveBeenCalled();
+  });
+
+  it('explains the invoice ID field and constrains the numeric inputs', async () => {
+    renderPayments();
+    await openRecordPayment();
+
+    expect(screen.getByRole('spinbutton', { name: 'finance.invoiceId' })).toHaveAttribute('min', '1');
+    expect(screen.getByRole('spinbutton', { name: 'finance.invoiceId' })).toHaveAttribute('step', '1');
+    expect(screen.getByText('finance.enterInvoiceId')).toBeInTheDocument();
+    expect(screen.getByRole('spinbutton', { name: 'finance.amount' })).toHaveAttribute('min', '0.01');
+    expect(screen.getByRole('spinbutton', { name: 'finance.amount' })).toHaveAttribute('step', '0.01');
   });
 });

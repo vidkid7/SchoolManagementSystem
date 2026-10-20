@@ -190,7 +190,7 @@ export function Payments() {
           <Table>
             <TableHead sx={{ bgcolor: S.TH_BG }}>
               <TableRow>
-                <TableCell>{t('finance.payments')}</TableCell>
+                <TableCell>{t('finance.paymentId')}</TableCell>
                 <TableCell>{t('finance.invoices')}</TableCell>
                 <TableCell>{t('finance.studentName')}</TableCell>
                 <TableCell align="right">{t('finance.amount')}</TableCell>
@@ -275,13 +275,14 @@ export function Payments() {
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <TextField
-              label={t('finance.invoices')}
+              label={t('finance.invoiceId')}
               type="number"
               value={formData.invoiceId}
               onChange={(e) => setFormData({ ...formData, invoiceId: e.target.value })}
               required
               fullWidth
-              helperText={t('finance.selectStudent')}
+              inputProps={{ min: 1, step: 1 }}
+              helperText={t('finance.enterInvoiceId')}
             />
             <TextField
               label={t('finance.amount')}
@@ -290,6 +291,7 @@ export function Payments() {
               onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
               required
               fullWidth
+              inputProps={{ min: 0.01, step: 0.01 }}
             />
             <TextField
               label={t('finance.paymentMethod')}
