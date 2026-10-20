@@ -23,6 +23,7 @@ import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import apiClient from '../../services/apiClient';
 import { RootState } from '../../store';
 import { useTranslation } from 'react-i18next';
+import { formatMaintenanceStatus, MAINTENANCE_STATUS_OPTIONS } from './transportMaintenance';
 
 interface DashboardData { summary: { totalStudents: number; activeStudents: number; role: string }; quickLinks: Array<{ label: string; path: string }>; }
 interface ProfileData { id: number; username: string; email: string; firstName: string; lastName: string; phoneNumber?: string; role: string; status: string; }
@@ -410,7 +411,7 @@ const TransportPortal: React.FC = () => {
                   <TableCell>{m.description || '—'}</TableCell>
                   <TableCell>${m.cost}</TableCell>
                   <TableCell>{new Date(m.date).toLocaleDateString()}</TableCell>
-                  <TableCell><Chip label={m.status} size="small" color={m.status === 'completed' ? 'success' : m.status === 'in-progress' ? 'warning' : 'info'} /></TableCell>
+                  <TableCell><Chip label={formatMaintenanceStatus(m.status)} size="small" color={m.status === 'completed' ? 'success' : m.status === 'in_progress' ? 'warning' : 'info'} /></TableCell>
                   <TableCell>
                     <Tooltip title={t('common.edit')}><IconButton size="small" onClick={() => { setEditMaintenance(m); setFormData({ ...m }); setMaintenanceDialog(true); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
                   </TableCell>
@@ -556,7 +557,7 @@ const TransportPortal: React.FC = () => {
           <FormControl fullWidth>
             <InputLabel>{t('common.status')}</InputLabel>
             <Select label={t('common.status')} value={formData.status ?? 'scheduled'} onChange={e => setFormData({ ...formData, status: e.target.value })}>
-              {['scheduled', 'in-progress', 'completed', 'cancelled'].map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+              {MAINTENANCE_STATUS_OPTIONS.map(({ value, label }) => <MenuItem key={value} value={value}>{label}</MenuItem>)}
             </Select>
           </FormControl>
         </DialogContent>
