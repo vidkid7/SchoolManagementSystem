@@ -12,6 +12,16 @@ import sportsRoutes from '../sports.routes';
 import Sport from '@models/Sport.model';
 import Team from '@models/Team.model';
 
+// The app below supplies a test user directly. Keep the real role authorization
+// checks, but bypass JWT parsing so these route tests do not need signed tokens.
+jest.mock('@middleware/auth', () => {
+  const actual = jest.requireActual('@middleware/auth');
+  return {
+    ...actual,
+    authenticate: (_req: unknown, _res: unknown, next: (error?: unknown) => void) => next()
+  };
+});
+
 // Mock the models
 jest.mock('@models/Sport.model');
 jest.mock('@models/Team.model');
@@ -141,7 +151,8 @@ describe('Sports Routes', () => {
       const createdSport = {
         sportId: 1,
         ...newSport,
-        status: 'active'
+        status: 'active',
+        getDataValue: (key: string) => key === 'sportId' ? 1 : undefined
       };
 
       (Sport.create as jest.Mock).mockResolvedValue(createdSport);
