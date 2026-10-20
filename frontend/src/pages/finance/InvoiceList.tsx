@@ -208,8 +208,9 @@ export const InvoiceList = () => {
           />
 
           <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>{t('finance.paymentStatus')}</InputLabel>
+            <InputLabel id="invoice-payment-status-label">{t('finance.paymentStatus')}</InputLabel>
             <Select
+              labelId="invoice-payment-status-label"
               value={statusFilter}
               label={t('finance.paymentStatus')}
               onChange={(e) => setStatusFilter(e.target.value)}
