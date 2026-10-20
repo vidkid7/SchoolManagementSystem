@@ -4,6 +4,8 @@ import AttendanceRecord from '../../../models/AttendanceRecord.model';
 import Invoice from '../../../models/Invoice.model';
 import Payment from '../../../models/Payment.model';
 import Grade from '../../../models/Grade.model';
+import Class from '../../../models/Class.model';
+import Exam from '../../../models/Exam.model';
 
 jest.mock('../../../models/Student.model');
 jest.mock('../../../models/AttendanceRecord.model');
@@ -53,7 +55,7 @@ describe('ReportService', () => {
       await reportService.generateEnrollmentReport({ classId: '1' });
 
       expect(Student.count).toHaveBeenCalledWith({
-        where: expect.objectContaining({ currentClass: '1' }),
+        where: expect.objectContaining({ currentClassId: '1' }),
       });
     });
 
@@ -105,6 +107,35 @@ describe('ReportService', () => {
   });
 
   describe('generateFeeCollectionReport', () => {
+    it('filters invoices and payments by the selected class and section', async () => {
+      (Invoice.findAll as jest.Mock).mockResolvedValue([]);
+      (Payment.findAll as jest.Mock).mockResolvedValue([]);
+
+      await reportService.generateFeeCollectionReport({
+        startDate: '2026-01-01',
+        endDate: '2026-12-31',
+        classId: '1',
+        section: 'K',
+      });
+
+      const expectedStudentFilter = expect.objectContaining({
+        model: Student,
+        as: 'student',
+        attributes: [],
+        required: true,
+        where: { currentClassId: '1' },
+        include: [expect.objectContaining({
+          as: 'currentClass',
+          where: { section: 'K' },
+          required: true,
+        })],
+      });
+      expect(Invoice.findAll).toHaveBeenCalledWith(expect.objectContaining({ include: [expectedStudentFilter] }));
+      expect(Payment.findAll).toHaveBeenCalledTimes(2);
+      expect((Payment.findAll as jest.Mock).mock.calls[0][0].include).toEqual([expectedStudentFilter]);
+      expect((Payment.findAll as jest.Mock).mock.calls[1][0].include).toEqual([expectedStudentFilter]);
+    });
+
     it('should calculate fee collection rate correctly', async () => {
       const mockInvoices = [
         { totalAmount: 10000, paidAmount: 8000 },
@@ -186,6 +217,8 @@ describe('ReportService', () => {
   describe('getDashboardData', () => {
     it('should return dashboard summary data', async () => {
       (Student.count as jest.Mock).mockResolvedValue(250);
+      jest.spyOn(Class, 'count').mockResolvedValue(10);
+      jest.spyOn(Exam, 'count').mockResolvedValue(5);
       (jest.spyOn(require('../../../models/Staff.model').default, 'count') as jest.Mock).mockResolvedValue(30);
 
       const data = await reportService.getDashboardData('school_admin', 'user-1');

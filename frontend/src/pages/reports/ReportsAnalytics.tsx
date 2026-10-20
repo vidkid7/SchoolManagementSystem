@@ -173,6 +173,12 @@ interface EnrollmentData {
   byShift: Array<{ shift: string; count: number }>;
 }
 
+interface ReportClassOption {
+  classId: number;
+  gradeLevel: number;
+  section: string;
+}
+
 export const formatEnrollmentClassLabel = (classNumber: number | null | undefined, translate: (key: string) => string) =>
   classNumber == null ? translate('reports.unassignedClass') : `${translate('reports.class')} ${classNumber}`;
 
@@ -252,6 +258,7 @@ interface TeacherPerformanceData {
   const [ecaData, setEcaData] = useState<ECAData | null>(null);
   const [sportsData, setSportsData] = useState<SportsData | null>(null);
   const [teacherPerformanceData, setTeacherPerformanceData] = useState<TeacherPerformanceData | null>(null);
+  const [classes, setClasses] = useState<ReportClassOption[]>([]);
   const normalizedRole = normalizeRole(user?.role);
   const canExportReports = ['school_admin', 'department_head', 'accountant'].includes(normalizedRole);
   const allowedReports = useMemo(() => {
@@ -273,6 +280,25 @@ interface TeacherPerformanceData {
     fetchAllData();
   }, [allowedReports]);
 
+  useEffect(() => {
+    let mounted = true;
+    apiClient.get('/academic/classes')
+      .then((response) => {
+        const rows = response.data?.data ?? response.data;
+        if (!mounted || !Array.isArray(rows)) return;
+
+        setClasses(rows.flatMap((row: any) => {
+          const classId = Number(row.classId ?? row.class_id);
+          const gradeLevel = Number(row.gradeLevel ?? row.grade_level);
+          if (!Number.isInteger(classId) || !Number.isInteger(gradeLevel)) return [];
+          return [{ classId, gradeLevel, section: String(row.section ?? '') }];
+        }));
+      })
+      .catch((error) => console.error('Failed to load report classes:', error));
+
+    return () => { mounted = false; };
+  }, []);
+
   const getDateRangeParams = () => {
     if (filters.startDate && filters.endDate) {
       return { startDate: filters.startDate, endDate: filters.endDate };
@@ -288,6 +314,10 @@ interface TeacherPerformanceData {
     setLoading(true);
     try {
       const dateRangeParams = getDateRangeParams();
+      const classParams = {
+        ...(filters.classId && { classId: filters.classId }),
+        ...(filters.section && { section: filters.section }),
+      };
       const teacherParams = filters.teacherId ? { teacherId: filters.teacherId } : {};
 
       const fetchReport = async <T,>(
@@ -307,10 +337,12 @@ interface TeacherPerformanceData {
       };
 
       await Promise.all([
-        fetchReport('enrollment', () => apiClient.get('/api/v1/reports/enrollment'), setEnrollmentData),
-        fetchReport('attendance', () => apiClient.get('/api/v1/reports/attendance', { params: dateRangeParams }), setAttendanceData),
-        fetchReport('fee', () => apiClient.get('/api/v1/reports/fee-collection', { params: dateRangeParams }), setFeeData),
-        fetchReport('exam', () => apiClient.get('/api/v1/reports/examination'), setExamData),
+        fetchReport('enrollment', () => apiClient.get('/api/v1/reports/enrollment', { params: classParams }), setEnrollmentData),
+        fetchReport('attendance', () => apiClient.get('/api/v1/reports/attendance', { params: { ...dateRangeParams, ...classParams } }), setAttendanceData),
+        fetchReport('fee', () => apiClient.get('/api/v1/reports/fee-collection', { params: { ...dateRangeParams, ...classParams } }), setFeeData),
+        fetchReport('exam', () => apiClient.get('/api/v1/reports/examination', {
+          params: filters.classId ? { classId: filters.classId } : {},
+        }), setExamData),
         fetchReport('library', () => apiClient.get('/api/v1/reports/library', { params: dateRangeParams }), setLibraryData),
         fetchReport('eca', () => apiClient.get('/api/v1/reports/eca'), setEcaData),
         fetchReport('sports', () => apiClient.get('/api/v1/reports/sports'), setSportsData),
@@ -823,8 +855,10 @@ interface TeacherPerformanceData {
                 }}
               >
                 <MenuItem value="">{t('reports.all')}</MenuItem>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((c) => (
-                  <MenuItem key={c} value={c}>{t('reports.class')} {c}</MenuItem>
+                {classes.map((classOption) => (
+                  <MenuItem key={classOption.classId} value={classOption.classId}>
+                    {t('reports.class')} {classOption.gradeLevel}{classOption.section ? ` - ${classOption.section}` : ''}
+                  </MenuItem>
                 ))}
               </TextField>
             </Grid>
@@ -844,7 +878,7 @@ interface TeacherPerformanceData {
                 }}
               >
                 <MenuItem value="">{t('reports.all')}</MenuItem>
-                {['A', 'B', 'C', 'D'].map((s) => (
+                {[...new Set(classes.map((classOption) => classOption.section).filter(Boolean))].sort().map((s) => (
                   <MenuItem key={s} value={s}>{s}</MenuItem>
                 ))}
               </TextField>

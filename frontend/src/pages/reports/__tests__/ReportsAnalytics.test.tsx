@@ -22,6 +22,8 @@ jest.mock('react-i18next', () => ({
       'reports.startDate': 'Start Date',
       'reports.endDate': 'End Date',
       'reports.class': 'Class',
+      'reports.applyFilters': 'Apply Filters',
+      'reports.all': 'All',
       'reports.unassignedClass': 'Unassigned',
       'reports.section': 'Section',
       'reports.pdf': 'PDF',
@@ -72,6 +74,40 @@ describe('ReportsAnalytics', () => {
     expect(screen.getByLabelText('End Date')).toBeInTheDocument();
     expect(screen.getByLabelText('Class')).toBeInTheDocument();
     expect(screen.getByLabelText('Section')).toBeInTheDocument();
+  });
+
+  it('loads configured class sections and applies the selected class and section to report requests', async () => {
+    mockedApiClient.get.mockImplementation(((url: string) => Promise.resolve({
+      data: url === '/academic/classes'
+        ? { success: true, data: [{ classId: 1, gradeLevel: 1, section: 'K' }] }
+        : { success: true, data: {} },
+    })) as any);
+
+    renderReports();
+    await screen.findByRole('heading', { name: 'Reports & Analytics' });
+    await waitFor(() => expect(mockedApiClient.get).toHaveBeenCalledWith('/academic/classes'));
+    mockedApiClient.get.mockClear();
+
+    fireEvent.mouseDown(screen.getByLabelText('Class'));
+    fireEvent.click(await screen.findByRole('option', { name: 'Class 1 - K' }));
+    fireEvent.mouseDown(screen.getByLabelText('Section'));
+    fireEvent.click(await screen.findByRole('option', { name: 'K' }));
+    fireEvent.click(screen.getByRole('button', { name: /Apply Filters/i }));
+
+    await waitFor(() => {
+      expect(mockedApiClient.get).toHaveBeenCalledWith('/api/v1/reports/enrollment', {
+        params: { classId: 1, section: 'K' },
+      });
+      expect(mockedApiClient.get).toHaveBeenCalledWith('/api/v1/reports/attendance', {
+        params: expect.objectContaining({ classId: 1, section: 'K' }),
+      });
+      expect(mockedApiClient.get).toHaveBeenCalledWith('/api/v1/reports/fee-collection', {
+        params: expect.objectContaining({ classId: 1, section: 'K' }),
+      });
+      expect(mockedApiClient.get).toHaveBeenCalledWith('/api/v1/reports/examination', {
+        params: { classId: 1 },
+      });
+    });
   });
 
   it('should update filters when inputs change', async () => {

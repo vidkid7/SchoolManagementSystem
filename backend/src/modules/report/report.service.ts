@@ -204,6 +204,25 @@ class ReportService {
 
   async generateFeeCollectionReport(params: FeeCollectionReportParams): Promise<FeeCollectionReport> {
     try {
+      const getStudentClassInclude = () => ({
+        model: Student,
+        as: 'student',
+        attributes: [],
+        ...((params.classId || params.section) && {
+          required: true,
+          ...(params.classId && { where: { currentClassId: params.classId } }),
+          ...(params.section && {
+            include: [{
+              model: Class,
+              as: 'currentClass',
+              attributes: [],
+              where: { section: params.section },
+              required: true,
+            }],
+          }),
+        }),
+      });
+
       const whereClause: any = {
         createdAt: {
           [Op.between]: [params.startDate, params.endDate],
@@ -214,7 +233,7 @@ class ReportService {
 
       const invoices = await Invoice.findAll({
         where: whereClause,
-        include: [{ model: Student, as: 'student' }],
+        include: [getStudentClassInclude()],
       });
 
       const totalExpected = invoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
@@ -236,6 +255,7 @@ class ReportService {
           [Payment.sequelize!.fn('SUM', Payment.sequelize!.col('amount')), 'amount'],
           [Payment.sequelize!.fn('COUNT', Payment.sequelize!.col('payment_id')), 'count'],
         ],
+        include: [getStudentClassInclude()],
         group: ['paymentMethod'],
         raw: true,
       }) as any[];
@@ -246,6 +266,7 @@ class ReportService {
           [Payment.sequelize!.fn('DATE', Payment.sequelize!.col('payment_date')), 'date'],
           [Payment.sequelize!.fn('SUM', Payment.sequelize!.col('amount')), 'amount'],
         ],
+        include: [getStudentClassInclude()],
         group: [Payment.sequelize!.fn('DATE', Payment.sequelize!.col('payment_date'))],
         order: [[Payment.sequelize!.fn('DATE', Payment.sequelize!.col('payment_date')), 'ASC']],
         raw: true,
