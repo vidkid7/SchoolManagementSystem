@@ -1873,6 +1873,7 @@
     "noTournamentsFound": "No tournaments found",
     "noAchievementsFound": "No achievements found",
     "selectSportClickLoad": "Select a sport and click Load Enrollments",
+    "noEnrollments": "No active enrollments found for this sport.",
     "loadEnrollments": "Load Enrollments",
     "markAttendanceBtn": "Mark Attendance",
     "enrollmentId": "Enrollment ID",

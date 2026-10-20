@@ -3599,6 +3599,7 @@
     "noTournamentsFound": "कुनै प्रतियोगिता फेला परेन",
     "noAchievementsFound": "कुनै उपलब्धि फेला परेन",
     "selectSportClickLoad": "खेलकुद छान्नुहोस् र भर्ना लोड क्लिक गर्नुहोस्",
+    "noEnrollments": "यस खेलका लागि सक्रिय भर्ना फेला परेन।",
     "loadEnrollments": "भर्ना लोड गर्नुहोस्",
     "markAttendanceBtn": "उपस्थिति चिन्ह लगाउनुहोस्",
     "enrollmentId": "भर्ना ID",

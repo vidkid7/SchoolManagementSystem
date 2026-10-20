@@ -86,6 +86,7 @@ export function SportsManagement() {
   const [sportsList, setSportsList] = useState<any[]>([]);
   const [selectedSportId, setSelectedSportId] = useState('');
   const [enrollments, setEnrollments] = useState<any[]>([]);
+  const [enrollmentsLoaded, setEnrollmentsLoaded] = useState(false);
   const [attendancePresence, setAttendancePresence] = useState<Record<number, boolean>>({});
   const [enrollmentsLoading, setEnrollmentsLoading] = useState(false);
 
@@ -170,11 +171,13 @@ export function SportsManagement() {
       const res = await apiClient.get(`/sports/${selectedSportId}/enrollments`, { params: { status: 'active' } });
       const list = res.data?.data || [];
       setEnrollments(list);
+      setEnrollmentsLoaded(true);
       const next: Record<number, boolean> = {};
       list.forEach((e: any) => { next[e.enrollmentId ?? e.id] = true; });
       setAttendancePresence(next);
     } catch {
       setEnrollments([]);
+      setEnrollmentsLoaded(false);
     } finally {
       setEnrollmentsLoading(false);
     }
@@ -558,7 +561,11 @@ export function SportsManagement() {
               size="small"
               label={t('sports.selectSport')}
               value={selectedSportId}
-              onChange={(e) => setSelectedSportId(e.target.value)}
+              onChange={(e) => {
+                setSelectedSportId(e.target.value);
+                setEnrollments([]);
+                setEnrollmentsLoaded(false);
+              }}
               sx={{ minWidth: 200 }}
             >
               <MenuItem value="">{t('sports.selectSport')}</MenuItem>
@@ -584,7 +591,7 @@ export function SportsManagement() {
                 </TableHead>
                 <TableBody>
                   {enrollments.length === 0 ? (
-                    <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>{t('sports.selectSportClickLoad')}</TableCell></TableRow>
+                    <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>{enrollmentsLoaded ? t('sports.noEnrollments') : t('sports.selectSportClickLoad')}</TableCell></TableRow>
                   ) : (
                     enrollments.map((e: any) => (
                       <TableRow key={e.enrollmentId ?? e.id} sx={S.TR_HOVER}>
@@ -650,7 +657,7 @@ export function SportsManagement() {
           )}
         </TabPanel>
 
-        <TablePagination component="div" count={total} page={page} onPageChange={(_, newPage) => setPage(newPage)} rowsPerPage={rowsPerPage} onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }} />
+        <TablePagination component="div" count={total} page={page} onPageChange={(_, newPage) => setPage(newPage)} rowsPerPage={rowsPerPage} rowsPerPageOptions={[10, 20, 50, 100]} onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }} />
       </Paper>
 
       <Dialog

@@ -15,6 +15,9 @@ jest.mock('react-i18next', () => ({
       'sports.achievements': 'Achievements',
       'sports.enrollmentsAndAttendance': 'Enrollments & Attendance',
       'sports.studentHistory': 'Student History',
+      'sports.selectSport': 'Select sport',
+      'sports.loadEnrollments': 'Load Enrollments',
+      'sports.noEnrollments': 'No active enrollments found for this sport.',
       'sports.createSport': 'Create Sport',
       'sports.noSportsFound': 'No sports found',
       'sports.sportName': 'Sport Name',
@@ -48,5 +51,22 @@ describe('SportsManagement dialog lifecycle', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
     expect(await screen.findByRole('button', { name: 'Create Sport' })).toBeInTheDocument();
     expect(screen.queryByText('Name is required.')).not.toBeInTheDocument();
+  });
+
+  it('shows an empty state after loading a sport with no active enrollments', async () => {
+    mockedApiClient.get.mockImplementation(async (url: any) => {
+      if (url === '/sports/list') return { data: { data: [{ sportId: 1, name: 'QA Sport' }], meta: { total: 1 } } } as any;
+      if (url === '/sports/1/enrollments') return { data: { data: [] } } as any;
+      return { data: { data: [], meta: { total: 0 } } } as any;
+    });
+
+    render(<MemoryRouter><SportsManagement /></MemoryRouter>);
+    fireEvent.click(await screen.findByRole('tab', { name: 'Enrollments & Attendance' }));
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Select sport' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'QA Sport' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Load Enrollments' }));
+
+    expect(await screen.findByText('No active enrollments found for this sport.')).toBeInTheDocument();
+    expect(screen.queryByText('Select a sport and click Load Enrollments')).not.toBeInTheDocument();
   });
 });
