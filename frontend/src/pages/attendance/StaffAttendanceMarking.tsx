@@ -53,6 +53,7 @@ export function StaffAttendanceMarking() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [staff, setStaff] = useState<Staff[]>([]);
+  const [availableDepartments, setAvailableDepartments] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [department, setDepartment] = useState('all');
   const [success, setSuccess] = useState('');
@@ -80,6 +81,11 @@ export function StaffAttendanceMarking() {
         : [];
       
       setStaff(staffWithStatus);
+      if (department === 'all') {
+        setAvailableDepartments([...new Set(staffWithStatus
+          .map((member) => member.department?.trim())
+          .filter((value): value is string => Boolean(value)))].sort((a, b) => a.localeCompare(b)));
+      }
     } catch (error) {
       console.error('Failed to fetch staff:', error);
       setError(t('attendance.noStaffFound'));
@@ -177,9 +183,11 @@ export function StaffAttendanceMarking() {
               sx={S.SELECT}
             >
               <MenuItem value="all">{t('attendance.allDepartments')}</MenuItem>
-              <MenuItem value="teaching">{t('attendance.teaching')}</MenuItem>
-              <MenuItem value="administration">{t('attendance.administration')}</MenuItem>
-              <MenuItem value="support">{t('attendance.support')}</MenuItem>
+              {availableDepartments.map((availableDepartment) => (
+                <MenuItem key={availableDepartment} value={availableDepartment}>
+                  {availableDepartment}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
           <Button
