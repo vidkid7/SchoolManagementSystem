@@ -101,6 +101,7 @@ export interface TeacherPerformanceReport {
 
 export interface LibraryReport {
   totalBooks: number;
+  byCategory: Array<{ category: string; count: number }>;
   totalIssued: number;
   totalReturned: number;
   overdueBooks: number;

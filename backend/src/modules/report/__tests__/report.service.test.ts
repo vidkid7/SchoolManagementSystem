@@ -7,6 +7,9 @@ import Payment from '../../../models/Payment.model';
 import Grade from '../../../models/Grade.model';
 import Class from '../../../models/Class.model';
 import Exam from '../../../models/Exam.model';
+import Book from '../../../models/Book.model';
+import Circulation from '../../../models/Circulation.model';
+import LibraryFine from '../../../models/LibraryFine.model';
 
 jest.mock('../../../models/Student.model');
 jest.mock('../../../models/AttendanceRecord.model');
@@ -16,6 +19,7 @@ jest.mock('../../../models/Grade.model');
 
 describe('ReportService', () => {
   beforeEach(() => {
+    jest.restoreAllMocks();
     jest.clearAllMocks();
   });
 
@@ -201,6 +205,25 @@ describe('ReportService', () => {
       expect(report.totalExpected).toBe(0);
       expect(report.totalCollected).toBe(0);
       expect(report.collectionRate).toBe(0);
+    });
+  });
+
+  describe('generateLibraryReport', () => {
+    it('returns actual book counts grouped by category', async () => {
+      jest.spyOn(Circulation, 'findAll').mockResolvedValue([{ status: 'returned' }, { status: 'overdue' }] as any);
+      jest.spyOn(Book, 'count').mockResolvedValue(2);
+      jest.spyOn(Book, 'findAll').mockResolvedValue([{ category: 'Academic', count: '2' }] as any);
+      jest.spyOn(LibraryFine, 'findAll').mockResolvedValue([] as any);
+      (Student.count as jest.Mock).mockResolvedValue(10);
+
+      const report = await reportService.generateLibraryReport({
+        startDate: '2026-01-01',
+        endDate: '2026-12-31',
+      });
+
+      expect(report.totalBooks).toBe(2);
+      expect(report.byCategory).toEqual([{ category: 'Academic', count: 2 }]);
+      expect(Book.findAll).toHaveBeenCalledWith(expect.objectContaining({ group: ['category'], raw: true }));
     });
   });
 

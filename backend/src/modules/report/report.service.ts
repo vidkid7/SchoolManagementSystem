@@ -506,6 +506,14 @@ class ReportService {
       });
 
       const totalBooks = await Book.count();
+      const byCategory = await Book.findAll({
+        attributes: [
+          'category',
+          [Book.sequelize!.fn('COUNT', Book.sequelize!.col('book_id')), 'count'],
+        ],
+        group: ['category'],
+        raw: true,
+      }) as any[];
       const totalIssued = circulations.length;
       const totalReturned = circulations.filter(c => c.status === 'returned').length;
       const overdueBooks = circulations.filter(c => c.status === 'overdue').length;
@@ -529,6 +537,7 @@ class ReportService {
 
       return {
         totalBooks,
+        byCategory: byCategory.map(item => ({ category: item.category, count: parseInt(item.count, 10) || 0 })),
         totalIssued,
         totalReturned,
         overdueBooks,
@@ -541,6 +550,7 @@ class ReportService {
       logger.warn('Library report: Tables not available yet', { error: error.message });
       return {
         totalBooks: 0,
+        byCategory: [],
         totalIssued: 0,
         totalReturned: 0,
         overdueBooks: 0,

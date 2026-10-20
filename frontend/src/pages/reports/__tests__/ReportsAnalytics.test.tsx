@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import '@testing-library/jest-dom';
-import ReportsAnalytics, { formatEnrollmentClassLabel } from '../ReportsAnalytics';
+import ReportsAnalytics, { formatEnrollmentClassLabel, mapLibraryCategoryData } from '../ReportsAnalytics';
 import apiClient from '../../../services/apiClient';
 import { store } from '../../../store';
 import { setUser } from '../../../store/slices/authSlice';
@@ -137,6 +137,13 @@ describe('ReportsAnalytics', () => {
     const feeTab = screen.getByRole('tab', { name: /Fee Collection/ });
     fireEvent.click(feeTab);
     expect(screen.getByRole('heading', { name: 'Fee Collection Overview' })).toBeInTheDocument();
+  });
+
+  it('maps actual library category counts instead of placeholder categories', () => {
+    expect(mapLibraryCategoryData([{ category: 'QA Library Category', count: 2 }])).toEqual([
+      { name: 'QA Library Category', size: 2 },
+    ]);
+    expect(mapLibraryCategoryData(undefined)).toEqual([]);
   });
 
   it('should render export buttons', async () => {

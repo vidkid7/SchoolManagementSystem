@@ -205,10 +205,14 @@ interface ExamData {
 
 interface LibraryData {
   totalBooks: number;
+  byCategory: Array<{ category: string; count: number }>;
   totalIssued: number;
   totalReturned: number;
   overdueBooks: number;
 }
+
+export const mapLibraryCategoryData = (categories: LibraryData['byCategory'] | undefined) =>
+  categories?.map(({ category, count }) => ({ name: category, size: count })) || [];
 
 interface ECAData {
   totalActivities: number;
@@ -502,15 +506,8 @@ interface TeacherPerformanceData {
   })) || [];
 
   const libraryTreemapData = useMemo(() => {
-    if (!libraryData?.totalIssued) return [];
-    return [
-      { name: t('reports.science'), size: Math.max(libraryData.totalIssued * 0.3, 1) },
-      { name: t('reports.mathematics'), size: Math.max(libraryData.totalIssued * 0.25, 1) },
-      { name: t('reports.english'), size: Math.max(libraryData.totalIssued * 0.2, 1) },
-      { name: t('reports.nepali'), size: Math.max(libraryData.totalIssued * 0.15, 1) },
-      { name: t('reports.history'), size: Math.max(libraryData.totalIssued * 0.1, 1) },
-    ];
-  }, [libraryData, t, i18n.language]);
+    return mapLibraryCategoryData(libraryData?.byCategory);
+  }, [libraryData]);
 
   const ecaChartData = ecaData?.byActivity?.map((item: any, index: number) => ({
     activity: item.activityName,
