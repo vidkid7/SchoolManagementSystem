@@ -4,7 +4,8 @@
  * Teacher interface for entering and managing exam grades
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import type { ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -37,7 +38,8 @@ import {
   Assessment as AssessmentIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { C, useAdminStyles } from '../../theme/designTokens';
+import { escapeCsvCell, importGradesFromCsv } from './gradeCsv';
 
 interface Student {
   id: number;
@@ -70,6 +72,7 @@ export const GradeEntry = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const theoryMarks = 75;
   const practicalMarks = 25;
@@ -259,26 +262,20 @@ export const GradeEntry = () => {
     }
   };
 
-  const handleBulkImport = () => {
-    // Create a file input element
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.csv,.xlsx,.xls';
-    
-    input.onchange = async (e: any) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+  const handleBulkImport = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
 
-      try {
-        // For now, show a message that the feature is coming soon
-        // In production, you would parse the Excel/CSV file and populate the grades
-        setSuccess(t('examinations.importFeatureComingSoon'));
-      } catch (error) {
-        setError(t('examinations.failedToImportGrades'));
-      }
-    };
-    
-    input.click();
+    setError('');
+    setSuccess('');
+    try {
+      const result = importGradesFromCsv(await file.text(), students, theoryMarks, practicalMarks);
+      setStudents(result.students);
+      setSuccess(t('examinations.importedGradesReviewBeforeSaving', { count: result.importedCount }));
+    } catch {
+      setError(t('examinations.invalidGradeCsv'));
+    }
   };
 
   const handleExport = () => {
@@ -312,8 +309,8 @@ export const GradeEntry = () => {
       ].filter((_, index) => hasPractical || index !== 4));
 
       const csvContent = [
-        headers.join(','),
-        ...rows.map(row => row.join(','))
+        headers.map(escapeCsvCell).join(','),
+        ...rows.map(row => row.map(escapeCsvCell).join(','))
       ].join('\n');
 
       // Create and download the file
@@ -502,7 +499,12 @@ export const GradeEntry = () => {
                 variant="outlined"
                 size="small"
                 startIcon={<UploadIcon />}
-                onClick={handleBulkImport}
+                onClick={() => {
+                  setError('');
+                  setSuccess('');
+                  importInputRef.current?.click();
+                }}
+                disabled={!selectedExam || !selectedClass || !selectedSection || !selectedSubject || students.length === 0 || loading || saving}
                 sx={{ ...S.BTN_OUTLINE, 
                   borderColor: C.primary,
                   color: C.primary,
@@ -512,6 +514,14 @@ export const GradeEntry = () => {
               >
                 {t('common.import')}
               </Button>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                hidden
+                onChange={handleBulkImport}
+                aria-label={t('examinations.importGradesCsv')}
+              />
             </Box>
           </Grid>
         </Grid>
