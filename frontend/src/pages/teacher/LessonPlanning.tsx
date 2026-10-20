@@ -6,6 +6,7 @@ import { YearSelectableDateField } from '../../components/YearSelectableDatePick
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -102,6 +103,8 @@ export const LessonPlanning = () => {
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
   const { accessToken } = useSelector((state: RootState) => state.auth);
   const [tabValue, setTabValue] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
@@ -280,8 +283,11 @@ export const LessonPlanning = () => {
         <Grid container spacing={3}>
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
-              <InputLabel>{t('common.subject')}</InputLabel>
+              <InputLabel id="lesson-filter-subject-label">{t('common.subject')}</InputLabel>
               <Select
+                id="lesson-filter-subject"
+                name="lessonFilterSubject"
+                labelId="lesson-filter-subject-label"
                 value={selectedSubject}
                 label={t('common.subject')}
                 onChange={(e) => setSelectedSubject(e.target.value)}
@@ -295,8 +301,11 @@ export const LessonPlanning = () => {
 
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
-              <InputLabel>{t('common.class')}</InputLabel>
+              <InputLabel id="lesson-filter-class-label">{t('common.class')}</InputLabel>
               <Select
+                id="lesson-filter-class"
+                name="lessonFilterClass"
+                labelId="lesson-filter-class-label"
                 value={selectedClass}
                 label={t('common.class')}
                 onChange={(e) => setSelectedClass(e.target.value)}
@@ -315,6 +324,7 @@ export const LessonPlanning = () => {
               fullWidth
               sx={{ ...S.BTN_OUTLINE,  height: '56px' }}
               startIcon={<ViewIcon />}
+              onClick={() => navigate(`/${municipalitySlug}/calendar`)}
             >
               {t('teacher.viewCalendar')}
             </Button>
@@ -482,8 +492,11 @@ export const LessonPlanning = () => {
           <Grid container spacing={3} sx={{ mt: 1 }}>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
-                <InputLabel>{t('common.subject')}</InputLabel>
+                <InputLabel id="lesson-form-subject-label">{t('common.subject')}</InputLabel>
                 <Select
+                  id="lesson-form-subject"
+                  name="lessonSubject"
+                  labelId="lesson-form-subject-label"
                   label={t('common.subject')}
                   value={lessonPlanForm.subject}
                   error={Boolean(formErrors.subject)}
@@ -499,8 +512,11 @@ export const LessonPlanning = () => {
 
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
-                <InputLabel>{t('common.class')}</InputLabel>
+                <InputLabel id="lesson-form-class-label">{t('common.class')}</InputLabel>
                 <Select
+                  id="lesson-form-class"
+                  name="lessonClass"
+                  labelId="lesson-form-class-label"
                   label={t('common.class')}
                   value={lessonPlanForm.className}
                   onChange={(event) => updateLessonPlanForm('className', event.target.value)}

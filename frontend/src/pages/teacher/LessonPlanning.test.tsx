@@ -2,6 +2,7 @@ import React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { Provider } from 'react-redux';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { buildLessonPlanPayload, LessonPlanning } from './LessonPlanning';
 import apiClient from '../../services/apiClient';
 import { store } from '../../store';
@@ -13,6 +14,7 @@ jest.mock('react-i18next', () => ({
       'teacher.lessonPlanning': 'Lesson Planning',
       'teacher.lessonPlanningSubtitle': 'Create and manage lesson plans with syllabus tracking.',
       'teacher.createLessonPlan': 'Create Lesson Plan',
+      'teacher.viewCalendar': 'View Calendar',
       'teacher.subjectRequired': 'Select a subject.',
       'teacher.topicRequired': 'Enter a lesson topic.',
       'teacher.durationMustBePositiveInteger': 'Duration must be a positive whole number.',
@@ -39,10 +41,20 @@ jest.mock('react-i18next', () => ({
 jest.mock('../../services/apiClient');
 const mockedApiClient = apiClient as jest.Mocked<typeof apiClient>;
 
+const CurrentPath = () => {
+  const location = useLocation();
+  return <div data-testid="current-path">{location.pathname}</div>;
+};
+
 const renderPage = () => render(
-  <Provider store={store}>
-    <LessonPlanning />
-  </Provider>,
+  <MemoryRouter initialEntries={['/KMC/teacher/lesson-planning']}>
+    <Provider store={store}>
+      <Routes>
+        <Route path="/:municipalitySlug/teacher/lesson-planning" element={<><LessonPlanning /><CurrentPath /></>} />
+        <Route path="/:municipalitySlug/calendar" element={<CurrentPath />} />
+      </Routes>
+    </Provider>
+  </MemoryRouter>,
 );
 
 describe('LessonPlanning', () => {
@@ -88,6 +100,17 @@ describe('LessonPlanning', () => {
       assessment: 'Quiz',
       status: 'draft',
     });
+  });
+
+  it('labels lesson filters and opens the school calendar', async () => {
+    renderPage();
+    await screen.findByText('No data available');
+
+    expect(screen.getByRole('combobox', { name: 'Subject' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Class' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'View Calendar' }));
+    expect(screen.getByTestId('current-path')).toHaveTextContent('/KMC/calendar');
   });
 
   it('ends loading and shows an error when lesson plan requests fail', async () => {
