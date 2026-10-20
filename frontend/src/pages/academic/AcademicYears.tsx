@@ -114,6 +114,7 @@ export const AcademicYears = () => {
   };
 
   const handleOpenDialog = (year?: AcademicYear) => {
+    setError('');
     setEditMode(!!year);
     if (year) {
       const yearId = year.academicYearId;
@@ -141,6 +142,7 @@ export const AcademicYears = () => {
   };
 
   const handleCloseDialog = () => {
+    setError('');
     setDialogOpen(false);
     setEditMode(false);
     setEditId(null);
@@ -155,6 +157,7 @@ export const AcademicYears = () => {
   };
 
   const handleOpenTermDialog = (yearId: number, term?: Term) => {
+    setError('');
     setSelectedYearId(yearId);
     setEditMode(!!term);
     if (term) {
@@ -175,6 +178,7 @@ export const AcademicYears = () => {
   };
 
   const handleCloseTermDialog = () => {
+    setError('');
     setTermDialogOpen(false);
     setEditMode(false);
     setEditId(null);
