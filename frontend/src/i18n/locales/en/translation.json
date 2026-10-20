@@ -2858,6 +2858,10 @@
     "more": "more",
     "fillRequiredFields": "Please fill all required fields",
     "failedToSaveEvent": "Failed to save event",
+    "saveChanges": "Save Changes",
+    "failedToDeleteEvent": "Failed to delete event",
+    "deleteEvent": "Delete Event",
+    "deleting": "Deleting...",
     "form": {
       "titleEn": "Title (English)",
       "titleNp": "Title (Nepali)",

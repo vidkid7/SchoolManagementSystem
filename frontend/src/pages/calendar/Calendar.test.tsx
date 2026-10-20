@@ -208,6 +208,63 @@ describe('Calendar Component', () => {
     });
   });
 
+  it('opens an existing event in edit mode and persists changes', async () => {
+    const event = {
+      eventId: 31,
+      title: 'QA Event',
+      titleNp: '',
+      description: 'Before update',
+      descriptionNp: '',
+      category: 'other',
+      startDate: localDateOnly(),
+      isHoliday: false,
+      isNepalGovernmentHoliday: false,
+      status: 'scheduled',
+    };
+    mockedAxios.get.mockResolvedValue({ data: { success: true, data: [event] } });
+    mockedAxios.put.mockResolvedValue({ data: { success: true, data: { ...event, title: 'QA Event Updated' } } });
+
+    renderCalendar();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'QA Event' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Event' }));
+    const titleField = screen.getByRole('textbox', { name: 'Title (English)' });
+    expect(titleField).toHaveValue('QA Event');
+    fireEvent.change(titleField, { target: { value: 'QA Event Updated' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => expect(mockedAxios.put).toHaveBeenCalledWith(
+      '/api/v1/calendar/events/31',
+      expect.objectContaining({ title: 'QA Event Updated', startDate: event.startDate }),
+    ));
+    expect(await screen.findByRole('heading', { name: 'QA Event Updated' })).toBeInTheDocument();
+  });
+
+  it('requires explicit confirmation before deleting an event', async () => {
+    const event = {
+      eventId: 32,
+      title: 'QA Event to Delete',
+      category: 'other',
+      startDate: localDateOnly(),
+      isHoliday: false,
+      isNepalGovernmentHoliday: false,
+      status: 'scheduled',
+    };
+    mockedAxios.get.mockResolvedValue({ data: { success: true, data: [event] } });
+    mockedAxios.delete.mockResolvedValue({ data: { success: true } });
+
+    renderCalendar();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'QA Event to Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Event' }));
+    expect(await screen.findByRole('dialog', { name: 'Delete Event' })).toBeInTheDocument();
+    expect(mockedAxios.delete).not.toHaveBeenCalled();
+
+    const deleteButtons = screen.getAllByRole('button', { name: 'Delete Event' });
+    fireEvent.click(deleteButtons[deleteButtons.length - 1]);
+    await waitFor(() => expect(mockedAxios.delete).toHaveBeenCalledWith('/api/v1/calendar/events/32'));
+  });
+
   it('should fetch events on mount', async () => {
     const mockEvents = [
       {

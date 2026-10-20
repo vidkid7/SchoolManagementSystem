@@ -111,7 +111,7 @@ export default defineConfig({
           
           // Static reference data - CacheFirst for better performance
           {
-            urlPattern: /^https?:\/\/.*\/api\/v1\/(academic\/years|academic\/terms|calendar).*$/i,
+            urlPattern: /^https?:\/\/.*\/api\/v1\/(academic\/years|academic\/terms).*$/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'api-reference-data',
@@ -122,6 +122,23 @@ export default defineConfig({
               cacheableResponse: {
                 statuses: [0, 200]
               }
+            }
+          },
+
+          // Calendar events are mutable; prefer fresh server data and use cache only offline.
+          {
+            urlPattern: /^https?:\/\/.*\/api\/v1\/calendar(?:\/.*)?$/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-calendar-data',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60
+              },
+              cacheableResponse: {
+                statuses: [200]
+              },
+              networkTimeoutSeconds: 10
             }
           },
           

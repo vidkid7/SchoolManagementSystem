@@ -57,6 +57,8 @@ import {
   MenuBook as ExamIcon,
   Groups as MeetingIcon,
   FileDownload as FileDownloadIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
@@ -112,6 +114,8 @@ const Calendar = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const isNepali = i18n.language === 'ne';
   const user = useSelector((state: RootState) => state.auth.user);
+  const canEditEvents = ['School_Admin', 'ECA_Coordinator', 'Sports_Coordinator'].includes(user?.role || '');
+  const canDeleteEvents = user?.role === 'School_Admin';
   const theme = useTheme();
   const S = useAdminStyles(theme);
 
@@ -126,6 +130,9 @@ const Calendar = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showEventDialog, setShowEventDialog] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [isEditingEvent, setIsEditingEvent] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [currentAcademicYear, setCurrentAcademicYear] = useState<string>('');
   const [saveLoading, setSaveLoading] = useState(false);
@@ -323,11 +330,18 @@ const Calendar = () => {
         status: 'scheduled' as const,
       };
 
-      const response = await apiClient.post('/api/v1/calendar/events', eventData);
+      const response = selectedEvent && isEditingEvent
+        ? await apiClient.put(`/api/v1/calendar/events/${selectedEvent.eventId}`, eventData)
+        : await apiClient.post('/api/v1/calendar/events', eventData);
 
       if (response.data.success) {
         // Refresh events
         await fetchEvents();
+        if (selectedEvent && isEditingEvent) {
+          setSelectedEvent({ ...selectedEvent, ...eventData });
+          setIsEditingEvent(false);
+          return;
+        }
         // Close dialog and reset form
         setShowEventDialog(false);
         setEventForm({
@@ -356,6 +370,7 @@ const Calendar = () => {
   // Handle opening add event dialog
   const handleOpenAddEvent = (initialDate = currentDate) => {
     setSelectedEvent(null);
+    setIsEditingEvent(false);
     setEventForm({
       title: '',
       titleNp: '',
@@ -371,6 +386,42 @@ const Calendar = () => {
       isHoliday: false,
     });
     setShowEventDialog(true);
+  };
+
+  const handleEditEvent = () => {
+    if (!selectedEvent) return;
+    setEventForm({
+      title: selectedEvent.title,
+      titleNp: selectedEvent.titleNp || '',
+      description: selectedEvent.description || '',
+      descriptionNp: selectedEvent.descriptionNp || '',
+      category: selectedEvent.category,
+      startDate: formatDateOnly(parseDateOnly(selectedEvent.startDate)),
+      endDate: formatDateOnly(parseDateOnly(selectedEvent.endDate)),
+      startTime: selectedEvent.startTime || '',
+      endTime: selectedEvent.endTime || '',
+      venue: selectedEvent.venue || '',
+      venueNp: selectedEvent.venueNp || '',
+      isHoliday: selectedEvent.isHoliday,
+    });
+    setIsEditingEvent(true);
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!selectedEvent) return;
+    try {
+      setDeleteLoading(true);
+      setError('');
+      await apiClient.delete(`/api/v1/calendar/events/${selectedEvent.eventId}`);
+      await fetchEvents();
+      setShowDeleteConfirmation(false);
+      setShowEventDialog(false);
+      setSelectedEvent(null);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || t('calendar.failedToDeleteEvent'));
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -578,6 +629,7 @@ const Calendar = () => {
                     e.stopPropagation();
                     dialogOpenerRef.current = e.currentTarget;
                     setSelectedEvent(event);
+                    setIsEditingEvent(false);
                     setShowEventDialog(true);
                   }}
                 />
@@ -707,6 +759,7 @@ const Calendar = () => {
                   e.stopPropagation();
                   dialogOpenerRef.current = e.currentTarget;
                   setSelectedEvent(event);
+                  setIsEditingEvent(false);
                   setShowEventDialog(true);
                 }}
               />
@@ -776,6 +829,7 @@ const Calendar = () => {
                   onClick={(e) => {
                     dialogOpenerRef.current = e.currentTarget;
                     setSelectedEvent(event);
+                    setIsEditingEvent(false);
                     setShowEventDialog(true);
                   }}
                 >
@@ -816,12 +870,12 @@ const Calendar = () => {
 
   return (
     <Box>
-      <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+      <Paper sx={{ ...S.GLASS, p: { xs: 1, sm: 3 }, mb: 3, minWidth: 0 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', md: 'center' }, gap: 1, mb: 3, minWidth: 0 }}>
           <Typography variant="h4">
             {t('calendar.title')}
           </Typography>
-          <Box display="flex" gap={2} alignItems="center">
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
             {/* Calendar System Toggle */}
             <ToggleButtonGroup
               value={calendarSystem}
@@ -847,8 +901,8 @@ const Calendar = () => {
         </Box>
 
         {/* Navigation and Filters */}
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Box display="flex" gap={1} alignItems="center">
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', lg: 'center' }, gap: 2, mb: 3, minWidth: 0 }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', minWidth: 0 }}>
             <IconButton
               onClick={handlePrevious}
               size="small"
@@ -857,7 +911,7 @@ const Calendar = () => {
               <ChevronLeftIcon />
             </IconButton>
             <Button
-              variant="outlined" sx={S.BTN_OUTLINE}
+              variant="outlined" sx={{ ...S.BTN_OUTLINE, flex: { xs: 1, sm: '0 0 auto' } }}
               startIcon={<TodayIcon />}
               onClick={handleToday}
               size="small"
@@ -871,7 +925,7 @@ const Calendar = () => {
             >
               <ChevronRightIcon />
             </IconButton>
-            <Box sx={{ ml: 2 }}>
+            <Box sx={{ ml: { xs: 0, sm: 1 }, flex: '1 1 180px', minWidth: 0 }}>
               <Typography variant="h6" component="h5">
                 {calendarSystem === 'BS' ? (
                   <>
@@ -913,9 +967,9 @@ const Calendar = () => {
             </Select>
           </Box>
 
-          <Box display="flex" gap={2} alignItems="center">
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', minWidth: 0 }}>
             {/* Category Filter */}
-            <FormControl size="small" sx={{ minWidth: 150 }}>
+            <FormControl size="small" sx={{ minWidth: { xs: 120, sm: 150 }, flex: { xs: '1 1 100%', sm: '0 0 auto' } }}>
               <InputLabel id="calendar-category-label">{t('calendar.category')}</InputLabel>
               <Select
                 labelId="calendar-category-label"
@@ -948,7 +1002,7 @@ const Calendar = () => {
 
             {/* Add Event Button (Admin only) */}
             <Button
-              variant="contained" sx={S.BTN_PRIMARY}
+              variant="contained" sx={{ ...S.BTN_PRIMARY, flex: { xs: 1, sm: '0 0 auto' } }}
               startIcon={<AddIcon />}
               onClick={(event) => {
                 dialogOpenerRef.current = event.currentTarget;
@@ -1013,10 +1067,10 @@ const Calendar = () => {
         }}
       >
         <DialogTitle>
-          {selectedEvent ? t('calendar.eventDetails') : t('calendar.addNewEvent')}
+          {selectedEvent ? (isEditingEvent ? t('calendar.editEvent') : t('calendar.eventDetails')) : t('calendar.addNewEvent')}
         </DialogTitle>
         <DialogContent>
-          {selectedEvent ? (
+          {selectedEvent && !isEditingEvent ? (
             // View Event Details
             <Box>
               <Typography variant="h6" gutterBottom>
@@ -1207,16 +1261,50 @@ const Calendar = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowEventDialog(false)}>{t('common.close')}</Button>
-          {!selectedEvent && (
+          <Button onClick={() => {
+            setShowEventDialog(false);
+            setIsEditingEvent(false);
+          }}>{t('common.close')}</Button>
+          {selectedEvent && !isEditingEvent && canEditEvents && (
+            <Button startIcon={<EditIcon />} onClick={handleEditEvent}>
+              {t('calendar.editEvent')}
+            </Button>
+          )}
+          {selectedEvent && !isEditingEvent && canDeleteEvents && (
+            <Button color="error" startIcon={<DeleteIcon />} onClick={() => {
+              setError('');
+              setShowDeleteConfirmation(true);
+            }}>
+              {t('calendar.deleteEvent')}
+            </Button>
+          )}
+          {(!selectedEvent || isEditingEvent) && (
             <Button
               variant="contained" sx={S.BTN_PRIMARY}
               onClick={handleSaveEvent}
               disabled={saveLoading}
             >
-              {saveLoading ? t('common.saving') : t('common.save')}
+              {saveLoading ? t('common.saving') : isEditingEvent ? t('calendar.saveChanges') : t('common.save')}
             </Button>
           )}
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={showDeleteConfirmation} onClose={() => !deleteLoading && setShowDeleteConfirmation(false)}>
+        <DialogTitle>{t('calendar.deleteEvent')}</DialogTitle>
+        <DialogContent>
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          <Typography>
+            {t('calendar.confirmDelete')} {selectedEvent?.title}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowDeleteConfirmation(false)} disabled={deleteLoading}>
+            {t('common.cancel')}
+          </Button>
+          <Button color="error" variant="contained" onClick={handleDeleteEvent} disabled={deleteLoading}>
+            {deleteLoading ? t('calendar.deleting') : t('calendar.deleteEvent')}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
