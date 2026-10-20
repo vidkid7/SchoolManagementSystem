@@ -61,6 +61,9 @@ describe('StaffAssignments', () => {
 
     const dialog = screen.getByRole('dialog');
     const getDialogComboboxes = () => within(dialog).getAllByRole('combobox');
+    expect(within(dialog).getByRole('combobox', { name: 'staff.form.assignmentType' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('combobox', { name: 'academic.class' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('combobox', { name: 'examinations.subject' })).toBeInTheDocument();
     fireEvent.mouseDown(getDialogComboboxes()[1]);
     await act(async () => {
       fireEvent.click(await screen.findByRole('option'));

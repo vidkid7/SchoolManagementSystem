@@ -608,8 +608,11 @@ export const StaffAssignments = () => {
           <Grid container spacing={2.5} sx={{ mt: 0.5 }}>
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>{t('staff.form.assignmentType')}</InputLabel>
+                <InputLabel id="staff-assignment-type-label">{t('staff.form.assignmentType')}</InputLabel>
                 <Select
+                  id="staff-assignment-type"
+                  labelId="staff-assignment-type-label"
+                  name="assignmentType"
                   value={assignmentType}
                   label={t('staff.form.assignmentType')}
                   onChange={(e) => setAssignmentType(e.target.value as 'class_teacher' | 'subject_teacher')}
@@ -626,8 +629,11 @@ export const StaffAssignments = () => {
 
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
-                <InputLabel>{t('academic.class')}</InputLabel>
+                <InputLabel id="staff-assignment-class-label">{t('academic.class')}</InputLabel>
                 <Select
+                  id="staff-assignment-class"
+                  labelId="staff-assignment-class-label"
+                  name="classId"
                   value={selectedClass}
                   label={t('academic.class')}
                   onChange={(e) => {
@@ -650,8 +656,11 @@ export const StaffAssignments = () => {
             {assignmentType === 'subject_teacher' && (
               <Grid item xs={12}>
                 <FormControl fullWidth>
-                  <InputLabel>{t('examinations.subject')}</InputLabel>
+                  <InputLabel id="staff-assignment-subject-label">{t('examinations.subject')}</InputLabel>
                   <Select
+                    id="staff-assignment-subject"
+                    labelId="staff-assignment-subject-label"
+                    name="subjectId"
                     value={selectedSubject}
                     label={t('examinations.subject')}
                     onChange={(e) => setSelectedSubject(e.target.value)}
