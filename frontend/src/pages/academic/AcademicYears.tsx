@@ -75,6 +75,7 @@ export const AcademicYears = () => {
   const [editId, setEditId] = useState<number | null>(null);
   const [selectedYearId, setSelectedYearId] = useState<number | null>(null);
   const [error, setError] = useState('');
+  const [termError, setTermError] = useState('');
 
   const termsRef = useRef<HTMLDivElement>(null);
 
@@ -158,6 +159,7 @@ export const AcademicYears = () => {
 
   const handleOpenTermDialog = (yearId: number, term?: Term) => {
     setError('');
+    setTermError('');
     setSelectedYearId(yearId);
     setEditMode(!!term);
     if (term) {
@@ -179,6 +181,7 @@ export const AcademicYears = () => {
 
   const handleCloseTermDialog = () => {
     setError('');
+    setTermError('');
     setTermDialogOpen(false);
     setEditMode(false);
     setEditId(null);
@@ -231,6 +234,11 @@ export const AcademicYears = () => {
   };
 
   const handleSaveTerm = async () => {
+    if (!termForm.name.trim() || !termForm.startDate || !termForm.endDate) {
+      setTermError(t('academicYears.fillAllRequiredFields'));
+      return;
+    }
+
     try {
       const payload = {
         ...termForm,
@@ -250,7 +258,12 @@ export const AcademicYears = () => {
       if (selectedYearId) fetchTerms(selectedYearId);
     } catch (err: any) {
       console.error('Failed to save term:', err);
-      setError(err.response?.data?.message || t('academicYears.failedToSaveTerm'));
+      const validationErrors = err.response?.data?.errors;
+      setTermError(
+        Array.isArray(validationErrors)
+          ? validationErrors.map((item: any) => item.message).join(', ')
+          : err.response?.data?.message || t('academicYears.failedToSaveTerm'),
+      );
     }
   };
 
@@ -558,11 +571,17 @@ export const AcademicYears = () => {
           {editMode ? t('academicYears.editTerm') : t('academicYears.addTerm')}
         </DialogTitle>
         <DialogContent>
+          {termError && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setTermError('')}>
+              {termError}
+            </Alert>
+          )}
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField
                 label={t('academicYears.termName')}
                 fullWidth
+                required
                 value={termForm.name}
                 onChange={(e) => setTermForm({ ...termForm, name: e.target.value })}
                 placeholder="e.g., First Term, Second Term"
@@ -572,6 +591,7 @@ export const AcademicYears = () => {
               <YearSelectableDateField
                 label={t('academicYears.startDate')}
                 fullWidth
+                required
                 value={termForm.startDate}
                 onChange={(e) => setTermForm({ ...termForm, startDate: e.target.value })}
                 InputLabelProps={{ shrink: true }}
@@ -581,6 +601,7 @@ export const AcademicYears = () => {
               <YearSelectableDateField
                 label={t('academicYears.endDate')}
                 fullWidth
+                required
                 value={termForm.endDate}
                 onChange={(e) => setTermForm({ ...termForm, endDate: e.target.value })}
                 InputLabelProps={{ shrink: true }}
