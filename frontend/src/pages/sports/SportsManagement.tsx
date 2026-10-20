@@ -452,7 +452,7 @@ export function SportsManagement() {
                     </TableCell>
                     <TableCell align="center" sx={S.TD}>
                       <IconButton size="small" aria-label={t('common.edit')} title={t('common.edit')} onClick={() => handleOpenDialog(item)}><EditIcon fontSize="small" /></IconButton>
-                      <IconButton size="small" onClick={() => handleDelete(item)} color="error"><DeleteIcon fontSize="small" /></IconButton>
+                      <IconButton size="small" aria-label={t('common.delete')} title={t('common.delete')} onClick={() => handleDelete(item)} color="error"><DeleteIcon fontSize="small" /></IconButton>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -28,6 +28,7 @@ jest.mock('react-i18next', () => ({
       'sports.active': 'Active',
       'sports.inactive': 'Inactive',
       'common.create': 'Create',
+      'common.delete': 'Delete',
     }[key] ?? key),
   }),
 }));
@@ -51,6 +52,20 @@ describe('SportsManagement dialog lifecycle', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
     expect(await screen.findByRole('button', { name: 'Create Sport' })).toBeInTheDocument();
     expect(screen.queryByText('Name is required.')).not.toBeInTheDocument();
+  });
+
+  it('gives the sport delete action an accessible name', async () => {
+    mockedApiClient.get.mockImplementation(async (url: any) => {
+      if (url === '/sports/list') {
+        return { data: { data: [{ sportId: 1, name: 'QA Sport', category: 'team', coordinatorId: 1, status: 'active' }], meta: { total: 1 } } } as any;
+      }
+      return { data: { data: [] } } as any;
+    });
+
+    render(<MemoryRouter><SportsManagement /></MemoryRouter>);
+
+    expect(await screen.findByText('QA Sport')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
   });
 
   it('shows an empty state after loading a sport with no active enrollments', async () => {
