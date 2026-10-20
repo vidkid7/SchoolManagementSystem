@@ -64,6 +64,7 @@ export function AttendanceReports() {
   const [selectedSection, setSelectedSection] = useState('');
   const [classes, setClasses] = useState<any[]>([]);
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
+  const [reportGenerated, setReportGenerated] = useState(false);
   const [error, setError] = useState('');
   const [summary, setSummary] = useState({
     totalStudents: 0,
@@ -75,6 +76,12 @@ export function AttendanceReports() {
   useEffect(() => {
     fetchClasses();
   }, []);
+
+  useEffect(() => {
+    setAttendanceData([]);
+    setError('');
+    setReportGenerated(false);
+  }, [reportType, startDate, endDate, selectedClass, selectedSection]);
 
   const fetchClasses = async () => {
     try {
@@ -90,6 +97,7 @@ export function AttendanceReports() {
     try {
       setLoading(true);
       setError('');
+      setReportGenerated(true);
 
       const params: any = {};
 
@@ -368,7 +376,7 @@ export function AttendanceReports() {
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
           <CircularProgress sx={{ color: C.primary }} />
         </Box>
-      ) : attendanceData.length === 0 && (startDate || endDate) ? (
+      ) : reportGenerated && attendanceData.length === 0 && (startDate || endDate) ? (
         <Paper sx={{ ...S.GLASS, p: 4, textAlign: 'center' }}>
           <ChartIcon sx={{ fontSize: 64, color: C.neutral, mb: 2 }} />
           <Typography variant="h6" color="text.secondary" gutterBottom>
