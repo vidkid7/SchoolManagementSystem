@@ -59,6 +59,17 @@ interface ReportData {
   chartData?: any[];
 }
 
+interface ReportDateRange {
+  startDate: string;
+  endDate: string;
+}
+
+const formatLocalDate = (date: Date): string => {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+};
+
 export function FinancialReports() {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -132,7 +143,7 @@ export function FinancialReports() {
     }
   };
 
-  const handleGenerateReport = async () => {
+  const handleGenerateReport = async (dateRange?: ReportDateRange) => {
     try {
       setLoading(true);
       setError('');
@@ -141,11 +152,14 @@ export function FinancialReports() {
         type: reportType,
       };
 
-      if (startDate) {
-        params.startDate = startDate;
+      const effectiveStartDate = dateRange?.startDate ?? startDate;
+      const effectiveEndDate = dateRange?.endDate ?? endDate;
+
+      if (effectiveStartDate) {
+        params.startDate = effectiveStartDate;
       }
-      if (endDate) {
-        params.endDate = endDate;
+      if (effectiveEndDate) {
+        params.endDate = effectiveEndDate;
       }
 
       console.log('Fetching financial report with params:', params);
@@ -208,33 +222,30 @@ export function FinancialReports() {
 
   const handleQuickReport = async (period: string) => {
     const today = new Date();
-    let start = new Date();
-    let end = new Date();
+    const start = new Date(today);
+    const end = new Date(today);
 
     switch (period) {
       case 'today':
-        start = today;
-        end = today;
         break;
       case 'week':
-        start = new Date(today.setDate(today.getDate() - 7));
-        end = new Date();
+        start.setDate(start.getDate() - 7);
         break;
       case 'month':
-        start = new Date(today.getFullYear(), today.getMonth(), 1);
-        end = new Date();
+        start.setDate(1);
         break;
       case 'year':
-        start = new Date(today.getFullYear(), 0, 1);
-        end = new Date();
+        start.setMonth(0, 1);
         break;
     }
 
-    setStartDate(start.toISOString().split('T')[0]);
-    setEndDate(end.toISOString().split('T')[0]);
-    
-    // Auto-generate report
-    setTimeout(() => handleGenerateReport(), 100);
+    const nextStartDate = formatLocalDate(start);
+    const nextEndDate = formatLocalDate(end);
+    setStartDate(nextStartDate);
+    setEndDate(nextEndDate);
+
+    // Pass the new range directly; state updates are asynchronous.
+    await handleGenerateReport({ startDate: nextStartDate, endDate: nextEndDate });
   };
 
   const reportTypes = [
@@ -375,7 +386,7 @@ export function FinancialReports() {
                   <Button
                     sx={S.BTN_PRIMARY}
                     startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <ReportIcon />}
-                    onClick={handleGenerateReport}
+                    onClick={() => handleGenerateReport()}
                     disabled={loading}
                     fullWidth
                   >
