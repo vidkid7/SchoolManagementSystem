@@ -13,6 +13,11 @@ describe('validateMaintenanceRecord', () => {
   it('accepts a valid maintenance record', () => {
     expect(validateMaintenanceRecord(validRecord)).toBeNull();
     expect(validateMaintenanceRecord({ ...validRecord, cost: 1.15 })).toBeNull();
+    expect(validateMaintenanceRecord({
+      ...validRecord,
+      date: new Date('2026-10-20T00:00:00.000Z'),
+      nextDueDate: new Date('2027-01-10T00:00:00.000Z'),
+    })).toBeNull();
   });
 
   it.each([-1, 'not-a-number', 1.234, 100_000_000])('rejects an invalid cost: %s', (cost) => {

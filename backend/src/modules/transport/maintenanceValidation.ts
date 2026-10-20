@@ -9,10 +9,13 @@ export interface MaintenanceRecordInput {
   status?: unknown;
 }
 
-function isValidDateOnly(value: unknown): boolean {
-  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+function normalizeDateOnly(value: unknown): string | null {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value.toISOString().slice(0, 10);
+  }
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
   const parsed = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value ? value : null;
 }
 
 export function validateMaintenanceRecord(input: MaintenanceRecordInput): string | null {
@@ -31,15 +34,15 @@ export function validateMaintenanceRecord(input: MaintenanceRecordInput): string
     }
   }
 
-  if (input.date !== undefined && input.date !== null && input.date !== '' && !isValidDateOnly(input.date)) {
-    return 'date must be a valid YYYY-MM-DD date';
-  }
+  const date = input.date === undefined || input.date === null || input.date === ''
+    ? null
+    : normalizeDateOnly(input.date);
+  if (input.date !== undefined && input.date !== null && input.date !== '' && !date) return 'date must be a valid YYYY-MM-DD date';
 
   if (input.nextDueDate !== undefined && input.nextDueDate !== null && input.nextDueDate !== '') {
-    if (!isValidDateOnly(input.nextDueDate)) return 'nextDueDate must be a valid YYYY-MM-DD date';
-    if (typeof input.date === 'string' && isValidDateOnly(input.date) && String(input.nextDueDate) < input.date) {
-      return 'nextDueDate must be on or after date';
-    }
+    const nextDueDate = normalizeDateOnly(input.nextDueDate);
+    if (!nextDueDate) return 'nextDueDate must be a valid YYYY-MM-DD date';
+    if (date && nextDueDate < date) return 'nextDueDate must be on or after date';
   }
 
   if (input.status !== undefined && input.status !== null && !MAINTENANCE_STATUSES.has(String(input.status))) {
