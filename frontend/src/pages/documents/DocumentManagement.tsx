@@ -706,7 +706,7 @@ export const DocumentManagement = () => {
             </Button>
           </Grid>
           <Grid item xs={12} md={1}>
-            <IconButton onClick={fetchDocuments} color="primary">
+            <IconButton onClick={fetchDocuments} color="primary" aria-label={t('common.refresh')}>
               <RefreshIcon />
             </IconButton>
           </Grid>
