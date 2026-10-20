@@ -55,6 +55,11 @@ interface Student {
   rollNumber: number;
 }
 
+interface AcademicTerm {
+  termId: number;
+  name: string;
+}
+
 
 export function ReportCards() {
   const { t } = useTranslation();
@@ -79,6 +84,9 @@ export function ReportCards() {
   });
 
   const [classes, setClasses] = useState<any[]>([]);
+  const [terms, setTerms] = useState<AcademicTerm[]>([]);
+  const [termsLoading, setTermsLoading] = useState(false);
+  const [termsError, setTermsError] = useState('');
 
   // Auto-select current year when it loads
   useEffect(() => {
@@ -90,6 +98,36 @@ export function ReportCards() {
   useEffect(() => {
     fetchInitialData();
   }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const fetchTerms = async () => {
+      setTerms([]);
+      setTermsError('');
+      setTermsLoading(false);
+      if (!filters.academicYear) return;
+
+      try {
+        setTermsLoading(true);
+        const response = await apiClient.get('/academic/terms', {
+          params: { academicYearId: filters.academicYear },
+        });
+        if (active) setTerms(response.data?.data || []);
+      } catch (err: any) {
+        if (active) {
+          setTerms([]);
+          setTermsError(err.response?.data?.message || t('examinations.failedToLoadTerms'));
+          console.error('Failed to fetch academic terms:', err);
+        }
+      } finally {
+        if (active) setTermsLoading(false);
+      }
+    };
+
+    fetchTerms();
+    return () => { active = false; };
+  }, [filters.academicYear]);
 
   useEffect(() => {
     if (filters.class) {
@@ -151,6 +189,7 @@ export function ReportCards() {
     setFilters({
       ...filters,
       [name]: value,
+      ...(name === 'academicYear' ? { term: '' } : {}),
     });
     if (name === 'class') {
       setStudents([]);
@@ -292,8 +331,11 @@ export function ReportCards() {
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <FormControl fullWidth size="small">
-              <InputLabel>{t('academic.academicYear')}</InputLabel>
+              <InputLabel id="report-card-academic-year-label">{t('academic.academicYear')}</InputLabel>
               <Select
+                id="report-card-academic-year"
+                name="academicYear"
+                labelId="report-card-academic-year-label"
                 value={filters.academicYear}
                 label={t('academic.academicYear')}
                 onChange={(e) => handleFilterChange('academicYear', e.target.value)}
@@ -309,25 +351,37 @@ export function ReportCards() {
           </Grid>
           <Grid item xs={12} md={6}>
             <FormControl fullWidth size="small">
-              <InputLabel>{t('examinations.term')}</InputLabel>
+              <InputLabel id="report-card-term-label">{t('examinations.term')}</InputLabel>
               <Select
+                id="report-card-term"
+                name="term"
                 value={filters.term}
                 label={t('examinations.term')}
+                labelId="report-card-term-label"
+                disabled={termsLoading || !filters.academicYear}
                 onChange={(e) => handleFilterChange('term', e.target.value)}
               >
                 <MenuItem value="">{t('common.select')} {t('examinations.term')}</MenuItem>
-                <MenuItem value="1">{t('examinations.firstTerm')}</MenuItem>
-                <MenuItem value="2">{t('examinations.secondTerm')}</MenuItem>
-                <MenuItem value="3">{t('examinations.thirdTerm')}</MenuItem>
+                {terms.length > 0
+                  ? terms.map(term => <MenuItem key={term.termId} value={String(term.termId)}>{term.name}</MenuItem>)
+                  : <MenuItem value="" disabled>{termsLoading ? t('common.loading') : termsError || t('examinations.noTermsConfigured')}</MenuItem>}
               </Select>
+              {!termsLoading && terms.length === 0 && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                  {termsError || t('examinations.noTermsConfigured')}
+                </Typography>
+              )}
             </FormControl>
           </Grid>
           <Grid item xs={12} md={4}>
             <FormControl fullWidth size="small">
-              <InputLabel>{t('common.class')}</InputLabel>
+              <InputLabel id="report-card-class-label">{t('common.class')}</InputLabel>
               <Select
+                id="report-card-class"
+                name="class"
                 value={filters.class}
                 label={t('common.class')}
+                labelId="report-card-class-label"
                 onChange={(e) => handleFilterChange('class', e.target.value)}
               >
                 <MenuItem value="">{t('common.select')} {t('common.class')}</MenuItem>
@@ -341,10 +395,13 @@ export function ReportCards() {
           </Grid>
           <Grid item xs={12} md={4}>
             <FormControl fullWidth size="small">
-              <InputLabel>{t('common.section')} ({t('common.optional')})</InputLabel>
+              <InputLabel id="report-card-section-label">{t('common.section')} ({t('common.optional')})</InputLabel>
               <Select
+                id="report-card-section"
+                name="section"
                 value={filters.section}
                 label={`${t('common.section')} (${t('common.optional')})`}
+                labelId="report-card-section-label"
                 onChange={(e) => handleFilterChange('section', e.target.value)}
               >
                 <MenuItem value="">{t('common.allSections')}</MenuItem>
@@ -357,10 +414,13 @@ export function ReportCards() {
           </Grid>
           <Grid item xs={12} md={4}>
             <FormControl fullWidth size="small">
-              <InputLabel>{t('students.student')}</InputLabel>
+              <InputLabel id="report-card-student-label">{t('students.student')}</InputLabel>
               <Select
+                id="report-card-student"
+                name="student"
                 value={selectedStudent}
                 label={t('students.student')}
+                labelId="report-card-student-label"
                 onChange={(e) => setSelectedStudent(e.target.value)}
               >
                 <MenuItem value="">{t('common.allStudents')}</MenuItem>
