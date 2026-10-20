@@ -134,7 +134,7 @@ export function ECAManagement() {
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
       <Paper sx={{ ...S.GLASS }}>
-        <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)}>
+        <Tabs value={tabValue} onChange={(_, v) => { setTabValue(v); setError(''); setEventErrors({}); setFormErrors({}); }}>
           <Tab label={t('eca.enrollments')} />
           <Tab label={t('eca.attendance')} />
           <Tab label={t('eca.events')} />
@@ -256,7 +256,7 @@ export function ECAManagement() {
         </TabPanel>
       </Paper>
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
+      <Dialog open={openDialog} onClose={() => { setOpenDialog(false); setError(''); setEventErrors({}); setFormErrors({}); }} maxWidth="sm" fullWidth>
         <DialogTitle>
           {tabValue === 0 && t('eca.enrollStudent')}
           {tabValue === 1 && t('eca.markAttendanceBtn')}
@@ -303,7 +303,7 @@ export function ECAManagement() {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>{t('eca.cancel')}</Button>
+          <Button onClick={() => { setOpenDialog(false); setError(''); setEventErrors({}); setFormErrors({}); }}>{t('eca.cancel')}</Button>
           <Button onClick={handleSubmit} variant="contained" sx={S.BTN_PRIMARY}>{t('eca.submit')}</Button>
         </DialogActions>
       </Dialog>

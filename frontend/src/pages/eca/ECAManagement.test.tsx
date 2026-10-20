@@ -73,6 +73,9 @@ describe('ECAManagement enrollment form', () => {
     expect(within(dialog).getByText('Select an event type.')).toBeInTheDocument();
     expect(within(dialog).getByText('Select an event date.')).toBeInTheDocument();
     expect(mockedApiClient.post).not.toHaveBeenCalled();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByText('Event title is required.')).not.toBeInTheDocument();
   });
 
   it('maps the event title to the API name field and converts the ECA ID', () => {
