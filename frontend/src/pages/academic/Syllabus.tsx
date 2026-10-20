@@ -319,8 +319,10 @@ export const Syllabus = () => {
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
-              <InputLabel>{t('academic.selectClass')}</InputLabel>
+              <InputLabel id="syllabus-class-label">{t('academic.selectClass')}</InputLabel>
               <Select
+                id="syllabus-class"
+                labelId="syllabus-class-label"
                 value={selectedClass || ''}
                 label={t('academic.selectClass')}
                 onChange={(e) => setSelectedClass(Number(e.target.value))}
@@ -335,8 +337,10 @@ export const Syllabus = () => {
           </Grid>
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
-              <InputLabel>{t('academic.selectSubject')}</InputLabel>
+              <InputLabel id="syllabus-subject-label">{t('academic.selectSubject')}</InputLabel>
               <Select
+                id="syllabus-subject"
+                labelId="syllabus-subject-label"
                 value={selectedSubject || ''}
                 label={t('academic.selectSubject')}
                 onChange={(e) => setSelectedSubject(Number(e.target.value))}

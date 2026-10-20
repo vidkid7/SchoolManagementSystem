@@ -40,6 +40,8 @@ describe('Syllabus', () => {
   it('shows the create state when the API successfully returns no syllabus', async () => {
     renderSyllabus();
 
+    expect(await screen.findByRole('combobox', { name: 'academic.selectClass' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'academic.selectSubject' })).toBeInTheDocument();
     expect(await screen.findByText('academic.noSyllabusFound')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'academic.createSyllabus' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'academic.addTopic' })).not.toBeInTheDocument();
