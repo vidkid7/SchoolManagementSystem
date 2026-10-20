@@ -665,7 +665,8 @@ export const NotificationCenter = () => {
                     fullWidth
                     type="password"
                     value={smsSettings.apiKey}
-                    onChange={(e) => setSmsSettings({ ...smsSettings, apiKey: e.target.value })}
+                    disabled
+                    helperText={t('notifications.credentialsNotSupported')}
                   />
                   <TextField
                     label={t('notifications.senderId')}
@@ -720,7 +721,8 @@ export const NotificationCenter = () => {
                     type="password"
                     fullWidth
                     value={emailSettings.password}
-                    onChange={(e) => setEmailSettings({ ...emailSettings, password: e.target.value })}
+                    disabled
+                    helperText={t('notifications.credentialsNotSupported')}
                   />
                   <TextField
                     label={t('notifications.fromEmail')}

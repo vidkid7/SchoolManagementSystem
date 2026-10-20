@@ -17,6 +17,23 @@ import NotificationTemplate from '@models/NotificationTemplate.model';
 import User from '@models/User.model';
 import { Op } from 'sequelize';
 
+type CommunicationSettings = Record<string, any>;
+
+/** Never return provider credentials from legacy audit snapshots. */
+export const redactCommunicationCredentials = (settings: CommunicationSettings): CommunicationSettings => {
+  const sms = settings?.sms && typeof settings.sms === 'object' ? settings.sms : {};
+  const email = settings?.email && typeof settings.email === 'object' ? settings.email : {};
+
+  return {
+    ...settings,
+    sms: { ...sms, apiKey: '' },
+    email: { ...email, password: '' },
+  };
+};
+
+const hasSubmittedCommunicationCredentials = (settings: CommunicationSettings): boolean =>
+  Boolean(settings?.sms?.apiKey || settings?.email?.password);
+
 export class CommunicationController {
   /**
    * Send a message
@@ -1832,7 +1849,7 @@ export class CommunicationController {
         smsBalance: { balance: 0, used: 0 },
       };
 
-      res.status(200).json({ success: true, data: settings });
+      res.status(200).json({ success: true, data: redactCommunicationCredentials(settings) });
     } catch (error) {
       res.status(500).json({ success: false, error: { code: 'FETCH_FAILED', message: 'Failed to fetch settings' } });
     }
@@ -1851,6 +1868,18 @@ export class CommunicationController {
       }
 
       const settings = req.body || {};
+      if (hasSubmittedCommunicationCredentials(settings)) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'CREDENTIALS_NOT_SUPPORTED',
+            message: 'Provider credentials cannot be stored through communication settings.',
+          },
+        });
+        return;
+      }
+
+      const safeSettings = redactCommunicationCredentials(settings);
       const requestMeta = this.getRequestMeta(req);
       await AuditLog.create({
         userId,
@@ -1858,7 +1887,7 @@ export class CommunicationController {
         entityId: 1,
         action: AuditAction.UPDATE,
         oldValue: null,
-        newValue: settings,
+        newValue: safeSettings,
         changedFields: null,
         ipAddress: requestMeta.ipAddress,
         userAgent: requestMeta.userAgent,
@@ -1869,7 +1898,7 @@ export class CommunicationController {
         timestamp: new Date(),
       });
 
-      res.status(200).json({ success: true, data: settings, message: 'Settings saved successfully' });
+      res.status(200).json({ success: true, data: safeSettings, message: 'Settings saved successfully' });
     } catch (error) {
       res.status(500).json({ success: false, error: { code: 'SAVE_FAILED', message: 'Failed to save settings' } });
     }

@@ -3675,6 +3675,7 @@
     "port": "Port",
     "username": "Username",
     "password": "Password",
+    "credentialsNotSupported": "Provider credentials are not supported in these settings and will not be stored.",
     "fromEmail": "From Email",
     "fromName": "From Name",
     "saveSettings": "Save Settings",
