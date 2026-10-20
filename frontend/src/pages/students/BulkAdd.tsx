@@ -432,7 +432,11 @@ export const BulkAdd = () => {
       >
         <Tabs
           value={tabValue}
-          onChange={(_, newValue) => setTabValue(newValue)}
+          onChange={(_, newValue) => {
+            setTabValue(newValue);
+            setError('');
+            setSuccess('');
+          }}
           sx={{
             borderBottom: `1px solid ${theme.palette.divider}`,
             '& .MuiTab-root': {
