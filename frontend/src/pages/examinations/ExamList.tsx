@@ -210,8 +210,9 @@ export function ExamList() {
         <Grid container spacing={2}>
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
-              <InputLabel>{t('common.status')}</InputLabel>
+              <InputLabel id="examination-status-filter-label">{t('common.status')}</InputLabel>
               <Select
+                labelId="examination-status-filter-label"
                 value={statusFilter}
                 label={t('common.status')}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -225,8 +226,9 @@ export function ExamList() {
           </Grid>
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
-              <InputLabel>{t('examinations.examType')}</InputLabel>
+              <InputLabel id="examination-type-filter-label">{t('examinations.examType')}</InputLabel>
               <Select
+                labelId="examination-type-filter-label"
                 value={typeFilter}
                 label={t('examinations.examType')}
                 onChange={(e) => setTypeFilter(e.target.value)}
@@ -240,8 +242,9 @@ export function ExamList() {
           </Grid>
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
-              <InputLabel>{t('common.class')}</InputLabel>
+              <InputLabel id="examination-class-filter-label">{t('common.class')}</InputLabel>
               <Select
+                labelId="examination-class-filter-label"
                 value={classFilter}
                 label={t('common.class')}
                 onChange={(e) => setClassFilter(e.target.value)}
