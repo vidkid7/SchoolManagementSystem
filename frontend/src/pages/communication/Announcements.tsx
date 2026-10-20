@@ -7,7 +7,7 @@ import { YearSelectableDateField } from '../../components/YearSelectableDatePick
  * Requirements: 24.8
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import {
@@ -71,6 +71,17 @@ export const Announcements: React.FC = () => {
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dialogTriggerRef = useRef<HTMLElement | null>(null);
+
+  const openAnnouncementDialog = (trigger: HTMLElement) => {
+    dialogTriggerRef.current = trigger;
+    trigger.blur();
+    setCreateDialogOpen(true);
+  };
+
+  const restoreAnnouncementDialogFocus = () => {
+    window.requestAnimationFrame(() => dialogTriggerRef.current?.focus());
+  };
 
   // Check if user can create announcements
   const canCreateAnnouncement = [
@@ -151,7 +162,7 @@ export const Announcements: React.FC = () => {
   };
 
   // Handle edit
-  const handleEdit = (announcement: Announcement) => {
+  const handleEdit = (announcement: Announcement, trigger: HTMLElement) => {
     setEditingAnnouncement(announcement);
     setFormData({
       title: announcement.title,
@@ -161,7 +172,7 @@ export const Announcements: React.FC = () => {
       targetClasses: announcement.targetClasses,
       expiresAt: announcement.expiresAt,
     });
-    setCreateDialogOpen(true);
+    openAnnouncementDialog(trigger);
   };
 
   // Get priority color
@@ -216,7 +227,7 @@ export const Announcements: React.FC = () => {
             variant="contained"
             size="large"
             startIcon={<AddIcon />}
-            onClick={() => {
+            onClick={(event) => {
               setEditingAnnouncement(null);
               setFormData({
                 title: '',
@@ -224,7 +235,7 @@ export const Announcements: React.FC = () => {
                 targetAudience: 'all',
                 priority: 'medium',
               });
-              setCreateDialogOpen(true);
+              openAnnouncementDialog(event.currentTarget);
             }}
             sx={{
               ...S.BTN_PRIMARY,
@@ -401,7 +412,7 @@ export const Announcements: React.FC = () => {
                       <Button
                         size="small"
                         startIcon={<EditIcon />}
-                        onClick={() => handleEdit(announcement)}
+                        onClick={(event) => handleEdit(announcement, event.currentTarget)}
                         sx={{ textTransform: 'none' }}
                       >
                         {t('common.edit')}
@@ -427,6 +438,7 @@ export const Announcements: React.FC = () => {
       {/* Create/Edit Dialog */}
       <Dialog
         open={createDialogOpen}
+        TransitionProps={{ onExited: restoreAnnouncementDialogFocus }}
         onClose={() => {
           setCreateDialogOpen(false);
           setEditingAnnouncement(null);
@@ -478,8 +490,11 @@ export const Announcements: React.FC = () => {
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth>
-                  <InputLabel>{t('communication.targetAudience')}</InputLabel>
+                  <InputLabel id="announcement-audience-label">{t('communication.targetAudience')}</InputLabel>
                   <Select
+                    id="announcement-audience"
+                    labelId="announcement-audience-label"
+                    name="targetAudience"
                     value={formData.targetAudience}
                     label={t('communication.targetAudience')}
                     onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value as any })}
@@ -496,8 +511,11 @@ export const Announcements: React.FC = () => {
 
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth>
-                  <InputLabel>{t('communication.priority')}</InputLabel>
+                  <InputLabel id="announcement-priority-label">{t('communication.priority')}</InputLabel>
                   <Select
+                    id="announcement-priority"
+                    labelId="announcement-priority-label"
+                    name="priority"
                     value={formData.priority}
                     label={t('communication.priority')}
                     onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
