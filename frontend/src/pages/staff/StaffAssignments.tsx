@@ -688,7 +688,12 @@ export const StaffAssignments = () => {
           <Button
             sx={S.BTN_PRIMARY}
             onClick={handleSubmit}
-            disabled={!selectedClass || !selectedSection}
+            disabled={
+              !selectedClass ||
+              !selectedSection ||
+              (assignmentType === 'subject_teacher' && !selectedSubject) ||
+              !academicYearId
+            }
           >
             {editMode ? t('common.save') : t('staff.form.addAssignment')}
           </Button>
