@@ -350,9 +350,10 @@ export const EventManagement = () => {
             }}
           />
           <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>{t('calendar.category')}</InputLabel>
+            <InputLabel id="event-category-filter-label">{t('calendar.category')}</InputLabel>
             <Select
               value={categoryFilter}
+              labelId="event-category-filter-label"
               label={t('calendar.category')}
               onChange={(e) => setCategoryFilter(e.target.value)}
             >
@@ -365,9 +366,10 @@ export const EventManagement = () => {
             </Select>
           </FormControl>
           <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>{t('calendar.status')}</InputLabel>
+            <InputLabel id="event-status-filter-label">{t('calendar.status')}</InputLabel>
             <Select
               value={statusFilter}
+              labelId="event-status-filter-label"
               label={t('calendar.status')}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
@@ -547,9 +549,10 @@ export const EventManagement = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth required>
-                  <InputLabel>{t('calendar.category')}</InputLabel>
+                  <InputLabel id="event-category-label">{t('calendar.category')}</InputLabel>
                   <Select
                     value={formData.category}
+                    labelId="event-category-label"
                     label={t('calendar.category')}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   >
@@ -563,9 +566,10 @@ export const EventManagement = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth>
-                  <InputLabel>{t('calendar.targetAudience')}</InputLabel>
+                  <InputLabel id="event-target-audience-label">{t('calendar.targetAudience')}</InputLabel>
                   <Select
                     value={formData.targetAudience}
+                    labelId="event-target-audience-label"
                     label={t('calendar.targetAudience')}
                     onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value })}
                   >
@@ -666,9 +670,10 @@ export const EventManagement = () => {
               {formData.isRecurring && (
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
-                    <InputLabel>{t('calendar.recurrencePattern')}</InputLabel>
+                    <InputLabel id="event-recurrence-pattern-label">{t('calendar.recurrencePattern')}</InputLabel>
                     <Select
                       value={formData.recurrencePattern}
+                      labelId="event-recurrence-pattern-label"
                       label={t('calendar.recurrencePattern')}
                       onChange={(e) => setFormData({ ...formData, recurrencePattern: e.target.value })}
                     >

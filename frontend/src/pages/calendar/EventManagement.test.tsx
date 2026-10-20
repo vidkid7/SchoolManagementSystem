@@ -30,4 +30,12 @@ describe('EventManagement', () => {
     expect(screen.getAllByText('validation.required')).toHaveLength(2);
     expect(apiClient.post).not.toHaveBeenCalled();
   });
+
+  it('gives the event list filter controls accessible names', async () => {
+    render(<EventManagement />);
+
+    await waitFor(() => expect(apiClient.get).toHaveBeenCalled());
+    expect(screen.getByRole('combobox', { name: 'calendar.category' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'calendar.status' })).toBeInTheDocument();
+  });
 });
