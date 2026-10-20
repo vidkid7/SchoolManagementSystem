@@ -73,6 +73,7 @@ export function Categories() {
   };
 
   const handleOpenDialog = (category?: Category) => {
+    setError('');
     if (category) {
       setEditingCategory(category);
       setFormData({
@@ -86,13 +87,33 @@ export function Categories() {
     setOpenDialog(true);
   };
 
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setError('');
+  };
+
   const handleSubmit = async () => {
+    const name = formData.name.trim();
+    const description = formData.description.trim();
+    if (!name) {
+      setError(t('validation.required'));
+      return;
+    }
+    if (name.length > 100) {
+      setError(t('validation.maxLength', { max: 100 }));
+      return;
+    }
+    if (description.length > 255) {
+      setError(t('validation.maxLength', { max: 255 }));
+      return;
+    }
+
     try {
       if (editingCategory) {
-        await apiClient.put(`/library/categories/${editingCategory.categoryId}`, formData);
+        await apiClient.put(`/library/categories/${editingCategory.categoryId}`, { name, description });
         setSuccess(t('library.categoryUpdatedSuccess'));
       } else {
-        await apiClient.post('/library/categories', formData);
+        await apiClient.post('/library/categories', { name, description });
         setSuccess(t('library.categoryCreatedSuccess'));
       }
       setOpenDialog(false);
@@ -135,7 +156,7 @@ export function Categories() {
       </Paper>
 
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
+      {error && !openDialog && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
       <Paper sx={S.GLASS}>
         <TableContainer>
@@ -191,7 +212,7 @@ export function Categories() {
         </TableContainer>
       </Paper>
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
           {editingCategory ? t('library.editCategory') : t('library.addCategory')}
         </DialogTitle>
@@ -216,7 +237,7 @@ export function Categories() {
           {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>{t('library.cancel')}</Button>
+          <Button onClick={handleCloseDialog}>{t('library.cancel')}</Button>
           <Button onClick={handleSubmit} variant="contained" sx={S.BTN_PRIMARY}>
             {editingCategory ? t('library.update') : t('library.create')}
           </Button>
