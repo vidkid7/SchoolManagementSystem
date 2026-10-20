@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { validateMaintenanceRecord } from './maintenanceValidation';
 import { Op, QueryTypes } from 'sequelize';
 import sequelize from '@config/database';
 import User, { UserRole } from '@models/User.model';
@@ -684,8 +685,19 @@ class TransportController {
   async createMaintenanceRecord(req: Request, res: Response): Promise<void> {
     try {
       const { vehicleId, type, description, cost, date, nextDueDate, status } = req.body;
-      if (!vehicleId || !type) {
-        res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'vehicleId and type are required' } });
+      const validationError = validateMaintenanceRecord({ vehicleId, type, cost, date, nextDueDate, status });
+      if (validationError) {
+        res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: validationError } });
+        return;
+      }
+
+      const normalizedVehicleId = asNumber(vehicleId);
+      const vehicle = await selectOne(
+        'SELECT id FROM transport_vehicles WHERE id = :vehicleId LIMIT 1',
+        { vehicleId: normalizedVehicleId }
+      );
+      if (!vehicle) {
+        res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'vehicleId must reference a vehicle in this school' } });
         return;
       }
 
@@ -695,8 +707,8 @@ class TransportController {
          VALUES
           (:vehicleId, :type, :description, :cost, :date, :nextDueDate, :status, :createdBy, NOW(), NOW())`,
         {
-          vehicleId: asNumber(vehicleId),
-          type,
+          vehicleId: normalizedVehicleId,
+          type: type.trim(),
           description: description ?? '',
           cost: asNumber(cost, 0),
           date: asNullableString(date) ?? new Date().toISOString().slice(0, 10),
@@ -724,6 +736,22 @@ class TransportController {
       }
 
       const updated = { ...mapMaintenanceRecord(existing), ...req.body };
+      const validationError = validateMaintenanceRecord(updated);
+      if (validationError) {
+        res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: validationError } });
+        return;
+      }
+
+      const normalizedVehicleId = asNumber(updated.vehicleId);
+      const vehicle = await selectOne(
+        'SELECT id FROM transport_vehicles WHERE id = :vehicleId LIMIT 1',
+        { vehicleId: normalizedVehicleId }
+      );
+      if (!vehicle) {
+        res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'vehicleId must reference a vehicle in this school' } });
+        return;
+      }
+
       await executeTransportQuery(
         `UPDATE transport_maintenance_records SET
           vehicle_id = :vehicleId, type = :type, description = :description, cost = :cost,
@@ -731,8 +759,8 @@ class TransportController {
          WHERE id = :id`,
         {
             id,
-            vehicleId: asNumber(updated.vehicleId),
-            type: updated.type,
+            vehicleId: normalizedVehicleId,
+            type: String(updated.type).trim(),
             description: updated.description ?? '',
             cost: asNumber(updated.cost, 0),
             date: asNullableString(updated.date),
