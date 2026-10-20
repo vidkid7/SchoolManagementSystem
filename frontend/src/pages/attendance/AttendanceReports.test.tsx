@@ -58,4 +58,31 @@ describe('AttendanceReports accessibility', () => {
     ));
     expect(await screen.findByText('common.noRecordsFound')).toBeInTheDocument();
   });
+
+  it('sends the selected class ID and available section to the student report API', async () => {
+    jest.mocked(apiClient.get)
+      .mockResolvedValueOnce({ data: { data: [{ classId: 11, classLevel: 5, section: 'K' }] } } as any)
+      .mockResolvedValueOnce({ data: { data: [] } } as any);
+
+    render(
+      <ThemeProvider theme={createTheme()}>
+        <AttendanceReports />
+      </ThemeProvider>,
+    );
+
+    await waitFor(() => expect(apiClient.get).toHaveBeenCalledWith('/academic/classes'));
+    const filters = screen.getAllByRole('combobox');
+    fireEvent.mouseDown(filters[1]);
+    fireEvent.click(await screen.findByRole('option', { name: 'common.class 5' }));
+    fireEvent.mouseDown(filters[2]);
+    fireEvent.click(await screen.findByRole('option', { name: 'common.section K' }));
+    fireEvent.click(screen.getByRole('button', { name: 'common.generate' }));
+
+    await waitFor(() => expect(apiClient.get).toHaveBeenCalledWith(
+      '/attendance/student/report',
+      expect.objectContaining({
+        params: expect.objectContaining({ classId: 11, section: 'K' }),
+      }),
+    ));
+  });
 });

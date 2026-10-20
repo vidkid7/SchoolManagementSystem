@@ -10,6 +10,7 @@ import attendanceService from './attendance.service';
 import leaveApplicationService from './leaveApplication.service';
 import attendanceRepository from './attendance.repository';
 import Student from '@models/Student.model';
+import Class from '@models/Class.model';
 import { Op } from 'sequelize';
 import { assertStudentAccess, getPortalStudentIds } from '@modules/security/studentAccess';
 
@@ -147,6 +148,7 @@ class AttendanceController {
       limit = PAGINATION.DEFAULT_PAGE_SIZE,
       studentId,
       classId,
+      section,
       status,
       dateFrom,
       dateTo,
@@ -165,7 +167,19 @@ class AttendanceController {
       if (studentId) await assertStudentAccess(req, Number(studentId));
       filters.studentId = studentId ? Number(studentId) : { [Op.in]: portalStudentIds };
     } else if (studentId) filters.studentId = Number(studentId);
-    if (classId) filters.classId = Number(classId);
+    if (section) {
+      const matchingClasses = await Class.findAll({
+        where: {
+          section: section as string,
+          ...(classId ? { classId: Number(classId) } : {})
+        },
+        attributes: ['classId'],
+        raw: true
+      });
+      filters.classId = matchingClasses.map((schoolClass) => schoolClass.classId);
+    } else if (classId) {
+      filters.classId = Number(classId);
+    }
     if (status) filters.status = status as string;
     if (dateFrom) filters.dateFrom = new Date(dateFrom as string);
     if (dateTo) filters.dateTo = new Date(dateTo as string);
