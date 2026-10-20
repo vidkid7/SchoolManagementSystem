@@ -168,8 +168,9 @@ export function StaffAttendanceMarking() {
             sx={{ ...S.TF, width: 200 }}
           />
           <FormControl sx={{ width: 200 }}>
-            <InputLabel>{t('attendance.department')}</InputLabel>
+            <InputLabel id="staff-attendance-department-label">{t('attendance.department')}</InputLabel>
             <Select
+              labelId="staff-attendance-department-label"
               value={department}
               label={t('attendance.department')}
               onChange={(e) => setDepartment(e.target.value)}
@@ -231,6 +232,7 @@ export function StaffAttendanceMarking() {
                         <Select
                           value={s.attendance_status}
                           onChange={(e) => handleStatusChange(s.staffId, e.target.value)}
+                          inputProps={{ 'aria-label': `${getFullName(s)} ${t('common.status')}` }}
                           sx={S.SELECT}
                         >
                           <MenuItem value="present">{t('attendance.present')}</MenuItem>
