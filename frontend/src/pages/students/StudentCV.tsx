@@ -1096,10 +1096,11 @@ export const StudentCV = () => {
               <Grid container spacing={3} sx={{ mb: 4 }}>
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
-                    <InputLabel>{t('Template')}</InputLabel>
+                    <InputLabel id="cv-template-label">{t('Template')}</InputLabel>
                     <Select
                       value={['standard', 'professional', 'modern'].includes(customization.templateId) ? customization.templateId : 'standard'}
                       label={t('Template')}
+                      labelId="cv-template-label"
                       onChange={(e) => handleCustomizationChange('templateId', e.target.value)}
                       sx={{ borderRadius: R.xl }}
                     >
