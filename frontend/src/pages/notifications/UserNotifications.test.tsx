@@ -46,6 +46,8 @@ describe('notification action accessibility', () => {
     render(<UserNotifications />);
 
     expect(screen.getByRole('combobox', { name: 'notifications.categoryFilter' })).toBeInTheDocument();
+    const notificationList = screen.getByRole('list');
+    expect(Array.from(notificationList.children).every((child) => child.tagName === 'LI')).toBe(true);
     expect(screen.getByRole('button', { name: 'notifications.markRead' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'notifications.deleteNotification' })).toBeInTheDocument();
     expect(markRead).not.toHaveBeenCalled();

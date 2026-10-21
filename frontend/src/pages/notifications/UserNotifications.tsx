@@ -2,7 +2,7 @@
  * UserNotifications — full-page list of the current user's in-app notifications.
  */
 
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import {
   Box,
   Typography,
@@ -176,8 +176,8 @@ export function UserNotifications() {
               const persistedId = n.notificationId;
 
               return (
-                <Box key={`${n.clientKey}-${idx}`}>
-                  {idx > 0 && <Divider sx={{ opacity: 0.06 }} />}
+                <Fragment key={`${n.clientKey}-${idx}`}>
+                  {idx > 0 && <Divider component="li" sx={{ opacity: 0.06 }} />}
                   <ListItem
                     alignItems="flex-start"
                     sx={{
@@ -256,7 +256,7 @@ export function UserNotifications() {
                     }
                   />
                   </ListItem>
-                </Box>
+                </Fragment>
               );
             })}
           </List>
