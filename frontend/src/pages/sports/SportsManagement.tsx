@@ -66,6 +66,7 @@ export function SportsManagement() {
   const [tabValue, setTabValue] = useState(initialTab);
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [total, setTotal] = useState(0);
@@ -109,6 +110,7 @@ export function SportsManagement() {
 
   const fetchData = async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const endpoints = ['/sports/list', '/sports/teams', '/sports/tournaments', '/sports/achievements'];
       const response = await apiClient.get(endpoints[tabValue], { params: { page: page + 1, limit: rowsPerPage } });
@@ -116,6 +118,8 @@ export function SportsManagement() {
       setTotal(response.data?.meta?.total || 0);
     } catch (err) {
       setData([]);
+      setTotal(0);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -413,6 +417,15 @@ export function SportsManagement() {
       </Paper>
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
+      {loadError && (
+        <Alert
+          severity="error"
+          sx={{ mb: 2 }}
+          action={<Button color="inherit" size="small" onClick={fetchData}>{t('sports.retry')}</Button>}
+        >
+          {t('sports.failedToLoadData')}
+        </Alert>
+      )}
 
       <Paper sx={{ ...S.GLASS }}>
         <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)}>
@@ -441,7 +454,7 @@ export function SportsManagement() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('common.loading')}</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('sports.noSportsFound')}</TableCell></TableRow> : data.map((item: any, index: number) => (
+                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('common.loading')}</TableCell></TableRow> : loadError ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('sports.failedToLoadData')}</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('sports.noSportsFound')}</TableCell></TableRow> : data.map((item: any, index: number) => (
                   <TableRow key={item.sportId ?? item.id ?? `sport-${index}`} sx={S.TR_HOVER}>
                     <TableCell sx={S.TD}>{item.name}</TableCell>
                     <TableCell sx={S.TD}><Chip label={item.category} size="small" /></TableCell>
@@ -478,7 +491,7 @@ export function SportsManagement() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('common.loading')}</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('sports.noTeamsFound')}</TableCell></TableRow> : data.map((item: any, index: number) => (
+                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('common.loading')}</TableCell></TableRow> : loadError ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('sports.failedToLoadData')}</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('sports.noTeamsFound')}</TableCell></TableRow> : data.map((item: any, index: number) => (
                   <TableRow key={item.teamId ?? item.id ?? `team-${index}`} sx={S.TR_HOVER}>
                     <TableCell sx={S.TD}>{item.name}</TableCell>
                     <TableCell sx={S.TD}>{item.sportName ?? getSportLabel(item.sportId)}</TableCell>
@@ -512,7 +525,7 @@ export function SportsManagement() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('common.loading')}</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('sports.noTournamentsFound')}</TableCell></TableRow> : data.map((item: any, index: number) => (
+                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('common.loading')}</TableCell></TableRow> : loadError ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('sports.failedToLoadData')}</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('sports.noTournamentsFound')}</TableCell></TableRow> : data.map((item: any, index: number) => (
                   <TableRow key={item.tournamentId ?? item.id ?? `tournament-${index}`} sx={S.TR_HOVER}>
                     <TableCell sx={S.TD}>{item.name}</TableCell>
                     <TableCell sx={S.TD}>{item.sportName ?? getSportLabel(item.sportId)}</TableCell>
@@ -542,7 +555,7 @@ export function SportsManagement() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>{t('common.loading')}</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>{t('sports.noAchievementsFound')}</TableCell></TableRow> : data.map((item: any, index: number) => (
+                {loading ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>{t('common.loading')}</TableCell></TableRow> : loadError ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>{t('sports.failedToLoadData')}</TableCell></TableRow> : data.length === 0 ? <TableRow sx={S.TR_HOVER}><TableCell colSpan={4} align="center" sx={S.TD}>{t('sports.noAchievementsFound')}</TableCell></TableRow> : data.map((item: any, index: number) => (
                   <TableRow key={item.achievementId ?? item.id ?? `achievement-${index}`} sx={S.TR_HOVER}>
                     <TableCell sx={S.TD}>{item.studentName ?? (item.studentId ? `Student #${item.studentId}` : '-')}</TableCell>
                     <TableCell sx={S.TD}>{item.sportName ?? getSportLabel(item.sportId)}</TableCell>

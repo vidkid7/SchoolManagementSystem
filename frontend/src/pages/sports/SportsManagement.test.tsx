@@ -20,6 +20,8 @@ jest.mock('react-i18next', () => ({
       'sports.noEnrollments': 'No active enrollments found for this sport.',
       'sports.createSport': 'Create Sport',
       'sports.noSportsFound': 'No sports found',
+      'sports.failedToLoadData': 'Could not load sports data. Please try again.',
+      'sports.retry': 'Retry',
       'sports.sportName': 'Sport Name',
       'sports.category': 'Category',
       'sports.status': 'Status',
@@ -83,5 +85,18 @@ describe('SportsManagement dialog lifecycle', () => {
 
     expect(await screen.findByText('No active enrollments found for this sport.')).toBeInTheDocument();
     expect(screen.queryByText('Select a sport and click Load Enrollments')).not.toBeInTheDocument();
+  });
+
+  it('shows a retryable load error instead of a false empty state', async () => {
+    mockedApiClient.get.mockImplementation(async (url: any) => {
+      if (url === '/sports/list') throw new Error('network unavailable');
+      return { data: { data: [], meta: { total: 0 } } } as any;
+    });
+
+    render(<MemoryRouter><SportsManagement /></MemoryRouter>);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not load sports data. Please try again.');
+    expect(screen.queryByText('No sports found')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
   });
 });
