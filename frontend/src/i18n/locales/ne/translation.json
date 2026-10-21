@@ -3602,6 +3602,7 @@
     "noUnread": "कुनै अपठित सूचना छैन",
     "noNotificationsYet": "अहिलेसम्म कुनै सूचना छैन",
     "unreadTab": "अपठित",
+    "categoryFilter": "सूचनाको श्रेणी",
     "categories": {
       "all": "सबै",
       "attendance": "उपस्थिति",

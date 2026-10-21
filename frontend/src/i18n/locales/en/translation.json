@@ -3788,6 +3788,7 @@
     "noUnread": "No unread notifications",
     "noNotificationsYet": "No notifications yet",
     "unreadTab": "Unread",
+    "categoryFilter": "Notification category",
     "categories": {
       "all": "All",
       "attendance": "Attendance",

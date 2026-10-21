@@ -148,6 +148,7 @@ export function UserNotifications() {
           <Select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
+            inputProps={{ 'aria-label': t('notifications.categoryFilter') }}
             sx={{ borderRadius: R.lg, fontSize: '0.82rem' }}
           >
             {Object.entries(CATEGORY_LABELS).map(([val, label]) => (
