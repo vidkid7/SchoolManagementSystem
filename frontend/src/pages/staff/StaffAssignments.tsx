@@ -354,7 +354,7 @@ export const StaffAssignments = () => {
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <PersonIcon color="action" fontSize="small" />
-              <Typography variant="h6" color="text.secondary">
+              <Typography variant="h6" component="p" color="text.secondary">
                 {isNepali 
                   ? `${staff.firstNameNp || ''} ${staff.lastNameNp || ''}`.trim()
                   : `${staff.firstNameEn} ${staff.lastNameEn}`
@@ -558,24 +558,30 @@ export const StaffAssignments = () => {
                   </TableCell>
                   <TableCell align="right">
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-                      <Tooltip title={assignment.isActive ? t('staff.form.inactive') : t('common.active')}>
-                        <Switch
-                          size="small"
-                          checked={assignment.isActive}
-                          disabled={!assignment.isActive}
-                          onChange={() => handleToggleActive(assignment)}
-                          color="success"
-                        />
-                      </Tooltip>
+                      {assignment.isActive && (
+                        <Tooltip title={t('staff.form.inactive')}>
+                          <Switch
+                            size="small"
+                            checked
+                            onChange={() => handleToggleActive(assignment)}
+                            color="success"
+                            inputProps={{
+                              'aria-label': `${t('staff.form.assignmentType')}: ${assignment.assignmentType === 'class_teacher' ? t('staff.form.classTeacher') : t('staff.form.subjectTeacher')}, ${t('academic.class')}: ${getClassName(assignment.classId)}, ${t('students.section')}: ${assignment.section || '-'}, ${t('common.status')}: ${t('common.active')}`,
+                            }}
+                          />
+                        </Tooltip>
+                      )}
                       <Tooltip title={t('common.edit')}>
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          disabled={!assignment.isActive}
-                          onClick={() => openEditDialog(assignment)}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
+                        <span>
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            disabled={!assignment.isActive}
+                            onClick={() => openEditDialog(assignment)}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </span>
                       </Tooltip>
                       <Tooltip title={t('common.delete')}>
                         <IconButton
