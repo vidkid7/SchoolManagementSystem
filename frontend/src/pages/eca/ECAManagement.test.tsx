@@ -137,6 +137,7 @@ describe('ECAManagement enrollment form', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Submit' }));
 
     expect(await within(dialog).findByText('ECA ID is required.')).toBeInTheDocument();
+    expect(within(dialog).queryByText('No active enrollments for this ECA.')).not.toBeInTheDocument();
     expect(mockedApiClient.post).not.toHaveBeenCalled();
 
     fireEvent.change(within(dialog).getByRole('spinbutton', { name: 'ECA ID' }), { target: { value: '9' } });

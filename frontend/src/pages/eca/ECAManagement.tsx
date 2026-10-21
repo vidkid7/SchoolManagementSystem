@@ -113,9 +113,10 @@ export function ECAManagement() {
       if (Object.values(nextErrors).some(Boolean)) return;
     }
     if (tabValue === 1) {
+      const hasValidEcaId = /^\d+$/.test(String(formData.ecaId || '')) && Number(formData.ecaId) > 0;
       const nextErrors = {
-        ecaId: !/^\d+$/.test(String(formData.ecaId || '')) || Number(formData.ecaId) <= 0,
-        attendanceData: !Array.isArray(formData.attendanceData) || formData.attendanceData.length === 0,
+        ecaId: !hasValidEcaId,
+        attendanceData: hasValidEcaId && (!Array.isArray(formData.attendanceData) || formData.attendanceData.length === 0),
       };
       setAttendanceErrors(nextErrors);
       if (Object.values(nextErrors).some(Boolean)) return;
