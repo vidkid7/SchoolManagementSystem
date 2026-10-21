@@ -20,6 +20,12 @@ jest.mock('react-i18next', () => ({
       'sports.noEnrollments': 'No active enrollments found for this sport.',
       'sports.createSport': 'Create Sport',
       'sports.noSportsFound': 'No sports found',
+      'sports.teamName': 'Team Name',
+      'sports.sport': 'Sport',
+      'sports.coach': 'Coach',
+      'sports.captain': 'Captain',
+      'sports.edit': 'Edit',
+      'sports.updatedSuccessfully': 'Updated successfully',
       'sports.failedToLoadData': 'Could not load sports data. Please try again.',
       'sports.retry': 'Retry',
       'sports.sportName': 'Sport Name',
@@ -30,6 +36,7 @@ jest.mock('react-i18next', () => ({
       'sports.active': 'Active',
       'sports.inactive': 'Inactive',
       'common.create': 'Create',
+      'common.edit': 'Edit',
       'common.delete': 'Delete',
     }[key] ?? key),
   }),
@@ -53,6 +60,40 @@ describe('SportsManagement dialog lifecycle', () => {
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
     expect(await screen.findByRole('button', { name: 'Create Sport' })).toBeInTheDocument();
+    expect(screen.queryByText('Name is required.')).not.toBeInTheDocument();
+  });
+
+  it('clears a validation error after a successful team update', async () => {
+    let savedTeamName = 'QA Team';
+    mockedApiClient.get.mockImplementation(async (url: any) => {
+      if (url === '/sports/list') {
+        return { data: { data: [{ sportId: 1, name: 'QA Sport', category: 'team', status: 'active' }], meta: { total: 1 } } } as any;
+      }
+      if (url === '/sports/teams') {
+        return { data: { data: [{ teamId: 1, sportId: 1, name: savedTeamName, status: 'active' }], meta: { total: 1 } } } as any;
+      }
+      return { data: { data: [], meta: { total: 0 } } } as any;
+    });
+    mockedApiClient.put.mockImplementation(async (_url: any, payload: any) => {
+      savedTeamName = payload.name;
+      return { data: { success: true } } as any;
+    });
+
+    render(<MemoryRouter><SportsManagement /></MemoryRouter>);
+    fireEvent.click(await screen.findByRole('tab', { name: 'Teams' }));
+    expect(await screen.findByText('QA Team')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    const dialog = await screen.findByRole('dialog');
+    const teamName = within(dialog).getByRole('textbox', { name: 'Team Name' });
+    fireEvent.change(teamName, { target: { value: '' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Submit' }));
+    expect(await within(dialog).findByText('Name is required.')).toBeInTheDocument();
+
+    fireEvent.change(teamName, { target: { value: 'QA Team Updated' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Submit' }));
+
+    expect(await screen.findByText('QA Team Updated')).toBeInTheDocument();
+    expect(mockedApiClient.put).toHaveBeenCalledWith('/sports/teams/1', expect.objectContaining({ name: 'QA Team Updated' }));
     expect(screen.queryByText('Name is required.')).not.toBeInTheDocument();
   });
 

@@ -373,6 +373,7 @@ export function SportsManagement() {
       const endpoints = ['/sports', '/sports/teams', '/sports/tournaments', '/sports/achievements'];
       const payload = buildSubmitPayload();
       if (!payload) return;
+      setError('');
       const id = getEditableId(editingItem);
       if (editingItem) {
         await apiClient.put(`${endpoints[tabValue]}/${id}`, payload);
