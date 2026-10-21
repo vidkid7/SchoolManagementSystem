@@ -78,6 +78,33 @@ describe('Authentication Middleware', () => {
       expect(mockNext).toHaveBeenCalledWith();
     });
 
+    it.each([
+      ['route params', { params: { municipalityId: 'municipality-other' } }],
+      ['request body', { body: { municipality_id: 'municipality-other' } }],
+      ['query string', { query: { municipalityId: 'municipality-other' } }],
+    ])('should reject an authenticated request with a mismatched municipality in %s', async (_source, requestFields) => {
+      mockRequest.headers = { authorization: 'Bearer valid-token' };
+      Object.assign(mockRequest, requestFields as Partial<Request>);
+      (authService.verifyAccessToken as jest.Mock).mockReturnValue({ userId: 1 });
+      jest.spyOn(User, 'findByPk').mockResolvedValue({
+        userId: 1,
+        username: 'admin',
+        email: 'admin@example.com',
+        role: UserRole.SCHOOL_ADMIN,
+        status: UserStatus.ACTIVE,
+        municipalityId: 'municipality-1',
+        schoolConfigId: 'school-1',
+        isAccountLocked: () => false,
+      } as never);
+
+      await authenticate(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(expect.objectContaining({
+        message: 'Access denied: municipality mismatch',
+        statusCode: 403,
+      }));
+    });
+
     it('should reject a token after the account is deactivated', async () => {
       mockRequest.headers = { authorization: 'Bearer old-token' };
       (authService.verifyAccessToken as jest.Mock).mockReturnValue({ userId: 1 });

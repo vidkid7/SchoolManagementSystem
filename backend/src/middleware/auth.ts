@@ -84,6 +84,8 @@ export const authenticate = async (
       permissions: decoded.permissions,
     };
 
+    assertMunicipalityAccess(req);
+
     const tenantContext = await resolveTenantContext({
       userId: req.user.userId,
       role: req.user.role,
@@ -354,29 +356,36 @@ export const requireResourceOwnership = (
 export const validateMunicipalityAccess = (
   req: Request, _res: Response, next: NextFunction
 ): void => {
+  try {
+    assertMunicipalityAccess(req);
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+const assertMunicipalityAccess = (req: Request): void => {
   if (!req.user?.municipalityId) {
-    return next();
+    return;
   }
 
   const tokenMunicipalityId = req.user.municipalityId;
 
   // Check route params
-  const paramMunicipalityId = req.params.municipalityId || req.params.municipality_id;
+  const paramMunicipalityId = req.params?.municipalityId || req.params?.municipality_id;
   if (paramMunicipalityId && paramMunicipalityId !== tokenMunicipalityId) {
-    return next(new AuthorizationError('Access denied: municipality mismatch'));
+    throw new AuthorizationError('Access denied: municipality mismatch');
   }
 
   // Check body
   const bodyMunicipalityId = req.body?.municipalityId || req.body?.municipality_id;
   if (bodyMunicipalityId && bodyMunicipalityId !== tokenMunicipalityId) {
-    return next(new AuthorizationError('Access denied: municipality mismatch'));
+    throw new AuthorizationError('Access denied: municipality mismatch');
   }
 
   // Check query
   const queryMunicipalityId = (req.query?.municipalityId || req.query?.municipality_id) as string | undefined;
   if (queryMunicipalityId && queryMunicipalityId !== tokenMunicipalityId) {
-    return next(new AuthorizationError('Access denied: municipality mismatch'));
+    throw new AuthorizationError('Access denied: municipality mismatch');
   }
-
-  next();
 };
