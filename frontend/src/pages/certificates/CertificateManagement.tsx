@@ -79,6 +79,8 @@ interface CertificateTemplate {
   type: string;
   isActive: boolean;
   createdAt: string;
+  templateHtml?: string;
+  variables?: string[];
 }
 
 interface Certificate {
@@ -257,19 +259,80 @@ const handleCreateTemplate = async () => {
     }
 
     try {
-      await apiClient.post('/api/v1/certificate-templates', { ...templateForm, variables });
+      const payload = { ...templateForm, name: templateForm.name.trim(), variables };
+      if (selectedTemplate) {
+        await apiClient.put(`/api/v1/certificate-templates/${getTemplateId(selectedTemplate)}`, payload);
+      } else {
+        await apiClient.post('/api/v1/certificate-templates', payload);
+      }
       setTemplateDialogOpen(false);
+      setSelectedTemplate(null);
       setTemplateForm({ name: '', type: '', templateHtml: '' });
       fetchTemplates();
-      setSnackbar({ open: true, message: t('certificates.templateCreated'), severity: 'success' });
-    } catch (error: any) {
-      console.error('Failed to create template:', error);
       setSnackbar({
         open: true,
-        message: error.response?.data?.error?.message || t('certificates.templateCreateFailed'),
+        message: t(selectedTemplate ? 'certificates.templateUpdated' : 'certificates.templateCreated'),
+        severity: 'success',
+      });
+    } catch (error: any) {
+      console.error(`Failed to ${selectedTemplate ? 'update' : 'create'} template:`, error);
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.error?.message || t(selectedTemplate ? 'certificates.templateUpdateFailed' : 'certificates.templateCreateFailed'),
         severity: 'error',
       });
     }
+  };
+
+  const handleOpenTemplate = async (template: CertificateTemplate) => {
+    const templateId = getTemplateId(template);
+    try {
+      const response = await apiClient.get(`/api/v1/certificate-templates/${templateId}`);
+      const details = response.data.data || template;
+      setSelectedTemplate({ ...template, ...details });
+      setTemplateForm({
+        name: details.name || template.name,
+        type: details.type || template.type,
+        templateHtml: details.templateHtml || '',
+      });
+      setTemplateDialogOpen(true);
+    } catch (error: any) {
+      console.error('Failed to load certificate template:', error);
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.error?.message || t('certificates.templateFetchFailed'),
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleDeleteTemplate = async (template: CertificateTemplate) => {
+    if (!window.confirm(t('certificates.confirmDeleteTemplate'))) return;
+
+    try {
+      await apiClient.delete(`/api/v1/certificate-templates/${getTemplateId(template)}`);
+      fetchTemplates();
+      setSnackbar({ open: true, message: t('certificates.templateDeleted'), severity: 'success' });
+    } catch (error: any) {
+      console.error('Failed to delete certificate template:', error);
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.error?.message || t('certificates.templateDeleteFailed'),
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleOpenNewTemplate = () => {
+    setSelectedTemplate(null);
+    setTemplateForm({ name: '', type: '', templateHtml: '' });
+    setTemplateDialogOpen(true);
+  };
+
+  const handleCloseTemplateDialog = () => {
+    setTemplateDialogOpen(false);
+    setSelectedTemplate(null);
+    setTemplateForm({ name: '', type: '', templateHtml: '' });
   };
 
 const handleGenerateCertificate = async () => {
@@ -434,7 +497,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
             <Button
               variant="contained" sx={S.BTN_PRIMARY}
               startIcon={<AddIcon />}
-              onClick={() => setTemplateDialogOpen(true)}
+              onClick={handleOpenNewTemplate}
             >
               {t('certificates.addTemplate')}
             </Button>
@@ -481,10 +544,18 @@ const handleRevokeCertificate = async (certificateId: number) => {
                     </TableCell>
                     <TableCell sx={S.TD}>{new Date(template.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell align="right" sx={S.TD}>
-                      <IconButton size="small" title="Edit">
+                      <IconButton
+                        size="small"
+                        aria-label={`${t('certificates.editTemplate')} ${template.name}`}
+                        onClick={() => handleOpenTemplate(template)}
+                      >
                         <EditIcon />
                       </IconButton>
-                      <IconButton size="small" title="Delete">
+                      <IconButton
+                        size="small"
+                        aria-label={`${t('common.delete')} ${template.name}`}
+                        onClick={() => handleDeleteTemplate(template)}
+                      >
                         <DeleteIcon />
                       </IconButton>
                     </TableCell>
@@ -713,8 +784,8 @@ const handleRevokeCertificate = async (certificateId: number) => {
       </TabPanel>
 
       {/* Create Template Dialog */}
-      <Dialog open={templateDialogOpen} onClose={() => setTemplateDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>{t('certificates.createTemplate')}</DialogTitle>
+      <Dialog open={templateDialogOpen} onClose={handleCloseTemplateDialog} maxWidth="md" fullWidth>
+        <DialogTitle>{t(selectedTemplate ? 'certificates.editTemplate' : 'certificates.createTemplate')}</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
@@ -753,9 +824,9 @@ const handleRevokeCertificate = async (certificateId: number) => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setTemplateDialogOpen(false)}>{t('common.cancel')}</Button>
+          <Button onClick={handleCloseTemplateDialog}>{t('common.cancel')}</Button>
           <Button variant="contained" sx={S.BTN_PRIMARY} onClick={handleCreateTemplate}>
-            {t('common.create')}
+            {t(selectedTemplate ? 'common.update' : 'common.create')}
           </Button>
         </DialogActions>
       </Dialog>

@@ -57,3 +57,86 @@ describe('CertificateManagement template creation', () => {
     }));
   });
 });
+
+describe('CertificateManagement template actions', () => {
+  const originalTemplate = {
+    templateId: 42,
+    name: 'QA Certificate Template',
+    type: 'course_completion',
+    isActive: true,
+    createdAt: '2026-10-21T00:00:00.000Z',
+    templateHtml: '<p>{{student_name}} completed {{course_name}}</p>',
+    variables: ['student_name', 'course_name'],
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (apiClient.post as jest.Mock).mockResolvedValue({ data: { success: true } });
+    (apiClient.put as jest.Mock).mockResolvedValue({ data: { success: true } });
+    (apiClient.delete as jest.Mock).mockResolvedValue({ data: { success: true } });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('loads a template for editing, updates it, then reads the updated name back', async () => {
+    let savedTemplate = { ...originalTemplate };
+    (apiClient.get as jest.Mock).mockImplementation((path: string) => {
+      if (path === '/api/v1/certificate-templates/42') {
+        return Promise.resolve({ data: { data: savedTemplate } });
+      }
+      if (path.startsWith('/api/v1/certificate-templates?')) {
+        return Promise.resolve({ data: { data: [savedTemplate], meta: { total: 1 } } });
+      }
+      return Promise.resolve({ data: { data: [], meta: { total: 0 } } });
+    });
+    (apiClient.put as jest.Mock).mockImplementation((_path: string, payload: typeof savedTemplate) => {
+      savedTemplate = { ...savedTemplate, ...payload };
+      return Promise.resolve({ data: { data: savedTemplate } });
+    });
+
+    renderManagement();
+    const editButton = await screen.findByRole('button', { name: 'certificates.editTemplate QA Certificate Template' });
+    fireEvent.click(editButton);
+
+    const nameField = await screen.findByRole('textbox', { name: 'certificates.templateName' });
+    expect(nameField).toHaveValue('QA Certificate Template');
+    expect(screen.getByRole('textbox', { name: 'certificates.templateHtml' })).toHaveValue(originalTemplate.templateHtml);
+    fireEvent.change(nameField, { target: { value: 'QA Certificate Template Updated' } });
+    fireEvent.click(screen.getByRole('button', { name: 'common.update' }));
+
+    await waitFor(() => expect(apiClient.put).toHaveBeenCalledWith('/api/v1/certificate-templates/42', {
+      name: 'QA Certificate Template Updated',
+      type: 'course_completion',
+      templateHtml: originalTemplate.templateHtml,
+      variables: ['student_name', 'course_name'],
+    }));
+    expect(await screen.findByText('QA Certificate Template Updated')).toBeInTheDocument();
+  });
+
+  it('deletes a template only after confirmation and refreshes the list', async () => {
+    let templates = [{ ...originalTemplate }];
+    (apiClient.get as jest.Mock).mockImplementation((path: string) => {
+      if (path.startsWith('/api/v1/certificate-templates?')) {
+        return Promise.resolve({ data: { data: templates, meta: { total: templates.length } } });
+      }
+      return Promise.resolve({ data: { data: [], meta: { total: 0 } } });
+    });
+    (apiClient.delete as jest.Mock).mockImplementation(async () => {
+      templates = [];
+      return { data: { success: true } };
+    });
+    const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false);
+
+    renderManagement();
+    const deleteButton = await screen.findByRole('button', { name: 'common.delete QA Certificate Template' });
+    fireEvent.click(deleteButton);
+    expect(apiClient.delete).not.toHaveBeenCalled();
+
+    confirm.mockReturnValue(true);
+    fireEvent.click(deleteButton);
+    await waitFor(() => expect(apiClient.delete).toHaveBeenCalledWith('/api/v1/certificate-templates/42'));
+    expect(await screen.findByText('certificates.noTemplatesFound')).toBeInTheDocument();
+  });
+});
