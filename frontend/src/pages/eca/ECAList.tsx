@@ -2,7 +2,7 @@
  * ECA List - Manage all Extra-Curricular Activities
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Box, Paper, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination, TextField, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Chip, Alert, Grid,
   useTheme,
 } from '@mui/material';
@@ -92,6 +92,7 @@ export function ECAList() {
   const [currentAcademicYearId, setCurrentAcademicYearId] = useState<number | null>(null);
   const [formMetadataLoaded, setFormMetadataLoaded] = useState(false);
   const [formData, setFormData] = useState<ECAFormData>(emptyForm);
+  const dialogTriggerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     fetchECAs();
@@ -163,7 +164,11 @@ export function ECAList() {
     return coordinator?.name ?? (eca.coordinatorId ? `Staff #${eca.coordinatorId}` : '-');
   };
 
-  const handleOpenDialog = (eca?: ECA) => {
+  const handleOpenDialog = (eca?: ECA, trigger?: HTMLElement) => {
+    if (trigger) {
+      dialogTriggerRef.current = trigger;
+      trigger.blur();
+    }
     if (eca) {
       setEditingECA(eca);
       setFormData({
@@ -182,6 +187,18 @@ export function ECAList() {
     }
     setError('');
     setOpenDialog(true);
+  };
+
+  const closeDialog = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    setOpenDialog(false);
+    setError('');
+  };
+
+  const restoreDialogFocus = () => {
+    window.requestAnimationFrame(() => dialogTriggerRef.current?.focus());
   };
 
   useEffect(() => {
@@ -208,6 +225,10 @@ export function ECAList() {
         return;
       }
 
+      // A previous validation message should not remain visible after the user
+      // corrects the form and submits it successfully.
+      setError('');
+
       const payload: any = {
         name: formData.name.trim(),
         category: formData.category,
@@ -230,6 +251,9 @@ export function ECAList() {
           academicYearId: currentAcademicYearId,
         });
         setSuccess(t('eca.ecaCreatedSuccess'));
+      }
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
       }
       setOpenDialog(false);
       fetchECAs();
@@ -257,7 +281,7 @@ export function ECAList() {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h5" fontWeight={700}>{t('eca.title')}</Typography>
           {canManageECA && (
-            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>{t('eca.createEca')}</Button>
+            <Button variant="contained" sx={S.BTN_PRIMARY} startIcon={<AddIcon />} onClick={(event) => handleOpenDialog(undefined, event.currentTarget)}>{t('eca.createEca')}</Button>
           )}
         </Box>
       </Paper>
@@ -322,7 +346,7 @@ export function ECAList() {
                     </TableCell>
                     {canManageECA && (
                       <TableCell align="center" sx={S.TD}>
-                        <IconButton size="small" aria-label={`${t('common.edit')} ${eca.name}`} onClick={() => handleOpenDialog(eca)}><EditIcon fontSize="small" /></IconButton>
+                        <IconButton size="small" aria-label={`${t('common.edit')} ${eca.name}`} onClick={(event) => handleOpenDialog(eca, event.currentTarget)}><EditIcon fontSize="small" /></IconButton>
                         {canDeleteECA && (
                           <IconButton size="small" aria-label={`${t('common.delete')} ${eca.name}`} onClick={() => handleDelete(eca.ecaId)} color="error"><DeleteIcon fontSize="small" /></IconButton>
                         )}
@@ -335,10 +359,10 @@ export function ECAList() {
             </TableBody>
           </Table>
         </TableContainer>
-        <TablePagination component="div" count={total} page={page} onPageChange={(_, newPage) => setPage(newPage)} rowsPerPage={rowsPerPage} onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }} />
+        <TablePagination component="div" count={total} page={page} onPageChange={(_, newPage) => setPage(newPage)} rowsPerPage={rowsPerPage} rowsPerPageOptions={[10, 20, 50, 100]} onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }} />
       </Paper>
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
+      <Dialog open={openDialog} onClose={closeDialog} TransitionProps={{ onExited: restoreDialogFocus }} maxWidth="md" fullWidth>
         <DialogTitle>{editingECA ? t('eca.editEca') : t('eca.createEca')}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
@@ -372,7 +396,7 @@ export function ECAList() {
           {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>{t('eca.cancel')}</Button>
+          <Button onClick={closeDialog}>{t('eca.cancel')}</Button>
           <Button onClick={handleSubmit} variant="contained" sx={S.BTN_PRIMARY}>{editingECA ? t('eca.update') : t('eca.create')}</Button>
         </DialogActions>
       </Dialog>
