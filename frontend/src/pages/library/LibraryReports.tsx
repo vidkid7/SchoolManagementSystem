@@ -109,6 +109,10 @@ export function LibraryReports() {
       setError(t('library.pleaseSelectDateRange'));
       return;
     }
+    if (startDate > endDate) {
+      setError(t('library.startDateMustBeOnOrBeforeEndDate'));
+      return;
+    }
 
     try {
       setLoading(true);
@@ -144,6 +148,10 @@ export function LibraryReports() {
   const handlePrint = async () => {
     if (!startDate || !endDate) {
       setError(t('library.pleaseSelectDateRange'));
+      return;
+    }
+    if (startDate > endDate) {
+      setError(t('library.startDateMustBeOnOrBeforeEndDate'));
       return;
     }
 

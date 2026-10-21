@@ -1,9 +1,17 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { ChangeEvent } from 'react';
 import apiClient from '../../services/apiClient';
 import { getQuickReportDateRange } from './LibraryReports';
 
 jest.mock('../../services/apiClient', () => ({ __esModule: true, default: { get: jest.fn() } }));
 jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+jest.mock('../../components/YearSelectableDatePicker/YearSelectableDatePicker', () => ({
+  YearSelectableDateField: ({ label, value, onChange }: {
+    label: string;
+    value: string;
+    onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  }) => <input aria-label={label} value={value} onChange={onChange} />,
+}));
 
 describe('library quick report ranges', () => {
   const today = new Date(2026, 9, 20, 0, 0, 0);
@@ -70,5 +78,30 @@ describe('library report print preview', () => {
       expect(window.open).toHaveBeenCalledWith('', '_blank');
     });
     expect(await screen.findByText('library.printPreviewOpened')).toBeInTheDocument();
+  });
+});
+
+describe('library report date range validation', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (apiClient.get as jest.Mock).mockResolvedValue({ data: { data: {} } });
+    jest.spyOn(window, 'open').mockReturnValue(null);
+  });
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it('blocks download and print when start date is after end date', async () => {
+    const { LibraryReports } = await import('./LibraryReports');
+    render(<LibraryReports />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'library.startDate' }), { target: { value: '2027-01-21' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'library.endDate' }), { target: { value: '2026-10-21' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'library.downloadPDF' }));
+    expect(await screen.findByText('library.startDateMustBeOnOrBeforeEndDate')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'reports.print' }));
+
+    expect(apiClient.get).toHaveBeenCalledTimes(1);
+    expect(apiClient.get).toHaveBeenCalledWith('/library/reports');
+    expect(window.open).not.toHaveBeenCalled();
   });
 });

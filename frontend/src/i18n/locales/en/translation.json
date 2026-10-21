@@ -2059,6 +2059,7 @@
     "thisMonth": "This Month",
     "thisYear": "This Year",
     "pleaseSelectDateRange": "Please select start and end dates",
+    "startDateMustBeOnOrBeforeEndDate": "Start date must be on or before the end date",
     "reportDownloadedSuccessfully": "Report downloaded successfully",
     "failedToGenerateReport": "Failed to generate report",
     "printFeatureComingSoon": "Print feature is coming soon",

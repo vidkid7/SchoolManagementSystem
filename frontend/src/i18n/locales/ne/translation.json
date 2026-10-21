@@ -1876,6 +1876,7 @@
     "thisMonth": "यो महिना",
     "thisYear": "यो वर्ष",
     "pleaseSelectDateRange": "कृपया सुरु र अन्त्य मिति चयन गर्नुहोस्",
+    "startDateMustBeOnOrBeforeEndDate": "सुरु मिति अन्त्य मिति भन्दा अघिको वा सोही दिन हुनुपर्छ",
     "reportDownloadedSuccessfully": "रिपोर्ट सफलतापूर्वक डाउनलोड भयो",
     "failedToGenerateReport": "रिपोर्ट उत्पन्न गर्न असफल भयो",
     "printFeatureComingSoon": "प्रिन्ट सुविधा चाँडै आउँदैछ",
