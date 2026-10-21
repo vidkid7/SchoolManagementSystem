@@ -51,6 +51,7 @@ export function ChangePassword() {
             fullWidth
             label="Current password"
             type={showPasswords ? 'text' : 'password'}
+            autoComplete="current-password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
             required
@@ -73,6 +74,7 @@ export function ChangePassword() {
             fullWidth
             label="New password"
             type={showPasswords ? 'text' : 'password'}
+            autoComplete="new-password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             required
@@ -82,6 +84,7 @@ export function ChangePassword() {
             fullWidth
             label="Confirm new password"
             type={showPasswords ? 'text' : 'password'}
+            autoComplete="new-password"
             value={confirmNewPassword}
             onChange={(e) => setConfirmNewPassword(e.target.value)}
             required

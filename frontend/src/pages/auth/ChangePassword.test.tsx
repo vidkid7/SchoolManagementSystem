@@ -17,6 +17,9 @@ describe('ChangePassword accessibility', () => {
 
     const currentPassword = screen.getByLabelText(/Current password/);
     expect(currentPassword).toHaveAttribute('type', 'password');
+    expect(currentPassword).toHaveAttribute('autocomplete', 'current-password');
+    expect(screen.getByLabelText(/New password/)).toHaveAttribute('autocomplete', 'new-password');
+    expect(screen.getByLabelText(/Confirm new password/)).toHaveAttribute('autocomplete', 'new-password');
 
     fireEvent.click(screen.getByRole('button', { name: 'auth.showPassword' }));
     expect(currentPassword).toHaveAttribute('type', 'text');
