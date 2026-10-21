@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { UserManagement } from '../UserManagement';
 import apiClient from '../../../services/apiClient';
@@ -23,6 +23,7 @@ jest.mock('react-i18next', () => ({
       'userManagement.lastLogin': 'Last Login',
       'userManagement.created': 'Created',
       'common.search': 'Search',
+      'common.loading': 'Loading...',
       'userManagement.never': 'Never',
     }[key] ?? key),
   }),
@@ -94,5 +95,34 @@ describe('UserManagement', () => {
     await user.click(screen.getByRole('button', { name: 'Add User' }));
     expect(screen.getByRole('combobox', { name: 'Role' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Status' })).toBeInTheDocument();
+  });
+
+  it('gives the user table loading indicator an accessible name', async () => {
+    let resolveUsers!: (value: { data: { data: typeof testUser[]; meta: { total: number } } }) => void;
+    mockedApiClient.get.mockImplementation((url) => {
+      if (url.startsWith('/api/v1/users?')) {
+        return new Promise((resolve) => { resolveUsers = resolve; });
+      }
+      return Promise.resolve({ data: { data: { total: 1, active: 1, inactive: 0, suspended: 0 } } });
+    });
+
+    render(<UserManagement />);
+
+    expect(screen.getByRole('progressbar', { name: 'Loading...' })).toBeInTheDocument();
+    await act(async () => {
+      resolveUsers({ data: { data: [testUser], meta: { total: 1 } } });
+    });
+    expect(await screen.findByText('@qaTeacher')).toBeInTheDocument();
+  });
+
+  it('restores focus to the Add User trigger after the dialog closes', async () => {
+    const user = userEvent.setup();
+    render(<UserManagement />);
+
+    const trigger = await screen.findByRole('button', { name: 'Add User' });
+    await user.click(trigger);
+    await user.click(screen.getByRole('button', { name: 'userManagement.cancel' }));
+
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
   });
 });

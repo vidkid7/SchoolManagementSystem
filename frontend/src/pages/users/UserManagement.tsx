@@ -4,7 +4,7 @@
  * Manage user accounts, roles, and permissions
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -116,6 +116,7 @@ export const UserManagement = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const dialogTriggerRef = useRef<HTMLElement | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -190,7 +191,11 @@ export const UserManagement = () => {
     }
   };
 
-  const handleOpenDialog = (user?: User) => {
+  const handleOpenDialog = (user?: User, trigger?: HTMLElement) => {
+    if (trigger) {
+      dialogTriggerRef.current = trigger;
+      trigger.blur();
+    }
     if (user) {
       setFormMode('edit');
       setSelectedUser(user);
@@ -222,8 +227,15 @@ export const UserManagement = () => {
   };
 
   const handleCloseDialog = () => {
+    if (window.document.activeElement instanceof HTMLElement) {
+      window.document.activeElement.blur();
+    }
     setDialogOpen(false);
     setSelectedUser(null);
+  };
+
+  const restoreDialogTriggerFocus = () => {
+    window.requestAnimationFrame(() => dialogTriggerRef.current?.focus());
   };
 
   const handleSubmit = async () => {
@@ -323,7 +335,7 @@ export const UserManagement = () => {
           <Button
             variant="contained" sx={S.BTN_PRIMARY}
             startIcon={<AddIcon />}
-            onClick={() => handleOpenDialog()}
+            onClick={(event) => handleOpenDialog(undefined, event.currentTarget)}
           >
             {t('userManagement.addUser')}
           </Button>
@@ -468,7 +480,7 @@ export const UserManagement = () => {
             {loading ? (
               <TableRow sx={S.TR_HOVER}>
                 <TableCell colSpan={7} align="center" sx={S.TD}>
-                  <CircularProgress />
+                  <CircularProgress aria-label={t('common.loading')} />
                 </TableCell>
               </TableRow>
             ) : users.length === 0 ? (
@@ -586,7 +598,13 @@ export const UserManagement = () => {
       </Menu>
 
       {/* Create/Edit Dialog */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        onTransitionExited={restoreDialogTriggerFocus}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>
           {formMode === 'create' ? t('userManagement.addUser') : t('userManagement.editUser')}
         </DialogTitle>
