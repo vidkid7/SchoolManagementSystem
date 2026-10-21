@@ -158,7 +158,7 @@ export const ClassTeacherView = () => {
       <Box sx={{ mb: 4 }}>
         <Button
           startIcon={<BackIcon />}
-          onClick={() => navigate('/academic')}
+          onClick={() => navigate('/academic/classes')}
           sx={{ mb: 2 }}
           variant="text"
         >

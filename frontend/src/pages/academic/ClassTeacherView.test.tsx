@@ -4,12 +4,14 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import apiClient from '../../services/apiClient';
 import { ClassTeacherView } from './ClassTeacherView';
 
+const mockNavigate = jest.fn();
+
 jest.mock('../../services/apiClient', () => ({
   __esModule: true,
   default: { get: jest.fn() },
 }));
 
-jest.mock('../../hooks/useSlugNavigate', () => ({ useSlugNavigate: () => jest.fn() }));
+jest.mock('../../hooks/useSlugNavigate', () => ({ useSlugNavigate: () => mockNavigate }));
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
@@ -18,6 +20,7 @@ jest.mock('react-i18next', () => ({
 describe('ClassTeacherView', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockNavigate.mockClear();
     (apiClient.get as jest.Mock).mockImplementation((path: string) => {
       if (path === '/api/v1/academic/years') {
         return Promise.resolve({ data: { data: [{ academicYearId: 11, isCurrent: true }] } });
@@ -48,5 +51,7 @@ describe('ClassTeacherView', () => {
 
     expect(await screen.findByRole('heading', { name: 'staff.form.classTeacher - Grade 1 - K', level: 4 })).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'staff.classTeacherView.noClassTeacherAssigned', level: 5 })).toBeInTheDocument();
+    screen.getByRole('button', { name: 'common.back' }).click();
+    expect(mockNavigate).toHaveBeenCalledWith('/academic/classes');
   });
 });
