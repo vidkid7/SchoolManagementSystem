@@ -288,7 +288,7 @@ const InfoSection = ({ icon, title, children, color = 'primary' }: { icon: React
       }}
     >
       <CardContent sx={{ p: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, mb: 2.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Typography component="h2" variant="h6" sx={{ fontWeight: 700, mb: 2.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box sx={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -311,7 +311,7 @@ const InfoSection = ({ icon, title, children, color = 'primary' }: { icon: React
 const StatBox = ({ value, label, color }: { value: string | number; label: string; color: string }) => {
   return (
     <Box sx={{ textAlign: 'center', p: 2 }}>
-      <Typography variant="h4" sx={{ fontWeight: 700, color: color, mb: 0.5 }}>
+      <Typography component="div" variant="h4" sx={{ fontWeight: 700, color: color, mb: 0.5 }}>
         {value}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
@@ -627,7 +627,8 @@ export const StudentCV = () => {
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
-          <IconButton 
+          <IconButton
+            aria-label={`${t('common.back')} ${t('Student')}`}
             onClick={() => navigate(`/students/${id}`)} 
             sx={{ 
               bgcolor: alpha(theme.palette.primary.main, 0.1),
@@ -638,7 +639,7 @@ export const StudentCV = () => {
             <BackIcon sx={{ color: theme.palette.primary.main }} />
           </IconButton>
           <Box>
-            <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
+            <Typography component="h1" variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
               {t('Student CV')}
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -729,7 +730,7 @@ export const StudentCV = () => {
                       >
                         <PersonIcon sx={{ fontSize: 48, color: theme.palette.primary.main }} />
                       </Avatar>
-                      <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                      <Typography component="h3" variant="h6" sx={{ fontWeight: 700 }}>
                         {cvData.personalInfo.fullNameEn}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
@@ -1059,7 +1060,7 @@ export const StudentCV = () => {
         <TabPanel value={tabValue} index={1}>
           {customization && (
             <Box>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>{t('Section Visibility')}</Typography>
+              <Typography component="h2" variant="h6" sx={{ fontWeight: 700, mb: 3 }}>{t('Section Visibility')}</Typography>
               <Grid container spacing={2} sx={{ mb: 4 }}>
                 {[
                   { key: 'showPersonalInfo', label: 'Personal Information', default: true },
@@ -1091,7 +1092,7 @@ export const StudentCV = () => {
 
               <Divider sx={{ my: 4 }} />
 
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>{t('Template Options')}</Typography>
+              <Typography component="h2" variant="h6" sx={{ fontWeight: 700, mb: 3 }}>{t('Template Options')}</Typography>
               <Grid container spacing={3} sx={{ mb: 4 }}>
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
@@ -1127,7 +1128,7 @@ export const StudentCV = () => {
 
               <Divider sx={{ my: 4 }} />
 
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>{t('Custom Fields')}</Typography>
+              <Typography component="h2" variant="h6" sx={{ fontWeight: 700, mb: 3 }}>{t('Custom Fields')}</Typography>
               
               {/* Skills */}
               <Box sx={{ mb: 4 }}>
