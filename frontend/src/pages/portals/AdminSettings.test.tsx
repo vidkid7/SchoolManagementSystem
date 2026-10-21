@@ -63,6 +63,7 @@ describe('AdminSettings runtime-only controls', () => {
     expect(await screen.findByText('adminSettings.backup.managedNotice')).toBeVisible();
     expect(screen.getByRole('spinbutton', { name: 'adminSettings.backup.retention' })).toBeDisabled();
     expect(screen.getByRole('checkbox', { name: 'adminSettings.backup.enableAutomated' })).toBeDisabled();
+    expect(screen.getByRole('combobox', { name: 'adminSettings.backup.schedule' })).toHaveAttribute('aria-disabled', 'true');
 
     fireEvent.click(screen.getByRole('tab', { name: 'adminSettings.tabs.features' }));
     expect(await screen.findByText('adminSettings.features.managedNotice')).toBeVisible();

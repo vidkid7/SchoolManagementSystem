@@ -643,8 +643,11 @@ const AdminSettings: React.FC = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth sx={S.TF}>
-                  <InputLabel>{t('adminSettings.backup.schedule')}</InputLabel>
+                  <InputLabel id="admin-settings-backup-schedule-label">
+                    {t('adminSettings.backup.schedule')}
+                  </InputLabel>
                   <Select
+                    labelId="admin-settings-backup-schedule-label"
                     disabled
                     value={systemSettings.backupSchedule}
                     onChange={(e) => setSystemSettings(prev => ({ ...prev, backupSchedule: e.target.value }))}
