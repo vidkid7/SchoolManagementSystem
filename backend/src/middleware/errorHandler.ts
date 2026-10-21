@@ -117,6 +117,26 @@ export const errorHandler = (
     );
   }
 
+  // Preserve auth status codes when an operational auth error crosses a module
+  // boundary and no longer passes the local instanceof check.
+  if (err.name === 'AuthenticationError') {
+    return sendError(
+      res,
+      err.message || 'Authentication required',
+      HTTP_STATUS.UNAUTHORIZED as number,
+      ERROR_CODES.AUTHENTICATION_REQUIRED
+    );
+  }
+
+  if (err.name === 'AuthorizationError') {
+    return sendError(
+      res,
+      err.message || 'You do not have permission to perform this action',
+      HTTP_STATUS.FORBIDDEN as number,
+      ERROR_CODES.PERMISSION_DENIED
+    );
+  }
+
   // Handle JWT Errors
   if (err.name === 'JsonWebTokenError') {
     return sendError(
