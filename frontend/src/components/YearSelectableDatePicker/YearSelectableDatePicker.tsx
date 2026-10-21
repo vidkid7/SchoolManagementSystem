@@ -79,6 +79,10 @@ export function YearSelectableDatePicker({
         slotProps={{
           textField: {
             ...textFieldProps,
+            inputProps: {
+              ...textFieldProps.inputProps,
+              'aria-label': label,
+            },
             fullWidth,
             required,
             error,
@@ -147,6 +151,10 @@ export function YearSelectableDateTimeField({ value, onChange, ...textFieldProps
           slotProps={{
             textField: {
               ...textFieldProps,
+              inputProps: {
+                ...textFieldProps.inputProps,
+                'aria-label': String(textFieldProps.label ?? ''),
+              },
               fullWidth: true,
               required: textFieldProps.required,
               error: textFieldProps.error,

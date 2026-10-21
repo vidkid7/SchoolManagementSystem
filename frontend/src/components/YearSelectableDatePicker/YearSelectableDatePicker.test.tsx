@@ -17,8 +17,8 @@ describe('YearSelectableDatePicker', () => {
       />
     );
 
+    expect(screen.getByRole('textbox', { name: 'Admission date' })).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Admission date'));
-
     expect(
       await screen.findByRole('button', { name: /year view is open/i })
     ).toBeInTheDocument();
@@ -36,6 +36,7 @@ describe('YearSelectableDateTimeField', () => {
       />
     );
 
+    expect(screen.getByRole('textbox', { name: 'Scheduled at' })).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Scheduled at'));
 
     expect(
