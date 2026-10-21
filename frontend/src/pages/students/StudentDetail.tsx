@@ -66,6 +66,7 @@ import StudentDocuments from './StudentDocuments';
 import StudentLibrary from './StudentLibrary';
 import { PromoteDialog, TransferDialog } from './PromoteTransferDialogs';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
+import { formatDateForInput } from './studentDateUtils';
 
 const MotionCard = motion.create(Card);
 
@@ -663,7 +664,7 @@ export const StudentDetail = () => {
                 <InfoRow icon={<SchoolIcon fontSize="small" />} label={t('students.class')} value={student.currentClassId != null ? formatNumber(student.currentClassId) : '-'} />
                 <InfoRow icon={<BadgeIcon fontSize="small" />} label={t('students.section')} value={student.section} />
                 <InfoRow icon={<BadgeIcon fontSize="small" />} label={t('students.rollNumber')} value={student.rollNumber} />
-                <InfoRow icon={<CalendarIcon fontSize="small" />} label={t('students.admissionDate')} value={student.admissionDate} />
+                <InfoRow icon={<CalendarIcon fontSize="small" />} label={t('students.admissionDate')} value={formatDateForInput(student.admissionDate) || undefined} />
               </InfoCard>
             </Grid>
           </Grid>
