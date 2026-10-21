@@ -216,6 +216,7 @@ export const ClassSubjects = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <IconButton
             onClick={() => navigate(`/academic`)}
+            aria-label={`${t('common.back')} ${t('classSubjects.title')}`}
             sx={{
               bgcolor: 'background.paper',
               boxShadow: 1,
@@ -247,8 +248,11 @@ export const ClassSubjects = () => {
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
-              <InputLabel>{t('classSubjects.selectClass')}</InputLabel>
+              <InputLabel id="class-subject-class-select-label">{t('classSubjects.selectClass')}</InputLabel>
               <Select
+                id="class-subject-class-select"
+                labelId="class-subject-class-select-label"
+                name="classId"
                 value={selectedClass || ''}
                 label={t('classSubjects.selectClass')}
                 onChange={(e) => setSelectedClass(Number(e.target.value))}
@@ -266,7 +270,7 @@ export const ClassSubjects = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <AssignmentIcon color="primary" sx={{ fontSize: 40 }} />
                 <Box>
-                  <Typography variant="h6">
+                  <Typography component="h5" variant="h6">
                     {t('classSubjects.classLabel')} {selectedClassInfo.gradeLevel} - {selectedClassInfo.section}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -283,7 +287,7 @@ export const ClassSubjects = () => {
       {selectedClass && (
         <Paper sx={{ ...S.GLASS }}>
           <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6" fontWeight={600}>
+            <Typography component="h5" variant="h6" fontWeight={600}>
               {t('classSubjects.assignedSubjects')}
             </Typography>
             {isSchoolAdmin && (
@@ -359,6 +363,7 @@ export const ClassSubjects = () => {
                           <IconButton
                             size="small"
                             color="error"
+                            aria-label={`${t('classSubjects.removeSubject')} ${cs.subject.code}`}
                             onClick={() => handleRemoveSubject(cs.subjectId)}
                             title={t('classSubjects.removeSubject')}
                           >
@@ -378,7 +383,7 @@ export const ClassSubjects = () => {
       {!selectedClass && (
         <Paper sx={{ ...S.GLASS, p: 5, textAlign: 'center' }}>
           <AssignmentIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" color="text.secondary">
+          <Typography component="h5" variant="h6" color="text.secondary">
             {t('classSubjects.selectClassPrompt')}
           </Typography>
         </Paper>
@@ -393,8 +398,11 @@ export const ClassSubjects = () => {
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>{t('classSubjects.subject')}</InputLabel>
+                <InputLabel id="class-subject-dialog-subject-label">{t('classSubjects.subject')}</InputLabel>
                 <Select
+                  id="class-subject-dialog-subject"
+                  labelId="class-subject-dialog-subject-label"
+                  name="subjectId"
                   value={assignmentForm.subjectId}
                   label={t('classSubjects.subject')}
                   onChange={(e) => setAssignmentForm({ ...assignmentForm, subjectId: e.target.value })}
@@ -409,8 +417,11 @@ export const ClassSubjects = () => {
             </Grid>
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>{t('classSubjects.teacherOptional')}</InputLabel>
+                <InputLabel id="class-subject-dialog-teacher-label">{t('classSubjects.teacherOptional')}</InputLabel>
                 <Select
+                  id="class-subject-dialog-teacher"
+                  labelId="class-subject-dialog-teacher-label"
+                  name="teacherId"
                   value={assignmentForm.teacherId}
                   label={t('classSubjects.teacherOptional')}
                   onChange={(e) => setAssignmentForm({ ...assignmentForm, teacherId: e.target.value })}
