@@ -674,7 +674,7 @@ export const StudentDetail = () => {
           {attendance ? (
             <Grid container spacing={3}>
               <Grid item xs={6} md={3}>
-                <StatCard value={`${attendance.summary?.percentage || 0}%`} label={t('attendance.present')} color={theme.palette.success.main} />
+                <StatCard value={`${attendance.summary?.percentage || 0}%`} label={t('attendance.attendancePercentage')} color={theme.palette.success.main} />
               </Grid>
               <Grid item xs={6} md={3}>
                 <StatCard value={formatNumber(attendance.summary?.present || 0)} label={t('attendance.present')} color="#10b981" />
@@ -711,6 +711,13 @@ export const StudentDetail = () => {
                           </TableCell>
                         </TableRow>
                       ))}
+                      {attendance.records?.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={2} align="center" sx={{ py: 3, color: 'text.secondary' }}>
+                            {t('messages.noData')}
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </TableContainer>
@@ -761,6 +768,13 @@ export const StudentDetail = () => {
                           </TableCell>
                         </TableRow>
                       ))}
+                      {grades.grades?.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={5} align="center" sx={{ py: 3, color: 'text.secondary' }}>
+                            {t('messages.noData')}
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </TableContainer>
@@ -814,6 +828,13 @@ export const StudentDetail = () => {
                           </TableCell>
                         </TableRow>
                       ))}
+                      {fees.invoices?.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} align="center" sx={{ py: 3, color: 'text.secondary' }}>
+                            {t('messages.noData')}
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </TableContainer>
@@ -1022,6 +1043,9 @@ export const StudentDetail = () => {
                       </Box>
                     </Paper>
                   ))}
+                  {remarks.remarks?.length === 0 && (
+                    <Typography color="text.secondary">{t('messages.noData')}</Typography>
+                  )}
                 </Box>
               </Grid>
             </Grid>
