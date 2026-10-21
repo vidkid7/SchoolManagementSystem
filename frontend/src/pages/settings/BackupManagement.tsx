@@ -341,7 +341,7 @@ export const BackupManagement = () => {
                 <Typography variant="body2" color="text.secondary">
                   {config.jobStatus?.lastRun 
                     ? formatDate(config.jobStatus.lastRun)
-                    : 'Never'}
+                    : t('backup.lastRunUnavailable')}
                 </Typography>
               </CardContent>
             </Card>
@@ -356,7 +356,9 @@ export const BackupManagement = () => {
                 <Typography variant="body2" color="text.secondary">
                   {config.jobStatus?.nextRun 
                     ? formatDate(config.jobStatus.nextRun)
-                    : 'Not scheduled'}
+                    : config.jobStatus?.isRunning
+                      ? t('backup.nextRunUnavailable')
+                      : t('backup.notScheduled')}
                 </Typography>
               </CardContent>
             </Card>

@@ -2444,7 +2444,10 @@
     "filename": "फाइलनाम",
     "size": "आकार",
     "noBackups": "कुनै ब्याकअप फेला परेन",
-    "confirmRestoreTitle": "पुनर्स्थापना पुष्टि गर्नुहोस्"
+    "confirmRestoreTitle": "पुनर्स्थापना पुष्टि गर्नुहोस्",
+    "lastRunUnavailable": "ब्याकअप चलेको इतिहास उपलब्ध छैन",
+    "nextRunUnavailable": "तालिका सक्रिय छ; अर्को चल्ने समय उपलब्ध छैन",
+    "notScheduled": "तालिका छैन"
   },
   "archive": {
     "title": "अभिलेख व्यवस्थापन",

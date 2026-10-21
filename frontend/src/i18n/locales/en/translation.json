@@ -2630,7 +2630,10 @@
     "filename": "Filename",
     "size": "Size",
     "noBackups": "No backups found",
-    "confirmRestoreTitle": "Confirm Restore"
+    "confirmRestoreTitle": "Confirm Restore",
+    "lastRunUnavailable": "No run history available",
+    "nextRunUnavailable": "Scheduler active; next run time unavailable",
+    "notScheduled": "Not scheduled"
   },
   "archive": {
     "title": "Archive Management",
