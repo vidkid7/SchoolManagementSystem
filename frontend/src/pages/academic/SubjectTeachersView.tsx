@@ -199,7 +199,7 @@ export const SubjectTeachersView = () => {
         </Alert>
         
         <Box sx={{ textAlign: 'center', py: 4 }}>
-          <Typography variant="h6" color="text.secondary" gutterBottom>
+          <Typography variant="h6" component="h5" color="text.secondary" gutterBottom>
             Unable to load teachers
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -270,7 +270,7 @@ export const SubjectTeachersView = () => {
                   <Typography variant="body2" color="text.secondary">
                     Total Teachers
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
+                  <Typography variant="h6" component="p" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
                     {teachers.length}
                   </Typography>
                 </Box>
@@ -380,7 +380,7 @@ export const SubjectTeachersView = () => {
       ) : (
         <Paper sx={{ ...S.GLASS, p: 4, textAlign: 'center' }}>
           <SchoolIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-          <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+          <Typography variant="h6" component="h5" color="text.secondary" sx={{ mb: 2 }}>
             No Teachers Assigned
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
