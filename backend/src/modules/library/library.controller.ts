@@ -641,8 +641,14 @@ export class LibraryController {
     try {
       const { studentId } = req.params;
       const { status } = req.query;
+      const parsedStudentId = Number(studentId);
 
-      const fines = await lateFeeService.getFinesByStudent(parseInt(studentId), status as string);
+      if (!Number.isInteger(parsedStudentId) || parsedStudentId <= 0) {
+        res.status(400).json({ success: false, message: 'Student ID must be a positive integer' });
+        return;
+      }
+
+      const fines = await lateFeeService.getFinesByStudent(parsedStudentId, status as string);
 
       res.status(200).json({
         success: true,

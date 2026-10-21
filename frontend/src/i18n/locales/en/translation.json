@@ -2150,6 +2150,7 @@
     "fineId": "Fine ID",
     "amount": "Amount",
     "loadFines": "Load Fines",
+    "failedToFetchFines": "Failed to load fines. Please try again.",
     "noFines": "No fines (enter Student ID and Load)",
     "bookCatalog": "Book Catalog",
     "searchPlaceholder": "Search by title, author, ISBN...",

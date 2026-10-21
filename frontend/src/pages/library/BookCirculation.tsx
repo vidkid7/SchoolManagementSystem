@@ -140,8 +140,7 @@ export function BookCirculation() {
   useEffect(() => {
     if (tabValue < 3) fetchCirculations();
     else if (tabValue === 3 && reservationBookId) fetchReservations();
-    else if (tabValue === 4 && finesStudentId) fetchFines();
-  }, [tabValue, page, rowsPerPage, reservationBookId, finesStudentId]);
+  }, [tabValue, page, rowsPerPage, reservationBookId]);
 
   useEffect(() => {
     if (!issueDialog) return;
@@ -365,13 +364,14 @@ export function BookCirculation() {
   };
 
   const fetchFines = async () => {
-    if (!finesStudentId) return;
+    if (!/^[1-9]\d*$/.test(finesStudentId)) return;
     setFinesLoading(true);
     try {
       const res = await apiClient.get(`/library/fines/${finesStudentId}`);
       setFinesList(Array.isArray(res.data?.data) ? res.data.data : []);
-    } catch {
+    } catch (err: any) {
       setFinesList([]);
+      setError(err.response?.data?.message || t('library.failedToFetchFines'));
     } finally {
       setFinesLoading(false);
     }
@@ -712,12 +712,14 @@ export function BookCirculation() {
             <TextField
               size="small"
               label={t('library.studentId')}
+              type="number"
+              inputProps={{ min: 1, step: 1 }}
               value={finesStudentId}
               onChange={(e) => setFinesStudentId(e.target.value)}
               placeholder={t('library.enterStudentId')}
               sx={{ width: 160 }}
             />
-            <Button variant="contained" sx={S.BTN_PRIMARY} onClick={fetchFines} disabled={!finesStudentId || finesLoading}>
+            <Button variant="contained" sx={S.BTN_PRIMARY} onClick={fetchFines} disabled={!/^[1-9]\d*$/.test(finesStudentId) || finesLoading}>
               {t('library.loadFines')}
             </Button>
           </Box>

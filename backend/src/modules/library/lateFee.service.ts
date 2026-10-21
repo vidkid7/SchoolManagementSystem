@@ -204,7 +204,8 @@ export class LateFeeService {
       include: [
         {
           model: Circulation,
-          include: [Book],
+          as: 'circulation',
+          include: [{ model: Book, as: 'book' }],
         },
         Student,
       ],
@@ -225,7 +226,8 @@ export class LateFeeService {
       include: [
         {
           model: Circulation,
-          include: [Book],
+          as: 'circulation',
+          include: [{ model: Book, as: 'book' }],
         },
       ],
       order: [['createdAt', 'DESC']],

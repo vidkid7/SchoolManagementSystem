@@ -25,6 +25,7 @@ import { Subject, ClassSubject } from './Subject.model';
 import Book from './Book.model';
 import Circulation from './Circulation.model';
 import Reservation from './Reservation.model';
+import LibraryFine from './LibraryFine.model';
 import Sport from './Sport.model';
 import Team from './Team.model';
 import Tournament from './Tournament.model';
@@ -418,12 +419,12 @@ export function setupGradeAssociations(): void {
 export function setupLibraryAssociations(): void {
   try {
     // Check if models are initialized
-    if (!Book || !Circulation || !Reservation || !Student) {
+    if (!Book || !Circulation || !Reservation || !LibraryFine || !Student) {
       return;
     }
 
     // Verify sequelize instance exists
-    if (!Book.sequelize || !Circulation.sequelize || !Reservation.sequelize || !Student.sequelize) {
+    if (!Book.sequelize || !Circulation.sequelize || !Reservation.sequelize || !LibraryFine.sequelize || !Student.sequelize) {
       return;
     }
 
@@ -466,6 +467,23 @@ export function setupLibraryAssociations(): void {
     Student.hasMany(Reservation, {
       foreignKey: 'studentId',
       as: 'reservations'
+    });
+
+    LibraryFine.belongsTo(Circulation, {
+      foreignKey: 'circulationId',
+      as: 'circulation'
+    });
+    Circulation.hasMany(LibraryFine, {
+      foreignKey: 'circulationId',
+      as: 'fines'
+    });
+    LibraryFine.belongsTo(Student, {
+      foreignKey: 'studentId',
+      as: 'student'
+    });
+    Student.hasMany(LibraryFine, {
+      foreignKey: 'studentId',
+      as: 'libraryFines'
     });
   } catch (error) {
     // Silently skip if models aren't ready
