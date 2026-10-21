@@ -571,18 +571,17 @@ export const StaffAssignments = () => {
                           />
                         </Tooltip>
                       )}
-                      <Tooltip title={t('common.edit')}>
-                        <span>
+                      {assignment.isActive && (
+                        <Tooltip title={t('common.edit')}>
                           <IconButton
                             size="small"
                             color="primary"
-                            disabled={!assignment.isActive}
                             onClick={() => openEditDialog(assignment)}
                           >
                             <EditIcon fontSize="small" />
                           </IconButton>
-                        </span>
-                      </Tooltip>
+                        </Tooltip>
+                      )}
                       <Tooltip title={t('common.delete')}>
                         <IconButton
                           size="small"

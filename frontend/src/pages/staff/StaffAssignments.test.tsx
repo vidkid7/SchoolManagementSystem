@@ -140,5 +140,6 @@ describe('StaffAssignments', () => {
     });
     expect(activeToggle).toBeChecked();
     expect(screen.getAllByRole('checkbox')).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'common.edit' })).toHaveLength(1);
   });
 });
