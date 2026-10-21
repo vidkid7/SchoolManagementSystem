@@ -581,6 +581,8 @@
     "subjectName": "Name",
     "subjectNameEnglish": "Name (English)",
     "subjectNameNepali": "Name (Nepali)",
+    "fillRequiredSubjectFields": "Enter a subject code, names in English and Nepali, credit hours, and full marks.",
+    "invalidSubjectMarks": "Credit hours and full marks must be positive whole numbers.",
     "subjectType": "Type",
     "compulsory": "Compulsory",
     "optional": "Optional",

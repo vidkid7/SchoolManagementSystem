@@ -248,7 +248,10 @@ export const ClassManagement = () => {
   const handleSaveSubject = async () => {
     try {
       if (!subjectForm.code.trim() || !subjectForm.name_en.trim() || !subjectForm.name_np.trim()) {
-        setError(t('academic.fillRequiredSubjectFields', 'Enter a subject code and names in English and Nepali.'));
+        setError(t(
+          'academic.fillRequiredSubjectFields',
+          'Enter a subject code, names in English and Nepali, credit hours, and full marks.',
+        ));
         return;
       }
 
@@ -706,6 +709,7 @@ export const ClassManagement = () => {
                   label={t('academic.capacity')}
                   type="number"
                   fullWidth
+                  inputProps={{ min: 1, max: 100, step: 1 }}
                   value={classForm.capacity}
                   error={Boolean(classErrors.capacity)}
                   onChange={(e) => {
@@ -769,6 +773,7 @@ export const ClassManagement = () => {
                   type="number"
                   fullWidth
                   required
+                  inputProps={{ min: 1, step: 1 }}
                   value={subjectForm.credit_hours}
                   onChange={(e) => setSubjectForm({ ...subjectForm, credit_hours: e.target.value })}
                 />
@@ -779,6 +784,7 @@ export const ClassManagement = () => {
                   type="number"
                   fullWidth
                   required
+                  inputProps={{ min: 1, step: 1 }}
                   value={subjectForm.full_marks}
                   onChange={(e) => setSubjectForm({ ...subjectForm, full_marks: e.target.value })}
                 />

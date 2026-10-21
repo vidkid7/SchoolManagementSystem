@@ -583,6 +583,8 @@
     "subjectName": "नाम",
     "subjectNameEnglish": "नाम (अंग्रेजी)",
     "subjectNameNepali": "नाम (नेपाली)",
+    "fillRequiredSubjectFields": "विषय कोड, अंग्रेजी र नेपाली नाम, क्रेडिट घण्टा र पूर्णांक प्रविष्ट गर्नुहोस्।",
+    "invalidSubjectMarks": "क्रेडिट घण्टा र पूर्णांक सकारात्मक पूर्ण संख्या हुनुपर्छ।",
     "subjectType": "प्रकार",
     "compulsory": "अनिवार्य",
     "optional": "ऐच्छिक",
