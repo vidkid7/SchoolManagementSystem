@@ -101,6 +101,16 @@ export function AttendanceReports() {
   };
 
   const fetchReport = async () => {
+    if (!startDate || !endDate) {
+      setError(t('common.dateRangeRequired'));
+      return;
+    }
+
+    if (endDate < startDate) {
+      setError(t('common.endDateMustNotBeBeforeStartDate'));
+      return;
+    }
+
     try {
       setLoading(true);
       setError('');
@@ -277,6 +287,7 @@ export function AttendanceReports() {
               fullWidth
               label={t('common.startDate')}
               value={startDate}
+              required
               onChange={(e) => setStartDate(e.target.value)}
               InputLabelProps={{ shrink: true }}
             />
@@ -286,6 +297,7 @@ export function AttendanceReports() {
               fullWidth
               label={t('common.endDate')}
               value={endDate}
+              required
               onChange={(e) => setEndDate(e.target.value)}
               InputLabelProps={{ shrink: true }}
             />

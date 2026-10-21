@@ -45,6 +45,8 @@
     "reportType": "Report Type",
     "startDate": "Start Date",
     "endDate": "End Date",
+    "dateRangeRequired": "Select both a start date and an end date",
+    "endDateMustNotBeBeforeStartDate": "End date must be on or after the start date",
     "class": "Class",
     "optional": "Optional",
     "allClasses": "All Classes",

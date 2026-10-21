@@ -43,6 +43,8 @@
     "reportType": "रिपोर्ट प्रकार",
     "startDate": "सुरु मिति",
     "endDate": "अन्त्य मिति",
+    "dateRangeRequired": "सुरु मिति र अन्त्य मिति दुवै चयन गर्नुहोस्",
+    "endDateMustNotBeBeforeStartDate": "अन्त्य मिति सुरु मिति वा त्यसपछिको हुनुपर्छ",
     "class": "कक्षा",
     "optional": "वैकल्पिक",
     "allClasses": "सबै कक्षाहरू",

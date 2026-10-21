@@ -46,6 +46,9 @@ describe('AttendanceReports accessibility', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'common.startDate' }), {
       target: { value: '2025-01-01' },
     });
+    fireEvent.change(screen.getByRole('textbox', { name: 'common.endDate' }), {
+      target: { value: '2025-01-31' },
+    });
 
     expect(screen.queryByText('common.noRecordsFound')).not.toBeInTheDocument();
     expect(screen.getByText('common.generateReport')).toBeInTheDocument();
@@ -57,6 +60,42 @@ describe('AttendanceReports accessibility', () => {
       expect.objectContaining({ params: expect.objectContaining({ dateFrom: expect.any(String) }) }),
     ));
     expect(await screen.findByText('common.noRecordsFound')).toBeInTheDocument();
+  });
+
+  it('requires both dates before requesting a report', async () => {
+    render(
+      <ThemeProvider theme={createTheme()}>
+        <AttendanceReports />
+      </ThemeProvider>,
+    );
+
+    await waitFor(() => expect(apiClient.get).toHaveBeenCalledWith('/academic/classes'));
+    jest.mocked(apiClient.get).mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'common.generate' }));
+
+    expect(await screen.findByText('common.dateRangeRequired')).toBeInTheDocument();
+    expect(apiClient.get).not.toHaveBeenCalled();
+  });
+
+  it('rejects a reversed date range before requesting a report', async () => {
+    render(
+      <ThemeProvider theme={createTheme()}>
+        <AttendanceReports />
+      </ThemeProvider>,
+    );
+
+    await waitFor(() => expect(apiClient.get).toHaveBeenCalledWith('/academic/classes'));
+    jest.mocked(apiClient.get).mockClear();
+    fireEvent.change(screen.getByRole('textbox', { name: 'common.startDate' }), {
+      target: { value: '2025-02-01' },
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: 'common.endDate' }), {
+      target: { value: '2025-01-31' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'common.generate' }));
+
+    expect(await screen.findByText('common.endDateMustNotBeBeforeStartDate')).toBeInTheDocument();
+    expect(apiClient.get).not.toHaveBeenCalled();
   });
 
   it('sends the selected class ID and available section to the student report API', async () => {
@@ -71,6 +110,12 @@ describe('AttendanceReports accessibility', () => {
     );
 
     await waitFor(() => expect(apiClient.get).toHaveBeenCalledWith('/academic/classes'));
+    fireEvent.change(screen.getByRole('textbox', { name: 'common.startDate' }), {
+      target: { value: '2025-01-01' },
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: 'common.endDate' }), {
+      target: { value: '2025-01-31' },
+    });
     const filters = screen.getAllByRole('combobox');
     fireEvent.mouseDown(filters[1]);
     fireEvent.click(await screen.findByRole('option', { name: 'common.class 5' }));
