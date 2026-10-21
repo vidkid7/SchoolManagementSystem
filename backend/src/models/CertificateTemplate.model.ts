@@ -28,14 +28,14 @@ export class CertificateTemplate
   extends Model<CertificateTemplateAttributes, CertificateTemplateCreationAttributes>
   implements CertificateTemplateAttributes
 {
-  public templateId!: number;
-  public name!: string;
-  public type!: 'character' | 'transfer' | 'academic_excellence' | 'eca' | 'sports' | 'course_completion' | 'bonafide';
-  public templateHtml!: string;
-  public variables!: string[];
-  public isActive!: boolean;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public templateId: number;
+  declare public name: string;
+  declare public type: 'character' | 'transfer' | 'academic_excellence' | 'eca' | 'sports' | 'course_completion' | 'bonafide';
+  declare public templateHtml: string;
+  declare public variables: string[];
+  declare public isActive: boolean;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   /**
    * Extract variables from template HTML
@@ -43,7 +43,7 @@ export class CertificateTemplate
    */
   public extractVariables(): string[] {
     const regex = /\{\{([^}]+)\}\}/g;
-    const matches = this.templateHtml.matchAll(regex);
+    const matches = this.getDataValue('templateHtml').matchAll(regex);
     const variables = new Set<string>();
     
     for (const match of matches) {
@@ -58,14 +58,14 @@ export class CertificateTemplate
    */
   public validateVariables(): boolean {
     const extractedVars = this.extractVariables();
-    return this.variables.every(v => extractedVars.includes(v));
+    return (this.getDataValue('variables') as string[]).every(v => extractedVars.includes(v));
   }
 
   /**
    * Replace variables in template with actual values
    */
   public renderTemplate(data: Record<string, any>): string {
-    let rendered = this.templateHtml;
+    let rendered = this.getDataValue('templateHtml');
     
     for (const [key, value] of Object.entries(data)) {
       const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');

@@ -43,12 +43,8 @@ export class CertificateTemplateService {
   constructor(private repository: CertificateTemplateRepository) {}
 
   private sanitizeTemplate(template: CertificateTemplate): CertificateTemplate {
-    const sanitizedHtml = cleanTemplateHtml(template.templateHtml);
-    if (typeof template.setDataValue === 'function') {
-      template.setDataValue('templateHtml', sanitizedHtml);
-    } else {
-      template.templateHtml = sanitizedHtml;
-    }
+    const sanitizedHtml = cleanTemplateHtml(template.getDataValue('templateHtml') || '');
+    template.setDataValue('templateHtml', sanitizedHtml);
     return template;
   }
 
@@ -125,8 +121,8 @@ export class CertificateTemplateService {
 
     // Validate template HTML if provided
     if (data.templateHtml || data.variables) {
-      const html = data.templateHtml || template.templateHtml;
-      const vars = data.variables || template.variables;
+      const html = data.templateHtml || template.getDataValue('templateHtml');
+      const vars = data.variables || template.getDataValue('variables');
       this.validateTemplateHtml(html, vars);
     }
 
@@ -221,12 +217,12 @@ export class CertificateTemplateService {
   async renderTemplate(templateId: number, data: Record<string, any>): Promise<string> {
     const template = await this.getTemplateById(templateId);
 
-    if (!template.isActive) {
+    if (!template.getDataValue('isActive')) {
       throw new Error('Cannot render inactive template');
     }
 
     // Validate that all required variables are provided
-    const missingVars = template.variables.filter(v => !(v in data));
+    const missingVars = (template.getDataValue('variables') as string[]).filter(v => !(v in data));
     if (missingVars.length > 0) {
       throw new Error(`Missing required variables: ${missingVars.join(', ')}`);
     }
@@ -247,12 +243,13 @@ export class CertificateTemplateService {
     byType: Record<string, number>;
   }> {
     const all = await this.repository.findAll();
-    const active = all.filter(t => t.isActive);
-    const inactive = all.filter(t => !t.isActive);
+    const active = all.filter(t => t.getDataValue('isActive'));
+    const inactive = all.filter(t => !t.getDataValue('isActive'));
 
     const byType: Record<string, number> = {};
     for (const template of all) {
-      byType[template.type] = (byType[template.type] || 0) + 1;
+      const type = template.getDataValue('type') as string;
+      byType[type] = (byType[type] || 0) + 1;
     }
 
     return {
