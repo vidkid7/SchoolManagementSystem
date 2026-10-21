@@ -43,6 +43,7 @@ import {
   Search as SearchIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 interface Invoice {
@@ -74,6 +75,7 @@ export const InvoiceList = () => {
   
   // Filters
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search);
   const [statusFilter, setStatusFilter] = useState('');
   
   // Payment Dialog
@@ -83,16 +85,16 @@ export const InvoiceList = () => {
   const [paymentMethod, setPaymentMethod] = useState('cash');
 
   useEffect(() => {
-    fetchInvoices();
-  }, [page, rowsPerPage, search, statusFilter]);
+    fetchInvoices(debouncedSearch);
+  }, [page, rowsPerPage, debouncedSearch, statusFilter]);
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = async (searchTerm = search) => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
         page: (page + 1).toString(),
         limit: rowsPerPage.toString(),
-        ...(search && { search }),
+        ...(searchTerm && { search: searchTerm }),
         ...(statusFilter && { status: statusFilter }),
       });
 
