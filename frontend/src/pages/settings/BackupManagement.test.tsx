@@ -58,4 +58,17 @@ describe('BackupManagement', () => {
     expect(screen.queryByText('Never')).not.toBeInTheDocument();
     expect(screen.queryByText('Not scheduled')).not.toBeInTheDocument();
   });
+
+  it('wraps the page title and backup actions so narrow screens can reach both actions', async () => {
+    render(<BackupManagement />);
+
+    const header = screen.getByRole('heading', { name: 'Backup & Restore' }).closest('.MuiPaper-root');
+    const headerRow = header?.firstElementChild as HTMLElement;
+    const actionGroup = headerRow.lastElementChild as HTMLElement;
+
+    expect(screen.getByRole('button', { name: 'Backup Configuration' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create Backup' })).toBeInTheDocument();
+    expect(getComputedStyle(headerRow).flexWrap).toBe('wrap');
+    expect(getComputedStyle(actionGroup).flexWrap).toBe('wrap');
+  });
 });

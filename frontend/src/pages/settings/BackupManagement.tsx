@@ -256,7 +256,7 @@ export const BackupManagement = () => {
   return (
     <Box>
       <Paper sx={S.PAGE_HEADER}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <BackupIcon sx={{ fontSize: 32, color: C.primary }} />
             <Box>
@@ -264,7 +264,7 @@ export const BackupManagement = () => {
               <Typography variant="body2" color="text.secondary">{t('backup.subtitle')}</Typography>
             </Box>
           </Box>
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
             <Button
               variant="outlined" sx={S.BTN_OUTLINE}
               startIcon={<SettingsIcon />}
