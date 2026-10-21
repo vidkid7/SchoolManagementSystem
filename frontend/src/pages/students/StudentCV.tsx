@@ -463,7 +463,7 @@ export const StudentCV = () => {
       if (customization?.schoolBrandingEnabled !== undefined) params.append('branding', customization.schoolBrandingEnabled.toString());
       
       const token = localStorage.getItem('accessToken');
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const API_URL = apiClient.defaults.baseURL || 'http://localhost:3000';
       const downloadUrl = `${API_URL}/api/v1/cv/${id}/download?${params.toString()}`;
       
       const link = document.createElement('a');
@@ -516,7 +516,7 @@ export const StudentCV = () => {
       if (customization?.schoolBrandingEnabled !== undefined) params.append('branding', customization.schoolBrandingEnabled.toString());
       
       const token = localStorage.getItem('accessToken');
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const API_URL = apiClient.defaults.baseURL || 'http://localhost:3000';
       const regenerateUrl = `${API_URL}/api/v1/cv/${id}/regenerate?${params.toString()}`;
       
       const response = await fetch(regenerateUrl, {
@@ -571,7 +571,7 @@ export const StudentCV = () => {
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
+        <CircularProgress aria-label={t('Loading...')} />
         <Typography sx={{ ml: 2 }}>{t('Loading...')}</Typography>
       </Box>
     );
@@ -617,16 +617,18 @@ export const StudentCV = () => {
         animate={{ opacity: 1, y: 0 }}
         sx={{ 
           display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between', 
-          alignItems: 'center', 
+          alignItems: { xs: 'stretch', sm: 'center' },
+          gap: 2,
           mb: 4,
-          p: 3,
+          p: { xs: 2, sm: 3 },
           borderRadius: R.lg,
           background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.secondary.main, 0.08)} 100%)`,
           border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, minWidth: 0 }}>
           <IconButton
             aria-label={`${t('common.back')} ${t('Student')}`}
             onClick={() => navigate(`/students/${id}`)} 
@@ -638,7 +640,7 @@ export const StudentCV = () => {
           >
             <BackIcon sx={{ color: theme.palette.primary.main }} />
           </IconButton>
-          <Box>
+          <Box sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
             <Typography component="h1" variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
               {t('Student CV')}
             </Typography>
@@ -647,7 +649,16 @@ export const StudentCV = () => {
             </Typography>
           </Box>
         </Box>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: { xs: 1, sm: 2 },
+            flexWrap: 'wrap',
+            width: { xs: '100%', sm: 'auto' },
+            justifyContent: { xs: 'space-between', sm: 'flex-end' },
+            '& > button': { flex: { xs: '1 1 8rem', sm: '0 0 auto' }, minWidth: { xs: 0, sm: 'auto' } },
+          }}
+        >
           <Button
             variant={previewMode ? 'contained' : 'outlined'}
             startIcon={previewMode ? <EditIcon /> : <PreviewIcon />}
@@ -1137,6 +1148,7 @@ export const StudentCV = () => {
                 <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
                   <TextField
                     size="small"
+                    label={t('Skill')}
                     value={skillInput}
                     onChange={(e) => setSkillInput(e.target.value)}
                     placeholder={t('Add a skill')}
@@ -1169,6 +1181,7 @@ export const StudentCV = () => {
                 <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
                   <TextField
                     size="small"
+                    label={t('Hobby')}
                     value={hobbyInput}
                     onChange={(e) => setHobbyInput(e.target.value)}
                     placeholder={t('Add a hobby')}
@@ -1202,6 +1215,7 @@ export const StudentCV = () => {
                   fullWidth
                   multiline
                   rows={3}
+                  label={t('Career Goals')}
                   value={customization.careerGoals}
                   onChange={(e) => handleCustomizationChange('careerGoals', e.target.value)}
                   placeholder={t('Describe your career goals')}
@@ -1216,6 +1230,7 @@ export const StudentCV = () => {
                   fullWidth
                   multiline
                   rows={4}
+                  label={t('Personal Statement')}
                   value={customization.personalStatement}
                   onChange={(e) => handleCustomizationChange('personalStatement', e.target.value)}
                   placeholder={t('Write your personal statement')}
