@@ -1,10 +1,15 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import apiClient from '../../services/apiClient';
 import { LibraryDashboard } from './LibraryDashboard';
 
 jest.mock('../../services/apiClient', () => ({ __esModule: true, default: { get: jest.fn() } }));
 jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+
+function CirculationRouteProbe() {
+  const location = useLocation();
+  return <div>Circulation route: {location.pathname} {location.state?.openIssueDialog ? 'issue-dialog-requested' : ''}</div>;
+}
 
 describe('LibraryDashboard API field mapping', () => {
   beforeEach(() => {
@@ -51,5 +56,33 @@ describe('LibraryDashboard API field mapping', () => {
     expect(screen.getByText('NPR 125')).toBeInTheDocument();
     fireEvent.click(totalBooksCard);
     expect(await screen.findByText('Books route')).toBeInTheDocument();
+  });
+
+  it('routes Issue Book to circulation with its dialog requested and Return Books to circulation', async () => {
+    render(
+      <MemoryRouter initialEntries={['/KMC/library']}>
+        <Routes>
+          <Route path="/:municipalitySlug/library" element={<LibraryDashboard />} />
+          <Route path="/:municipalitySlug/library/circulation" element={<CirculationRouteProbe />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'library.issueBook' }));
+    expect(await screen.findByText(/Circulation route: \/KMC\/library\/circulation issue-dialog-requested/)).toBeInTheDocument();
+  });
+
+  it('routes Return Books to the issued circulation list', async () => {
+    render(
+      <MemoryRouter initialEntries={['/KMC/library']}>
+        <Routes>
+          <Route path="/:municipalitySlug/library" element={<LibraryDashboard />} />
+          <Route path="/:municipalitySlug/library/circulation" element={<CirculationRouteProbe />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'library.returnBooks' }));
+    expect(await screen.findByText('Circulation route: /KMC/library/circulation')).toBeInTheDocument();
   });
 });

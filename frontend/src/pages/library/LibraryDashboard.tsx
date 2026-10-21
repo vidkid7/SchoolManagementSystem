@@ -162,7 +162,7 @@ export function LibraryDashboard() {
             <Button
               variant="outlined" sx={S.BTN_OUTLINE}
               startIcon={<IssueIcon />}
-              onClick={() => navigate(`/library/issue`)}
+              onClick={() => navigate('/library/circulation', { state: { openIssueDialog: true } })}
             >
               {t('library.issueBook')}
             </Button>
@@ -265,7 +265,7 @@ export function LibraryDashboard() {
                 variant="outlined" sx={S.BTN_OUTLINE}
                 fullWidth
                 startIcon={<ReturnIcon />}
-                onClick={() => navigate(`/library/return`)}
+                onClick={() => navigate('/library/circulation')}
               >
                 {t('library.returnBooks')}
               </Button>

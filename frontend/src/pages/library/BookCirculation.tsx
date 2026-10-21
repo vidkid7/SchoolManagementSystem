@@ -5,6 +5,7 @@ import { YearSelectableDateField } from '../../components/YearSelectableDatePick
  */
 
 import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
@@ -76,6 +77,8 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export function BookCirculation() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const theme = useTheme();
   const S = useAdminStyles(theme);
@@ -108,6 +111,13 @@ export function BookCirculation() {
     setIssueStudentSearch('');
     setIssueForm({ dueDate: '' });
   };
+
+  useEffect(() => {
+    if (!location.state?.openIssueDialog) return;
+    setError('');
+    setIssueDialog(true);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
 
   // Return Dialog
   const [returnDialog, setReturnDialog] = useState(false);
