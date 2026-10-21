@@ -508,6 +508,7 @@ export const UserManagement = () => {
                       label={user.status}
                       color={getStatusColor(user.status)}
                       size="small"
+                      style={user.status === 'active' ? { backgroundColor: '#166534', color: '#fff' } : undefined}
                     />
                   </TableCell>
                   <TableCell sx={S.TD}>
@@ -721,7 +722,12 @@ export const UserManagement = () => {
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="subtitle2" color="text.secondary">{t('userManagement.status')}</Typography>
-                  <Chip label={selectedUser.status} color={getStatusColor(selectedUser.status)} size="small" />
+                  <Chip
+                    label={selectedUser.status}
+                    color={getStatusColor(selectedUser.status)}
+                    size="small"
+                    style={selectedUser.status === 'active' ? { backgroundColor: '#166534', color: '#fff' } : undefined}
+                  />
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="subtitle2" color="text.secondary">{t('userManagement.lastLogin')}</Typography>

@@ -64,6 +64,10 @@ describe('UserManagement', () => {
     
     expect(await screen.findByText('@qaTeacher')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Actions for qaTeacher' })).toBeInTheDocument();
+    expect(screen.getByText('active').closest('.MuiChip-root')).toHaveStyle({
+      backgroundColor: 'rgb(22, 101, 52)',
+      color: 'rgb(255, 255, 255)',
+    });
 
     await user.type(screen.getByRole('textbox', { name: 'Search' }), 'QA Teacher');
 
