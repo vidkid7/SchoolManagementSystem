@@ -180,7 +180,7 @@ export function FinancialReports() {
     }
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadCSV = () => {
     if (!reportData) return;
 
     // Create CSV content
@@ -397,7 +397,7 @@ export function FinancialReports() {
                       <Button
                         variant="outlined"
                         startIcon={<DownloadIcon />}
-                        onClick={handleDownloadPDF}
+                        onClick={handleDownloadCSV}
                         disabled={loading}
                         fullWidth
                         sx={{ ...S.BTN_OUTLINE, 
@@ -409,7 +409,7 @@ export function FinancialReports() {
                           },
                         }}
                       >
-                        {t('finance.downloadPDF')}
+                        {t('finance.downloadCSV')}
                       </Button>
                       <Button
                         variant="outlined"

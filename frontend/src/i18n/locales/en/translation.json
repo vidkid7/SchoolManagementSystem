@@ -1658,7 +1658,7 @@
     "reportType": "Report Type",
     "startDate": "Start Date",
     "endDate": "End Date",
-    "downloadPDF": "Download PDF",
+    "downloadCSV": "Download CSV",
     "generateReportToView": "Generate a report to view data",
     "reportSummary": "Report Summary",
     "detailedReport": "Detailed Report",

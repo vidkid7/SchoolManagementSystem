@@ -1660,7 +1660,7 @@
     "reportType": "रिपोर्ट प्रकार",
     "startDate": "सुरु मिति",
     "endDate": "अन्त्य मिति",
-    "downloadPDF": "PDF डाउनलोड गर्नुहोस्",
+    "downloadCSV": "CSV डाउनलोड गर्नुहोस्",
     "generateReportToView": "डेटा हेर्नको लागि रिपोर्ट उत्पन्न गर्नुहोस्",
     "reportSummary": "रिपोर्ट सारांश",
     "detailedReport": "विस्तृत रिपोर्ट",

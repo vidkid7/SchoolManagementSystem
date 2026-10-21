@@ -57,4 +57,42 @@ describe('Financial report quick ranges', () => {
       params: { type: 'revenue', startDate: expectedStart, endDate: '2026-10-20' },
     });
   });
+
+  it('labels the CSV export accurately and downloads a CSV file', async () => {
+    const originalCreateObjectURL = URL.createObjectURL;
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+    const createObjectURL = jest.fn(() => 'blob:financial-report');
+    const revokeObjectURL = jest.fn();
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: createObjectURL });
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: revokeObjectURL });
+
+    let downloadedFilename = '';
+    const anchorClick = jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function () {
+      downloadedFilename = this.download;
+    });
+
+    try {
+      jest.mocked(apiClient.get)
+        .mockResolvedValueOnce({ data: { data: {} } } as unknown as Awaited<ReturnType<typeof apiClient.get>>)
+        .mockResolvedValueOnce({
+          data: { data: { summary: { totalRevenue: 0 } } },
+        } as unknown as Awaited<ReturnType<typeof apiClient.get>>);
+      renderReports();
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'common.generate' }));
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'finance.downloadCSV' }));
+
+      expect(createObjectURL).toHaveBeenCalledWith(expect.objectContaining({ type: 'text/csv' }));
+      expect(anchorClick).toHaveBeenCalledTimes(1);
+      expect(downloadedFilename).toMatch(/^financial_report_revenue_\d+\.csv$/);
+      expect(revokeObjectURL).toHaveBeenCalledWith('blob:financial-report');
+    } finally {
+      anchorClick.mockRestore();
+      Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: originalCreateObjectURL });
+      Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: originalRevokeObjectURL });
+    }
+  });
 });
