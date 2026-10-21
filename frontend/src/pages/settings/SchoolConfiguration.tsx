@@ -388,8 +388,9 @@ export const SchoolConfiguration = () => {
                 </Grid>
                 <Grid item xs={12} md={4}>
                   <FormControl fullWidth>
-                    <InputLabel>{t('settings.province')} *</InputLabel>
+                    <InputLabel id="school-province-edit-label">{t('settings.province')} *</InputLabel>
                     <Select
+                      labelId="school-province-edit-label"
                       value={formData.province || ''}
                       label={`${t('settings.province')} *`}
                       onChange={(e) => setFormData({ ...formData, province: e.target.value })}
@@ -668,8 +669,9 @@ export const SchoolConfiguration = () => {
                   </Grid>
                   <Grid item xs={12} md={4}>
                     <FormControl fullWidth>
-                      <InputLabel>{t('settings.province')}</InputLabel>
+                      <InputLabel id="school-province-display-label">{t('settings.province')}</InputLabel>
                       <Select
+                        labelId="school-province-display-label"
                         value={formData.province || ''}
                         label={t('settings.province')}
                         onChange={(e) => setFormData({ ...formData, province: e.target.value })}
