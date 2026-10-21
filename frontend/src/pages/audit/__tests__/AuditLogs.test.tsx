@@ -131,6 +131,14 @@ describe('AuditLogs Component', () => {
     });
   });
 
+  it('uses a valid heading hierarchy for the page and filters section', async () => {
+    renderComponent();
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Audit Logs' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Filters' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '100' })).not.toBeInTheDocument();
+  });
+
   it('should display statistics cards', async () => {
     renderComponent();
 

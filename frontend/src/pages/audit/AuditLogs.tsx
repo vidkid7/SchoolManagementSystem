@@ -289,7 +289,7 @@ const AuditLogs: React.FC = () => {
               <HistoryIcon sx={{ fontSize: 22 }} />
             </Box>
             <Box>
-              <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
+              <Typography component="h1" variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
                 {t('audit.title')}
               </Typography>
               <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
@@ -338,7 +338,7 @@ const AuditLogs: React.FC = () => {
                   >
                     {label}
                   </Typography>
-                  <Typography variant="h4" sx={{ color: accent, fontWeight: 700, lineHeight: 1.2 }}>
+                  <Typography component="p" variant="h4" sx={{ color: accent, fontWeight: 700, lineHeight: 1.2 }}>
                     {value.toLocaleString()}
                   </Typography>
                 </Box>
@@ -350,7 +350,7 @@ const AuditLogs: React.FC = () => {
         {/* Filters Card */}
         <Box sx={{ ...S.GLASS, p: 2, mb: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+            <Typography component="h2" variant="subtitle1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
               {t('audit.filters')}
             </Typography>
             <IconButton
