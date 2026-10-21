@@ -25,6 +25,7 @@ jest.mock('react-i18next', () => ({
         'academic.timetableSubtitle': 'Create and manage class schedules',
         'academic.daysScheduled': `${options?.count ?? 0} days scheduled`,
         'academic.period': 'Period',
+        'academic.periodDay': 'Period / Day',
         'academic.monday': 'Monday',
         'academic.tuesday': 'Tuesday',
         'academic.wednesday': 'Wednesday',
@@ -68,6 +69,7 @@ describe('Timetable', () => {
     await user.click(await screen.findByRole('option', { name: 'Class 1 - Section K' }));
 
     const firstPeriodButton = await screen.findByRole('button', { name: 'Add Period - Monday Period 1' });
+    expect(screen.getByRole('columnheader', { name: 'Period / Day' })).toHaveStyle({ color: 'rgb(255, 255, 255)' });
     await user.click(firstPeriodButton);
     expect(await screen.findByRole('heading', { name: 'Add Period - Monday Period 1' })).toBeInTheDocument();
     expect(screen.getByLabelText('Start Time')).toHaveValue('08:00');

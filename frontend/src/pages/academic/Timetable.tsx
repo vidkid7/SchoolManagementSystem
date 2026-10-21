@@ -388,11 +388,11 @@ export const Timetable = () => {
             <Table sx={{ minWidth: 800 }}>
               <TableHead sx={{ bgcolor: S.TH_BG }}>
                 <TableRow sx={{ bgcolor: 'primary.main' }}>
-                  <TableCell sx={{ color: 'white', fontWeight: 600, minWidth: 100 }}>
+                  <TableCell sx={{ color: 'white !important', fontWeight: 600, minWidth: 100 }}>
                     {t('academic.periodDay')}
                   </TableCell>
                   {DAYS.map((_, index) => (
-                    <TableCell key={index} align="center" sx={{ color: 'white', fontWeight: 600 }}>
+                    <TableCell key={index} align="center" sx={{ color: 'white !important', fontWeight: 600 }}>
                       {getDayName(index)}
                     </TableCell>
                   ))}
