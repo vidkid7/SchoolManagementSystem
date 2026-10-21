@@ -84,6 +84,8 @@ export const Syllabus = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
   const [error, setError] = useState('');
+  const [topicFormError, setTopicFormError] = useState('');
+  const [progressError, setProgressError] = useState('');
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
 
   const [topicForm, setTopicForm] = useState({
@@ -208,11 +210,14 @@ export const Syllabus = () => {
   };
 
   const handleOpenDialog = () => {
+    setError('');
+    setTopicFormError('');
     setDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
+    setTopicFormError('');
     setTopicForm({
       title: '',
       description: '',
@@ -221,6 +226,8 @@ export const Syllabus = () => {
   };
 
   const handleOpenProgressDialog = (topic: Topic) => {
+    setError('');
+    setProgressError('');
     setSelectedTopic(topic);
     setProgressForm({
       completedHours: topic.completedHours.toString(),
@@ -232,6 +239,7 @@ export const Syllabus = () => {
     setProgressDialogOpen(false);
     setSelectedTopic(null);
     setProgressForm({ completedHours: '' });
+    setProgressError('');
   };
 
   const handleSaveTopic = async () => {
@@ -242,15 +250,16 @@ export const Syllabus = () => {
       
       // Validate input
       if (!topicForm.title.trim()) {
-        setError(t('academic.topicTitleRequired'));
+        setTopicFormError(t('academic.topicTitleRequired'));
         return;
       }
       
       if (isNaN(estimatedHours) || estimatedHours < 1) {
-        setError(t('academic.estimatedHoursMin'));
+        setTopicFormError(t('academic.estimatedHoursMin'));
         return;
       }
 
+      setTopicFormError('');
       const response = await api.post('/academic/syllabus', {
         syllabusId: syllabus.syllabusId,
         title: topicForm.title,
@@ -261,23 +270,35 @@ export const Syllabus = () => {
       handleCloseDialog();
       await fetchSyllabus();
     } catch (error: any) {
-      setError(error.response?.data?.message || t('academic.failedToSaveTopic'));
+      setTopicFormError(error.response?.data?.message || t('academic.failedToSaveTopic'));
     }
   };
 
   const handleUpdateProgress = async () => {
     if (!selectedTopic) return;
 
+    const completedHours = Number(progressForm.completedHours);
+    if (
+      !progressForm.completedHours.trim() ||
+      !Number.isInteger(completedHours) ||
+      completedHours < 0 ||
+      completedHours > 500
+    ) {
+      setProgressError(t('academic.completedHoursRange'));
+      return;
+    }
+
     try {
+      setProgressError('');
       await api.put('/academic/syllabus', {
         topicId: selectedTopic.topicId,
-        completedHours: parseInt(progressForm.completedHours),
+        completedHours,
       });
       handleCloseProgressDialog();
       fetchSyllabus();
     } catch (error: any) {
       console.error('Failed to update progress:', error);
-      setError(error.response?.data?.message || t('academic.failedToUpdateProgress'));
+      setProgressError(error.response?.data?.message || t('academic.failedToUpdateProgress'));
     }
   };
 
@@ -286,8 +307,6 @@ export const Syllabus = () => {
     
     const totalEstimated = syllabus.topics.reduce((sum, t) => sum + Number(t.estimatedHours), 0);
     const totalCompleted = syllabus.topics.reduce((sum, t) => sum + Number(t.completedHours), 0);
-    
-    console.log('Progress calculation:', { totalEstimated, totalCompleted, percentage: totalEstimated > 0 ? (totalCompleted / totalEstimated) * 100 : 0 });
     
     return totalEstimated > 0 ? (totalCompleted / totalEstimated) * 100 : 0;
   };
@@ -504,13 +523,23 @@ export const Syllabus = () => {
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 600 }}>{t('academic.addTopic')}</DialogTitle>
         <DialogContent>
+          {topicFormError && (
+            <Alert severity="error" role="alert" sx={{ mt: 1 }}>
+              {topicFormError}
+            </Alert>
+          )}
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField
                 label={t('academic.topicTitle')}
                 fullWidth
+                required
                 value={topicForm.title}
-                onChange={(e) => setTopicForm({ ...topicForm, title: e.target.value })}
+                error={Boolean(topicFormError && !topicForm.title.trim())}
+                onChange={(e) => {
+                  setTopicForm({ ...topicForm, title: e.target.value });
+                  setTopicFormError('');
+                }}
                 placeholder={t('academic.topicTitlePlaceholder')}
               />
             </Grid>
@@ -529,8 +558,14 @@ export const Syllabus = () => {
                 label={t('academic.estimatedHours')}
                 type="number"
                 fullWidth
+                required
                 value={topicForm.estimatedHours}
-                onChange={(e) => setTopicForm({ ...topicForm, estimatedHours: e.target.value })}
+                inputProps={{ min: 1, step: 1 }}
+                error={Boolean(topicFormError && topicForm.title.trim() && (!topicForm.estimatedHours || Number(topicForm.estimatedHours) < 1))}
+                onChange={(e) => {
+                  setTopicForm({ ...topicForm, estimatedHours: e.target.value });
+                  setTopicFormError('');
+                }}
               />
             </Grid>
           </Grid>
@@ -547,6 +582,11 @@ export const Syllabus = () => {
       <Dialog open={progressDialogOpen} onClose={handleCloseProgressDialog} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ fontWeight: 600 }}>{t('academic.updateProgress')}</DialogTitle>
         <DialogContent>
+          {progressError && (
+            <Alert severity="error" role="alert" sx={{ mt: 1 }}>
+              {progressError}
+            </Alert>
+          )}
           <Box sx={{ mt: 2 }}>
             <Typography variant="body2" color="text.secondary" gutterBottom>
               {t('academic.topicLabel')}: {selectedTopic?.title}
@@ -558,10 +598,15 @@ export const Syllabus = () => {
               label={t('academic.completedHours')}
               type="number"
               fullWidth
+              required
               value={progressForm.completedHours}
-              onChange={(e) => setProgressForm({ completedHours: e.target.value })}
+              error={Boolean(progressError)}
+              onChange={(e) => {
+                setProgressForm({ completedHours: e.target.value });
+                setProgressError('');
+              }}
               sx={{ mt: 2 }}
-              inputProps={{ min: 0, max: selectedTopic?.estimatedHours }}
+              inputProps={{ min: 0, max: 500, step: 1 }}
             />
           </Box>
         </DialogContent>

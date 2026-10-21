@@ -641,6 +641,7 @@
     "failedToCreateSyllabus": "पाठ्यक्रम सिर्जना गर्न असफल",
     "topicTitleRequired": "विषयवस्तुको शीर्षक आवश्यक छ",
     "estimatedHoursMin": "अनुमानित घण्टाहरू कम्तिमा १ हुनु पर्छ",
+    "completedHoursRange": "पूरा भएको घण्टा ० देखि ५०० सम्मको पूर्ण संख्या हुनुपर्छ",
     "failedToSaveTopic": "विषयवस्तु बचत गर्न असफल",
     "failedToUpdateProgress": "प्रगति अपडेट गर्न असफल",
     "timetableManagement": "समय तालिका व्यवस्थापन",
