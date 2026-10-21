@@ -33,8 +33,12 @@ describe('ClassManagement', () => {
     );
 
     fireEvent.click(screen.getAllByRole('tab')[1]);
-    fireEvent.click(await screen.findByRole('button', { name: 'academic.addSubject' }));
+    const addSubjectButton = await screen.findByRole('button', { name: 'academic.addSubject' });
+    addSubjectButton.focus();
+    const triggerBlurSpy = jest.spyOn(addSubjectButton, 'blur');
+    fireEvent.click(addSubjectButton);
     const dialog = await screen.findByRole('dialog');
+    expect(triggerBlurSpy).toHaveBeenCalledTimes(1);
     expect(within(dialog).getByRole('textbox', { name: 'academic.subjectCode' })).toBeRequired();
     expect(within(dialog).getByRole('textbox', { name: 'academic.subjectNameEnglish' })).toBeRequired();
     expect(within(dialog).getByRole('textbox', { name: 'academic.subjectNameNepali' })).toBeRequired();
@@ -47,8 +51,15 @@ describe('ClassManagement', () => {
     );
     expect(apiClient.post).not.toHaveBeenCalled();
 
-    fireEvent.click(within(dialog).getByRole('button', { name: 'common.cancel' }));
+    const cancelButton = within(dialog).getByRole('button', { name: 'common.cancel' });
+    cancelButton.focus();
+    const cancelBlurSpy = jest.spyOn(cancelButton, 'blur');
+    fireEvent.click(cancelButton);
     await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+    expect(cancelBlurSpy).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(addSubjectButton).toHaveFocus());
+    triggerBlurSpy.mockRestore();
+    cancelBlurSpy.mockRestore();
   });
 
   it('exposes the numeric limits described by class capacity and subject mark validation', async () => {

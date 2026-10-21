@@ -4,7 +4,7 @@
  * Manage classes, sections, and subjects
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
@@ -112,6 +112,7 @@ export const ClassManagement = () => {
   const [totalStudents, setTotalStudents] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const dialogTriggerRef = useRef<HTMLElement | null>(null);
   const [dialogType, setDialogType] = useState<'class' | 'subject'>('class');
   const [editMode, setEditMode] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
@@ -164,7 +165,9 @@ export const ClassManagement = () => {
     }
   };
 
-  const handleOpenDialog = (type: 'class' | 'subject', item?: Class | Subject) => {
+  const handleOpenDialog = (type: 'class' | 'subject', trigger: HTMLElement, item?: Class | Subject) => {
+    dialogTriggerRef.current = trigger;
+    trigger.blur();
     setError('');
     setClassErrors({});
     setDialogType(type);
@@ -199,6 +202,9 @@ export const ClassManagement = () => {
   };
 
   const handleCloseDialog = () => {
+    if (window.document.activeElement instanceof HTMLElement) {
+      window.document.activeElement.blur();
+    }
     setDialogOpen(false);
     setError('');
     setEditMode(false);
@@ -206,6 +212,10 @@ export const ClassManagement = () => {
     setClassErrors({});
     setClassForm({ grade_level: '', section: '', capacity: '' });
     setSubjectForm({ code: '', name_en: '', name_np: '', type: 'compulsory', credit_hours: '', full_marks: '' });
+  };
+
+  const restoreDialogTriggerFocus = () => {
+    window.requestAnimationFrame(() => dialogTriggerRef.current?.focus());
   };
 
   const handleSaveClass = async () => {
@@ -450,7 +460,7 @@ export const ClassManagement = () => {
             <Button
               sx={S.BTN_PRIMARY}
               startIcon={<AddIcon />}
-              onClick={() => handleOpenDialog('class')}
+              onClick={(event) => handleOpenDialog('class', event.currentTarget)}
             >
               {t('academic.addClass')}
             </Button>
@@ -526,7 +536,7 @@ export const ClassManagement = () => {
                           size="small" 
                           color="primary" 
                           title={t('common.edit')}
-                          onClick={() => handleOpenDialog('class', cls)}
+                          onClick={(event) => handleOpenDialog('class', event.currentTarget, cls)}
                         >
                           <EditIcon />
                         </IconButton>
@@ -554,7 +564,7 @@ export const ClassManagement = () => {
             <Button
               sx={S.BTN_PRIMARY}
               startIcon={<AddIcon />}
-              onClick={() => handleOpenDialog('subject')}
+              onClick={(event) => handleOpenDialog('subject', event.currentTarget)}
             >
               {t('academic.addSubject')}
             </Button>
@@ -624,7 +634,7 @@ export const ClassManagement = () => {
                           size="small" 
                           color="primary" 
                           title={t('common.edit')}
-                          onClick={() => handleOpenDialog('subject', subject)}
+                          onClick={(event) => handleOpenDialog('subject', event.currentTarget, subject)}
                         >
                           <EditIcon />
                         </IconButton>
@@ -648,7 +658,14 @@ export const ClassManagement = () => {
       </Paper>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        TransitionProps={{ onExited: restoreDialogTriggerFocus }}
+        disableRestoreFocus
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle sx={{ fontWeight: 600 }}>
           {editMode 
             ? (dialogType === 'class' ? t('academic.editClass') : t('academic.editSubject'))
