@@ -49,6 +49,13 @@ beforeEach(() => {
 });
 
 describe('AcademicYears', () => {
+  it('gives the back and year edit icon buttons accessible names', () => {
+    renderPage();
+
+    expect(screen.getByRole('button', { name: 'common.back academicYears.title' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'academicYears.editAcademicYear 2083-2084' })).toBeInTheDocument();
+  });
+
   it('clears validation feedback when the year dialog is canceled', () => {
     renderPage();
 

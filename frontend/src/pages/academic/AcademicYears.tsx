@@ -274,6 +274,7 @@ export const AcademicYears = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <IconButton
               onClick={() => navigate(`/academic`)}
+              aria-label={`${t('common.back')} ${t('academicYears.title')}`}
               sx={{
                 bgcolor: 'background.paper',
                 boxShadow: 1,
@@ -375,7 +376,12 @@ export const AcademicYears = () => {
                       <TableCell sx={S.TD}>{new Date(year.endDateAD).toLocaleDateString()}</TableCell>
                       <TableCell sx={S.TD}>
                         {year.isCurrent ? (
-                          <Chip label={t('academicYears.current')} color="success" size="small" />
+                          <Chip
+                            label={t('academicYears.current')}
+                            color="success"
+                            size="small"
+                            sx={{ bgcolor: 'success.dark', color: 'success.contrastText' }}
+                          />
                         ) : (
                           <Chip label={t('academicYears.inactive')} size="small" />
                         )}
@@ -398,6 +404,7 @@ export const AcademicYears = () => {
                         <IconButton
                           size="small"
                           color="primary"
+                          aria-label={`${t('academicYears.editAcademicYear')} ${year.name}`}
                           onClick={() => handleOpenDialog(year)}
                         >
                           <EditIcon />
