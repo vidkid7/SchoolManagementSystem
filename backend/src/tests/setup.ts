@@ -13,11 +13,15 @@ process.env.ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef01
 process.env.SESSION_SECRET = 'test_session_secret';
 
 // Set database environment variables for tests
+// Never allow a developer or CI DATABASE_URL to redirect destructive test
+// fixtures at a shared or production database. Tests are pinned to localhost.
+delete process.env.DATABASE_URL;
+delete process.env.MYSQL_URL;
 process.env.DB_HOST = 'localhost';
 process.env.DB_PORT = '3306';
 process.env.DB_NAME = 'school_management_system_test';
 process.env.DB_USER = 'root';
-process.env.DB_PASSWORD = 'Dhire12345@@';
+process.env.DB_PASSWORD = process.env.TEST_DB_PASSWORD || '';
 process.env.DB_POOL_MIN = '2';
 process.env.DB_POOL_MAX = '10';
 
