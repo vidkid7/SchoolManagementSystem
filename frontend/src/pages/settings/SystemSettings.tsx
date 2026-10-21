@@ -4,7 +4,7 @@
  * Manage grading schemes, attendance rules, notification templates, and date format
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -127,6 +127,7 @@ export const SystemSettings = () => {
   const [notificationTemplates, setNotificationTemplates] = useState<NotificationTemplate[]>([]);
   const [dateFormatSettings, setDateFormatSettings] = useState<DateFormatSettings>(DEFAULT_DATE_FORMAT_SETTINGS);
   const [dateFormatAvailable, setDateFormatAvailable] = useState(false);
+  const dialogTriggerRef = useRef<HTMLElement | null>(null);
   
   const [gradingDialog, setGradingDialog] = useState<{ open: boolean; mode: 'create' | 'edit'; data?: GradingScheme }>({
     open: false,
@@ -140,6 +141,36 @@ export const SystemSettings = () => {
     open: false,
     mode: 'create',
   });
+
+  const rememberDialogTrigger = (trigger: HTMLElement) => {
+    dialogTriggerRef.current = trigger;
+    trigger.blur();
+  };
+
+  const blurActiveElement = () => {
+    if (window.document.activeElement instanceof HTMLElement) {
+      window.document.activeElement.blur();
+    }
+  };
+
+  const restoreDialogTriggerFocus = () => {
+    window.requestAnimationFrame(() => dialogTriggerRef.current?.focus());
+  };
+
+  const closeGradingDialog = () => {
+    blurActiveElement();
+    setGradingDialog({ open: false, mode: 'create' });
+  };
+
+  const closeAttendanceDialog = () => {
+    blurActiveElement();
+    setAttendanceDialog({ open: false, mode: 'create' });
+  };
+
+  const closeTemplateDialog = () => {
+    blurActiveElement();
+    setTemplateDialog({ open: false, mode: 'create' });
+  };
 
   useEffect(() => {
     fetchAllData();
@@ -177,7 +208,7 @@ export const SystemSettings = () => {
         await apiClient.put(`/api/v1/system-settings/grading-schemes/${gradingDialog.data?.id}`, data);
       }
       setSuccess(t('systemSettings.successMessage'));
-      setGradingDialog({ open: false, mode: 'create' });
+      closeGradingDialog();
       fetchAllData();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to save');
@@ -203,7 +234,7 @@ export const SystemSettings = () => {
         await apiClient.put(`/api/v1/system-settings/attendance-rules/${attendanceDialog.data?.id}`, data);
       }
       setSuccess(t('systemSettings.successMessage'));
-      setAttendanceDialog({ open: false, mode: 'create' });
+      closeAttendanceDialog();
       fetchAllData();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to save');
@@ -229,7 +260,7 @@ export const SystemSettings = () => {
         await apiClient.put(`/api/v1/system-settings/notification-templates/${templateDialog.data?.id}`, data);
       }
       setSuccess(t('systemSettings.successMessage'));
-      setTemplateDialog({ open: false, mode: 'create' });
+      closeTemplateDialog();
       fetchAllData();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to save');
@@ -315,7 +346,7 @@ export const SystemSettings = () => {
                 <Button
                   sx={S.BTN_PRIMARY}
                   startIcon={<AddIcon />}
-                  onClick={() => { setError(''); setGradingDialog({ open: true, mode: 'create' }); }}
+                  onClick={(event) => { rememberDialogTrigger(event.currentTarget); setError(''); setGradingDialog({ open: true, mode: 'create' }); }}
                 >
                   {t('systemSettings.addGradingScheme')}
                 </Button>
@@ -351,7 +382,7 @@ export const SystemSettings = () => {
                             />
                           </TableCell>
                           <TableCell align="right">
-                            <IconButton size="small" onClick={() => { setError(''); setGradingDialog({ open: true, mode: 'edit', data: scheme }); }}>
+                            <IconButton size="small" onClick={(event) => { rememberDialogTrigger(event.currentTarget); setError(''); setGradingDialog({ open: true, mode: 'edit', data: scheme }); }}>
                               <EditIcon fontSize="small" />
                             </IconButton>
                             <IconButton size="small" onClick={() => handleDeleteGradingScheme(scheme.id)} color="error">
@@ -375,7 +406,7 @@ export const SystemSettings = () => {
                 <Button
                   sx={S.BTN_PRIMARY}
                   startIcon={<AddIcon />}
-                  onClick={() => { setError(''); setAttendanceDialog({ open: true, mode: 'create' }); }}
+                  onClick={(event) => { rememberDialogTrigger(event.currentTarget); setError(''); setAttendanceDialog({ open: true, mode: 'create' }); }}
                 >
                   {t('systemSettings.addAttendanceRule')}
                 </Button>
@@ -411,7 +442,7 @@ export const SystemSettings = () => {
                             />
                           </TableCell>
                           <TableCell align="right">
-                            <IconButton size="small" onClick={() => { setError(''); setAttendanceDialog({ open: true, mode: 'edit', data: rule }); }}>
+                            <IconButton size="small" onClick={(event) => { rememberDialogTrigger(event.currentTarget); setError(''); setAttendanceDialog({ open: true, mode: 'edit', data: rule }); }}>
                               <EditIcon fontSize="small" />
                             </IconButton>
                             <IconButton size="small" onClick={() => handleDeleteAttendanceRule(rule.id)} color="error">
@@ -435,7 +466,7 @@ export const SystemSettings = () => {
                 <Button
                   sx={S.BTN_PRIMARY}
                   startIcon={<AddIcon />}
-                  onClick={() => { setError(''); setTemplateDialog({ open: true, mode: 'create' }); }}
+                  onClick={(event) => { rememberDialogTrigger(event.currentTarget); setError(''); setTemplateDialog({ open: true, mode: 'create' }); }}
                 >
                   {t('systemSettings.addTemplate')}
                 </Button>
@@ -469,7 +500,7 @@ export const SystemSettings = () => {
                             />
                           </TableCell>
                           <TableCell align="right">
-                            <IconButton size="small" onClick={() => { setError(''); setTemplateDialog({ open: true, mode: 'edit', data: template }); }}>
+                            <IconButton size="small" onClick={(event) => { rememberDialogTrigger(event.currentTarget); setError(''); setTemplateDialog({ open: true, mode: 'edit', data: template }); }}>
                               <EditIcon fontSize="small" />
                             </IconButton>
                             <IconButton size="small" onClick={() => handleDeleteTemplate(template.id)} color="error">
@@ -550,7 +581,8 @@ export const SystemSettings = () => {
         mode={gradingDialog.mode}
         data={gradingDialog.data}
         saveError={error}
-        onClose={() => setGradingDialog({ open: false, mode: 'create' })}
+        onClose={closeGradingDialog}
+        restoreTriggerFocus={restoreDialogTriggerFocus}
         onSave={handleSaveGradingScheme}
       />
 
@@ -560,7 +592,8 @@ export const SystemSettings = () => {
         mode={attendanceDialog.mode}
         data={attendanceDialog.data}
         saveError={error}
-        onClose={() => setAttendanceDialog({ open: false, mode: 'create' })}
+        onClose={closeAttendanceDialog}
+        restoreTriggerFocus={restoreDialogTriggerFocus}
         onSave={handleSaveAttendanceRule}
       />
 
@@ -570,7 +603,8 @@ export const SystemSettings = () => {
         mode={templateDialog.mode}
         data={templateDialog.data}
         saveError={error}
-        onClose={() => setTemplateDialog({ open: false, mode: 'create' })}
+        onClose={closeTemplateDialog}
+        restoreTriggerFocus={restoreDialogTriggerFocus}
         onSave={handleSaveTemplate}
       />
     </Box>
@@ -583,10 +617,11 @@ interface GradingSchemeDialogProps {
   data?: GradingScheme;
   saveError?: string;
   onClose: () => void;
+  restoreTriggerFocus: () => void;
   onSave: (data: Partial<GradingScheme>) => void;
 }
 
-const GradingSchemeDialog = ({ open, mode, data, saveError, onClose, onSave }: GradingSchemeDialogProps) => {
+const GradingSchemeDialog = ({ open, mode, data, saveError, onClose, restoreTriggerFocus, onSave }: GradingSchemeDialogProps) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const S = useAdminStyles(theme);
@@ -671,7 +706,7 @@ const GradingSchemeDialog = ({ open, mode, data, saveError, onClose, onSave }: G
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} TransitionProps={{ onExited: restoreTriggerFocus }} disableRestoreFocus maxWidth="md" fullWidth>
       <DialogTitle>
         {mode === 'create' ? t('systemSettings.addGradingScheme') : t('systemSettings.editGradingScheme')}
       </DialogTitle>
@@ -797,10 +832,11 @@ interface AttendanceRuleDialogProps {
   data?: AttendanceRule;
   saveError?: string;
   onClose: () => void;
+  restoreTriggerFocus: () => void;
   onSave: (data: Partial<AttendanceRule>) => void;
 }
 
-const AttendanceRuleDialog = ({ open, mode, data, saveError, onClose, onSave }: AttendanceRuleDialogProps) => {
+const AttendanceRuleDialog = ({ open, mode, data, saveError, onClose, restoreTriggerFocus, onSave }: AttendanceRuleDialogProps) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const S = useAdminStyles(theme);
@@ -868,7 +904,7 @@ const AttendanceRuleDialog = ({ open, mode, data, saveError, onClose, onSave }: 
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} TransitionProps={{ onExited: restoreTriggerFocus }} disableRestoreFocus maxWidth="sm" fullWidth>
       <DialogTitle>
         {mode === 'create' ? t('systemSettings.addAttendanceRule') : t('systemSettings.editAttendanceRule')}
       </DialogTitle>
@@ -971,10 +1007,11 @@ interface TemplateDialogProps {
   data?: NotificationTemplate;
   saveError?: string;
   onClose: () => void;
+  restoreTriggerFocus: () => void;
   onSave: (data: Partial<NotificationTemplate>) => void;
 }
 
-const TemplateDialog = ({ open, mode, data, saveError, onClose, onSave }: TemplateDialogProps) => {
+const TemplateDialog = ({ open, mode, data, saveError, onClose, restoreTriggerFocus, onSave }: TemplateDialogProps) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const S = useAdminStyles(theme);
@@ -1030,7 +1067,7 @@ const TemplateDialog = ({ open, mode, data, saveError, onClose, onSave }: Templa
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} TransitionProps={{ onExited: restoreTriggerFocus }} disableRestoreFocus maxWidth="md" fullWidth>
       <DialogTitle>
         {mode === 'create' ? t('systemSettings.addTemplate') : t('systemSettings.editTemplate')}
       </DialogTitle>

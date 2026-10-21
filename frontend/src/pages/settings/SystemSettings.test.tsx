@@ -137,6 +137,18 @@ describe('SystemSettings grading scheme form', () => {
     expect(mockedApi.post).not.toHaveBeenCalled();
   });
 
+  it('returns focus to the Attendance Rule trigger after closing the dialog', async () => {
+    const user = userEvent.setup();
+    render(<SystemSettings />);
+
+    await user.click(await screen.findByRole('tab', { name: 'Attendance Rules' }));
+    const trigger = await screen.findByRole('button', { name: 'Add Attendance Rule' });
+    await user.click(trigger);
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
+  });
+
   it('prevents a blank notification template from reaching the API', async () => {
     const user = userEvent.setup();
     render(<SystemSettings />);
