@@ -84,6 +84,7 @@ interface Timetable {
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const PERIODS = [
+  { number: 1, start: '08:00', end: '08:45' },
   { number: 2, start: '08:45', end: '09:30' },
   { number: 3, start: '09:30', end: '10:15' },
   { number: 4, start: '10:30', end: '11:15' },
