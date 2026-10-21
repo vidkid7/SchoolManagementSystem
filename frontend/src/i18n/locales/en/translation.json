@@ -150,7 +150,12 @@
     "titleNepali": "नेपाल विद्यालय व्यवस्थापन प्रणाली",
     "subtitle": "Optimized for Nepal Education System",
     "role": "Role",
-    "academicYear": "Academic Year"
+    "academicYear": "Academic Year",
+    "features": {
+      "smartAnalytics": "Smart Analytics",
+      "easyManagement": "Easy Management",
+      "secure": "Secure"
+    }
   },
   "menu": {
     "dashboard": "Dashboard",

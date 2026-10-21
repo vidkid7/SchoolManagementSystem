@@ -150,7 +150,12 @@
     "titleNepali": "नेपाल विद्यालय व्यवस्थापन प्रणाली",
     "subtitle": "नेपाल शिक्षा प्रणालीको लागि अनुकूलित",
     "role": "भूमिका",
-    "academicYear": "शैक्षिक वर्ष"
+    "academicYear": "शैक्षिक वर्ष",
+    "features": {
+      "smartAnalytics": "स्मार्ट विश्लेषण",
+      "easyManagement": "सजिलो व्यवस्थापन",
+      "secure": "सुरक्षित"
+    }
   },
   "menu": {
     "dashboard": "ड्यासबोर्ड",

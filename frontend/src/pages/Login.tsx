@@ -277,9 +277,13 @@ export const Login = () => {
 
             {/* Feature highlights */}
             <Box sx={{ mt: 5, display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap' }}>
-              {['Smart Analytics', 'Easy Management', 'Secure'].map((feature, i) => (
+              {[
+                'app.features.smartAnalytics',
+                'app.features.easyManagement',
+                'app.features.secure',
+              ].map((feature, i) => (
                 <Box
-                  key={i}
+                  key={feature}
                   sx={{
                     px: 2.5,
                     py: 1,
@@ -292,7 +296,7 @@ export const Login = () => {
                     animation: `${fadeInUp} 0.8s ease-out ${0.3 + i * 0.15}s both`,
                   }}
                 >
-                  {feature}
+                  {t(feature)}
                 </Box>
               ))}
             </Box>
