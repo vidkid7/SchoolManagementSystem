@@ -160,4 +160,31 @@ describe('Syllabus', () => {
       completedHours: 3,
     }));
   });
+
+  it('gives both syllabus progress bars accessible names', async () => {
+    (api.get as jest.Mock).mockImplementation((path: string) => {
+      if (path === '/academic/classes') {
+        return Promise.resolve({ data: { data: [{ classId: 1, gradeLevel: 1, section: 'K' }] } });
+      }
+      if (path === '/academic/subjects') {
+        return Promise.resolve({ data: { data: [{ subjectId: 1, code: 'QA-101', nameEn: 'QA Subject' }] } });
+      }
+      if (path === '/academic/syllabus?classId=1&subjectId=1') {
+        return Promise.resolve({
+          data: { data: { syllabusId: 1, topics: [{
+            topicId: 11,
+            title: 'Existing topic',
+            estimatedHours: 5,
+            completedHours: 2,
+          }] } },
+        });
+      }
+      throw new Error(`Unexpected GET ${path}`);
+    });
+
+    renderSyllabus();
+
+    expect(await screen.findByRole('progressbar', { name: 'academic.overallProgress' })).toHaveAttribute('aria-valuenow', '40');
+    expect(screen.getByRole('progressbar', { name: 'Existing topic academic.completedHours' })).toHaveAttribute('aria-valuenow', '40');
+  });
 });

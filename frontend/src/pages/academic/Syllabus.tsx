@@ -413,6 +413,7 @@ export const Syllabus = () => {
                   <LinearProgress
                     variant="determinate"
                     value={progress}
+                    aria-label={t('academic.overallProgress')}
                     sx={{ height: 8, borderRadius: R.sm }}
                   />
                 </Box>
@@ -458,6 +459,11 @@ export const Syllabus = () => {
                                 label={`${topic.completedHours}/${topic.estimatedHours} hrs`}
                                 size="small"
                                 color={isCompleted ? 'success' : 'default'}
+                                sx={isCompleted ? {
+                                  backgroundColor: '#166534',
+                                  color: '#fff',
+                                  '& .MuiChip-label': { color: '#fff' },
+                                } : undefined}
                               />
                             </Box>
                           }
@@ -471,6 +477,7 @@ export const Syllabus = () => {
                               <LinearProgress
                                 variant="determinate"
                                 value={Math.min(topicProgress, 100)}
+                                aria-label={`${topic.title} ${t('academic.completedHours')}`}
                                 sx={{ height: 6, borderRadius: R.sm }}
                                 color={isCompleted ? 'success' : 'primary'}
                               />
