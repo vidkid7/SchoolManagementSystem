@@ -114,8 +114,9 @@ export function StudentFeeSearch() {
 
           <Grid item xs={12} md={3}>
             <FormControl fullWidth>
-              <InputLabel>{t('finance.feeStatus')}</InputLabel>
+              <InputLabel id="fee-status-label">{t('finance.feeStatus')}</InputLabel>
               <Select
+                labelId="fee-status-label"
                 value={feeStatus}
                 label={t('finance.feeStatus')}
                 onChange={(e) => setFeeStatus(e.target.value)}
