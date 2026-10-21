@@ -13,7 +13,6 @@ import {
   ListItemText,
   ListItemAvatar,
   Avatar,
-  Divider,
   Button,
   IconButton,
   Chip,
@@ -177,9 +176,9 @@ export function UserNotifications() {
 
               return (
                 <Fragment key={`${n.clientKey}-${idx}`}>
-                  {idx > 0 && <Divider component="li" sx={{ opacity: 0.06 }} />}
                   <ListItem
                     alignItems="flex-start"
+                    divider={idx < filtered.length - 1}
                     sx={{
                       py: 2, px: 3,
                       background: n.isRead ? 'transparent' : 'rgba(0,122,255,0.04)',
