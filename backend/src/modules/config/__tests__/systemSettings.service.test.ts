@@ -4,6 +4,7 @@ import AttendanceRule from '@models/AttendanceRule.model';
 import NotificationTemplate from '@models/NotificationTemplate.model';
 import SchoolConfig from '@models/SchoolConfig.model';
 import { NotFoundError, ValidationError } from '@middleware/errorHandler';
+import { Op } from 'sequelize';
 
 jest.mock('@models/GradingScheme.model');
 jest.mock('@models/AttendanceRule.model');
@@ -429,6 +430,26 @@ describe('SystemSettingsService', () => {
         const updateData = { templateEn: 'New message' };
         await systemSettingsService.updateNotificationTemplate('1', updateData, 1);
 
+        expect(mockTemplate.update).toHaveBeenCalledWith(updateData, { transaction: undefined });
+      });
+
+      it('should allow editing a template without changing its code', async () => {
+        const mockTemplate = {
+          id: '1',
+          code: 'TEST_TEMPLATE',
+          update: jest.fn().mockResolvedValue(true),
+          toJSON: jest.fn().mockReturnValue({ id: '1', code: 'TEST_TEMPLATE' }),
+        };
+
+        (NotificationTemplate.findByPk as jest.Mock).mockResolvedValue(mockTemplate);
+        (NotificationTemplate.findOne as jest.Mock).mockResolvedValue(null);
+
+        const updateData = { code: 'TEST_TEMPLATE', templateEn: 'Updated message' };
+        await systemSettingsService.updateNotificationTemplate('1', updateData, 1);
+
+        expect(NotificationTemplate.findOne).toHaveBeenCalledWith({
+          where: { code: 'TEST_TEMPLATE', id: { [Op.ne]: '1' } },
+        });
         expect(mockTemplate.update).toHaveBeenCalledWith(updateData, { transaction: undefined });
       });
 

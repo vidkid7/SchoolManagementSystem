@@ -5,7 +5,7 @@ import SchoolConfig from '@models/SchoolConfig.model';
 import { NotFoundError, ValidationError } from '@middleware/errorHandler';
 import auditLogger from '@utils/auditLogger';
 import { AuditAction } from '@models/AuditLog.model';
-import { Transaction } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
 
 interface GradingSchemeData {
   name: string;
@@ -372,10 +372,14 @@ class SystemSettingsService {
     const template = await this.getNotificationTemplateById(id);
     const oldData = template.toJSON();
 
-    // Check if code is being changed and if it already exists
-    if (data.code && data.code !== template.code) {
+    // Exclude the current template so unchanged codes remain valid on edits.
+    // The database unique constraint still protects against concurrent creates.
+    if (data.code) {
       const existing = await NotificationTemplate.findOne({
-        where: { code: data.code },
+        where: {
+          code: data.code,
+          id: { [Op.ne]: id },
+        },
       });
 
       if (existing) {
