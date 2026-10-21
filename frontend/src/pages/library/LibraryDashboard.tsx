@@ -15,6 +15,7 @@ import {
   Paper,
   Typography,
   Card,
+  CardActionArea,
   CardContent,
   Button,
   List,
@@ -44,15 +45,17 @@ interface LibraryStats {
 }
 
 interface RecentActivity {
-  id: number;
+  id: number | string;
   type: 'issue' | 'return';
-  bookTitle: string;
+  bookTitle?: string;
   book_title?: string;
+  book?: string;
   title?: string;
-  memberName: string;
+  memberName?: string;
   member_name?: string;
   studentName?: string;
   student_name?: string;
+  student?: string;
   date: string;
 }
 
@@ -86,7 +89,12 @@ export function LibraryDashboard() {
       ]);
 
       if (statsRes.data?.data) {
-        setStats(prev => ({ ...prev, ...statsRes.data.data }));
+        const data = statsRes.data.data;
+        setStats(prev => ({
+          ...prev,
+          ...data,
+          finesCollected: data.finesCollected ?? data.collectedFines ?? data.paidFines ?? prev.finesCollected,
+        }));
       }
       setRecentActivities(activitiesRes.data?.data || []);
     } catch (error) {
@@ -138,7 +146,7 @@ export function LibraryDashboard() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <BookIcon sx={{ fontSize: 32, color: C.primary }} />
             <Box>
-              <Typography variant="h5" fontWeight={700}>{t('library.libraryDashboard')}</Typography>
+              <Typography component="h1" variant="h5" fontWeight={700}>{t('library.libraryDashboard')}</Typography>
               <Typography variant="body2" color="text.secondary">{t('library.subtitle')}</Typography>
             </Box>
           </Box>
@@ -168,27 +176,27 @@ export function LibraryDashboard() {
             <Card
               sx={{
                 ...S.GLASS,
-                cursor: 'pointer',
                 transition: 'transform 0.2s',
                 '&:hover': { transform: 'translateY(-4px)' },
               }}
-              onClick={card.action}
             >
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <Box>
-                    <Typography color="text.secondary" variant="body2" gutterBottom>
-                      {card.title}
-                    </Typography>
-                    <Typography variant="h4" fontWeight={600}>
-                      {card.value}
-                    </Typography>
+              <CardActionArea onClick={card.action}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <Box>
+                      <Typography color="text.secondary" variant="body2" gutterBottom>
+                        {card.title}
+                      </Typography>
+                      <Typography component="p" variant="h4" fontWeight={600}>
+                        {card.value}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ backgroundColor: card.bgColor, color: card.color, p: 1.5, borderRadius: R.lg, display: 'flex', alignItems: 'center' }}>
+                      {card.icon}
+                    </Box>
                   </Box>
-                  <Box sx={{ backgroundColor: card.bgColor, color: card.color, p: 1.5, borderRadius: R.lg, display: 'flex', alignItems: 'center' }}>
-                    {card.icon}
-                  </Box>
-                </Box>
-              </CardContent>
+                </CardContent>
+              </CardActionArea>
             </Card>
           </Grid>
         ))}
@@ -197,7 +205,7 @@ export function LibraryDashboard() {
       <Grid container spacing={3} sx={{ mt: 2 }}>
         <Grid item xs={12} md={8}>
           <Paper sx={{ ...S.GLASS, p: 3 }}>
-            <Typography variant="h6" fontWeight={600} gutterBottom>
+            <Typography component="h2" variant="h6" fontWeight={600} gutterBottom>
               {t('library.recentActivities')}
             </Typography>
             <Divider sx={{ mb: 2 }} />
@@ -215,12 +223,13 @@ export function LibraryDashboard() {
                         label={activity.type}
                         size="small"
                         color={activity.type === 'issue' ? 'primary' : 'success'}
+                        sx={activity.type === 'return' ? { bgcolor: '#15803d', color: '#fff' } : undefined}
                       />
                     }
                   >
                     <ListItemText
-                      primary={activity.bookTitle || activity.book_title || activity.title || t('library.book')}
-                      secondary={`${activity.memberName || activity.member_name || activity.studentName || activity.student_name || ''} • ${new Date(activity.date).toLocaleDateString()}`}
+                      primary={activity.bookTitle || activity.book_title || activity.book || activity.title || t('library.book')}
+                      secondary={`${activity.memberName || activity.member_name || activity.studentName || activity.student_name || activity.student || ''} • ${new Date(activity.date).toLocaleDateString()}`}
                     />
                   </ListItem>
                 ))}
@@ -231,7 +240,7 @@ export function LibraryDashboard() {
 
         <Grid item xs={12} md={4}>
           <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
-            <Typography variant="h6" fontWeight={600} gutterBottom>
+            <Typography component="h2" variant="h6" fontWeight={600} gutterBottom>
               {t('library.quickActions')}
             </Typography>
             <Divider sx={{ mb: 2 }} />
@@ -279,7 +288,7 @@ export function LibraryDashboard() {
           </Paper>
 
           <Paper sx={{ ...S.GLASS, p: 3 }}>
-            <Typography variant="h6" fontWeight={600} gutterBottom>
+            <Typography component="h2" variant="h6" fontWeight={600} gutterBottom>
               {t('library.statistics')}
             </Typography>
             <Divider sx={{ mb: 2 }} />
