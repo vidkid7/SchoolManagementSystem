@@ -212,6 +212,7 @@ export const DocumentManagement = () => {
   const S = useAdminStyles(theme);
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadDialogTriggerRef = useRef<HTMLElement | null>(null);
 
   // State for documents
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -380,8 +381,7 @@ export const DocumentManagement = () => {
 
       if (response.data.success) {
         setSuccess(t('documents.documentUploadedSuccessfully'));
-        setUploadDialogOpen(false);
-        resetUploadForm();
+        closeUploadDialog(true);
         fetchDocuments();
       }
     } catch (err: any) {
@@ -442,6 +442,26 @@ export const DocumentManagement = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const openUploadDialog = (trigger: HTMLElement) => {
+    uploadDialogTriggerRef.current = trigger;
+    trigger.blur();
+    setUploadDialogOpen(true);
+  };
+
+  const closeUploadDialog = (resetForm = false) => {
+    // Blur controls inside the modal before MUI hides the app root. This
+    // prevents a focused dialog button from being left under aria-hidden.
+    if (window.document.activeElement instanceof HTMLElement) {
+      window.document.activeElement.blur();
+    }
+    setUploadDialogOpen(false);
+    if (resetForm) resetUploadForm();
+  };
+
+  const restoreUploadDialogFocus = () => {
+    window.requestAnimationFrame(() => uploadDialogTriggerRef.current?.focus());
   };
 
   const handleAddTag = () => {
@@ -598,7 +618,7 @@ export const DocumentManagement = () => {
           <Button
             variant="contained" sx={S.BTN_PRIMARY}
             startIcon={<UploadIcon />}
-            onClick={() => setUploadDialogOpen(true)}
+            onClick={(event) => openUploadDialog(event.currentTarget)}
           >
             {t('documents.uploadDocument')}
           </Button>
@@ -898,7 +918,9 @@ export const DocumentManagement = () => {
       {/* Upload Dialog */}
       <Dialog
         open={uploadDialogOpen}
-        onClose={() => !uploading && setUploadDialogOpen(false)}
+        onClose={() => !uploading && closeUploadDialog()}
+        TransitionProps={{ onExited: restoreUploadDialogFocus }}
+        disableRestoreFocus
         maxWidth="sm"
         fullWidth
       >
@@ -1033,10 +1055,7 @@ export const DocumentManagement = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => {
-            setUploadDialogOpen(false);
-            resetUploadForm();
-          }} disabled={uploading}>
+          <Button onClick={() => closeUploadDialog(true)} disabled={uploading}>
             {t('documents.cancel')}
           </Button>
           <Button

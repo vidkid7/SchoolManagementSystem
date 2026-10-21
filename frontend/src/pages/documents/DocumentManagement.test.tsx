@@ -355,6 +355,8 @@ describe('DocumentManagement Page', () => {
       renderComponent();
       
       const uploadButton = screen.getByRole('button', { name: 'Upload Document' });
+      uploadButton.focus();
+      const triggerBlurSpy = jest.spyOn(uploadButton, 'blur');
       fireEvent.click(uploadButton);
       
       await waitFor(() => {
@@ -362,6 +364,8 @@ describe('DocumentManagement Page', () => {
         expect(within(dialog).getByRole('heading', { name: 'Upload Document' })).toBeInTheDocument();
         expect(within(dialog).getByRole('button', { name: 'Click to select a file' })).toBeInTheDocument();
       });
+      expect(triggerBlurSpy).toHaveBeenCalledTimes(1);
+      triggerBlurSpy.mockRestore();
     });
 
     it('should open the file picker from the keyboard-accessible control', () => {
@@ -383,12 +387,17 @@ describe('DocumentManagement Page', () => {
       const uploadButton = screen.getByRole('button', { name: 'Upload Document' });
       fireEvent.click(uploadButton);
       
-      const cancelButton = screen.getByText('Cancel');
+      const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+      cancelButton.focus();
+      const blurSpy = jest.spyOn(cancelButton, 'blur');
       fireEvent.click(cancelButton);
       
       await waitFor(() => {
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
       });
+      expect(blurSpy).toHaveBeenCalledTimes(1);
+      await waitFor(() => expect(uploadButton).toHaveFocus());
+      blurSpy.mockRestore();
     });
 
     it('should show error when trying to upload without file', async () => {
