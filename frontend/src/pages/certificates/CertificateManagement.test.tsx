@@ -140,3 +140,27 @@ describe('CertificateManagement template actions', () => {
     expect(await screen.findByText('certificates.noTemplatesFound')).toBeInTheDocument();
   });
 });
+
+describe('CertificateManagement generation student data', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (apiClient.get as jest.Mock).mockImplementation((path: string) => {
+      if (path === '/api/v1/students?limit=1000') {
+        return Promise.resolve({ data: { data: [{ studentId: 9, studentCode: 'QA-009', firstNameEn: 'Asha', lastNameEn: 'Rai' }] } });
+      }
+      return Promise.resolve({ data: { data: [], meta: { total: 0 } } });
+    });
+  });
+
+  it('uses the API firstNameEn and lastNameEn fields in the single-certificate form', async () => {
+    renderManagement();
+    fireEvent.click(await screen.findByRole('tab', { name: 'certificates.generate' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Generate Single Certificate' }));
+
+    const studentSelect = await screen.findByRole('combobox', { name: 'certificates.student' });
+    fireEvent.mouseDown(studentSelect);
+    fireEvent.click(await screen.findByRole('option', { name: 'Asha Rai (QA-009)' }));
+
+    expect(screen.getByRole('textbox', { name: 'certificates.studentName' })).toHaveValue('Asha Rai');
+  });
+});

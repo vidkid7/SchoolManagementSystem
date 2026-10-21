@@ -191,7 +191,12 @@ export const CertificateManagement = () => {
   const fetchStudents = async () => {
     try {
       const response = await apiClient.get('/api/v1/students?limit=1000');
-      setStudents(response.data.data || []);
+      const studentRows = response.data.data || [];
+      setStudents(studentRows.map((student: any) => ({
+        ...student,
+        firstName: student.firstName ?? student.firstNameEn ?? '',
+        lastName: student.lastName ?? student.lastNameEn ?? '',
+      })));
     } catch (error) {
       console.error('Failed to fetch students:', error);
     }
