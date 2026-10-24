@@ -99,6 +99,7 @@ export interface CVData {
 export interface CVCustomization {
   templateId: string;
   schoolBrandingEnabled: boolean;
+  includePersonalInfo: boolean;
   includePhoto: boolean;
   includeAttendance: boolean;
   includeGrades: boolean;
@@ -430,6 +431,7 @@ class CVService {
       const defaultCustomization: CVCustomization = {
         templateId: 'standard',
         schoolBrandingEnabled: true,
+        includePersonalInfo: true,
         includePhoto: true,
         includeAttendance: true,
         includeGrades: true,
@@ -478,7 +480,7 @@ class CVService {
         }
 
         // Student Info
-        if (cvData.personalInfo) {
+        if (customization.includePersonalInfo && cvData.personalInfo) {
           doc.fontSize(14).text('Personal Information', { underline: true });
           doc.moveDown(0.5);
           doc.fontSize(12);

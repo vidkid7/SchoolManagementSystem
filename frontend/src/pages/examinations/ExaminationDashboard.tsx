@@ -198,7 +198,7 @@ export function ExaminationDashboard() {
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <Paper sx={{ ...S.GLASS, p: 3 }}>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" component="h5" gutterBottom>
               {t('examinations.pendingActions')}
             </Typography>
             <Box sx={{ mt: 2 }}>
@@ -224,7 +224,7 @@ export function ExaminationDashboard() {
 
         <Grid item xs={12} md={6}>
           <Paper sx={{ ...S.GLASS, p: 3 }}>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" component="h5" gutterBottom>
               {t('examinations.quickActions')}
             </Typography>
             <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>

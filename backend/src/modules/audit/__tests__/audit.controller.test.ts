@@ -325,7 +325,11 @@ describe('AuditController', () => {
 
       (auditService.exportAuditLogs as jest.Mock).mockResolvedValue(mockLogs);
 
-      mockRequest.query = { entityType: 'student' };
+      mockRequest.query = {
+        entityType: 'student',
+        ipAddress: '192.0.2.10',
+        search: 'status',
+      };
 
       await auditController.exportAuditLogs(
         mockRequest as Request,
@@ -334,7 +338,9 @@ describe('AuditController', () => {
       );
 
       expect(auditService.exportAuditLogs).toHaveBeenCalledWith({
-        entityType: 'student'
+        entityType: 'student',
+        ipAddress: '192.0.2.10',
+        search: 'status',
       });
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({

@@ -287,7 +287,7 @@ class AttachmentService {
    */
   async deleteAttachment(attachmentUrl: string): Promise<void> {
     try {
-      const filePath = path.join(process.cwd(), attachmentUrl);
+      const filePath = this.getAttachmentPath(attachmentUrl);
 
       if (fs.existsSync(filePath)) {
         await fs.promises.unlink(filePath);
@@ -354,7 +354,21 @@ class AttachmentService {
    * @returns Full file path
    */
   getAttachmentPath(attachmentUrl: string): string {
-    return path.join(process.cwd(), attachmentUrl);
+    // Attachment URLs are persisted as application-relative URLs. Accept only
+    // the exact shape emitted by processAttachment; never let a URL select a
+    // path outside the message attachment tree.
+    const match = /^\/uploads\/attachments\/messages\/([1-9]\d*)\/([A-Za-z0-9][A-Za-z0-9._-]{0,254})$/.exec(attachmentUrl);
+    if (!match || match[2] === '.' || match[2] === '..') {
+      throw new Error('Invalid attachment path');
+    }
+
+    const filePath = path.resolve(process.cwd(), `.${attachmentUrl}`);
+    const userDirectory = path.resolve(ATTACHMENTS_DIR, match[1]);
+    const relativePath = path.relative(userDirectory, filePath);
+    if (!relativePath || relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+      throw new Error('Invalid attachment path');
+    }
+    return filePath;
   }
 
   /**

@@ -9,43 +9,36 @@
 import { CertificateService } from '../certificate.service';
 import { CertificateRepository } from '../certificate.repository';
 import { CertificateTemplateRepository } from '../certificateTemplate.repository';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 
 // Mock dependencies
 jest.mock('../certificate.repository');
 jest.mock('../certificateTemplate.repository');
-jest.mock('fs', () => ({
-  createWriteStream: jest.fn(() => ({
-    on: jest.fn((event, callback) => {
-      if (event === 'finish') {
-        setTimeout(callback, 0);
-      }
-      return this;
-    }),
-  })),
-  mkdir: jest.fn((_path: string, _options: any, callback: Function) => callback(null)),
-}));
-jest.mock('util', () => ({
-  promisify: jest.fn((fn) => fn),
-}));
-
 describe('Bulk Certificate Generation Integration Tests', () => {
   let service: CertificateService;
   let mockCertificateRepo: jest.Mocked<CertificateRepository>;
   let mockTemplateRepo: jest.Mocked<CertificateTemplateRepository>;
+  let testUploadDir: string;
 
   beforeEach(() => {
+    testUploadDir = fs.mkdtempSync(path.join(os.tmpdir(), 'certificate-bulk-test-'));
     mockCertificateRepo = new CertificateRepository() as jest.Mocked<CertificateRepository>;
     mockTemplateRepo = new CertificateTemplateRepository() as jest.Mocked<CertificateTemplateRepository>;
     service = new CertificateService(
       mockCertificateRepo,
       mockTemplateRepo,
       'http://localhost:3000',
-      'uploads/certificates'
+      testUploadDir
     );
+    jest.spyOn(service as any, 'generatePDF').mockResolvedValue('/uploads/certificates/test.pdf');
+    jest.spyOn(service as any, 'generateQRCode').mockResolvedValue('data:image/png;base64,dGVzdA==');
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+    fs.rmSync(testUploadDir, { recursive: true, force: true });
   });
 
   describe('Bulk Generation Status Tracking', () => {
@@ -372,13 +365,13 @@ describe('Bulk Certificate Generation Integration Tests', () => {
       ];
 
       // Act & Assert
-      await expect(
-        service.bulkGenerateCertificates({
-          templateId: 999,
-          students,
-          issuedBy: 1,
-        })
-      ).rejects.toThrow('Template with ID 999 not found');
+      const result = await service.bulkGenerateCertificates({
+        templateId: 999,
+        students,
+        issuedBy: 1,
+      });
+      expect(result.success).toHaveLength(0);
+      expect(result.failed).toEqual([{ studentId: 1, error: 'Template with ID 999 not found' }]);
     });
 
     it('should handle inactive template error', async () => {
@@ -395,13 +388,13 @@ describe('Bulk Certificate Generation Integration Tests', () => {
       ];
 
       // Act & Assert
-      await expect(
-        service.bulkGenerateCertificates({
-          templateId: 1,
-          students,
-          issuedBy: 1,
-        })
-      ).rejects.toThrow('Cannot generate certificate from inactive template');
+      const result = await service.bulkGenerateCertificates({
+        templateId: 1,
+        students,
+        issuedBy: 1,
+      });
+      expect(result.success).toHaveLength(0);
+      expect(result.failed).toEqual([{ studentId: 1, error: 'Cannot generate certificate from inactive template' }]);
     });
 
     it('should handle empty student array gracefully', async () => {
@@ -447,7 +440,7 @@ describe('Bulk Certificate Generation Integration Tests', () => {
       let callCount = 0;
       mockCertificateRepo.create = jest.fn().mockImplementation((data) => {
         callCount++;
-        if (callCount === 3) {
+        if (data.studentId === 3) {
           throw new Error('Network timeout');
         }
         return Promise.resolve({ 

@@ -5,7 +5,7 @@
  * Requirements: 26.3, 26.5
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
@@ -58,15 +58,26 @@ import {
   Email as EmailIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { useSelector } from 'react-redux';
 import { apiClient } from '../../services/apiClient';
 import { formatLocalDate } from '../../utils/dateUtils';
-import type { RootState } from '../../store';
 import { motion } from 'framer-motion';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 
 const MotionCard = motion.create(Card);
 const MotionBox = motion.create(Box);
+
+const getApiErrorMessage = (error: unknown, fallback: string): string => {
+  if (error && typeof error === 'object') {
+    const response = (error as { response?: { data?: unknown } }).response;
+    const data = response?.data;
+    if (data && typeof data === 'object') {
+      const responseData = data as { message?: unknown; error?: { message?: unknown } };
+      if (typeof responseData.message === 'string') return responseData.message;
+      if (typeof responseData.error?.message === 'string') return responseData.error.message;
+    }
+  }
+  return error instanceof Error ? error.message : fallback;
+};
 
 interface PersonalInfo {
   studentId: number;
@@ -272,7 +283,7 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-const InfoSection = ({ icon, title, children, color = 'primary' }: { icon: React.ReactNode; title: string; children: React.ReactNode; color?: string }) => {
+const InfoSection = ({ icon, title, children, color = 'primary' }: { icon: React.ReactNode; title: string; children: React.ReactNode; color?: 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' }) => {
   const theme = useTheme();
   return (
     <MotionCard
@@ -296,7 +307,7 @@ const InfoSection = ({ icon, title, children, color = 'primary' }: { icon: React
             width: 40, 
             height: 40, 
             borderRadius: R.xl,
-            bgcolor: alpha((theme.palette as any)[color]?.main || theme.palette.primary.main, 0.1),
+            bgcolor: alpha(theme.palette[color].main, 0.1),
           }}>
             {icon}
           </Box>
@@ -322,14 +333,11 @@ const StatBox = ({ value, label, color }: { value: string | number; label: strin
 };
 
 export const StudentCV = () => {
-  const { id, municipalitySlug } = useParams<{ id: string; municipalitySlug: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useSlugNavigate();
   const { t } = useTranslation();
   const theme = useTheme();
   const S = useAdminStyles(theme);
-  const { accessToken } = useSelector((state: RootState) => state.auth);
-  const authHdr = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
-  
   const [tabValue, setTabValue] = useState(0);
   const [cvData, setCvData] = useState<FullCVData | null>(null);
   const [customization, setCustomization] = useState<CVCustomization | null>(null);
@@ -342,32 +350,20 @@ export const StudentCV = () => {
   const [hobbyInput, setHobbyInput] = useState('');
   const [previewMode, setPreviewMode] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      fetchCVData();
-      fetchCustomization();
-      checkNeedsRegeneration();
-    }
-  }, [id]);
-
-  const fetchCVData = async () => {
+  const fetchCVData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiClient.get(`/api/v1/cv/${id}/data`);
       setCvData(response.data.data);
-    } catch (err: any) {
-      if (err.response?.status === 404 || err.response?.status === 500) {
-        // Silently handle - CV feature not implemented yet
-        setError('CV feature is not yet available');
-      } else {
-        setError(err.response?.data?.error?.message || 'Failed to load CV data');
-      }
+      setError(null);
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to load CV data'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const fetchCustomization = async () => {
+  const fetchCustomization = useCallback(async () => {
     try {
       const response = await apiClient.get(`/api/v1/cv/${id}`);
       const data = response.data.data;
@@ -382,29 +378,33 @@ export const StudentCV = () => {
       }
       
       setCustomization(data);
-    } catch (err: any) {
-      if (err.response?.status === 404 || err.response?.status === 500) {
-        // Silently handle - CV feature not implemented yet
-      } else {
-        console.error('Failed to load customization:', err);
-      }
+    } catch (err: unknown) {
+      console.error('Failed to load customization:', err);
     }
-  };
+  }, [id]);
 
-  const checkNeedsRegeneration = async () => {
+  const checkNeedsRegeneration = useCallback(async () => {
     try {
       const response = await apiClient.get(`/api/v1/cv/${id}/needs-regeneration`);
       setNeedsRegeneration(response.data.data.needsRegeneration);
-    } catch (err: any) {
-      if (err.response?.status === 404 || err.response?.status === 500) {
-        // Silently handle - CV feature not implemented yet
-      } else {
-        console.error('Failed to check regeneration need:', err);
-      }
+    } catch (err: unknown) {
+      console.error('Failed to check regeneration need:', err);
     }
-  };
+  }, [id]);
 
-  const handleCustomizationChange = async (field: keyof CVCustomization, value: any) => {
+  useEffect(() => {
+    if (!id) return;
+
+    const timer = window.setTimeout(() => {
+      void fetchCVData();
+      void fetchCustomization();
+      void checkNeedsRegeneration();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [id, fetchCVData, fetchCustomization, checkNeedsRegeneration]);
+
+  const handleCustomizationChange = async (field: keyof CVCustomization, value: CVCustomization[keyof CVCustomization]) => {
     if (!customization) return;
     
     const updated = { ...customization, [field]: value };
@@ -414,12 +414,9 @@ export const StudentCV = () => {
       setSaving(true);
       await apiClient.put(`/api/v1/cv/${id}`, updated);
       setNeedsRegeneration(true);
-    } catch (err: any) {
-      if (err.response?.status === 500) {
-        setError('CV customization feature is not yet available');
-      } else {
-        setError(err.response?.data?.error?.message || 'Failed to save customization');
-      }
+    } catch (err: unknown) {
+      setCustomization(customization);
+      setError(getApiErrorMessage(err, 'Failed to save customization'));
     } finally {
       setSaving(false);
     }
@@ -461,6 +458,14 @@ export const StudentCV = () => {
       const params = new URLSearchParams();
       if (customization?.templateId) params.append('template', customization.templateId);
       if (customization?.schoolBrandingEnabled !== undefined) params.append('branding', customization.schoolBrandingEnabled.toString());
+      if (customization) {
+        params.append('personalInfo', customization.showPersonalInfo.toString());
+        params.append('grades', customization.showAcademicPerformance.toString());
+        params.append('attendance', customization.showAttendance.toString());
+        params.append('eca', customization.showECA.toString());
+        params.append('sports', customization.showSports.toString());
+        params.append('certificates', customization.showCertificates.toString());
+      }
       
       const token = localStorage.getItem('accessToken');
       const API_URL = apiClient.defaults.baseURL || 'http://localhost:3000';
@@ -494,8 +499,8 @@ export const StudentCV = () => {
         link.click();
         link.remove();
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to generate PDF');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to generate PDF'));
     } finally {
       setPdfLoading(false);
     }
@@ -514,6 +519,14 @@ export const StudentCV = () => {
       
       params.append('template', templateId);
       if (customization?.schoolBrandingEnabled !== undefined) params.append('branding', customization.schoolBrandingEnabled.toString());
+      if (customization) {
+        params.append('personalInfo', customization.showPersonalInfo.toString());
+        params.append('grades', customization.showAcademicPerformance.toString());
+        params.append('attendance', customization.showAttendance.toString());
+        params.append('eca', customization.showECA.toString());
+        params.append('sports', customization.showSports.toString());
+        params.append('certificates', customization.showCertificates.toString());
+      }
       
       const token = localStorage.getItem('accessToken');
       const API_URL = apiClient.defaults.baseURL || 'http://localhost:3000';
@@ -542,30 +555,17 @@ export const StudentCV = () => {
       window.URL.revokeObjectURL(url);
       
       setNeedsRegeneration(false);
-    } catch (err: any) {
-      setError(err.message || 'Failed to regenerate CV');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to regenerate CV'));
     } finally {
       setPdfLoading(false);
     }
   };
 
-  const handleCreateCV = async () => {
+  const handleRetryLoadCV = async () => {
     if (!id) return;
-    try {
-      setLoading(true);
-      setError(null);
-      await apiClient.post('/api/v1/cv/', { studentId: Number(id) }, accessToken ? authHdr(accessToken) : {});
-      await fetchCVData();
-      await fetchCustomization();
-    } catch (err: any) {
-      if (err.response?.status === 500) {
-        setError('CV creation feature is not yet available');
-      } else {
-        setError(err.response?.data?.error?.message || 'Failed to create CV. Please try again.');
-      }
-    } finally {
-      setLoading(false);
-    }
+    setError(null);
+    await Promise.all([fetchCVData(), fetchCustomization(), checkNeedsRegeneration()]);
   };
 
   if (loading) {
@@ -586,15 +586,15 @@ export const StudentCV = () => {
           {t('No CV data available')}
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-          {t('Create your CV to get started. Your academic records, achievements, and activities will be compiled into a professional CV.')}
+          {t('The CV could not be loaded. Retry, or return to the student record.')}
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
           <Button
             startIcon={<AddIcon />}
-            onClick={handleCreateCV}
+            onClick={handleRetryLoadCV}
             sx={S.BTN_PRIMARY}
           >
-            {t('Create CV')}
+            {t('Retry')}
           </Button>
           <Button
             startIcon={<BackIcon />}
@@ -724,7 +724,7 @@ export const StudentCV = () => {
           {cvData && (
             <Box>
               {/* Personal Info */}
-              {cvData.personalInfo && (
+              {customization?.showPersonalInfo === true && cvData.personalInfo && (
                 <InfoSection icon={<PersonIcon sx={{ color: theme.palette.primary.main }} />} title={t('Personal Information')}>
                   <Grid container spacing={3}>
                     <Grid item xs={12} md={4} sx={{ textAlign: 'center' }}>
@@ -802,7 +802,7 @@ export const StudentCV = () => {
               )}
 
               {/* Academic Performance */}
-              {cvData.academicPerformance && cvData.academicPerformance.academicYears.length > 0 && (
+              {customization?.showAcademicPerformance === true && cvData.academicPerformance && cvData.academicPerformance.academicYears.length > 0 && (
                 <InfoSection icon={<SchoolIcon sx={{ color: theme.palette.primary.main }} />} title={t('Academic Performance')}>
                   <Grid container spacing={2} sx={{ mb: 3 }}>
                     <Grid item xs={4}>
@@ -837,7 +837,7 @@ export const StudentCV = () => {
               )}
 
               {/* Attendance */}
-              {cvData.attendance && (
+              {customization?.showAttendance === true && cvData.attendance && (
                 <InfoSection icon={<AttendanceIcon sx={{ color: C.success }} />} title={t('Attendance Record')}>
                   <Grid container spacing={2} sx={{ mb: 3 }}>
                     <Grid item xs={4}>
@@ -866,7 +866,7 @@ export const StudentCV = () => {
               )}
 
               {/* ECA */}
-              {cvData.eca && cvData.eca.participations.length > 0 && (
+              {customization?.showECA === true && cvData.eca && cvData.eca.participations.length > 0 && (
                 <InfoSection icon={<ECAIcon sx={{ color: C.warning }} />} title={t('Extra-Curricular Activities')}>
                   <Grid container spacing={2} sx={{ mb: 3 }}>
                     <Grid item xs={4}>
@@ -912,7 +912,7 @@ export const StudentCV = () => {
               )}
 
               {/* Sports */}
-              {cvData.sports && cvData.sports.participations.length > 0 && (
+              {customization?.showSports === true && cvData.sports && cvData.sports.participations.length > 0 && (
                 <InfoSection icon={<SportsIcon sx={{ color: C.primary }} />} title={t('Sports Activities')}>
                   <Grid container spacing={2} sx={{ mb: 3 }}>
                     <Grid item xs={4}>
@@ -966,7 +966,7 @@ export const StudentCV = () => {
               )}
 
               {/* Certificates */}
-              {cvData.certificates && cvData.certificates.totalCount > 0 && (
+              {customization?.showCertificates === true && cvData.certificates && cvData.certificates.totalCount > 0 && (
                 <InfoSection icon={<CertificateIcon sx={{ color: C.purple }} />} title={t('Certificates')}>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
                     {cvData.certificates.certificates.map((cert, index) => (

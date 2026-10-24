@@ -12,9 +12,15 @@ import { sendSuccess, calculatePagination } from '@utils/responseFormatter';
 import { asyncHandler } from '@middleware/errorHandler';
 import { NotFoundError, ValidationError } from '@middleware/errorHandler';
 import Student, { StudentStatus } from '@models/Student.model';
+import StudentTransferHistory from '@models/StudentTransferHistory.model';
 import Class from '@models/Class.model';
 import { HTTP_STATUS, PAGINATION } from '@config/constants';
 import { logger } from '@utils/logger';
+import {
+  getStudentDocumentExpiryStatus,
+  isValidStudentDocumentExpiryDate,
+  studentDocumentContentUrl,
+} from './studentDocument.utils';
 import AttendanceRecord from '@models/AttendanceRecord.model';
 import Grade from '@models/Grade.model';
 import Exam from '@models/Exam.model';
@@ -25,6 +31,7 @@ import ECA from '@models/ECA.model';
 import SportsEnrollment from '@models/SportsEnrollment.model';
 import Sport from '@models/Sport.model';
 import Certificate from '@models/Certificate.model';
+import { assertStudentAccess } from '@modules/security/studentAccess';
 import Circulation from '@models/Circulation.model';
 import Book from '@models/Book.model';
 import { Op } from 'sequelize';
@@ -34,6 +41,7 @@ let documentIdNext = 1;
 const documentRegistry = new Map<number, { studentId: number; category: string; filename: string }>();
 const isSafeDocumentCategory = (category: unknown): category is string =>
   typeof category === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(category);
+
 
 /**
  * Student Controller
@@ -107,6 +115,7 @@ class StudentController {
    */
   getById = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const studentId = Number(req.params.id);
+    await assertStudentAccess(req, studentId);
 
     const student = await StudentRepository.findById(studentId);
 
@@ -430,7 +439,8 @@ class StudentController {
       gpa,
       totalMarks,
       rank,
-      hasFailingGrades
+      hasFailingGrades,
+      remarks
     } = req.body;
 
     const result = await promotionService.promoteStudent(
@@ -445,7 +455,8 @@ class StudentController {
         gpa,
         totalMarks,
         rank,
-        hasFailingGrades
+        hasFailingGrades,
+        remarks
       },
       undefined, // use default criteria
       userId,
@@ -480,26 +491,18 @@ class StudentController {
     const userId = req.user?.userId;
     const { newClassId, newRollNumber, reason } = req.body;
 
-    const student = await StudentRepository.findById(studentId);
+    const updatedStudent = await StudentRepository.transferClass(
+      studentId,
+      newClassId,
+      newRollNumber,
+      userId,
+      req,
+      reason
+    );
 
-    if (!student) {
+    if (!updatedStudent) {
       throw new NotFoundError('Student');
     }
-
-    const updateData: Record<string, any> = {
-      currentClassId: newClassId
-    };
-
-    if (newRollNumber) {
-      updateData.rollNumber = newRollNumber;
-    }
-
-    const updatedStudent = await StudentRepository.update(
-      studentId,
-      updateData,
-      userId,
-      req
-    );
 
     logger.info('Student transferred via API', {
       studentId,
@@ -509,6 +512,22 @@ class StudentController {
     });
 
     sendSuccess(res, updatedStudent, 'Student transferred successfully');
+  });
+
+  /**
+   * Read a student's class transfer history.
+   * GET /api/v1/students/:id/transfer-history
+   */
+  getTransferHistory = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const studentId = Number(req.params.id);
+    const student = await StudentRepository.findById(studentId);
+    if (!student) throw new NotFoundError('Student');
+
+    const transfers = await StudentTransferHistory.findAll({
+      where: { studentId },
+      order: [['transferredAt', 'DESC']],
+    });
+    sendSuccess(res, transfers, 'Student transfer history retrieved successfully');
   });
 
   /**
@@ -574,6 +593,15 @@ class StudentController {
       ]);
     }
 
+    const expiryDate = typeof req.body.expiryDate === 'string' && req.body.expiryDate ? req.body.expiryDate : undefined;
+    const documentName = typeof req.body.name === 'string' ? req.body.name.trim() : undefined;
+    if (expiryDate !== undefined && !isValidStudentDocumentExpiryDate(expiryDate)) {
+      throw new ValidationError('Invalid expiry date', [{ field: 'expiryDate', message: 'Use a valid YYYY-MM-DD date' }]);
+    }
+    if (documentName && documentName.length > 255) {
+      throw new ValidationError('Invalid document name', [{ field: 'name', message: 'Use 255 characters or fewer' }]);
+    }
+
     if (!req.files || (Array.isArray(req.files) && req.files.length === 0)) {
       throw new ValidationError('At least one document file is required', [
         { field: 'documents', message: 'Please upload at least one document' }
@@ -590,7 +618,7 @@ class StudentController {
     const uploadedDocuments = [];
 
     for (const file of files) {
-      const docInfo = await photoService.saveStudentDocument(file, studentId, category);
+      const docInfo = await photoService.saveStudentDocument(file, studentId, category, { name: documentName, expiryDate });
       uploadedDocuments.push(docInfo);
     }
 
@@ -625,7 +653,7 @@ class StudentController {
     const documents = list.map((doc) => {
       const id = documentIdNext++;
       documentRegistry.set(id, { studentId, category: doc.category, filename: doc.filename });
-      return { id, ...doc, isExpired: false, isExpiringSoon: false };
+      return { id, ...doc, ...getStudentDocumentExpiryStatus(doc.expiryDate), fileUrl: studentDocumentContentUrl(studentId, doc.category, doc.filename) };
     });
     sendSuccess(res, documents, 'Documents retrieved successfully');
   });
@@ -638,7 +666,13 @@ class StudentController {
     const studentId = Number(req.params.id);
     const student = await StudentRepository.findById(studentId);
     if (!student) throw new NotFoundError('Student');
-    sendSuccess(res, [], 'Documents retrieved successfully');
+    const list = await photoService.listStudentDocuments(studentId);
+    const documents = list.filter((doc) => getStudentDocumentExpiryStatus(doc.expiryDate).isExpired).map((doc) => {
+      const id = documentIdNext++;
+      documentRegistry.set(id, { studentId, category: doc.category, filename: doc.filename });
+      return { id, ...doc, ...getStudentDocumentExpiryStatus(doc.expiryDate), fileUrl: studentDocumentContentUrl(studentId, doc.category, doc.filename) };
+    });
+    sendSuccess(res, documents, 'Documents retrieved successfully');
   });
 
   /**
@@ -650,10 +684,10 @@ class StudentController {
     const student = await StudentRepository.findById(studentId);
     if (!student) throw new NotFoundError('Student');
     const list = await photoService.listStudentDocuments(studentId);
-    const documents = list.map((doc) => {
+    const documents = list.filter((doc) => getStudentDocumentExpiryStatus(doc.expiryDate).isExpiringSoon).map((doc) => {
       const id = documentIdNext++;
       documentRegistry.set(id, { studentId, category: doc.category, filename: doc.filename });
-      return { id, ...doc, isExpired: false, isExpiringSoon: true };
+      return { id, ...doc, ...getStudentDocumentExpiryStatus(doc.expiryDate), fileUrl: studentDocumentContentUrl(studentId, doc.category, doc.filename) };
     });
     sendSuccess(res, documents, 'Documents retrieved successfully');
   });
@@ -667,8 +701,10 @@ class StudentController {
     const student = await StudentRepository.findById(studentId);
     if (!student) throw new NotFoundError('Student');
     const list = await photoService.listStudentDocuments(studentId);
-    const total = list.length;
-    sendSuccess(res, { total, active: total, expired: 0, expiringSoon: 0 }, 'Statistics retrieved');
+    const statuses = list.map((doc) => getStudentDocumentExpiryStatus(doc.expiryDate));
+    const expired = statuses.filter((status) => status.isExpired).length;
+    const expiringSoon = statuses.filter((status) => status.isExpiringSoon).length;
+    sendSuccess(res, { total: list.length, active: list.length - expired - expiringSoon, expired, expiringSoon }, 'Statistics retrieved');
   });
 
   /**
@@ -712,8 +748,20 @@ class StudentController {
     if (!entry) throw new NotFoundError('Document');
     const student = await Student.findByPk(entry.studentId);
     if (!student) throw new NotFoundError('Document');
-    const url = `/uploads/documents/students/${entry.studentId}/${entry.category}/${entry.filename}`;
-    sendSuccess(res, { id: documentId, filename: entry.filename, url, category: entry.category }, 'Document retrieved');
+    const document = (await photoService.listStudentDocuments(entry.studentId, entry.category)).find((item) => item.filename === entry.filename);
+    if (!document) throw new NotFoundError('Document');
+    sendSuccess(res, { id: documentId, ...document, ...getStudentDocumentExpiryStatus(document.expiryDate), fileUrl: studentDocumentContentUrl(entry.studentId, entry.category, entry.filename) }, 'Document retrieved');
+  });
+
+  getStudentDocumentContent = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const studentId = Number(req.params.id);
+    const student = await StudentRepository.findById(studentId);
+    if (!student) throw new NotFoundError('Student');
+    const { buffer, mimeType } = await photoService.readStudentDocumentFile(studentId, req.params.category, req.params.filename);
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.send(buffer);
   });
 
   /**
@@ -738,6 +786,7 @@ class StudentController {
    */
    getAcademicHistory = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const studentId = Number(req.params.id);
+    await assertStudentAccess(req, studentId);
 
     // Verify student exists
     const student = await StudentRepository.findById(studentId);
@@ -756,6 +805,7 @@ class StudentController {
    */
   getAttendance = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const studentId = Number(req.params.id);
+    await assertStudentAccess(req, studentId);
 
     const student = await StudentRepository.findById(studentId);
     if (!student) {
@@ -799,6 +849,7 @@ class StudentController {
    */
   getGrades = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const studentId = Number(req.params.id);
+    await assertStudentAccess(req, studentId);
 
     const student = await StudentRepository.findById(studentId);
     if (!student) {
@@ -850,6 +901,7 @@ class StudentController {
    */
   getFees = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const studentId = Number(req.params.id);
+    await assertStudentAccess(req, studentId);
 
     const student = await StudentRepository.findById(studentId);
     if (!student) {
@@ -913,6 +965,7 @@ class StudentController {
    */
   getECA = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const studentId = Number(req.params.id);
+    await assertStudentAccess(req, studentId);
 
     const student = await StudentRepository.findById(studentId);
     if (!student) {
@@ -978,6 +1031,7 @@ class StudentController {
    */
   getCertificates = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const studentId = Number(req.params.id);
+    await assertStudentAccess(req, studentId);
 
     const student = await StudentRepository.findById(studentId);
     if (!student) {
@@ -1013,6 +1067,7 @@ class StudentController {
    */
   getRemarks = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const studentId = Number(req.params.id);
+    await assertStudentAccess(req, studentId);
     const { type } = req.query;
 
     const student = await StudentRepository.findById(studentId);
@@ -1072,6 +1127,7 @@ class StudentController {
    */
   getLibrary = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const studentId = Number(req.params.id);
+    await assertStudentAccess(req, studentId);
 
     const student = await StudentRepository.findById(studentId);
     if (!student) {
@@ -1384,9 +1440,13 @@ class StudentController {
     const studentData = student?.get({ plain: true }) as any;
 
     try {
+      const currentClass = studentData?.currentClass;
+      const className = currentClass?.gradeLevel && currentClass?.section
+        ? `Class ${currentClass.gradeLevel} ${currentClass.section}`
+        : undefined;
       const assignmentController = require('@modules/assignment/assignment.controller').default;
-      const allAssignments = assignmentController.getAllAssignmentsForStudent
-        ? assignmentController.getAllAssignmentsForStudent(studentData?.currentClass?.name)
+      const allAssignments = className && assignmentController.getAllAssignmentsForStudent
+        ? await assignmentController.getAllAssignmentsForStudent(className)
         : [];
 
       sendSuccess(res, {

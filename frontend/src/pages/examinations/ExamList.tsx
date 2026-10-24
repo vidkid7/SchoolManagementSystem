@@ -212,6 +212,8 @@ export function ExamList() {
             <FormControl fullWidth>
               <InputLabel id="examination-status-filter-label">{t('common.status')}</InputLabel>
               <Select
+                id="examination-status-filter"
+                name="statusFilter"
                 labelId="examination-status-filter-label"
                 value={statusFilter}
                 label={t('common.status')}
@@ -228,6 +230,8 @@ export function ExamList() {
             <FormControl fullWidth>
               <InputLabel id="examination-type-filter-label">{t('examinations.examType')}</InputLabel>
               <Select
+                id="examination-type-filter"
+                name="typeFilter"
                 labelId="examination-type-filter-label"
                 value={typeFilter}
                 label={t('examinations.examType')}
@@ -244,6 +248,8 @@ export function ExamList() {
             <FormControl fullWidth>
               <InputLabel id="examination-class-filter-label">{t('common.class')}</InputLabel>
               <Select
+                id="examination-class-filter"
+                name="classFilter"
                 labelId="examination-class-filter-label"
                 value={classFilter}
                 label={t('common.class')}

@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box, Grid, Card, CardContent, Typography, Button, Divider, List, ListItem,
+  Box, Grid, Typography, Button, Divider, List, ListItem,
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
-  TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog,
-  DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select,
-  FormControl, InputLabel, IconButton, Tooltip, useTheme,
+  TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, useTheme,
 } from '@mui/material';
 import {
   EmojiEvents as SportsIcon,
@@ -12,12 +10,10 @@ import {
   Message as MessageIcon,
   CalendarMonth as CalendarIcon,
   Person as PersonIcon,
-  SportsScore as ScoreIcon,
   Groups as TeamIcon,
   Event as EventIcon,
   MilitaryTech as AchievementIcon,
   FitnessCenter as ActiveIcon,
-  Notifications as AnnouncementIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
@@ -86,7 +82,16 @@ interface ProfileData {
 const authHdr = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
 
 function TabPanel({ children, value, index }: { children: React.ReactNode; value: number; index: number }) {
-  return <div hidden={value !== index}>{value === index && <Box sx={{ pt: 2 }}>{children}</Box>}</div>;
+  return (
+    <div
+      role="tabpanel"
+      id={`sports-tabpanel-${index}`}
+      aria-labelledby={`sports-tab-${index}`}
+      hidden={value !== index}
+    >
+      {value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
+    </div>
+  );
 }
 
 const SportsCoordinatorPortal: React.FC = () => {
@@ -107,15 +112,24 @@ const SportsCoordinatorPortal: React.FC = () => {
   const S = useAdminStyles(theme);
 
   const loadData = useCallback(async () => {
-    if (!accessToken) return;
+    if (!accessToken) {
+      setError(t('portal.failedToLoadData'));
+      setLoading(false);
+      return;
+    }
     try {
+      const fallback = (url: string, value: unknown) =>
+        apiClient.get(url, authHdr(accessToken)).catch(() => {
+          setError(t('portal.failedToLoadData'));
+          return { data: { data: value } };
+        });
       const [statsRes, sportsRes, teamsRes, tournamentsRes, achievementsRes, profileRes] = await Promise.all([
-        apiClient.get('/api/v1/sports/statistics', authHdr(accessToken)).catch(() => ({ data: { data: null } })),
-        apiClient.get('/api/v1/sports?limit=50', authHdr(accessToken)).catch(() => ({ data: { data: [] } })),
-        apiClient.get('/api/v1/sports/teams?limit=50', authHdr(accessToken)).catch(() => ({ data: { data: [] } })),
-        apiClient.get('/api/v1/sports/tournaments?limit=50', authHdr(accessToken)).catch(() => ({ data: { data: [] } })),
-        apiClient.get('/api/v1/sports/achievements?limit=50', authHdr(accessToken)).catch(() => ({ data: { data: [] } })),
-        apiClient.get('/api/v1/auth/me', authHdr(accessToken)).catch(() => ({ data: { data: null } })),
+        fallback('/api/v1/sports/statistics', null),
+        fallback('/api/v1/sports?limit=50', []),
+        fallback('/api/v1/sports/teams?limit=50', []),
+        fallback('/api/v1/sports/tournaments?limit=50', []),
+        fallback('/api/v1/sports/achievements?limit=50', []),
+        fallback('/api/v1/auth/me', null),
       ]);
       const s = statsRes.data?.data;
       if (s) {
@@ -142,7 +156,11 @@ const SportsCoordinatorPortal: React.FC = () => {
     }
   }, [accessToken, t]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    // loadData starts API requests and updates state when those requests settle.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadData();
+  }, [loadData]);
 
   if (loading) return <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh"><CircularProgress /></Box>;
 
@@ -184,12 +202,12 @@ const SportsCoordinatorPortal: React.FC = () => {
 
       {/* Tabs */}
       <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
-        <Tab icon={<SportsIcon />} iconPosition="start" label={t('portal.dashboard')} />
-        <Tab icon={<ActiveIcon />} iconPosition="start" label={t('portal.sports')} />
-        <Tab icon={<TeamIcon />} iconPosition="start" label={t('portal.teams')} />
-        <Tab icon={<EventIcon />} iconPosition="start" label={t('portal.tournaments')} />
-        <Tab icon={<AchievementIcon />} iconPosition="start" label={t('portal.achievementsCount')} />
-        <Tab icon={<PersonIcon />} iconPosition="start" label={t('portal.profileAndLinks')} />
+        <Tab id="sports-tab-0" aria-controls="sports-tabpanel-0" icon={<SportsIcon />} iconPosition="start" label={t('portal.dashboard')} />
+        <Tab id="sports-tab-1" aria-controls="sports-tabpanel-1" icon={<ActiveIcon />} iconPosition="start" label={t('portal.sports')} />
+        <Tab id="sports-tab-2" aria-controls="sports-tabpanel-2" icon={<TeamIcon />} iconPosition="start" label={t('portal.teams')} />
+        <Tab id="sports-tab-3" aria-controls="sports-tabpanel-3" icon={<EventIcon />} iconPosition="start" label={t('portal.tournaments')} />
+        <Tab id="sports-tab-4" aria-controls="sports-tabpanel-4" icon={<AchievementIcon />} iconPosition="start" label={t('portal.achievementsCount')} />
+        <Tab id="sports-tab-5" aria-controls="sports-tabpanel-5" icon={<PersonIcon />} iconPosition="start" label={t('portal.profileAndLinks')} />
       </Tabs>
 
       {/* Dashboard */}

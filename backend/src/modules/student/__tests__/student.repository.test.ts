@@ -1,4 +1,6 @@
 import Student, { StudentStatus, Gender } from '@models/Student.model';
+import Class, { Shift } from '@models/Class.model';
+import { AcademicYear } from '@models/AcademicYear.model';
 import studentRepository from '../student.repository';
 import sequelize from '@config/database';
 
@@ -11,7 +13,20 @@ import sequelize from '@config/database';
 describe('StudentRepository', () => {
   // Setup: Create tables before all tests
   beforeAll(async () => {
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('Student repository tests require TEST_DB_DIALECT=sqlite');
+    }
     await sequelize.sync({ force: true });
+    await AcademicYear.create({
+      academicYearId: 1,
+      name: '2081-2082 BS',
+      startDateBS: '2081-01-01',
+      endDateBS: '2081-12-30',
+      startDateAD: new Date('2024-04-13'),
+      endDateAD: new Date('2025-04-13'),
+    });
+    await Class.create({ classId: 1, academicYearId: 1, gradeLevel: 1, section: 'A', shift: Shift.MORNING });
+    await Class.create({ classId: 2, academicYearId: 1, gradeLevel: 2, section: 'A', shift: Shift.MORNING });
   });
 
   // Cleanup: Close connection after all tests
@@ -56,7 +71,7 @@ describe('StudentRepository', () => {
       expect(student.firstNameEn).toBe(studentData.firstNameEn);
       expect(student.lastNameEn).toBe(studentData.lastNameEn);
       expect(student.status).toBe(StudentStatus.ACTIVE);
-      expect(student.deletedAt).toBeNull();
+      expect(student.deletedAt ?? null).toBeNull();
     });
 
     it('should create student with optional fields', async () => {
@@ -321,16 +336,22 @@ describe('StudentRepository', () => {
     beforeEach(async () => {
       await studentRepository.create(createTestStudentData({
         studentCode: 'TEST-001',
+        firstNameEn: 'Ram',
+        lastNameEn: 'Gurung',
         status: StudentStatus.ACTIVE,
         gender: Gender.MALE
       }));
       await studentRepository.create(createTestStudentData({
         studentCode: 'TEST-002',
+        firstNameEn: 'Sita',
+        lastNameEn: 'Thapa',
         status: StudentStatus.INACTIVE,
         gender: Gender.FEMALE
       }));
       await studentRepository.create(createTestStudentData({
         studentCode: 'TEST-003',
+        firstNameEn: 'Hari',
+        lastNameEn: 'Rai',
         status: StudentStatus.ACTIVE,
         gender: Gender.MALE
       }));

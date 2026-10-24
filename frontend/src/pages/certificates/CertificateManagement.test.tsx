@@ -6,6 +6,7 @@ import { CertificateManagement } from './CertificateManagement';
 jest.mock('../../services/apiClient', () => ({
   __esModule: true,
   default: { get: jest.fn(), post: jest.fn(), put: jest.fn(), delete: jest.fn() },
+  resolveApiAssetUrl: (path: string) => new URL(path, 'https://api.school.test').toString(),
 }));
 
 jest.mock('react-i18next', () => ({
@@ -55,6 +56,42 @@ describe('CertificateManagement template creation', () => {
       templateHtml: '<div>{{student_name}} - {{ student_name }}</div>',
       variables: ['student_name'],
     }));
+  });
+});
+
+describe('CertificateManagement certificate downloads', () => {
+  it('opens the backend-hosted certificate PDF with opener isolation', async () => {
+    const certificate = {
+      certificateId: 61001,
+      certificateNumber: 'CERT-QA-61001',
+      templateId: 1,
+      templateName: 'Character Certificate',
+      studentId: 5100,
+      studentName: 'QA Student',
+      type: 'character',
+      issuedDate: '2026-01-15',
+      issuedDateBS: '2082-10-02',
+      status: 'active',
+      pdfUrl: '/uploads/certificates/CERT-QA-61001.pdf',
+    };
+    const openSpy = jest.spyOn(window, 'open').mockReturnValue(null);
+    (apiClient.get as jest.Mock).mockImplementation((url: string) => Promise.resolve({
+      data: url.startsWith('/api/v1/certificates?')
+        ? { data: [certificate], meta: { total: 1 } }
+        : { data: [], meta: { total: 0 } },
+    }));
+
+    renderManagement();
+    fireEvent.click(await screen.findByRole('tab', { name: 'certificates.title' }));
+    await screen.findByText('CERT-QA-61001');
+    fireEvent.click(screen.getByTitle('Download PDF'));
+
+    expect(openSpy).toHaveBeenCalledWith(
+      'https://api.school.test/uploads/certificates/CERT-QA-61001.pdf',
+      '_blank',
+      'noopener,noreferrer',
+    );
+    openSpy.mockRestore();
   });
 });
 

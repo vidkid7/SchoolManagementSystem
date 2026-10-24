@@ -10,16 +10,16 @@ import sequelize from '@config/database';
  */
 
 class BSCalendar extends Model {
-  public id!: number;
-  public yearBs!: number;
-  public monthBs!: number;
-  public daysInMonth!: number;
-  public startDateAd!: Date;
-  public endDateAd!: Date;
-  public monthNameEn!: string;
-  public monthNameNp!: string;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public id: number;
+  declare public yearBs: number;
+  declare public monthBs: number;
+  declare public daysInMonth: number;
+  declare public startDateAd: Date;
+  declare public endDateAd: Date;
+  declare public monthNameEn: string;
+  declare public monthNameNp: string;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   /**
    * Get month name in English for a given month number

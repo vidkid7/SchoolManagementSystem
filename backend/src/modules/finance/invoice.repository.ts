@@ -1,5 +1,7 @@
 import { Invoice, InvoiceItem, InvoiceStatus, DiscountApprovalStatus } from '@models/Invoice.model';
 import { FeeComponent } from '@models/FeeStructure.model';
+import Student from '@models/Student.model';
+import Class from '@models/Class.model';
 import { Transaction, Op } from 'sequelize';
 
 /**
@@ -119,7 +121,7 @@ class InvoiceRepository {
   /**
    * Find invoice by ID
    */
-  async findById(id: number): Promise<Invoice | null> {
+  findById(id: number, transaction?: Transaction, lockForUpdate = false): Promise<Invoice | null> {
     return Invoice.findByPk(id, {
       include: [
         {
@@ -132,14 +134,16 @@ class InvoiceRepository {
             }
           ]
         }
-      ]
+      ],
+      transaction,
+      lock: transaction && lockForUpdate ? transaction.LOCK.UPDATE : undefined
     });
   }
 
   /**
    * Find invoice by invoice number
    */
-  async findByInvoiceNumber(invoiceNumber: string): Promise<Invoice | null> {
+  findByInvoiceNumber(invoiceNumber: string): Promise<Invoice | null> {
     return Invoice.findOne({
       where: { invoiceNumber },
       include: [
@@ -203,6 +207,16 @@ class InvoiceRepository {
         {
           model: InvoiceItem,
           as: 'invoiceItems'
+        },
+        {
+          model: Student,
+          as: 'student',
+          attributes: ['studentId', 'firstNameEn', 'middleNameEn', 'lastNameEn', 'currentClassId'],
+          include: [{
+            model: Class,
+            as: 'currentClass',
+            attributes: ['classId', 'gradeLevel', 'section']
+          }]
         }
       ],
       order: [[orderBy, orderDirection]],
@@ -224,7 +238,7 @@ class InvoiceRepository {
   /**
    * Find pending invoices for a student
    */
-  async findPendingByStudentId(studentId: number): Promise<Invoice[]> {
+  findPendingByStudentId(studentId: number): Promise<Invoice[]> {
     return Invoice.findAll({
       where: {
         studentId,
@@ -429,7 +443,7 @@ class InvoiceRepository {
   /**
    * Get invoice items for an invoice
    */
-  async getItems(invoiceId: number): Promise<InvoiceItem[]> {
+  getItems(invoiceId: number): Promise<InvoiceItem[]> {
     return InvoiceItem.findAll({
       where: { invoiceId },
       include: [
@@ -483,7 +497,7 @@ class InvoiceRepository {
   /**
    * Get invoices requiring discount approval
    */
-  async findPendingDiscountApprovals(): Promise<Invoice[]> {
+  findPendingDiscountApprovals(): Promise<Invoice[]> {
     return Invoice.findAll({
       where: {
         discountApprovalStatus: DiscountApprovalStatus.PENDING,

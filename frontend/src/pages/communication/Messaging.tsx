@@ -121,9 +121,6 @@ export const Messaging: React.FC<MessagingProps> = () => {
         userApi.getUsers({ limit: 1000 }), // Get all users for mapping
       ]);
       
-      console.log('Raw conversations from API:', convsResult.conversations);
-      console.log('Available users:', usersResult.users.length);
-      
       // Create a user map for quick lookup
       const userMap = new Map(usersResult.users.map(u => [u.userId, u]));
       
@@ -151,8 +148,6 @@ export const Messaging: React.FC<MessagingProps> = () => {
         };
       }).filter(conv => conv.id) as Conversation[]; // Filter out conversations without IDs
       
-      console.log('Loaded conversations:', enrichedConversations);
-      console.log('Loaded groups:', groupsResult.groupConversations);
       setConversations(enrichedConversations);
       setGroupConversations(groupsResult.groupConversations);
     } catch (error) {
@@ -260,16 +255,14 @@ export const Messaging: React.FC<MessagingProps> = () => {
 
   // Handle conversation selection
   const handleSelectConversation = (conversation: Conversation) => {
-    console.log('Selecting conversation:', conversation);
-    
     // Validate conversation has required data
     if (!conversation.id) {
-      console.error('Conversation missing ID:', conversation);
+      console.error('Conversation missing ID');
       return;
     }
     
     if (!conversation.participants || conversation.participants.length === 0) {
-      console.error('Conversation missing participants:', conversation);
+      console.error('Conversation missing participants');
       // Still set it as selected but don't try to load messages
       setSelectedConversation(conversation);
       setSelectedGroup(null);
@@ -667,6 +660,15 @@ export const Messaging: React.FC<MessagingProps> = () => {
                 );
               })}
 
+              {tabValue === 0 && filteredConversations.length === 0 && (
+                <ListItem sx={{ justifyContent: 'center', py: 4 }}>
+                  <ListItemText
+                    primary={t('communication.noConversationsFound')}
+                    primaryTypographyProps={{ role: 'status', color: 'text.secondary', textAlign: 'center' }}
+                  />
+                </ListItem>
+              )}
+
               {tabValue === 1 && filteredGroups.map((group) => (
                 <ListItemButton
                   key={group.id}
@@ -697,6 +699,15 @@ export const Messaging: React.FC<MessagingProps> = () => {
                   )}
                 </ListItemButton>
               ))}
+
+              {tabValue === 1 && filteredGroups.length === 0 && (
+                <ListItem sx={{ justifyContent: 'center', py: 4 }}>
+                  <ListItemText
+                    primary={t('communication.noGroupsFound')}
+                    primaryTypographyProps={{ role: 'status', color: 'text.secondary', textAlign: 'center' }}
+                  />
+                </ListItem>
+              )}
             </List>
           )}
         </Paper>

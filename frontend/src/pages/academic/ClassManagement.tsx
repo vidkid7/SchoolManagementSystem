@@ -685,6 +685,7 @@ export const ClassManagement = () => {
                   <InputLabel id="class-grade-level-label">{t('academic.class')}</InputLabel>
                   <Select
                     id="class-grade-level"
+                    name="grade_level"
                     labelId="class-grade-level-label"
                     value={classForm.grade_level}
                     label={t('academic.class')}
@@ -706,6 +707,8 @@ export const ClassManagement = () => {
               </Grid>
               <Grid item xs={12}>
                 <TextField
+                  id="class-section"
+                  name="section"
                   label={t('academic.section')}
                   required
                   fullWidth
@@ -723,6 +726,8 @@ export const ClassManagement = () => {
               </Grid>
               <Grid item xs={12}>
                 <TextField
+                  id="class-capacity"
+                  name="capacity"
                   label={t('academic.capacity')}
                   type="number"
                   fullWidth
@@ -743,6 +748,8 @@ export const ClassManagement = () => {
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12}>
                 <TextField
+                  id="subject-code"
+                  name="code"
                   label={t('academic.subjectCode')}
                   fullWidth
                   required
@@ -752,6 +759,8 @@ export const ClassManagement = () => {
               </Grid>
               <Grid item xs={12}>
                 <TextField
+                  id="subject-name-en"
+                  name="name_en"
                   label={t('academic.subjectNameEnglish')}
                   fullWidth
                   required
@@ -761,6 +770,8 @@ export const ClassManagement = () => {
               </Grid>
               <Grid item xs={12}>
                 <TextField
+                  id="subject-name-np"
+                  name="name_np"
                   label={t('academic.subjectNameNepali')}
                   fullWidth
                   required
@@ -786,6 +797,8 @@ export const ClassManagement = () => {
               </Grid>
               <Grid item xs={6}>
                 <TextField
+                  id="subject-credit-hours"
+                  name="credit_hours"
                   label={t('academic.creditHours')}
                   type="number"
                   fullWidth
@@ -797,6 +810,8 @@ export const ClassManagement = () => {
               </Grid>
               <Grid item xs={6}>
                 <TextField
+                  id="subject-full-marks"
+                  name="full_marks"
                   label={t('academic.fullMarks')}
                   type="number"
                   fullWidth

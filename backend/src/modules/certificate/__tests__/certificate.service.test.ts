@@ -10,43 +10,34 @@ import { CertificateService } from '../certificate.service';
 import { CertificateRepository } from '../certificate.repository';
 import { CertificateTemplateRepository } from '../certificateTemplate.repository';
 import { Certificate } from '../../../models/Certificate.model';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 
 // Mock dependencies
 jest.mock('../certificate.repository');
 jest.mock('../certificateTemplate.repository');
-jest.mock('fs', () => ({
-  createWriteStream: jest.fn(() => ({
-    on: jest.fn((event, callback) => {
-      if (event === 'finish') {
-        setTimeout(callback, 0);
-      }
-      return this;
-    }),
-  })),
-  mkdir: jest.fn((_path: string, _options: any, callback: Function) => callback(null)),
-}));
-jest.mock('util', () => ({
-  promisify: jest.fn((fn) => fn),
-}));
-
 describe('CertificateService', () => {
   let service: CertificateService;
   let mockCertificateRepo: jest.Mocked<CertificateRepository>;
   let mockTemplateRepo: jest.Mocked<CertificateTemplateRepository>;
+  let testUploadDir: string;
 
   beforeEach(() => {
+    testUploadDir = fs.mkdtempSync(path.join(os.tmpdir(), 'certificate-service-test-'));
     mockCertificateRepo = new CertificateRepository() as jest.Mocked<CertificateRepository>;
     mockTemplateRepo = new CertificateTemplateRepository() as jest.Mocked<CertificateTemplateRepository>;
     service = new CertificateService(
       mockCertificateRepo,
       mockTemplateRepo,
       'http://localhost:3000',
-      'uploads/certificates'
+      testUploadDir
     );
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+    fs.rmSync(testUploadDir, { recursive: true, force: true });
   });
 
   describe('generateCertificate', () => {

@@ -6,6 +6,7 @@ describe('FeeStructure Model', () => {
   let testAcademicYear: AcademicYear;
 
   beforeAll(async () => {
+    await sequelize.sync({ force: true });
     await sequelize.authenticate();
     
     // Create a test academic year
@@ -20,8 +21,10 @@ describe('FeeStructure Model', () => {
   });
 
   afterAll(async () => {
-    // Clean up test academic year
-    await AcademicYear.destroy({ where: {}, force: true });
+    // Remove dependent fee records before the fixture academic year.
+    await FeeComponent.destroy({ where: {}, force: true });
+    await FeeStructure.destroy({ where: { academicYearId: testAcademicYear.academicYearId }, force: true });
+    await AcademicYear.destroy({ where: { academicYearId: testAcademicYear.academicYearId }, force: true });
     await sequelize.close();
   });
 

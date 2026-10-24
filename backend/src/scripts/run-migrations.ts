@@ -64,6 +64,10 @@ import * as createLibraryCategoriesTable from '../migrations/20261019000003-crea
 import * as ensureRefundsTable from '../migrations/20261019000004-ensure-refunds-table';
 import * as addInvoiceRemarks from '../migrations/20261019000005-add-invoice-remarks';
 import * as addStudentCityDistrict from '../migrations/20261019000006-add-student-city-district';
+import * as addSchoolConfigProfileFields from '../migrations/20261022000001-add-school-config-profile-fields';
+import * as createStaffLeaveRequests from '../migrations/20261022000002-create-staff-leave-requests';
+import * as createStaffTaskScheduleTables from '../migrations/20261022000003-create-staff-task-schedule-tables';
+import * as createStudentTransferHistory from '../migrations/20261023000001-create-student-transfer-history';
 
 /**
  * Migration Runner
@@ -368,6 +372,26 @@ const migrations: Migration[] = [
     name: '20261019000006-add-student-city-district',
     up: addStudentCityDistrict.up,
     down: addStudentCityDistrict.down
+  },
+  {
+    name: '20261022000001-add-school-config-profile-fields',
+    up: addSchoolConfigProfileFields.up,
+    down: addSchoolConfigProfileFields.down
+  },
+  {
+    name: '20261022000002-create-staff-leave-requests',
+    up: createStaffLeaveRequests.up,
+    down: createStaffLeaveRequests.down
+  },
+  {
+    name: '20261022000003-create-staff-task-schedule-tables',
+    up: createStaffTaskScheduleTables.up,
+    down: createStaffTaskScheduleTables.down
+  },
+  {
+    name: '20261023000001-create-student-transfer-history',
+    up: createStudentTransferHistory.up,
+    down: createStudentTransferHistory.down
   }
 ];
 

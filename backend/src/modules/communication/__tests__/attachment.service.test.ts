@@ -216,6 +216,18 @@ describe('AttachmentService', () => {
         attachmentService.deleteAttachment('/uploads/attachments/messages/999999/nonexistent.pdf')
       ).resolves.not.toThrow();
     });
+
+    it.each([
+      '/uploads/attachments/messages/1/../../../../package.json',
+      '/uploads/attachments/messages/1/%2e%2e%2fpackage.json',
+      '/uploads/attachments/messages/1\\..\\..\\package.json',
+      '/uploads/attachments/messages/1/..',
+    ])('should reject unsafe attachment path %s', async (attachmentUrl) => {
+      const unlinkSpy = jest.spyOn(fs.promises, 'unlink');
+      await expect(attachmentService.deleteAttachment(attachmentUrl)).rejects.toThrow('Failed to delete attachment');
+      expect(unlinkSpy).not.toHaveBeenCalled();
+      unlinkSpy.mockRestore();
+    });
   });
 
   describe('deleteMultipleAttachments', () => {
@@ -329,6 +341,11 @@ describe('AttachmentService', () => {
 
     it('should return false for non-existent attachment', () => {
       expect(attachmentService.attachmentExists('/uploads/attachments/messages/999999/nonexistent.pdf')).toBe(false);
+    });
+
+    it('should reject unsafe paths instead of checking arbitrary files', () => {
+      expect(() => attachmentService.attachmentExists('/uploads/attachments/messages/1/../../package.json')).toThrow('Invalid attachment path');
+      expect(() => attachmentService.getAttachmentPath('/uploads/attachments/messages/1/../../package.json')).toThrow('Invalid attachment path');
     });
   });
 

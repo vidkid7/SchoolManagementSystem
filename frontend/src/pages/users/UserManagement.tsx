@@ -4,7 +4,7 @@
  * Manage user accounts, roles, and permissions
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
   Paper,
@@ -142,15 +142,7 @@ export const UserManagement = () => {
     suspended: 0,
   });
 
-  useEffect(() => {
-    fetchUsers();
-  }, [page, rowsPerPage, debouncedSearch, roleFilter, statusFilter]);
-
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -163,23 +155,31 @@ export const UserManagement = () => {
       const response = await apiClient.get(`/api/v1/users?${params}`);
       setUsers(response.data.data || []);
       setTotalUsers(response.data.meta?.total ?? response.data.data?.length ?? 0);
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
+    } catch {
+      setSnackbar({ open: true, message: t('userManagement.failedToFetchUsers'), severity: 'error' });
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, rowsPerPage, debouncedSearch, roleFilter, statusFilter, t]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const response = await apiClient.get('/api/v1/users/stats');
       if (response.data.data) {
         setStats(response.data.data);
       }
-    } catch (error) {
-      console.error('Failed to fetch stats:', error);
+    } catch {
+      setSnackbar({ open: true, message: t('userManagement.failedToFetchStats'), severity: 'error' });
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchUsers);
+  }, [fetchUsers]);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchStats);
+  }, [fetchStats]);
 
   const fetchUserActivity = async (userId: number) => {
     try {
@@ -255,8 +255,8 @@ export const UserManagement = () => {
       handleCloseDialog();
       fetchUsers();
       fetchStats();
-    } catch (error: any) {
-      setSnackbar({ open: true, message: error.response?.data?.error?.message || 'Operation failed', severity: 'error' });
+    } catch {
+      setSnackbar({ open: true, message: t('userManagement.operationFailed'), severity: 'error' });
     }
   };
 
@@ -267,8 +267,8 @@ export const UserManagement = () => {
       setSnackbar({ open: true, message: t('userManagement.deleteSuccess'), severity: 'success' });
       fetchUsers();
       fetchStats();
-    } catch (error: any) {
-      setSnackbar({ open: true, message: error.response?.data?.error?.message || 'Failed to delete user', severity: 'error' });
+    } catch {
+      setSnackbar({ open: true, message: t('userManagement.failedToDelete'), severity: 'error' });
     }
   };
 
@@ -276,8 +276,8 @@ export const UserManagement = () => {
     try {
       await apiClient.post(`/api/v1/users/${userId}/reset-password`);
       setSnackbar({ open: true, message: t('userManagement.resetPasswordSuccess'), severity: 'success' });
-    } catch (error: any) {
-      setSnackbar({ open: true, message: 'Failed to reset password', severity: 'error' });
+    } catch {
+      setSnackbar({ open: true, message: t('userManagement.failedToResetPassword'), severity: 'error' });
     }
     setAnchorEl(null);
   };
@@ -289,8 +289,8 @@ export const UserManagement = () => {
       setSnackbar({ open: true, message: t('userManagement.statusUpdated'), severity: 'success' });
       fetchUsers();
       fetchStats();
-    } catch (error: any) {
-      setSnackbar({ open: true, message: 'Failed to update status', severity: 'error' });
+    } catch {
+      setSnackbar({ open: true, message: t('userManagement.failedToUpdateStatus'), severity: 'error' });
     }
     setAnchorEl(null);
   };
@@ -414,7 +414,7 @@ export const UserManagement = () => {
             variant="outlined"
             size="small"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
             sx={{ minWidth: 250 }}
             InputProps={{
               startAdornment: <SearchIcon color="action" />,
@@ -427,7 +427,7 @@ export const UserManagement = () => {
               labelId="user-role-filter-label"
               value={roleFilter}
               label={t('userManagement.role')}
-              onChange={(e) => setRoleFilter(e.target.value)}
+              onChange={(e) => { setRoleFilter(e.target.value); setPage(0); }}
             >
               <MenuItem value="">{t('common.all')}</MenuItem>
               {ASSIGNABLE_ROLES.map((role) => (
@@ -444,7 +444,7 @@ export const UserManagement = () => {
               labelId="user-status-filter-label"
               value={statusFilter}
               label={t('userManagement.status')}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}
             >
               <MenuItem value="">{t('common.all')}</MenuItem>
               <MenuItem value="active">{t('userManagement.active')}</MenuItem>
@@ -685,7 +685,7 @@ export const UserManagement = () => {
                 labelId="user-form-status-label"
                 value={userForm.status}
                 label={t('userManagement.status')}
-                onChange={(e) => setUserForm({ ...userForm, status: e.target.value as any })}
+                onChange={(e) => setUserForm({ ...userForm, status: e.target.value as User['status'] })}
               >
                 <MenuItem value="active">{t('userManagement.active')}</MenuItem>
                 <MenuItem value="inactive">{t('userManagement.inactive')}</MenuItem>
@@ -699,7 +699,7 @@ export const UserManagement = () => {
           <Button
             variant="contained" sx={S.BTN_PRIMARY}
             onClick={handleSubmit}
-            disabled={!userForm.username || !userForm.email || !userForm.firstName || !userForm.roleId}
+            disabled={!userForm.username || !userForm.email || !userForm.firstName || !userForm.lastName || !userForm.roleId || (formMode === 'create' && !userForm.password)}
           >
             {formMode === 'create' ? t('userManagement.create') : t('userManagement.update')}
           </Button>

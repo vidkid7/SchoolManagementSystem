@@ -6,13 +6,14 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 $baseUrl = "http://localhost:3000/api/v1"
+if (-not $env:QA_USERNAME -or -not $env:QA_PASSWORD) { throw "Set QA_USERNAME and QA_PASSWORD for the local QA account." }
 
 # First, login to get a token
 Write-Host "Step 1: Logging in..." -ForegroundColor Yellow
 
 $loginBody = @{
-    username = "admin"
-    password = "Admin@123"
+    username = $env:QA_USERNAME
+    password = $env:QA_PASSWORD
 } | ConvertTo-Json
 
 try {

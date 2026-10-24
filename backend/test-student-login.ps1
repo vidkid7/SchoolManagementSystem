@@ -4,12 +4,12 @@ Write-Host "========================" -ForegroundColor Cyan
 Write-Host ""
 
 # Test credentials
-$username = "student1"
-$password = "Student@123"
+$username = $env:QA_USERNAME
+$password = $env:QA_PASSWORD
+if (-not $username -or -not $password) { throw "Set QA_USERNAME and QA_PASSWORD for the local QA account." }
 
 Write-Host "Testing with credentials:" -ForegroundColor Yellow
 Write-Host "Username: $username" -ForegroundColor White
-Write-Host "Password: $password" -ForegroundColor White
 Write-Host ""
 
 # Create JSON body
@@ -62,8 +62,7 @@ catch {
     Write-Host "3. Check if account is locked:" -ForegroundColor White
     Write-Host "   Look for 'account_locked_until' in database" -ForegroundColor Gray
     Write-Host ""
-    Write-Host "4. Verify password hasn't been changed:" -ForegroundColor White
-    Write-Host "   Default password is: Student@123" -ForegroundColor Gray
+    Write-Host "4. Verify the configured QA account password is current." -ForegroundColor White
     Write-Host ""
     Write-Host "5. Re-seed the database:" -ForegroundColor White
     Write-Host "   npm run seed" -ForegroundColor Gray

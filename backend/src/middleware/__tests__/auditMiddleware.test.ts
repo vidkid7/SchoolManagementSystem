@@ -2,12 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import { auditMiddleware } from '../auditMiddleware';
 import auditLogger from '@utils/auditLogger';
 import { logger } from '@utils/logger';
+import { UserRole } from '@models/User.model';
 
 jest.mock('@utils/auditLogger');
 jest.mock('@utils/logger');
 
 describe('Audit Middleware', () => {
-  let mockRequest: Partial<Request>;
+  type MutableMockRequest = Omit<Partial<Request>, 'path' | 'ip'> & { path?: string; ip?: string };
+  let mockRequest: MutableMockRequest;
   let mockResponse: Partial<Response>;
   let nextFunction: NextFunction;
 
@@ -17,7 +19,7 @@ describe('Audit Middleware', () => {
       path: '/api/v1/students',
       body: { name: 'Test Student' },
       params: { id: '123' },
-      user: { userId: 1 },
+      user: { userId: 1, username: 'qa-admin', email: 'qa@example.test', role: UserRole.SCHOOL_ADMIN },
       get: jest.fn(),
       ip: '127.0.0.1'
     };

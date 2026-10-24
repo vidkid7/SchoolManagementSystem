@@ -4,9 +4,9 @@
  * Reusable form for creating and editing students
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
@@ -37,17 +37,19 @@ import {
   ContactPhone as ContactIcon,
   FamilyRestroom as GuardianIcon,
 } from '@mui/icons-material';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
+import { isAxiosError } from 'axios';
 import { apiClient } from '../../services/apiClient';
 import { BSDatePicker } from '../../components/BSDatePicker/BSDatePicker';
 import { YearSelectableDatePicker } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 import { motion } from 'framer-motion';
 import { useNepaliNumbers } from '../../hooks/useNepaliNumbers';
-import { C, useAdminStyles } from '../../theme/designTokens';
+import { useAdminStyles } from '../../theme/designTokens';
 import { DuplicateWarningDialog } from '../../components/students/DuplicateWarningDialog';
 import { ValidationWarnings } from '../../components/students/ValidationWarnings';
 import { SiblingsList } from '../../components/students/SiblingsList';
 import { formatBSDate, formatDate, formatDateForInput, parseBSDate, parseDate } from './studentDateUtils';
+import { getStudentPhotoValidationError, hasNonWhitespaceText, isValidEmail, isValidNepalPhone, isValidRequiredNepalPhone } from './studentFormValidation';
 
 const MotionCard = motion.create(Card);
 
@@ -110,18 +112,6 @@ const GENDER_OPTIONS = [
 ];
 
 const BLOOD_GROUP_OPTIONS = ['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-const NEPAL_PHONE_PATTERN = /^(\+977)?[0-9]{7,10}$/;
-
-const isValidNepalPhone = (value?: string) => {
-  const trimmed = value?.trim() || '';
-  return !trimmed || NEPAL_PHONE_PATTERN.test(trimmed);
-};
-
-const isValidEmail = (value?: string) => {
-  const trimmed = value?.trim() || '';
-  return !trimmed || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
-};
-
 const API_FIELD_LABELS: Record<string, string> = {
   firstNameEn: 'First Name',
   middleNameEn: 'Middle Name',
@@ -166,12 +156,6 @@ const API_FIELD_TO_FORM_FIELD: Record<string, keyof StudentFormData> = {
   admissionClass: 'admission_class',
 };
 
-const RELATION_OPTIONS = [
-  { value: 'father', labelKey: 'students.father' },
-  { value: 'mother', labelKey: 'students.mother' },
-  { value: 'guardian', labelKey: 'students.guardian' },
-];
-
 const STATUS_OPTIONS = [
   { value: 'active', labelKey: 'students.active' },
   { value: 'inactive', labelKey: 'students.inactive' },
@@ -183,10 +167,56 @@ interface AcademicClassOption {
   section: string;
 }
 
+interface DuplicateCandidate {
+  student: {
+    studentId: number;
+    studentCode: string;
+    firstNameEn: string;
+    lastNameEn: string;
+    photoUrl?: string;
+    phone?: string;
+    class?: { gradeLevel: number; section: string };
+  };
+  nameScore: number;
+  dobScore: number;
+  guardianScore: number;
+  addressScore: number;
+  overallScore: number;
+  isDuplicate: boolean;
+  confidence: 'low' | 'medium' | 'high';
+  reasons: string[];
+}
+
+interface StudentValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+interface SiblingRecord {
+  studentId: number;
+  studentCode: string;
+  firstNameEn: string;
+  lastNameEn: string;
+  photoUrl?: string;
+  class?: { gradeLevel: number; section: string };
+  status: string;
+}
+
+interface StudentPayload {
+  [field: string]: string | number | null;
+}
+
+interface StudentApiErrorResponse {
+  message?: string;
+  errors?: Array<{ field?: string }>;
+}
+
 export const StudentForm = () => {
   const { t, i18n } = useTranslation();
   const navigate = useSlugNavigate();
-  const { id, municipalitySlug } = useParams<{ id: string; municipalitySlug: string }>();
+  const location = useLocation();
+  const { id } = useParams<{ id: string; municipalitySlug: string }>();
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const { formatNumber } = useNepaliNumbers();
@@ -194,6 +224,7 @@ export const StudentForm = () => {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [photoUploadWarning, setPhotoUploadWarning] = useState(Boolean((location.state as { photoUploadFailed?: boolean } | null)?.photoUploadFailed));
   const [photoPreview, setPhotoPreview] = useState<string>('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [academicClasses, setAcademicClasses] = useState<AcademicClassOption[]>([]);
@@ -202,13 +233,13 @@ export const StudentForm = () => {
   
   // Enhanced features
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
-  const [duplicates, setDuplicates] = useState<any[]>([]);
-  const [validation, setValidation] = useState<any>(null);
-  const [siblings, setSiblings] = useState<any[]>([]);
+  const [duplicates, setDuplicates] = useState<DuplicateCandidate[]>([]);
+  const [validation, setValidation] = useState<StudentValidationResult | null>(null);
+  const [siblings, setSiblings] = useState<SiblingRecord[]>([]);
   const [siblingsLoading, setSiblingsLoading] = useState(false);
   const [checkingDuplicates, setCheckingDuplicates] = useState(false);
 
-  const { control, handleSubmit, reset, getValues, setValue, watch, setError: setFieldError, formState: { errors } } = useForm<StudentFormData>({
+  const { control, handleSubmit, reset, getValues, setValue, setError: setFieldError, formState: { errors } } = useForm<StudentFormData>({
     defaultValues: {
       first_name: '',
       middle_name: '',
@@ -250,7 +281,7 @@ export const StudentForm = () => {
     },
   });
 
-  const dateOfBirthAD = watch('date_of_birth_ad');
+  const dateOfBirthAD = useWatch({ control, name: 'date_of_birth_ad' });
 
   useEffect(() => {
     const date = parseDate(dateOfBirthAD);
@@ -270,15 +301,15 @@ export const StudentForm = () => {
         const classRows = response.data?.data || response.data;
         if (!mounted || !Array.isArray(classRows)) return;
 
-        setAcademicClasses(classRows.flatMap((row: any) => {
+        setAcademicClasses(classRows.flatMap((row: Record<string, unknown>) => {
           const classId = Number(row.classId ?? row.class_id);
           const gradeLevel = Number(row.gradeLevel ?? row.grade_level);
           if (!Number.isInteger(classId) || !Number.isInteger(gradeLevel)) return [];
           return [{ classId, gradeLevel, section: String(row.section || '') }];
         }));
       })
-      .catch((classError) => {
-        console.error('Failed to load academic classes:', classError);
+      .catch(() => {
+        console.error('Failed to load academic classes');
         if (mounted) setAcademicClassesLoadFailed(true);
       })
       .finally(() => {
@@ -290,19 +321,10 @@ export const StudentForm = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (isEdit) {
-      fetchStudent();
-      fetchSiblings();
-    }
-  }, [id]);
-
-  const fetchStudent = async () => {
+  const fetchStudent = useCallback(async () => {
     try {
       const response = await apiClient.get(`/api/v1/students/${id}`);
       const student = response.data.data || response.data;
-      
-      console.log('Fetched student data:', student);
       
       // Map backend camelCase to form snake_case
       const formData = {
@@ -364,35 +386,47 @@ export const StudentForm = () => {
         status: student.status || 'active',
       };
       
-      console.log('Mapped form data:', formData);
-      
       reset(formData);
       if (student.photoUrl) {
         setPhotoPreview(student.photoUrl);
       }
-    } catch (error) {
-      console.error('Failed to fetch student:', error);
+    } catch {
+      console.error('Failed to fetch student');
       setError(t('messages.error'));
     }
-  };
+  }, [id, reset, t]);
 
-  const fetchSiblings = async () => {
+  const fetchSiblings = useCallback(async () => {
     if (!id) return;
     
     try {
       setSiblingsLoading(true);
       const response = await apiClient.get(`/api/v1/students/${id}/siblings`);
       setSiblings(response.data.data || []);
-    } catch (error) {
-      console.error('Failed to fetch siblings:', error);
+    } catch {
+      console.error('Failed to fetch siblings');
     } finally {
       setSiblingsLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (isEdit) {
+      void Promise.resolve().then(() => Promise.all([fetchStudent(), fetchSiblings()]));
+    }
+  }, [fetchSiblings, fetchStudent, isEdit]);
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      const validationError = getStudentPhotoValidationError(file);
+      if (validationError) {
+        setError(t(validationError === 'size' ? 'students.photoTooLarge' : 'students.photoInvalidType'));
+        event.target.value = '';
+        return;
+      }
+      setError('');
+      setPhotoUploadWarning(false);
       setPhotoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -468,14 +502,14 @@ export const StudentForm = () => {
 
       // For edits, validate and save
       await validateAndSave(studentData);
-    } catch (error: any) {
-      console.error('Failed to save student:', error);
+    } catch (error: unknown) {
+      console.error('Failed to save student');
       setError(getStudentErrorMessage(error));
       setLoading(false);
     }
   };
 
-  const checkForDuplicates = async (studentData: any) => {
+  const checkForDuplicates = async (studentData: StudentPayload) => {
     try {
       setCheckingDuplicates(true);
       
@@ -491,8 +525,8 @@ export const StudentForm = () => {
         // No duplicates, proceed with validation and save
         await validateAndSave(studentData);
       }
-    } catch (error: any) {
-      console.error('Duplicate check failed:', error);
+    } catch {
+      console.error('Duplicate check failed');
       // If duplicate check fails, proceed anyway
       await validateAndSave(studentData);
     } finally {
@@ -500,7 +534,7 @@ export const StudentForm = () => {
     }
   };
 
-  const validateAndSave = async (studentData: any) => {
+  const validateAndSave = async (studentData: StudentPayload) => {
     try {
       // Validate student data
       const valResponse = await apiClient.post('/api/v1/students/validate', studentData, {
@@ -517,7 +551,7 @@ export const StudentForm = () => {
       }
 
       // Save student
-      let savedStudent;
+      let savedStudent: { studentId?: number } | undefined;
       if (isEdit) {
         const response = await apiClient.put(`/api/v1/students/${id}`, studentData);
         savedStudent = response.data.data;
@@ -530,23 +564,38 @@ export const StudentForm = () => {
       if (photoFile && savedStudent) {
         const photoFormData = new FormData();
         photoFormData.append('photo', photoFile);
-        await apiClient.post(`/api/v1/students/${savedStudent.studentId || id}/photo`, photoFormData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        try {
+          await apiClient.post(`/api/v1/students/${savedStudent.studentId || id}/photo`, photoFormData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+        } catch {
+          console.error('Student saved, but photo upload failed');
+          const savedStudentId = savedStudent.studentId || id;
+          setLoading(false);
+          setPhotoUploadWarning(true);
+          if (savedStudentId) {
+            navigate(`/students/${savedStudentId}/edit`, { state: { photoUploadFailed: true } });
+            return;
+          }
+          setPhotoUploadWarning(true);
+          setError(t('students.photoUploadFailed'));
+          return;
+        }
       }
 
       navigate(`/students`);
-    } catch (error: any) {
-      console.error('Failed to save student:', error);
+    } catch (error: unknown) {
+      console.error('Failed to save student');
       setError(getStudentErrorMessage(error));
       setLoading(false);
     }
   };
 
-  const getStudentErrorMessage = (error: any) => {
-    const apiErrors = error.response?.data?.errors;
+  const getStudentErrorMessage = (error: unknown) => {
+    const responseData = isAxiosError<StudentApiErrorResponse>(error) ? error.response?.data : undefined;
+    const apiErrors = responseData?.errors;
     if (!Array.isArray(apiErrors) || apiErrors.length === 0) {
-      return error.response?.data?.message || t('messages.error');
+      return responseData?.message || (error instanceof Error ? error.message : undefined) || t('messages.error');
     }
 
     const fields = new Set<string>();
@@ -566,7 +615,7 @@ export const StudentForm = () => {
 
     return fields.size
       ? `${t('validation.errors')}: ${Array.from(fields).join(', ')}`
-      : error.response?.data?.message || t('messages.error');
+      : responseData?.message || t('messages.error');
   };
 
   const handleProceedWithDuplicate = async () => {
@@ -717,6 +766,11 @@ export const StudentForm = () => {
           {error}
         </Alert>
       )}
+      {photoUploadWarning && (
+        <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
+          {t('students.photoUploadFailed')}
+        </Alert>
+      )}
 
       {/* Validation Warnings */}
       <ValidationWarnings validation={validation} sx={{ mb: 3 }} />
@@ -761,7 +815,7 @@ export const StudentForm = () => {
                 <PersonIcon sx={{ fontSize: 48, color: theme.palette.primary.main }} />
               </Avatar>
               <input
-                accept="image/*"
+                accept="image/jpeg,image/png,image/gif"
                 style={{ display: 'none' }}
                 id="photo-upload"
                 type="file"
@@ -829,7 +883,7 @@ export const StudentForm = () => {
                 <Controller
                   name="first_name"
                   control={control}
-                  rules={{ required: t('validation.required') }}
+                  rules={{ required: t('validation.required'), validate: (value) => hasNonWhitespaceText(value) || t('validation.required') }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -867,7 +921,7 @@ export const StudentForm = () => {
                 <Controller
                   name="last_name"
                   control={control}
-                  rules={{ required: t('validation.required') }}
+                  rules={{ required: t('validation.required'), validate: (value) => hasNonWhitespaceText(value) || t('validation.required') }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1197,7 +1251,7 @@ export const StudentForm = () => {
                 <Controller
                   name="address"
                   control={control}
-                  rules={{ required: t('validation.required') }}
+                  rules={{ required: t('validation.required'), validate: (value) => hasNonWhitespaceText(value) || t('validation.required') }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1262,7 +1316,7 @@ export const StudentForm = () => {
                   control={control}
                   rules={{
                     required: t('validation.required'),
-                    validate: (value) => isValidNepalPhone(value) || t('validation.invalidPhone'),
+                    validate: (value) => isValidRequiredNepalPhone(value) || t('validation.invalidPhone'),
                   }}
                   render={({ field }) => (
                     <TextField
@@ -1297,7 +1351,7 @@ export const StudentForm = () => {
                 <Controller
                   name="father_name"
                   control={control}
-                  rules={{ required: t('validation.required') }}
+                  rules={{ required: t('validation.required'), validate: (value) => hasNonWhitespaceText(value) || t('validation.required') }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1316,7 +1370,7 @@ export const StudentForm = () => {
                   control={control}
                   rules={{
                     required: t('validation.required'),
-                    validate: (value) => isValidNepalPhone(value) || t('validation.invalidPhone'),
+                    validate: (value) => isValidRequiredNepalPhone(value) || t('validation.invalidPhone'),
                   }}
                   render={({ field }) => (
                     <TextField
@@ -1359,7 +1413,7 @@ export const StudentForm = () => {
                 <Controller
                   name="mother_name"
                   control={control}
-                  rules={{ required: t('validation.required') }}
+                  rules={{ required: t('validation.required'), validate: (value) => hasNonWhitespaceText(value) || t('validation.required') }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1378,7 +1432,7 @@ export const StudentForm = () => {
                   control={control}
                   rules={{
                     required: t('validation.required'),
-                    validate: (value) => isValidNepalPhone(value) || t('validation.invalidPhone'),
+                    validate: (value) => isValidRequiredNepalPhone(value) || t('validation.invalidPhone'),
                   }}
                   render={({ field }) => (
                     <TextField

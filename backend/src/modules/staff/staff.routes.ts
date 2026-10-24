@@ -1,11 +1,52 @@
 import { Router } from 'express';
+import { body, param, query } from 'express-validator';
 import staffController from './staff.controller';
 import { authenticate, authorize } from '@middleware/auth';
 import { UserRole } from '@models/User.model';
 import { photoUpload } from '@modules/student/photo.service';
 import { staffDocumentUpload } from './staffDocument.service';
+import { validateRequest } from '@middleware/validation';
+import { AssignmentType } from '@models/StaffAssignment.model';
 
 const router = Router();
+
+const validateStaffId = validateRequest([
+  param('id').isInt({ min: 1 }).withMessage('Staff ID must be a positive integer'),
+]);
+const validateAssignmentId = validateRequest([
+  param('assignmentId').isInt({ min: 1 }).withMessage('Assignment ID must be a positive integer'),
+]);
+const validateClassId = validateRequest([
+  param('classId').isInt({ min: 1 }).withMessage('Class ID must be a positive integer'),
+]);
+const validateClassAndSubjectIds = validateRequest([
+  param('classId').isInt({ min: 1 }).withMessage('Class ID must be a positive integer'),
+  param('subjectId').isInt({ min: 1 }).withMessage('Subject ID must be a positive integer'),
+]);
+const validateStaffListQuery = validateRequest([
+  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  query('limit').optional().isInt({ min: 1 }).withMessage('Limit must be a positive integer'),
+]);
+const validateOptionalAcademicYearQuery = validateRequest([
+  query('academicYearId').optional().isInt({ min: 1 }).withMessage('Academic year ID must be a positive integer'),
+]);
+const validateRequiredAcademicYearQuery = validateRequest([
+  query('academicYearId').isInt({ min: 1 }).withMessage('Academic year ID must be a positive integer'),
+]);
+const validateStaffEmail = validateRequest([
+  body('email').optional({ nullable: true, checkFalsy: true }).isEmail().withMessage('Email must be valid'),
+]);
+const validateStaffAssignment = validateRequest([
+  body('staffId').isInt({ min: 1 }).withMessage('Staff ID must be a positive integer')
+    .bail()
+    .custom((value, { req }) => Number(value) === Number(req.params?.id))
+    .withMessage('Staff ID must match the route'),
+  body('academicYearId').isInt({ min: 1 }).withMessage('Academic year ID must be a positive integer'),
+  body('assignmentType').isIn(Object.values(AssignmentType)).withMessage('Assignment type is invalid'),
+  body('startDate').isISO8601().withMessage('Start date must be a valid ISO date'),
+  body('classId').optional().isInt({ min: 1 }).withMessage('Class ID must be a positive integer'),
+  body('subjectId').optional().isInt({ min: 1 }).withMessage('Subject ID must be a positive integer'),
+]);
 
 /**
  * @route   GET /api/v1/staff
@@ -16,6 +57,7 @@ router.get(
   '/',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN, UserRole.ECA_COORDINATOR, UserRole.SPORTS_COORDINATOR),
+  validateStaffListQuery,
   staffController.getAll
 );
 
@@ -40,6 +82,7 @@ router.get(
   '/:id',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validateStaffId,
   staffController.getById
 );
 
@@ -52,6 +95,7 @@ router.post(
   '/',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validateStaffEmail,
   staffController.create
 );
 
@@ -64,6 +108,8 @@ router.put(
   '/:id',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validateStaffId,
+  validateStaffEmail,
   staffController.update
 );
 
@@ -76,6 +122,7 @@ router.delete(
   '/:id',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validateStaffId,
   staffController.delete
 );
 
@@ -88,6 +135,8 @@ router.post(
   '/:id/assign',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validateStaffId,
+  validateStaffAssignment,
   staffController.assign
 );
 
@@ -100,6 +149,8 @@ router.get(
   '/:id/assignments',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validateStaffId,
+  validateOptionalAcademicYearQuery,
   staffController.getAssignments
 );
 
@@ -112,6 +163,7 @@ router.put(
   '/assignments/:assignmentId/end',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validateAssignmentId,
   staffController.endAssignment
 );
 
@@ -124,6 +176,7 @@ router.delete(
   '/assignments/:assignmentId',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validateAssignmentId,
   staffController.deleteAssignment
 );
 
@@ -136,6 +189,8 @@ router.get(
   '/class/:classId/teacher',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN, UserRole.CLASS_TEACHER),
+  validateClassId,
+  validateRequiredAcademicYearQuery,
   staffController.getClassTeacher
 );
 
@@ -148,6 +203,8 @@ router.get(
   '/class/:classId/subject/:subjectId/teachers',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN, UserRole.CLASS_TEACHER),
+  validateClassAndSubjectIds,
+  validateRequiredAcademicYearQuery,
   staffController.getSubjectTeachers
 );
 
@@ -160,6 +217,7 @@ router.post(
   '/:id/photo',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validateStaffId,
   photoUpload.single('photo'),
   staffController.uploadPhoto
 );
@@ -173,6 +231,7 @@ router.post(
   '/:id/documents',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validateStaffId,
   staffDocumentUpload.single('document'),
   staffController.uploadDocument
 );
@@ -186,6 +245,7 @@ router.post(
   '/:id/documents/bulk',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validateStaffId,
   staffDocumentUpload.array('documents', 10),
   staffController.bulkUploadDocuments
 );
@@ -199,6 +259,7 @@ router.get(
   '/:id/documents',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validateStaffId,
   staffController.getDocuments
 );
 
@@ -211,6 +272,7 @@ router.get(
   '/:id/documents/statistics',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validateStaffId,
   staffController.getDocumentStatistics
 );
 
@@ -223,6 +285,7 @@ router.get(
   '/:id/documents/versions',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validateStaffId,
   staffController.getDocumentVersions
 );
 
@@ -235,6 +298,7 @@ router.get(
   '/:id/documents/expired',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validateStaffId,
   staffController.getExpiredDocuments
 );
 
@@ -247,6 +311,7 @@ router.get(
   '/:id/documents/expiring-soon',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validateStaffId,
   staffController.getDocumentsExpiringSoon
 );
 
@@ -259,6 +324,7 @@ router.get(
   '/documents/:documentId',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validateRequest([param('documentId').isInt({ min: 1 }).withMessage('Document ID must be a positive integer')]),
   staffController.getDocumentById
 );
 
@@ -271,6 +337,7 @@ router.put(
   '/documents/:documentId',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validateRequest([param('documentId').isInt({ min: 1 }).withMessage('Document ID must be a positive integer')]),
   staffController.updateDocument
 );
 
@@ -283,6 +350,7 @@ router.delete(
   '/documents/:documentId',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validateRequest([param('documentId').isInt({ min: 1 }).withMessage('Document ID must be a positive integer')]),
   staffController.deleteDocument
 );
 

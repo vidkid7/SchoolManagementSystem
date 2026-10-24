@@ -39,7 +39,8 @@ import {
   useTheme,
 } from '@mui/material';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
-import { YearSelectableDatePicker, parseDateOnly, formatDateOnly } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
+import { YearSelectableDatePicker } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
+import { parseDateOnly, formatDateOnly } from '../../components/YearSelectableDatePicker/dateUtils';
 import {
   Add as AddIcon,
   Edit as EditIcon,

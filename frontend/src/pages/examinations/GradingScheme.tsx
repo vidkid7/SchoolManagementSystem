@@ -366,6 +366,7 @@ export function GradingScheme() {
             <Grid item xs={12}>
               <TextField
                 fullWidth
+                id="grading-scheme-description"
                 label={t('common.description')}
                 name="description"
                 value={formData.description}
@@ -375,7 +376,7 @@ export function GradingScheme() {
               />
             </Grid>
           </Grid>
-          <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>
+          <Typography variant="h6" component="h3" sx={{ mt: 3, mb: 2 }}>
             {t('examinations.gradeDefinitions')}
           </Typography>
           <TableContainer>

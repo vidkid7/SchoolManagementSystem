@@ -4,7 +4,7 @@
  * Handles student promotion to next grade and transfer to different class/section
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Dialog,
@@ -31,7 +31,12 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { useNepaliNumbers } from '../../hooks/useNepaliNumbers';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useAdminStyles } from '../../theme/designTokens';
+
+const getApiErrorMessage = (error: unknown): string | undefined => {
+  if (typeof error !== 'object' || error === null) return undefined;
+  return (error as { response?: { data?: { message?: string } } }).response?.data?.message;
+};
 
 interface PromoteDialogProps {
   open: boolean;
@@ -42,6 +47,19 @@ interface PromoteDialogProps {
   onSuccess: () => void;
 }
 
+interface AcademicClass {
+  classId: number;
+  gradeLevel: number;
+  section: string;
+  academicYearId: number;
+}
+
+interface PromotionContext {
+  currentGradeLevel: number;
+  academicYearId: number;
+  nextClassId: number;
+}
+
 export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentName, onSuccess }: PromoteDialogProps) => {
   const theme = useTheme();
   const S = useAdminStyles(theme);
@@ -49,18 +67,68 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
   const { formatNumber } = useNepaliNumbers();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [promotionContext, setPromotionContext] = useState<PromotionContext | null>(null);
   const [formData, setFormData] = useState({
-    academicYearId: 1, // Default to current academic year
-    nextClassId: currentClass + 1,
     totalMarks: '',
-    obtainedMarks: '',
-    percentage: '',
     rank: '',
     remarks: '',
   });
 
-  const nextClass = currentClass + 1;
-  const canPromote = currentClass < 12;
+  useEffect(() => {
+    if (!open) return;
+
+    let cancelled = false;
+    const loadPromotionContext = async () => {
+      setLoading(true);
+      setError('');
+      setPromotionContext(null);
+      try {
+        const [classesResponse, yearsResponse] = await Promise.all([
+          apiClient.get('/api/v1/academic/classes'),
+          apiClient.get('/api/v1/academic/years'),
+        ]);
+        const classes = (classesResponse.data?.data ?? []) as AcademicClass[];
+        const years = yearsResponse.data?.data ?? [];
+        const currentYear = years.find((year: { isCurrent?: boolean }) => year.isCurrent);
+        const currentClassRecord = classes.find((item) => Number(item.classId) === Number(currentClass));
+
+        if (!currentYear || !currentClassRecord) {
+          throw new Error('Promotion context is unavailable');
+        }
+
+        const academicYearId = Number(currentYear.academicYearId);
+        const nextGradeLevel = Number(currentClassRecord.gradeLevel) + 1;
+        const nextClass = classes.find((item) =>
+          Number(item.academicYearId) === academicYearId
+          && Number(item.gradeLevel) === nextGradeLevel
+          && item.section === currentClassRecord.section,
+        ) ?? classes.find((item) =>
+          Number(item.academicYearId) === academicYearId
+          && Number(item.gradeLevel) === nextGradeLevel,
+        );
+
+        if (!nextClass) throw new Error('Next class is unavailable for the current academic year');
+        if (!cancelled) {
+          setPromotionContext({
+            currentGradeLevel: Number(currentClassRecord.gradeLevel),
+            academicYearId,
+            nextClassId: Number(nextClass.classId),
+          });
+        }
+      } catch {
+        if (!cancelled) setError(t('students.promote.failed'));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadPromotionContext();
+    return () => { cancelled = true; };
+  }, [open, currentClass, t]);
+
+  const currentGradeLevel = promotionContext?.currentGradeLevel;
+  const nextClass = currentGradeLevel == null ? null : currentGradeLevel + 1;
+  const canPromote = currentGradeLevel != null && currentGradeLevel < 12 && promotionContext != null;
 
   const handlePromote = async () => {
     if (!canPromote) {
@@ -73,14 +141,12 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
       setError('');
 
       const payload = {
-        academicYearId: formData.academicYearId,
-        nextClassId: formData.nextClassId,
-        academicData: {
-          totalMarks: formData.totalMarks ? parseFloat(formData.totalMarks) : undefined,
-          obtainedMarks: formData.obtainedMarks ? parseFloat(formData.obtainedMarks) : undefined,
-          percentage: formData.percentage ? parseFloat(formData.percentage) : undefined,
-          rank: formData.rank ? parseInt(formData.rank) : undefined,
-        },
+        academicYearId: promotionContext.academicYearId,
+        nextClassId: promotionContext.nextClassId,
+        currentClassId: Number(currentClass),
+        currentGradeLevel: promotionContext.currentGradeLevel,
+        totalMarks: formData.totalMarks ? parseFloat(formData.totalMarks) : undefined,
+        rank: formData.rank ? parseInt(formData.rank, 10) : undefined,
         remarks: formData.remarks || undefined,
       };
 
@@ -88,9 +154,9 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
       
       onSuccess();
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to promote student:', err);
-      setError(err.response?.data?.message || t('students.promote.failed'));
+      setError(getApiErrorMessage(err) || t('students.promote.failed'));
     } finally {
       setLoading(false);
     }
@@ -140,7 +206,7 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="caption" color="text.secondary">{t('students.promote.currentClass')}</Typography>
               <Chip 
-                label={`${t('students.class')} ${formatNumber(currentClass)}`}
+                label={`${t('students.class')} ${currentGradeLevel == null ? '—' : formatNumber(currentGradeLevel)}`}
                 sx={{ 
                   mt: 0.5,
                   bgcolor: alpha(theme.palette.warning.main, 0.1),
@@ -153,7 +219,7 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="caption" color="text.secondary">{t('students.promote.nextClass')}</Typography>
               <Chip 
-                label={`${t('students.class')} ${formatNumber(nextClass)}`}
+                label={`${t('students.class')} ${nextClass == null ? '—' : formatNumber(nextClass)}`}
                 sx={{ 
                   mt: 0.5,
                   bgcolor: alpha(theme.palette.success.main, 0.1),
@@ -178,26 +244,6 @@ export const PromoteDialog = ({ open, onClose, studentId, currentClass, studentN
               fullWidth
               value={formData.totalMarks}
               onChange={(e) => setFormData({ ...formData, totalMarks: e.target.value })}
-              disabled={!canPromote}
-            />
-          </Grid>
-          <Grid item xs={6}>
-            <TextField
-              label={t('students.promote.obtainedMarks')}
-              type="number"
-              fullWidth
-              value={formData.obtainedMarks}
-              onChange={(e) => setFormData({ ...formData, obtainedMarks: e.target.value })}
-              disabled={!canPromote}
-            />
-          </Grid>
-          <Grid item xs={6}>
-            <TextField
-              label={t('students.promote.percentage')}
-              type="number"
-              fullWidth
-              value={formData.percentage}
-              onChange={(e) => setFormData({ ...formData, percentage: e.target.value })}
               disabled={!canPromote}
             />
           </Grid>
@@ -258,23 +304,63 @@ export const TransferDialog = ({ open, onClose, studentId, currentClass, current
   const { t } = useTranslation();
   const { formatNumber } = useNepaliNumbers();
   const [loading, setLoading] = useState(false);
+  const [classesLoading, setClassesLoading] = useState(false);
   const [error, setError] = useState('');
-  
-  // Validate and sanitize initial values
-  const validClass = currentClass >= 1 && currentClass <= 12 ? currentClass : 1;
-  const validSection = ['A', 'B', 'C'].includes(currentSection) ? currentSection : 'A';
-  
+  const [classes, setClasses] = useState<AcademicClass[]>([]);
+  const [currentAcademicYearId, setCurrentAcademicYearId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
-    newClassId: validClass,
-    newSection: validSection,
+    newClassId: '',
     newRollNumber: '',
     reason: '',
-    transferType: 'internal', // internal or external
   });
 
+  useEffect(() => {
+    if (!open) return;
+
+    let cancelled = false;
+    const loadClasses = async () => {
+      setClassesLoading(true);
+      setError('');
+      setClasses([]);
+      setCurrentAcademicYearId(null);
+      try {
+        const yearsResponse = await apiClient.get('/api/v1/academic/years');
+        const currentYear = (yearsResponse.data?.data ?? []).find((year: { isCurrent?: boolean }) => year.isCurrent);
+        if (!currentYear) throw new Error('Current academic year is unavailable');
+        const classesResponse = await apiClient.get('/api/v1/academic/classes');
+        if (!cancelled) {
+          setCurrentAcademicYearId(Number(currentYear.academicYearId));
+          setClasses((classesResponse.data?.data ?? []) as AcademicClass[]);
+        }
+      } catch {
+        if (!cancelled) setError(t('students.transfer.failed'));
+      } finally {
+        if (!cancelled) setClassesLoading(false);
+      }
+    };
+
+    loadClasses();
+    return () => { cancelled = true; };
+  }, [open, t]);
+
+  const currentClassRecord = classes.find((item) => Number(item.classId) === Number(currentClass));
+  const parsedRollNumber = formData.newRollNumber.trim() ? Number(formData.newRollNumber) : undefined;
+  const rollNumberError = parsedRollNumber !== undefined
+    && (!Number.isInteger(parsedRollNumber) || parsedRollNumber < 1)
+    ? t('students.transfer.invalidRollNumber')
+    : '';
+
   const handleTransfer = async () => {
-    if (!formData.reason) {
+    if (!formData.newClassId) {
       setError(t('students.transfer.reasonRequired'));
+      return;
+    }
+    if (!formData.reason.trim()) {
+      setError(t('students.transfer.reasonRequired'));
+      return;
+    }
+    if (rollNumberError) {
+      setError(rollNumberError);
       return;
     }
 
@@ -283,20 +369,18 @@ export const TransferDialog = ({ open, onClose, studentId, currentClass, current
       setError('');
 
       const payload = {
-        newClassId: formData.newClassId,
-        newSection: formData.newSection,
-        newRollNumber: formData.newRollNumber ? parseInt(formData.newRollNumber) : undefined,
-        reason: formData.reason,
-        transferType: formData.transferType,
+        newClassId: Number(formData.newClassId),
+        newRollNumber: parsedRollNumber,
+        reason: formData.reason.trim(),
       };
 
       await apiClient.post(`/api/v1/students/${studentId}/transfer`, payload);
       
       onSuccess();
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to transfer student:', err);
-      setError(err.response?.data?.message || t('students.transfer.failed'));
+      setError(getApiErrorMessage(err) || t('students.transfer.failed'));
     } finally {
       setLoading(false);
     }
@@ -341,7 +425,9 @@ export const TransferDialog = ({ open, onClose, studentId, currentClass, current
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
             <Chip 
-              label={`${t('students.class')} ${formatNumber(currentClass)}`}
+              label={currentClassRecord
+                ? `${t('students.class')} ${formatNumber(currentClassRecord.gradeLevel)}`
+                : `${t('students.class')} ${formatNumber(currentClass)}`}
               size="small"
               sx={{ 
                 bgcolor: alpha(theme.palette.warning.main, 0.1),
@@ -350,7 +436,7 @@ export const TransferDialog = ({ open, onClose, studentId, currentClass, current
               }}
             />
             <Chip 
-              label={`${t('students.section')} ${currentSection}`}
+              label={`${t('students.section')} ${currentClassRecord?.section ?? currentSection}`}
               size="small"
               sx={{ 
                 bgcolor: alpha(theme.palette.warning.main, 0.1),
@@ -363,64 +449,37 @@ export const TransferDialog = ({ open, onClose, studentId, currentClass, current
 
         <Grid container spacing={2}>
           <Grid item xs={12}>
-            <FormControl fullWidth>
-              <InputLabel>{t('students.transfer.transferType')}</InputLabel>
+            <FormControl fullWidth disabled={classesLoading || classes.length === 0}>
+              <InputLabel id="transfer-class-label">{t('students.transfer.newClass')}</InputLabel>
               <Select
-                value={formData.transferType}
-                label={t('students.transfer.transferType')}
-                onChange={(e) => setFormData({ ...formData, transferType: e.target.value })}
+                labelId="transfer-class-label"
+                value={formData.newClassId}
+                label={t('students.transfer.newClass')}
+                onChange={(e) => setFormData({ ...formData, newClassId: String(e.target.value) })}
               >
-                <MenuItem value="internal">{t('students.transfer.internal')}</MenuItem>
-                <MenuItem value="external">{t('students.transfer.external')}</MenuItem>
+                {classes.filter((item) =>
+                  Number(item.academicYearId) === currentAcademicYearId
+                  && Number(item.classId) !== Number(currentClass),
+                ).map((item) => (
+                  <MenuItem key={item.classId} value={String(item.classId)}>
+                    {t('students.class')} {formatNumber(item.gradeLevel)} — {t('students.section')} {item.section}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Grid>
-
-          {formData.transferType === 'internal' && (
-            <>
-              <Grid item xs={6}>
-                <FormControl fullWidth>
-                  <InputLabel>{t('students.transfer.newClass')}</InputLabel>
-                  <Select
-                    value={formData.newClassId}
-                    label={t('students.transfer.newClass')}
-                    onChange={(e) => setFormData({ ...formData, newClassId: Number(e.target.value) })}
-                  >
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((cls) => (
-                      <MenuItem key={cls} value={cls}>
-                        {t('students.class')} {formatNumber(cls)}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={6}>
-                <FormControl fullWidth>
-                  <InputLabel>{t('students.transfer.newSection')}</InputLabel>
-                  <Select
-                    value={formData.newSection}
-                    label={t('students.transfer.newSection')}
-                    onChange={(e) => setFormData({ ...formData, newSection: e.target.value })}
-                  >
-                    {['A', 'B', 'C'].map((sec) => (
-                      <MenuItem key={sec} value={sec}>
-                        {t('students.section')} {sec}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  label={t('students.transfer.newRollNumber')}
-                  type="number"
-                  fullWidth
-                  value={formData.newRollNumber}
-                  onChange={(e) => setFormData({ ...formData, newRollNumber: e.target.value })}
-                />
-              </Grid>
-            </>
-          )}
+          <Grid item xs={12}>
+            <TextField
+              label={t('students.transfer.newRollNumber')}
+              type="number"
+              fullWidth
+              value={formData.newRollNumber}
+              error={Boolean(rollNumberError)}
+              helperText={rollNumberError || undefined}
+              inputProps={{ min: 1, step: 1 }}
+              onChange={(e) => setFormData({ ...formData, newRollNumber: e.target.value })}
+            />
+          </Grid>
 
           <Grid item xs={12}>
             <TextField
@@ -430,6 +489,7 @@ export const TransferDialog = ({ open, onClose, studentId, currentClass, current
               fullWidth
               value={formData.reason}
               onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+              inputProps={{ maxLength: 500 }}
               required
               helperText={t('students.transfer.reasonHelper')}
             />
@@ -444,7 +504,7 @@ export const TransferDialog = ({ open, onClose, studentId, currentClass, current
           variant="contained" sx={S.BTN_PRIMARY}
           color="info"
           onClick={handleTransfer}
-          disabled={loading || !formData.reason}
+          disabled={loading || classesLoading || !formData.newClassId || !formData.reason.trim() || Boolean(rollNumberError)}
           startIcon={<TransferIcon />}
         >
           {loading ? t('students.transfer.transferring') : t('students.transfer.transferButton')}

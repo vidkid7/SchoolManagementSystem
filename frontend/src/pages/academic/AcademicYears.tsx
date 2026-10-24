@@ -7,10 +7,10 @@ import { YearSelectableDateField } from '../../components/YearSelectableDatePick
  * This page is read-only for academic year records; admins can still manage terms.
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
+import type { AxiosError } from 'axios';
 import {
   Box,
   Paper,
@@ -47,7 +47,19 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { useCurrentAcademicYear, AcademicYear } from '../../hooks/useCurrentAcademicYear';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { formatSchoolDate, toSchoolDateInputValue } from './academicYearDates';
+import { C, useAdminStyles } from '../../theme/designTokens';
+
+interface ApiValidationError {
+  field?: string;
+  message: string;
+}
+
+interface ApiErrorResponse {
+  errors?: ApiValidationError[];
+  message?: string;
+  error?: string;
+}
 
 interface Term {
   termId?: number;
@@ -65,7 +77,6 @@ export const AcademicYears = () => {
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const navigate = useSlugNavigate();
-  const { municipalitySlug } = useParams();
   const { currentYear, academicYears, loading, error: hookError } = useCurrentAcademicYear();
 
   const [terms, setTerms] = useState<Term[]>([]);
@@ -96,9 +107,7 @@ export const AcademicYears = () => {
     examEndDate: '',
   });
 
-  useEffect(() => {
-    if (hookError) setError(hookError);
-  }, [hookError]);
+  const pageError = !dialogOpen && !termDialogOpen ? error || hookError : '';
 
   const fetchTerms = async (academicYearId: number) => {
     try {
@@ -124,8 +133,8 @@ export const AcademicYears = () => {
         name: year.name,
         startDateBS: year.startDateBS,
         endDateBS: year.endDateBS,
-        startDateAD: year.startDateAD ? new Date(year.startDateAD).toISOString().split('T')[0] : '',
-        endDateAD: year.endDateAD ? new Date(year.endDateAD).toISOString().split('T')[0] : '',
+        startDateAD: toSchoolDateInputValue(year.startDateAD),
+        endDateAD: toSchoolDateInputValue(year.endDateAD),
         isCurrent: year.isCurrent,
       });
     } else {
@@ -167,10 +176,10 @@ export const AcademicYears = () => {
       setEditId(termId || null);
       setTermForm({
         name: term.name,
-        startDate: term.startDate ? new Date(term.startDate).toISOString().split('T')[0] : '',
-        endDate: term.endDate ? new Date(term.endDate).toISOString().split('T')[0] : '',
-        examStartDate: term.examStartDate ? new Date(term.examStartDate).toISOString().split('T')[0] : '',
-        examEndDate: term.examEndDate ? new Date(term.examEndDate).toISOString().split('T')[0] : '',
+        startDate: toSchoolDateInputValue(term.startDate),
+        endDate: toSchoolDateInputValue(term.endDate),
+        examStartDate: toSchoolDateInputValue(term.examStartDate),
+        examEndDate: toSchoolDateInputValue(term.examEndDate),
       });
     } else {
       setEditId(null);
@@ -222,13 +231,14 @@ export const AcademicYears = () => {
       }
       handleCloseDialog();
       window.location.reload(); // Reload to refresh academic years
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to save academic year:', error);
-      if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
-        const errorMessages = error.response.data.errors.map((e: any) => `${e.field}: ${e.message}`).join(', ');
+      const responseData = (error as AxiosError<ApiErrorResponse>).response?.data;
+      if (Array.isArray(responseData?.errors)) {
+        const errorMessages = responseData.errors.map((item) => `${item.field ? `${item.field}: ` : ''}${item.message}`).join(', ');
         setError(errorMessages);
       } else {
-        setError(error.response?.data?.message || error.response?.data?.error || t('academicYears.failedToSaveYear'));
+        setError(responseData?.message || responseData?.error || t('academicYears.failedToSaveYear'));
       }
     }
   };
@@ -256,13 +266,14 @@ export const AcademicYears = () => {
       }
       handleCloseTermDialog();
       if (selectedYearId) fetchTerms(selectedYearId);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to save term:', err);
-      const validationErrors = err.response?.data?.errors;
+      const responseData = (err as AxiosError<ApiErrorResponse>).response?.data;
+      const validationErrors = responseData?.errors;
       setTermError(
         Array.isArray(validationErrors)
-          ? validationErrors.map((item: any) => item.message).join(', ')
-          : err.response?.data?.message || t('academicYears.failedToSaveTerm'),
+          ? validationErrors.map((item) => item.message).join(', ')
+          : responseData?.message || t('academicYears.failedToSaveTerm'),
       );
     }
   };
@@ -310,9 +321,9 @@ export const AcademicYears = () => {
         {t('academicYears.autoDetectionInfo')}
       </Alert>
 
-      {error && (
+      {pageError && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
-          {error}
+          {pageError}
         </Alert>
       )}
 
@@ -372,8 +383,8 @@ export const AcademicYears = () => {
                       </TableCell>
                       <TableCell sx={S.TD}>{year.startDateBS}</TableCell>
                       <TableCell sx={S.TD}>{year.endDateBS}</TableCell>
-                      <TableCell sx={S.TD}>{new Date(year.startDateAD).toLocaleDateString()}</TableCell>
-                      <TableCell sx={S.TD}>{new Date(year.endDateAD).toLocaleDateString()}</TableCell>
+                      <TableCell sx={S.TD}>{formatSchoolDate(year.startDateAD)}</TableCell>
+                      <TableCell sx={S.TD}>{formatSchoolDate(year.endDateAD)}</TableCell>
                       <TableCell sx={S.TD}>
                         {year.isCurrent ? (
                           <Chip
@@ -499,6 +510,11 @@ export const AcademicYears = () => {
           {editMode ? t('academicYears.editAcademicYear') : t('academicYears.addAcademicYear')}
         </DialogTitle>
         <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+              {error}
+            </Alert>
+          )}
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField

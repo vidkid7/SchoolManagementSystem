@@ -3,7 +3,7 @@
  * For Class Teachers to view their assigned class students
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
@@ -24,19 +24,17 @@ import {
   Grid,
   Card,
   CardContent,
-  Button,
   Alert,
 } from '@mui/material';
 import {
   Search as SearchIcon,
   Visibility as ViewIcon,
   Phone as PhoneIcon,
-  Email as EmailIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { useTheme } from '@mui/material';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { C, useAdminStyles } from '../../theme/designTokens';
 
 interface Student {
   studentId: number;
@@ -75,29 +73,30 @@ export function ClassRoster() {
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchClassData();
-  }, []);
-
-  const fetchClassData = async () => {
+  const fetchClassData = useCallback(async () => {
     try {
       setLoading(true);
       // Get teacher's assigned class
       const response = await apiClient.get('/teachers/my-class');
       setClassInfo(response.data?.data?.classInfo || null);
       setStudents(response.data?.data?.students || []);
-    } catch (err: any) {
+    } catch {
       setError(t('portal.failedToLoadData'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
+  useEffect(() => {
+    void Promise.resolve().then(fetchClassData);
+  }, [fetchClassData]);
+
+  const normalizedQuery = searchQuery.toLowerCase();
   const filteredStudents = students.filter((student) =>
-    searchQuery === '' ||
-    student.firstNameEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.lastNameEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.rollNumber.toLowerCase().includes(searchQuery.toLowerCase())
+    !normalizedQuery ||
+    (student.firstNameEn || '').toLowerCase().includes(normalizedQuery) ||
+    (student.lastNameEn || '').toLowerCase().includes(normalizedQuery) ||
+    String(student.rollNumber || '').toLowerCase().includes(normalizedQuery)
   );
 
   const stats = {
@@ -155,6 +154,7 @@ export function ClassRoster() {
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
+              label={t('teacher.searchStudents')}
               placeholder={t('teacher.searchStudents')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -234,10 +234,10 @@ export function ClassRoster() {
                     )}
                   </TableCell>
                   <TableCell sx={S.TD}>
-                    {student.fatherPhone && (
+                    {(student.fatherPhone || student.motherPhone) && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <PhoneIcon fontSize="small" color="action" />
-                        <Typography variant="body2">{student.fatherPhone}</Typography>
+                        <Typography variant="body2">{student.fatherPhone || student.motherPhone}</Typography>
                       </Box>
                     )}
                   </TableCell>

@@ -190,12 +190,22 @@ export function ReportCards() {
       ...filters,
       [name]: value,
       ...(name === 'academicYear' ? { term: '' } : {}),
+      ...(name === 'class' ? { section: '' } : {}),
     });
     if (name === 'class') {
       setStudents([]);
       setSelectedStudent('');
     }
   };
+
+  const availableSections = filters.class
+    ? Array.from(new Set(
+        classes
+          .filter((classInfo) => String(classInfo.classId) === String(filters.class))
+          .map((classInfo) => String(classInfo.section || '').trim())
+          .filter(Boolean),
+      )).sort()
+    : [];
 
   const handleGenerateReport = async (studentId?: string) => {
     const targetStudent = studentId || selectedStudent;
@@ -284,7 +294,11 @@ export function ReportCards() {
       
       setSuccess(t('examinations.reportCardsSentViaEmail'));
     } catch (err: any) {
-      setError(err.response?.data?.message || t('examinations.failedToSendReportCards'));
+      setError(
+        err.response?.data?.message
+          || err.response?.data?.error?.message
+          || t('examinations.failedToSendReportCards'),
+      );
     } finally {
       setLoading(false);
     }
@@ -402,13 +416,13 @@ export function ReportCards() {
                 value={filters.section}
                 label={`${t('common.section')} (${t('common.optional')})`}
                 labelId="report-card-section-label"
+                disabled={!filters.class || availableSections.length === 0}
                 onChange={(e) => handleFilterChange('section', e.target.value)}
               >
                 <MenuItem value="">{t('common.allSections')}</MenuItem>
-                <MenuItem value="A">{t('common.section')} A</MenuItem>
-                <MenuItem value="B">{t('common.section')} B</MenuItem>
-                <MenuItem value="C">{t('common.section')} C</MenuItem>
-                <MenuItem value="D">{t('common.section')} D</MenuItem>
+                {availableSections.map((section) => (
+                  <MenuItem key={section} value={section}>{t('common.section')} {section}</MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Grid>

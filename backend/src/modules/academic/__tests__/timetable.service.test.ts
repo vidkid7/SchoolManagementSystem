@@ -20,9 +20,10 @@ describe('TimetableService', () => {
   let teacher2: Staff;
 
   beforeAll(async () => {
-    // Don't use sync({ force: true }) as it tries to drop tables with foreign keys
-    // Instead, just ensure the database connection is established
-    await sequelize.authenticate();
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('Timetable service tests require TEST_DB_DIALECT=sqlite');
+    }
+    await sequelize.sync({ force: true });
 
     // Create test academic year
     academicYear = await AcademicYear.create({
@@ -98,9 +99,17 @@ describe('TimetableService', () => {
   });
 
   afterEach(async () => {
-    // Clean up timetables and periods after each test
-    await Period.destroy({ where: {}, force: true });
-    await Timetable.destroy({ where: {}, force: true });
+    if (!testClass) return;
+    const timetables = await Timetable.findAll({
+      where: { classId: testClass.classId },
+      attributes: ['timetableId'],
+      raw: true,
+    });
+    const timetableIds = timetables.map((timetable) => timetable.timetableId);
+    if (timetableIds.length) {
+      await Period.destroy({ where: { timetableId: timetableIds }, force: true });
+      await Timetable.destroy({ where: { timetableId: timetableIds }, force: true });
+    }
   });
 
   describe('createTimetable', () => {
@@ -127,20 +136,20 @@ describe('TimetableService', () => {
       ).rejects.toThrow('Day of week must be between 0 (Sunday) and 6 (Saturday)');
     });
 
-    it('should throw error if timetable already exists', async () => {
-      await timetableService.createTimetable({
+    it('should return the existing timetable when it already exists', async () => {
+      const existing = await timetableService.createTimetable({
         classId: testClass.classId,
         academicYearId: academicYear.academicYearId,
         dayOfWeek: 1
       });
 
-      await expect(
-        timetableService.createTimetable({
-          classId: testClass.classId,
-          academicYearId: academicYear.academicYearId,
-          dayOfWeek: 1
-        })
-      ).rejects.toThrow('Timetable already exists');
+      const duplicate = await timetableService.createTimetable({
+        classId: testClass.classId,
+        academicYearId: academicYear.academicYearId,
+        dayOfWeek: 1
+      });
+
+      expect(duplicate.timetableId).toBe(existing.timetableId);
     });
   });
 
@@ -566,6 +575,22 @@ describe('TimetableService', () => {
           }
         ])
       ).rejects.toThrow('Teacher conflict');
+    });
+
+    it('should reject conflicts with an existing period in another timetable', async () => {
+      await timetableService.addPeriod(timetable.timetableId, {
+        periodNumber: 1,
+        startTime: '09:00',
+        endTime: '09:45',
+        teacherId: teacher1.staffId
+      });
+
+      await expect(timetableService.bulkCreatePeriods(timetable.timetableId, [{
+        periodNumber: 2,
+        startTime: '09:30',
+        endTime: '10:15',
+        teacherId: teacher1.staffId
+      }])).rejects.toThrow('Teacher conflict');
     });
 
     it('should reject bulk create if any period has invalid time format', async () => {

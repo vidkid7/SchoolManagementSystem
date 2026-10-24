@@ -7,9 +7,10 @@
 
 import axios from 'axios';
 import { store } from '../store';
-import { logout, setCredentials } from '../store/slices/authSlice';
+import { clearAuth, setCredentials } from '../store/slices/authSlice';
 import { requestQueue } from '../utils/requestQueue';
-import { refreshAuthTokens } from './tokenRefresh';
+import { isRefreshTokenRejected, refreshAuthTokens } from './tokenRefresh';
+import { resolveApiAssetUrlAtOrigin } from './apiAssetUrl';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -20,6 +21,12 @@ export const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+/** Resolve backend file paths against the configured API host instead of the frontend origin. */
+export const resolveApiAssetUrl = (assetUrl: string): string => {
+  const apiBaseUrl = apiClient.defaults.baseURL || window.location.origin;
+  return resolveApiAssetUrlAtOrigin(assetUrl, apiBaseUrl, window.location.origin);
+};
 
 // Request interceptor
 apiClient.interceptors.request.use(
@@ -77,11 +84,11 @@ apiClient.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, logout user
-        store.dispatch(logout());
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        window.location.href = '/login';
+        // Preserve the session on transient failures so the user can retry after an outage.
+        if (isRefreshTokenRejected(refreshError)) {
+          store.dispatch(clearAuth());
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       }
     }

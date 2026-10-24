@@ -44,7 +44,7 @@ export default defineConfig({
       workbox: {
         // Cache all static assets during build (exclude config.js - it must always be fresh)
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,ttf,eot}'],
-        globIgnores: ['config.js'],
+        globIgnores: ['config.js', 'test-*.html', 'config.railway.js'],
         
         // Force new service worker to activate immediately
         skipWaiting: true,

@@ -1,4 +1,4 @@
-import Admission, { AdmissionAttributes, AdmissionStatus } from '@models/Admission.model';
+import Admission, { AdmissionStatus } from '@models/Admission.model';
 import Student, { StudentStatus, Gender, StudentCreationAttributes } from '@models/Student.model';
 import User, { UserRole, UserStatus } from '@models/User.model';
 import studentIdService from '@modules/student/studentId.service';
@@ -8,14 +8,7 @@ import { logger } from '@utils/logger';
 import { Op, WhereOptions } from 'sequelize';
 import { env } from '@config/env';
 import crypto from 'crypto';
-
-// Sequelize model attributes must be read via get() when model fields are
-// declared as class fields. ES2022 class-field emission can shadow Sequelize's
-// dynamic property accessors in production builds.
-const admissionValue = <K extends keyof AdmissionAttributes>(
-  admission: Admission,
-  key: K
-): AdmissionAttributes[K] => admission.get(key) as AdmissionAttributes[K];
+import { ValidationError } from '@middleware/errorHandler';
 
 /**
  * Admission Workflow Service
@@ -47,15 +40,15 @@ class AdmissionService {
     studentCode: string,
     studentEmail: string | undefined,
     guardianPhone: string | undefined,
-    guardianEmail: string | undefined,
-    studentName: string
+    guardianEmail: string | undefined
   ): Promise<{
     studentUsername: string;
     studentPassword: string;
     parentUsername: string | null;
     parentPassword: string | null;
   }> {
-    const studentUsername = studentCode.toLowerCase().replace(/-/g, '.');
+    const compactStudentCode = studentCode.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const studentUsername = compactStudentCode;
     const studentPassword = this.generateTemporaryPassword();
 
     const existingStudent = await User.findOne({ where: { username: studentUsername } });
@@ -66,7 +59,7 @@ class AdmissionService {
         password: studentPassword,
         role: UserRole.STUDENT,
         status: UserStatus.ACTIVE,
-        phoneNumber: '',
+        phoneNumber: guardianPhone || undefined,
         failedLoginAttempts: 0,
       });
       logger.info('Student login account created', { studentUsername });
@@ -76,8 +69,7 @@ class AdmissionService {
     let parentPassword: string | null = null;
 
     if (guardianPhone || guardianEmail) {
-      const phoneDigits = (guardianPhone || '').replace(/\D/g, '').slice(-6);
-      parentUsername = `parent.${studentCode.toLowerCase().replace(/-/g, '.')}`;
+      parentUsername = `parent${compactStudentCode}`;
       parentPassword = this.generateTemporaryPassword();
 
       const existingParent = await User.findOne({ where: { username: parentUsername } });
@@ -88,7 +80,7 @@ class AdmissionService {
           password: parentPassword,
           role: UserRole.PARENT,
           status: UserStatus.ACTIVE,
-          phoneNumber: guardianPhone || '',
+          phoneNumber: guardianPhone || undefined,
           failedLoginAttempts: 0,
         });
         logger.info('Parent login account created', { parentUsername });
@@ -558,6 +550,8 @@ class AdmissionService {
         throw new Error(`Cannot enroll from status: ${admission.status}`);
       }
 
+      this.assertApplicantHasStudentDetails(admission);
+
       // Generate student code
       const admissionDate = admission.admissionDate || new Date();
       const studentCode = await studentIdService.generateStudentId(admissionDate);
@@ -617,8 +611,7 @@ class AdmissionService {
         studentCode,
         admission.email,
         guardianPhone,
-        guardianEmail,
-        admission.getFullNameEn()
+        guardianEmail
       );
 
       // Send enrollment SMS with login credentials
@@ -628,7 +621,7 @@ class AdmissionService {
           (credentials.parentUsername
             ? ` | Parent login: ${credentials.parentUsername} / ${credentials.parentPassword}`
             : '') +
-          ` Please change your password on first login.`;
+          ' Please change your password on first login.';
         await smsService.sendSMS(guardianPhone, credMsg);
       }
 
@@ -636,6 +629,27 @@ class AdmissionService {
     } catch (error) {
       logger.error('Error enrolling applicant', { error, admissionId });
       throw error;
+    }
+  }
+
+  private assertApplicantHasStudentDetails(admission: Admission): void {
+    const requiredStudentDetails: Array<[string, unknown]> = [
+      ['Date of Birth (BS)', admission.dateOfBirthBS],
+      ['Date of Birth (AD)', admission.dateOfBirthAD],
+      ['Address', admission.addressEn],
+      ['Father name', admission.fatherName],
+      ['Father phone', admission.fatherPhone],
+      ['Mother name', admission.motherName],
+      ['Mother phone', admission.motherPhone]
+    ];
+    const missingStudentDetails = requiredStudentDetails
+      .filter(([, value]) => value === null || value === undefined || String(value).trim() === '')
+      .map(([label]) => label);
+
+    if (missingStudentDetails.length > 0) {
+      throw new ValidationError(
+        `Complete the applicant's student details before enrollment: ${missingStudentDetails.join(', ')}`
+      );
     }
   }
 
@@ -680,7 +694,7 @@ class AdmissionService {
   /**
    * Get admission by ID
    */
-  async findById(admissionId: number): Promise<Admission | null> {
+  findById(admissionId: number): Promise<Admission | null> {
     return Admission.findByPk(admissionId);
   }
 
@@ -753,22 +767,40 @@ class AdmissionService {
         where.academicYearId = academicYearId;
       }
 
-      const total = await Admission.count({ where });
-
-      const byStatus: Record<string, number> = {};
-      for (const status of Object.values(AdmissionStatus)) {
-        byStatus[status] = await Admission.count({
-          where: { ...where, status }
-        });
+      // One grouped query avoids serializing 23 COUNT round trips to the DB.
+      // This report is loaded on every visit to the admissions dashboard, so
+      // per-query network latency otherwise compounds into a long spinner.
+      const sequelize = Admission.sequelize;
+      if (!sequelize) {
+        throw new Error('Admission model is not initialized');
       }
+      const rows = await Admission.findAll({
+        attributes: [
+          'status',
+          'applyingForClass',
+          [sequelize.fn('COUNT', sequelize.col('admission_id')), 'count']
+        ],
+        where,
+        group: ['status', 'applyingForClass'],
+        raw: true
+      }) as unknown as Array<{
+        status: AdmissionStatus;
+        applyingForClass: number;
+        count: number | string;
+      }>;
 
+      const byStatus: Record<string, number> = Object.fromEntries(
+        Object.values(AdmissionStatus).map(status => [status, 0])
+      );
       const byClass: Record<number, number> = {};
-      for (let cls = 1; cls <= 12; cls++) {
-        const count = await Admission.count({
-          where: { ...where, applyingForClass: cls }
-        });
-        if (count > 0) {
-          byClass[cls] = count;
+      let total = 0;
+
+      for (const row of rows) {
+        const count = Number(row.count);
+        total += count;
+        byStatus[row.status] = (byStatus[row.status] ?? 0) + count;
+        if (row.applyingForClass >= 1 && row.applyingForClass <= 12) {
+          byClass[row.applyingForClass] = (byClass[row.applyingForClass] ?? 0) + count;
         }
       }
 

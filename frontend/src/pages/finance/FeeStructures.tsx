@@ -3,8 +3,8 @@
  * Create, view, update, and delete fee structures
  */
 
-import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useCallback, useState, useEffect, useRef } from 'react';
+import { isAxiosError } from 'axios';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import { useTranslation } from 'react-i18next';
 import {
@@ -37,7 +37,7 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { useCurrentAcademicYear } from '../../hooks/useCurrentAcademicYear';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useAdminStyles } from '../../theme/designTokens';
 import {
   getAcademicYearDisplayName,
   getApplicableClassesForUpdate,
@@ -68,7 +68,6 @@ export function FeeStructures() {
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const navigate = useSlugNavigate();
-  const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
   const { currentYear, academicYears } = useCurrentAcademicYear();
   const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,13 +91,8 @@ export function FeeStructures() {
     setError('');
   };
 
-  useEffect(() => {
-    fetchFeeStructures();
-  }, []);
-
-  const fetchFeeStructures = async () => {
+  const fetchFeeStructures = useCallback(async () => {
     try {
-      setLoading(true);
       const response = await apiClient.get('/finance/fee-structures');
       setFeeStructures(response.data?.data || []);
     } catch (err) {
@@ -107,7 +101,11 @@ export function FeeStructures() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchFeeStructures);
+  }, [fetchFeeStructures]);
 
   const handleOpenDialog = (fee?: FeeStructure) => {
     dialogOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -199,8 +197,11 @@ export function FeeStructures() {
       handleCloseDialog();
       fetchFeeStructures();
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || t('finance.failedToSave', { defaultValue: 'Failed to save fee structure' }));
+    } catch (err: unknown) {
+      const message = isAxiosError<{ message?: string }>(err)
+        ? err.response?.data?.message || err.message
+        : err instanceof Error ? err.message : undefined;
+      setError(message || t('finance.failedToSave', { defaultValue: 'Failed to save fee structure' }));
     }
   };
 
@@ -212,8 +213,11 @@ export function FeeStructures() {
       setSuccess(t('finance.deletedSuccessfully'));
       fetchFeeStructures();
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('finance.failedToLoad'));
+    } catch (err: unknown) {
+      const message = isAxiosError<{ message?: string }>(err)
+        ? err.response?.data?.message || err.message
+        : err instanceof Error ? err.message : undefined;
+      setError(message || t('finance.failedToLoad'));
     }
   };
 
@@ -286,6 +290,7 @@ export function FeeStructures() {
                       <IconButton
                         size="small"
                         onClick={() => handleOpenDialog(fee)}
+                        aria-label={t('common.edit')}
                         title={t('common.edit')}
                       >
                         <EditIcon fontSize="small" />
@@ -293,6 +298,7 @@ export function FeeStructures() {
                       <IconButton
                         size="small"
                         onClick={() => handleDelete(fee.feeStructureId)}
+                        aria-label={t('common.delete')}
                         title={t('common.delete')}
                         color="error"
                       >
@@ -300,8 +306,9 @@ export function FeeStructures() {
                       </IconButton>
                       <IconButton
                         size="small"
-                        onClick={() => navigate(`/finance/fee-structures/${fee.feeStructureId}/assign`)}
-                        title={t('finance.addPayment')}
+                        onClick={() => navigate('/finance/invoices/generate', { state: { feeStructureId: fee.feeStructureId } })}
+                        aria-label={t('finance.generateInvoice')}
+                        title={t('finance.generateInvoice')}
                       >
                         <AssignIcon fontSize="small" />
                       </IconButton>

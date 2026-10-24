@@ -408,7 +408,7 @@ describe('Property-Based Tests - XSS Prevention', () => {
       fc.assert(
         fc.property(
           xssAttackArbitrary,
-          fc.string({ minLength: 1, maxLength: 50 }),
+          fc.string({ minLength: 1, maxLength: 50 }).filter((name) => !['__proto__', 'constructor', 'prototype'].includes(name)),
           (xssInput, fieldName) => {
             const mockRequest: Partial<Request> = {
               body: { [fieldName]: xssInput },
@@ -437,7 +437,7 @@ describe('Property-Based Tests - XSS Prevention', () => {
       fc.assert(
         fc.property(
           xssAttackArbitrary,
-          fc.string({ minLength: 1, maxLength: 50 }),
+          fc.string({ minLength: 1, maxLength: 50 }).filter((name) => !['__proto__', 'constructor', 'prototype'].includes(name)),
           (xssInput, paramName) => {
             const mockRequest: Partial<Request> = {
               body: {},
@@ -461,6 +461,25 @@ describe('Property-Based Tests - XSS Prevention', () => {
         { numRuns: 50 }
       );
     });
+
+  it('does not let prototype-sensitive body keys change the sanitized object prototype', () => {
+    const body = JSON.parse('{"__proto__":{"polluted":"<script>alert(1)</script>"},"constructor":{"prototype":{"polluted":"nested"}},"prototype":{"polluted":"nested"},"user":{"__proto__":{"nestedPolluted":"yes"},"safe":" nested "},"safe":" value "}');
+    const originalPrototype = Object.getPrototypeOf(body);
+    const mockRequest: Partial<Request> = { body, query: {}, params: {} };
+
+    sanitizeRequest(mockRequest as Request, mockResponse as Response, mockNext);
+
+    expect(Object.getPrototypeOf(mockRequest.body)).toBe(originalPrototype);
+    expect((mockRequest.body as Record<string, unknown>).polluted).toBeUndefined();
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+    expect(Object.hasOwn(mockRequest.body, '__proto__')).toBe(false);
+    expect(Object.hasOwn(mockRequest.body, 'constructor')).toBe(false);
+    expect(Object.hasOwn(mockRequest.body, 'prototype')).toBe(false);
+    expect(mockRequest.body.safe).toBe('value');
+    expect((mockRequest.body.user as Record<string, unknown>).nestedPolluted).toBeUndefined();
+    expect(Object.getPrototypeOf(mockRequest.body.user)).toBe(Object.prototype);
+    expect((mockRequest.body.user as Record<string, unknown>).safe).toBe('nested');
+  });
 
     it('should sanitize XSS in nested objects', () => {
       fc.assert(

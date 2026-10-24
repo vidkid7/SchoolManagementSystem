@@ -77,6 +77,16 @@ RolePermission.init(
 );
 
 // Define associations
+RolePermission.belongsTo(Role, {
+  foreignKey: 'roleId',
+  as: 'role',
+});
+
+RolePermission.belongsTo(Permission, {
+  foreignKey: 'permissionId',
+  as: 'permission',
+});
+
 Role.belongsToMany(Permission, {
   through: RolePermission,
   foreignKey: 'roleId',

@@ -227,29 +227,27 @@ describe('AuditService', () => {
 
   describe('rotateAuditLogs', () => {
     it('should delete logs older than retention period', async () => {
-      const mockDate = new Date('2024-12-31');
-      jest.spyOn(global, 'Date').mockImplementation(() => mockDate as any);
+      const executedAt = new Date('2024-12-31T00:00:00.000Z');
+      jest.useFakeTimers().setSystemTime(executedAt);
 
       (AuditLog.destroy as jest.Mock).mockResolvedValue(50);
 
       const result = await auditService.rotateAuditLogs(365);
 
       expect(result.deletedCount).toBe(50);
-      expect(result.executedAt).toEqual(mockDate);
-      
-      const expectedCutoffDate = new Date('2024-12-31');
-      expectedCutoffDate.setDate(expectedCutoffDate.getDate() - 365);
+      expect(result.executedAt).toEqual(executedAt);
+      expect(result.cutoffDate).toEqual(new Date('2024-01-01T00:00:00.000Z'));
       
       expect(AuditLog.destroy).toHaveBeenCalledWith({
         where: {
           timestamp: {
-            [Op.lt]: expect.any(Date)
+            [Op.lt]: new Date('2024-01-01T00:00:00.000Z')
           }
         },
         force: true
       });
 
-      jest.restoreAllMocks();
+      jest.useRealTimers();
     });
 
     it('should use default retention of 365 days', async () => {
@@ -263,6 +261,32 @@ describe('AuditService', () => {
   });
 
   describe('exportAuditLogs', () => {
+    it('applies IP, search, and date filters to the exported records', async () => {
+      (AuditLog.findAll as jest.Mock).mockResolvedValue([]);
+      const startDate = new Date('2026-01-01T00:00:00.000Z');
+      const endDate = new Date('2026-12-31T23:59:59.999Z');
+
+      await auditService.exportAuditLogs({
+        ipAddress: '192.0.2.10',
+        search: 'status',
+        startDate,
+        endDate,
+      });
+
+      expect(AuditLog.findAll).toHaveBeenCalledWith({
+        where: {
+          ipAddress: '192.0.2.10',
+          timestamp: { [Op.gte]: startDate, [Op.lte]: endDate },
+          [Op.or]: [
+            { entityType: { [Op.like]: '%status%' } },
+            { changedFields: { [Op.like]: '%status%' } },
+          ],
+        },
+        order: [['timestamp', 'DESC']],
+        limit: 10000,
+      });
+    });
+
     it('should export audit logs with filters', async () => {
       const mockLogs = [
         { auditLogId: 1, entityType: 'student' },

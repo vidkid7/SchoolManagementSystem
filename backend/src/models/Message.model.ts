@@ -32,17 +32,17 @@ export class Message
   extends Model<MessageAttributes, MessageCreationAttributes>
   implements MessageAttributes
 {
-  public messageId!: number;
-  public conversationId!: number;
-  public senderId!: number;
-  public recipientId!: number;
-  public content!: string;
-  public attachments?: object[];
-  public isRead!: boolean;
-  public readAt?: Date;
-  public sentAt!: Date;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public messageId: number;
+  declare public conversationId: number;
+  declare public senderId: number;
+  declare public recipientId: number;
+  declare public content: string;
+  declare public attachments?: object[];
+  declare public isRead: boolean;
+  declare public readAt?: Date;
+  declare public sentAt: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   // Instance methods
   public async markAsRead(): Promise<void> {

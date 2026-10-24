@@ -55,6 +55,7 @@ describe('StaffAssignments', () => {
     );
 
     await screen.findByRole('heading', { name: 'staff.form.teacherAssignments' });
+    expect((await screen.findByText('staff.form.noAssignments')).tagName).toBe('P');
     await act(async () => {
       fireEvent.click(screen.getAllByRole('button', { name: 'staff.form.addAssignment' })[0]);
     });
@@ -64,6 +65,8 @@ describe('StaffAssignments', () => {
     expect(within(dialog).getByRole('combobox', { name: 'staff.form.assignmentType' })).toBeInTheDocument();
     expect(within(dialog).getByRole('combobox', { name: 'academic.class' })).toBeInTheDocument();
     expect(within(dialog).getByRole('combobox', { name: 'examinations.subject' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('checkbox', { name: 'common.active' })).toHaveAttribute('id', 'staff-assignment-active');
+    expect(within(dialog).getByRole('checkbox', { name: 'common.active' })).toHaveAttribute('name', 'isActive');
     fireEvent.mouseDown(getDialogComboboxes()[1]);
     await act(async () => {
       fireEvent.click(await screen.findByRole('option'));

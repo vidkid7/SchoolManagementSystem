@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { MemoryRouter } from 'react-router-dom';
 import apiClient from '../../services/apiClient';
 import { InvoiceList } from './InvoiceList';
 
@@ -17,9 +18,7 @@ jest.mock('../../services/apiClient', () => ({
 describe('InvoiceList accessibility', () => {
   it('gives the payment status filter an accessible name', async () => {
     render(
-      <ThemeProvider theme={createTheme()}>
-        <InvoiceList />
-      </ThemeProvider>,
+      <MemoryRouter><ThemeProvider theme={createTheme()}><InvoiceList /></ThemeProvider></MemoryRouter>,
     );
 
     await waitFor(() => {
@@ -31,9 +30,7 @@ describe('InvoiceList accessibility', () => {
     jest.useFakeTimers();
     try {
       render(
-        <ThemeProvider theme={createTheme()}>
-          <InvoiceList />
-        </ThemeProvider>,
+        <MemoryRouter><ThemeProvider theme={createTheme()}><InvoiceList /></ThemeProvider></MemoryRouter>,
       );
 
       await act(async () => {
@@ -57,5 +54,46 @@ describe('InvoiceList accessibility', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+
+  it('opens invoice details in place instead of navigating to a missing route', async () => {
+    jest.mocked(apiClient.get).mockResolvedValueOnce({
+      data: {
+        data: [{ id: 41, invoice_number: 'INV-QA-41', student_name: 'QA Student', class_name: 'Grade 4', total_amount: 1200, paid_amount: 200, balance: 1000, due_date: '2026-11-01', status: 'partial' }],
+        total: 1,
+      },
+    } as never);
+
+    render(<MemoryRouter><ThemeProvider theme={createTheme()}><InvoiceList /></ThemeProvider></MemoryRouter>);
+
+    const viewButton = await screen.findByTitle('common.view');
+    fireEvent.click(viewButton);
+    expect(await screen.findByText('finance.invoices INV-QA-41')).toBeInTheDocument();
+    expect(screen.getByText('QA Student', { selector: 'p' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'common.close' })).toBeInTheDocument();
+  });
+
+  it('labels the payment dialog as an add-payment action', async () => {
+    jest.mocked(apiClient.get).mockResolvedValueOnce({
+      data: {
+        data: [{ id: 42, invoice_number: 'INV-QA-42', student_name: 'QA Student', class_name: 'Grade 4', total_amount: 1200, paid_amount: 200, balance: 1000, due_date: '2026-11-01', status: 'partial' }],
+        total: 1,
+      },
+    } as never);
+
+    render(<MemoryRouter><ThemeProvider theme={createTheme()}><InvoiceList /></ThemeProvider></MemoryRouter>);
+    fireEvent.click(await screen.findByTitle('finance.addPayment'));
+    expect(await screen.findByText('finance.addPayment', { selector: 'h2' })).toBeInTheDocument();
+  });
+
+  it('uses an invoice search query when opened from global search', async () => {
+    render(
+      <MemoryRouter initialEntries={['/KMC/finance/invoices?search=INV-QA-43']}>
+        <ThemeProvider theme={createTheme()}><InvoiceList /></ThemeProvider>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(apiClient.get).toHaveBeenCalledWith(expect.stringContaining('search=INV-QA-43')));
+    expect(screen.getByRole('textbox', { name: 'common.search' })).toHaveValue('INV-QA-43');
   });
 });

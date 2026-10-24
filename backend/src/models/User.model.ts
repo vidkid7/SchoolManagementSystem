@@ -50,12 +50,12 @@ export interface UserAttributes {
   profilePhoto?: string;
   lastLogin?: Date;
   failedLoginAttempts: number;
-  accountLockedUntil?: Date;
+  accountLockedUntil?: Date | null;
   passwordChangedAt?: Date;
-  passwordResetToken?: string;
-  passwordResetExpires?: Date;
-  refreshToken?: string;
-  refreshTokenExpiresAt?: Date;
+  passwordResetToken?: string | null;
+  passwordResetExpires?: Date | null;
+  refreshToken?: string | null;
+  refreshTokenExpiresAt?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
   deletedAt?: Date;
@@ -88,12 +88,12 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   declare profilePhoto?: string;
   declare lastLogin?: Date;
   declare failedLoginAttempts: number;
-  declare accountLockedUntil?: Date;
+  declare accountLockedUntil?: Date | null;
   declare passwordChangedAt?: Date;
-  declare passwordResetToken?: string;
-  declare passwordResetExpires?: Date;
-  declare refreshToken?: string;
-  declare refreshTokenExpiresAt?: Date;
+  declare passwordResetToken?: string | null;
+  declare passwordResetExpires?: Date | null;
+  declare refreshToken?: string | null;
+  declare refreshTokenExpiresAt?: Date | null;
 
   // Timestamps
   declare readonly createdAt: Date;
@@ -181,8 +181,8 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
    * Clear password reset token
    */
   public async clearPasswordResetToken(): Promise<void> {
-    this.passwordResetToken = undefined;
-    this.passwordResetExpires = undefined;
+    this.passwordResetToken = null;
+    this.passwordResetExpires = null;
     await this.save();
   }
 }

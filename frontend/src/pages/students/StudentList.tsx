@@ -5,7 +5,7 @@
  * Updated: Fixed React key warnings
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -37,6 +37,7 @@ import {
   ToggleButtonGroup,
   Tooltip,
   Badge,
+  Alert,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -55,7 +56,6 @@ import {
   Psychology as FuzzyIcon,
   Bolt as ExactIcon,
 } from '@mui/icons-material';
-import { useParams } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import { apiClient } from '../../services/apiClient';
 import { motion } from 'framer-motion';
@@ -73,7 +73,7 @@ interface Student {
   middleNameEn?: string;
   lastNameEn: string;
   currentClassId?: number;
-  status: 'active' | 'inactive' | 'graduated' | 'transferred';
+  status: 'active' | 'inactive' | 'graduated' | 'transferred' | 'suspended';
   photoUrl?: string;
   phone?: string;
   email?: string;
@@ -97,17 +97,18 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; labelKey: strin
   inactive: { color: C.neutral, bg: C.neutral, labelKey: 'students.inactive' },
   graduated: { color: C.primary, bg: C.primary, labelKey: 'students.graduated' },
   transferred: { color: C.warning, bg: C.warning, labelKey: 'students.transferred' },
+  suspended: { color: C.danger, bg: C.danger, labelKey: 'userManagement.suspended' },
 };
 
 export const StudentList = () => {
   const { t, i18n } = useTranslation();
   const navigate = useSlugNavigate();
-  const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const { formatNumber, formatWithSeparators } = useNepaliNumbers();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [total, setTotal] = useState(0);
@@ -140,17 +141,10 @@ export const StudentList = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (searchMode === 'fuzzy' && debouncedSearch) {
-      performFuzzySearch(debouncedSearch);
-    } else {
-      fetchStudents(debouncedSearch);
-    }
-  }, [page, rowsPerPage, debouncedSearch, classFilter, sectionFilter, statusFilter, searchMode]);
-
-  const fetchStudents = async (searchTerm: string) => {
+  const fetchStudents = useCallback(async (searchTerm: string) => {
     try {
       setLoading(true);
+      setLoadError(false);
       const params = new URLSearchParams({
         page: (page + 1).toString(),
         limit: rowsPerPage.toString(),
@@ -165,15 +159,20 @@ export const StudentList = () => {
       setTotal(response.data.meta?.total || response.data.total || 0);
       setFuzzyResults([]);
     } catch (error) {
+      setStudents([]);
+      setTotal(0);
+      setFuzzyResults([]);
+      setLoadError(true);
       console.error('Failed to fetch students:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, rowsPerPage, classFilter, sectionFilter, statusFilter]);
 
-  const performFuzzySearch = async (searchTerm: string) => {
+  const performFuzzySearch = useCallback(async (searchTerm: string) => {
     try {
       setLoading(true);
+      setLoadError(false);
       const params = new URLSearchParams({
         query: searchTerm,
         threshold: '0.4',
@@ -186,11 +185,24 @@ export const StudentList = () => {
       setStudents(results.map((r: FuzzySearchResult) => r.student));
       setTotal(results.length);
     } catch (error) {
+      setStudents([]);
+      setTotal(0);
+      setFuzzyResults([]);
+      setLoadError(true);
       console.error('Failed to perform fuzzy search:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void Promise.resolve().then(() => {
+      if (searchMode === 'fuzzy' && debouncedSearch) {
+        return performFuzzySearch(debouncedSearch);
+      }
+      return fetchStudents(debouncedSearch);
+    });
+  }, [page, rowsPerPage, debouncedSearch, classFilter, sectionFilter, statusFilter, searchMode, fetchStudents, performFuzzySearch]);
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
@@ -207,6 +219,15 @@ export const StudentList = () => {
     setSectionFilter('');
     setStatusFilter('');
     setSearchMode('exact');
+    setPage(0);
+  };
+
+  const refreshStudents = () => {
+    if (searchMode === 'fuzzy' && debouncedSearch) {
+      void performFuzzySearch(debouncedSearch);
+      return;
+    }
+    void fetchStudents(debouncedSearch);
   };
 
   const hasActiveFilters = search || classFilter || sectionFilter || statusFilter;
@@ -314,7 +335,7 @@ export const StudentList = () => {
                 <span>
                 <IconButton
                   aria-label={t('common.refresh')}
-                  onClick={() => fetchStudents(debouncedSearch)}
+                  onClick={refreshStudents}
                   disabled={loading}
                   sx={{
                     background: isDark
@@ -562,7 +583,10 @@ export const StudentList = () => {
                 variant="outlined"
                 size="small"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(0);
+                }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -619,7 +643,10 @@ export const StudentList = () => {
                   labelId="student-class-filter-label"
                   value={classFilter}
                   label={t('students.class')}
-                  onChange={(e) => setClassFilter(e.target.value)}
+                  onChange={(e) => {
+                    setClassFilter(e.target.value);
+                    setPage(0);
+                  }}
                   sx={{ 
                     borderRadius: 2,
                     bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
@@ -641,7 +668,10 @@ export const StudentList = () => {
                   labelId="student-section-filter-label"
                   value={sectionFilter}
                   label={t('students.section')}
-                  onChange={(e) => setSectionFilter(e.target.value)}
+                  onChange={(e) => {
+                    setSectionFilter(e.target.value);
+                    setPage(0);
+                  }}
                   sx={{ 
                     borderRadius: 2,
                     bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
@@ -663,7 +693,10 @@ export const StudentList = () => {
                   labelId="student-status-filter-label"
                   value={statusFilter}
                   label={t('students.status')}
-                  onChange={(e) => setStatusFilter(e.target.value)}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setPage(0);
+                  }}
                   sx={{ 
                     borderRadius: 2,
                     bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
@@ -674,6 +707,7 @@ export const StudentList = () => {
                   <MenuItem value="inactive">{t('students.inactive')}</MenuItem>
                   <MenuItem value="graduated">{t('students.graduated')}</MenuItem>
                   <MenuItem value="transferred">{t('students.transferred')}</MenuItem>
+                  <MenuItem value="suspended">{t('userManagement.suspended')}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -755,7 +789,23 @@ export const StudentList = () => {
                   </TableCell>
                 </TableRow>
               )}
-              {!loading && students.length === 0 && (
+              {!loading && loadError && (
+                <TableRow key="load-error">
+                  <TableCell colSpan={8} sx={{ py: 2 }}>
+                    <Alert
+                      severity="error"
+                      action={(
+                        <Button color="inherit" size="small" onClick={refreshStudents}>
+                          {t('common.retry')}
+                        </Button>
+                      )}
+                    >
+                      {t('academic.failedToLoad')}
+                    </Alert>
+                  </TableCell>
+                </TableRow>
+              )}
+              {!loading && !loadError && students.length === 0 && (
                 <TableRow key="no-data">
                   <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
@@ -765,7 +815,7 @@ export const StudentList = () => {
                   </TableCell>
                 </TableRow>
               )}
-              {!loading && students.length > 0 && students.map((student, index) => (
+              {!loading && !loadError && students.length > 0 && students.map((student, index) => (
                 <TableRow 
                   key={student.studentId} 
                   hover

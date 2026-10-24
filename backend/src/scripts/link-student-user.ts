@@ -4,10 +4,9 @@
  */
 
 import { sequelize } from '../config/database';
-import { User } from '../models/User.model';
-import { Student } from '../models/Student.model';
-import { Class } from '../models/Class.model';
-import { Section } from '../models/Section.model';
+import User from '../models/User.model';
+import Student, { Gender, StudentStatus } from '../models/Student.model';
+import Class from '../models/Class.model';
 import logger from '../utils/logger';
 
 async function linkStudentUser() {
@@ -40,40 +39,38 @@ async function linkStudentUser() {
 
     // Find a class and section to assign
     const firstClass = await Class.findOne();
-    const firstSection = await Section.findOne();
-
-    if (!firstClass || !firstSection) {
-      logger.error('No class or section found. Please create classes first.');
+    if (!firstClass) {
+      logger.error('No class found. Please create a class first.');
       process.exit(1);
     }
 
     // Create student record
     const student = await Student.create({
       userId: user.userId,
-      firstName: 'Test',
-      lastName: 'Student',
-      dateOfBirth: new Date('2010-01-01'),
-      gender: 'male',
-      classId: firstClass.classId,
-      sectionId: firstSection.sectionId,
+      firstNameEn: 'Test',
+      lastNameEn: 'Student',
+      dateOfBirthBS: '2066-10-30',
+      dateOfBirthAD: new Date('2010-01-01'),
+      gender: Gender.MALE,
+      addressEn: 'Kathmandu, Nepal',
+      fatherName: 'Parent Name',
+      fatherPhone: '+977-9841234567',
+      motherName: 'Parent Name',
+      motherPhone: '+977-9841234567',
+      emergencyContact: '+977-9841234567',
+      currentClassId: firstClass.classId,
       rollNumber: 1,
-      admissionNumber: 'ADM2024001',
       admissionDate: new Date(),
-      studentCode: 'STU001',
-      bloodGroup: 'O+',
-      address: 'Kathmandu, Nepal',
-      guardianName: 'Parent Name',
-      guardianPhone: '+977-9841234567',
-      guardianEmail: 'parent@example.com',
-      guardianRelation: 'father',
-      status: 'active',
+      admissionClass: firstClass.gradeLevel,
+      studentCode: `STU-${String(user.userId).padStart(6, '0')}`,
+      status: StudentStatus.ACTIVE,
     });
 
     logger.info('✅ Student record created successfully!');
     logger.info(`Student ID: ${student.studentId}`);
     logger.info(`User ID: ${student.userId}`);
     logger.info(`Class: ${firstClass.className}`);
-    logger.info(`Section: ${firstSection.sectionName}`);
+    logger.info(`Section: ${firstClass.section}`);
 
     process.exit(0);
   } catch (error) {

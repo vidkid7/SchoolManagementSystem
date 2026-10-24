@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
 import User, { UserRole } from '@models/User.model';
-import Student from '@models/Student.model';
+import Student, { StudentAttributes } from '@models/Student.model';
 import { logger } from '@utils/logger';
 import HostelRoom from '@models/HostelRoom.model';
-import HostelResident from '@models/HostelResident.model';
+import HostelResident, { HostelResidentAttributes } from '@models/HostelResident.model';
 import HostelIncident from '@models/HostelIncident.model';
 import HostelVisitor from '@models/HostelVisitor.model';
 import HostelDisciplineRecord from '@models/HostelDisciplineRecord.model';
@@ -15,6 +15,14 @@ import HostelInventoryItem from '@models/HostelInventoryItem.model';
 
 const roomTypes = ['single', 'double', 'dormitory'] as const;
 const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
+
+type HostelResidentStudent = Pick<StudentAttributes, 'studentId' | 'firstNameEn' | 'lastNameEn' | 'studentCode'>;
+type HostelResidentRecord = Pick<HostelResidentAttributes, 'id' | 'roomId'> & { student: HostelResidentStudent };
+
+function serializeResidentStudent(resident: HostelResident): HostelResidentStudent & { hostelResidentId: number; roomId: number } {
+  const { id, roomId, student } = resident.get({ plain: true }) as unknown as HostelResidentRecord;
+  return { ...student, hostelResidentId: id, roomId };
+}
 
 function normalizeRoomType(type: unknown): 'single' | 'double' | 'dormitory' | null {
   const value = String(type ?? '').toLowerCase();
@@ -107,43 +115,53 @@ class HostelController {
 
   async getResidentStudents(req: Request, res: Response): Promise<void> {
     try {
-      const { page = 1, limit = 20, search } = req.query;
-      const offset = (Number(page) - 1) * Number(limit);
-
-      const whereClause: any = { status: 'active' };
-      if (search) {
-        whereClause[Op.or] = [
+      const requestedPage = Number(req.query.page) || 1;
+      const requestedLimit = Number(req.query.limit) || 20;
+      const page = Math.max(1, Math.floor(requestedPage));
+      const limit = Math.min(100, Math.max(1, Math.floor(requestedLimit)));
+      const search = String(req.query.search ?? '').trim();
+      const studentWhere = search ? {
+        [Op.or]: [
           { firstNameEn: { [Op.like]: `%${search}%` } },
           { lastNameEn: { [Op.like]: `%${search}%` } },
-          { studentCode: { [Op.like]: `%${search}%` } }
-        ];
-      }
+          { studentCode: { [Op.like]: `%${search}%` } },
+        ],
+      } : undefined;
 
-      const { count, rows } = await Student.findAndCountAll({
-        where: whereClause,
-        attributes: ['studentId', 'firstNameEn', 'lastNameEn', 'studentCode', 'addressEn', 'fatherPhone', 'fatherName'],
-        limit: Number(limit),
-        offset,
-        order: [['firstNameEn', 'ASC']]
+      const { count, rows } = await HostelResident.findAndCountAll({
+        where: { status: 'active' },
+        include: [{
+          model: Student,
+          as: 'student',
+          attributes: ['studentId', 'firstNameEn', 'lastNameEn', 'studentCode'],
+          required: true,
+          ...(studentWhere ? { where: studentWhere } : {}),
+        }],
+        limit,
+        offset: (page - 1) * limit,
+        order: [['checkInDate', 'DESC']],
+        distinct: true,
       });
+
+      const students = rows.map(serializeResidentStudent);
 
       res.status(200).json({
         success: true,
         data: {
-          students: rows,
+          students,
           pagination: {
             total: count,
-            page: Number(page),
-            limit: Number(limit),
-            pages: Math.ceil(count / Number(limit))
+            page,
+            limit,
+            pages: Math.ceil(count / limit)
           }
         }
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Hostel resident students error:', error);
       res.status(500).json({
         success: false,
-        error: { code: 'RESIDENT_LIST_ERROR', message: error.message || 'Failed to load resident list' }
+        error: { code: 'RESIDENT_LIST_ERROR', message: error instanceof Error ? error.message : 'Failed to load resident list' }
       });
     }
   }

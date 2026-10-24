@@ -4,7 +4,8 @@
  * Configure attendance rules and policies
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { isAxiosError } from 'axios';
 import { useTheme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
@@ -15,10 +16,6 @@ import {
   TextField,
   Button,
   Grid,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Switch,
   FormControlLabel,
   Alert,
@@ -73,7 +70,7 @@ const defaultSettings: AttendanceRule = {
 };
 
 const mapResponseToSettings = (data: AttendanceRuleResponse): AttendanceRule => ({
-  id: data.id,
+  id: data.id === 'default' ? undefined : data.id,
   minimumAttendancePercentage: data.minimumAttendancePercentage ?? defaultSettings.minimumAttendancePercentage,
   lateArrivalGracePeriod: data.correctionWindowHours ?? defaultSettings.lateArrivalGracePeriod,
   autoMarkAbsentAfter: defaultSettings.autoMarkAbsentAfter,
@@ -95,11 +92,7 @@ export function AttendanceSettings() {
   const [error, setError] = useState('');
   const [settings, setSettings] = useState<AttendanceRule>(defaultSettings);
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiClient.get('/config/attendance-rules/active');
@@ -111,10 +104,14 @@ export function AttendanceSettings() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleChange = (field: keyof AttendanceRule, value: any) => {
-    setSettings({ ...settings, [field]: value });
+  useEffect(() => {
+    void Promise.resolve().then(fetchSettings);
+  }, [fetchSettings]);
+
+  const handleChange = <K extends keyof AttendanceRule>(field: K, value: AttendanceRule[K]) => {
+    setSettings((previous) => ({ ...previous, [field]: value }));
   };
 
   const handleSubmit = async () => {
@@ -131,10 +128,11 @@ export function AttendanceSettings() {
 
       setSuccess(t('attendance.settingsSavedSuccess'));
       setTimeout(() => setSuccess(''), 3000);
-      fetchSettings();
-    } catch (error: any) {
-      console.error('Failed to save settings:', error);
-      setError(error.response?.data?.message || t('attendance.failedToSaveSettings'));
+      await fetchSettings();
+    } catch (error: unknown) {
+      console.error('Failed to save attendance settings');
+      const message = isAxiosError<{ message?: string }>(error) ? error.response?.data?.message : undefined;
+      setError(message || t('attendance.failedToSaveSettings'));
     } finally {
       setSaving(false);
     }

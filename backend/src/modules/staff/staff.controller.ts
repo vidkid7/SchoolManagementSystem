@@ -21,6 +21,7 @@ class StaffController {
       category,
       status,
       department,
+      position,
       search
     } = req.query;
 
@@ -33,6 +34,7 @@ class StaffController {
         category: category as StaffCategory,
         status: status as StaffStatus,
         department: department as string,
+        position: position as string,
         search: search as string
       },
       { limit: limitNum, offset }
@@ -101,9 +103,14 @@ class StaffController {
    * Assign staff to class/subject
    */
   assign = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const assignment = await staffService.assign(req.body, { skipValidation: true });
+    const { assignment, validation } = await staffService.assign(req.body, { skipValidation: true });
 
-    sendSuccess(res, assignment, 'Staff assigned successfully', HTTP_STATUS.CREATED);
+    sendSuccess(
+      res,
+      { ...assignment.toJSON(), validation },
+      'Staff assigned successfully',
+      HTTP_STATUS.CREATED
+    );
   });
 
   /**
@@ -246,14 +253,20 @@ class StaffController {
     const uploadedBy = (req as any).user?.userId;
 
     if (!req.file) {
-      throw new Error('No file uploaded');
+      throw new ValidationError('No file uploaded', [{ field: 'document', message: 'A document file is required' }]);
+    }
+    if (!Object.values(StaffDocumentCategory).includes(category as StaffDocumentCategory)) {
+      throw new ValidationError('Invalid document category', [{ field: 'category', message: 'Choose a supported document category' }]);
+    }
+    if (typeof documentName !== 'string' || !documentName.trim() || documentName.trim().length > 200) {
+      throw new ValidationError('Invalid document name', [{ field: 'documentName', message: 'Document name must contain 1 to 200 characters' }]);
     }
 
     const document = await staffDocumentService.uploadDocument(
       req.file,
       staffId,
       category as StaffDocumentCategory,
-      documentName,
+      documentName.trim(),
       uploadedBy,
       description,
       expiryDate ? new Date(expiryDate) : undefined
@@ -318,12 +331,24 @@ class StaffController {
    */
   updateDocument = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const documentId = Number(req.params.documentId);
-    const { documentName, description, expiryDate } = req.body;
+    const { documentName, category, description, expiryDate } = req.body;
+
+    if (documentName !== undefined && (typeof documentName !== 'string' || !documentName.trim() || documentName.trim().length > 200)) {
+      throw new ValidationError('Invalid document name', [{ field: 'documentName', message: 'Document name must contain 1 to 200 characters' }]);
+    }
+    if (category !== undefined && !Object.values(StaffDocumentCategory).includes(category as StaffDocumentCategory)) {
+      throw new ValidationError('Invalid document category', [{ field: 'category', message: 'Choose a supported document category' }]);
+    }
 
     const document = await staffDocumentService.updateDocument(documentId, {
-      documentName,
+      documentName: typeof documentName === 'string' ? documentName.trim() : undefined,
+      category,
       description,
-      expiryDate: expiryDate ? new Date(expiryDate) : undefined
+      expiryDate: expiryDate === null || expiryDate === ''
+        ? null
+        : expiryDate === undefined
+          ? undefined
+          : new Date(expiryDate)
     });
 
     if (!document) {
@@ -391,7 +416,10 @@ class StaffController {
     const uploadedBy = (req as any).user?.userId;
 
     if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
-      throw new Error('No files uploaded');
+      throw new ValidationError('No files uploaded', [{ field: 'documents', message: 'Select at least one document' }]);
+    }
+    if (!Object.values(StaffDocumentCategory).includes(category as StaffDocumentCategory)) {
+      throw new ValidationError('Invalid document category', [{ field: 'category', message: 'Choose a supported document category' }]);
     }
 
     const documents = await staffDocumentService.bulkUploadDocuments(

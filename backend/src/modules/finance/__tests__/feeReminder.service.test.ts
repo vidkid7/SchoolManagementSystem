@@ -1,7 +1,10 @@
 import feeReminderService from '../feeReminder.service';
 import feeReminderRepository from '../feeReminder.repository';
-import { ReminderType, ReminderStatus, ReminderConfig } from '@models/FeeReminder.model';
-import { Invoice } from '@models/Invoice.model';
+import { ReminderType, ReminderStatus, ReminderConfig, FeeReminder, ReminderConfig as ReminderConfigModel } from '@models/FeeReminder.model';
+import { Invoice, InvoiceStatus } from '@models/Invoice.model';
+import { AcademicYear } from '@models/AcademicYear.model';
+import { FeeStructure } from '@models/FeeStructure.model';
+import Student, { Gender, StudentStatus } from '@models/Student.model';
 import sequelize from '@config/database';
 
 /**
@@ -11,19 +14,71 @@ import sequelize from '@config/database';
 
 describe('FeeReminderService', () => {
   beforeAll(async () => {
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('Fee reminder service tests require TEST_DB_DIALECT=sqlite');
+    }
     await sequelize.sync({ force: true });
+
+    const academicYear = await AcademicYear.create({
+      name: 'QA Fee Reminder 2026-2027',
+      startDateBS: '2083-01-01',
+      endDateBS: '2083-12-30',
+      startDateAD: new Date('2026-04-14'),
+      endDateAD: new Date('2027-04-13'),
+      isCurrent: true
+    });
+    const feeStructure = await FeeStructure.create({
+      name: 'QA Fee Reminder Structure',
+      applicableClasses: [1],
+      applicableShifts: ['morning'],
+      academicYearId: academicYear.academicYearId,
+      totalAmount: 10000,
+      isActive: true
+    });
+    await Student.create({
+      studentCode: 'QA-FEE-REMINDER-1',
+      firstNameEn: 'FeeReminder',
+      lastNameEn: 'Test',
+      dateOfBirthBS: '2065-01-01',
+      dateOfBirthAD: new Date('2008-04-13'),
+      gender: Gender.OTHER,
+      addressEn: 'Test address',
+      fatherName: 'Test Father',
+      fatherPhone: '9800000000',
+      motherName: 'Test Mother',
+      motherPhone: '9800000001',
+      admissionDate: new Date('2026-04-14'),
+      admissionClass: 1,
+      emergencyContact: '9800000002',
+      status: StudentStatus.ACTIVE
+    });
+    await Invoice.bulkCreate([1, 2].map((number) => ({
+      invoiceNumber: `QA-FEE-REMINDER-${number}`,
+      studentId: 1,
+      feeStructureId: feeStructure.feeStructureId,
+      academicYearId: academicYear.academicYearId,
+      dueDate: '2026-06-01',
+      subtotal: 10000,
+      discount: 0,
+      totalAmount: 10000,
+      paidAmount: 0,
+      balance: 10000,
+      status: InvoiceStatus.OVERDUE
+    })));
   });
 
   afterAll(async () => {
+    await FeeReminder.destroy({ where: {}, force: true });
+    await Invoice.destroy({ where: { studentId: 1 }, force: true });
+    await FeeStructure.destroy({ where: {}, force: true });
+    await AcademicYear.destroy({ where: {}, force: true });
+    await Student.destroy({ where: { studentId: 1 }, force: true });
     await sequelize.close();
   });
 
   beforeEach(async () => {
-    // Clear all tables
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
-    await sequelize.query('TRUNCATE TABLE fee_reminders');
-    await sequelize.query('TRUNCATE TABLE reminder_config');
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
+    await FeeReminder.destroy({ where: {}, force: true });
+    await ReminderConfigModel.destroy({ where: {}, force: true });
 
     // Create default config
     await feeReminderRepository.createConfig({
@@ -333,7 +388,7 @@ describe('FeeReminderService', () => {
 
       expect(retried).toBeDefined();
       expect(retried?.status).toBe(ReminderStatus.PENDING);
-      expect(retried?.failureReason).toBeUndefined();
+      expect(retried?.failureReason).toBeNull();
     });
 
     it('should throw error for non-failed reminders', async () => {

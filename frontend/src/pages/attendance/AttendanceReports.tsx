@@ -95,8 +95,8 @@ export function AttendanceReports() {
       const response = await apiClient.get('/academic/classes');
       const classesData = response.data?.data || [];
       setClasses(classesData);
-    } catch (error) {
-      console.error('Failed to fetch classes:', error);
+    } catch {
+      console.error('Failed to fetch classes');
     }
   };
 
@@ -125,8 +125,8 @@ export function AttendanceReports() {
           if (!isNaN(date.getTime())) {
             params.dateFrom = date.toISOString();
           }
-        } catch (e) {
-          console.error('Invalid start date:', e);
+        } catch {
+          console.error('Invalid start date');
         }
       }
       
@@ -136,8 +136,8 @@ export function AttendanceReports() {
           if (!isNaN(date.getTime())) {
             params.dateTo = date.toISOString();
           }
-        } catch (e) {
-          console.error('Invalid end date:', e);
+        } catch {
+          console.error('Invalid end date');
         }
       }
 
@@ -155,16 +155,11 @@ export function AttendanceReports() {
         ? '/attendance/student/report'
         : '/attendance/staff/report';
 
-      console.log('Fetching report with params:', params);
-
       const response = await apiClient.get(endpoint, { params });
-      console.log('Response:', response.data);
       
       // The backend returns { records: [...], total, page, limit, totalPages }
       const responseData = response.data?.data;
       const data = responseData?.records || responseData || [];
-      
-      console.log('Parsed data:', data);
       
       setAttendanceData(data);
       
@@ -197,8 +192,7 @@ export function AttendanceReports() {
         });
       }
     } catch (error: any) {
-      console.error('Failed to fetch report:', error);
-      console.error('Error response:', error.response?.data);
+      console.error('Failed to fetch report');
       const errorDetails = error.response?.data?.details || error.response?.data?.error || '';
       const errorMsg = error.response?.data?.message || error.message || 'Failed to fetch attendance report';
       setError(`${errorMsg}${errorDetails ? ': ' + JSON.stringify(errorDetails) : ''}`);

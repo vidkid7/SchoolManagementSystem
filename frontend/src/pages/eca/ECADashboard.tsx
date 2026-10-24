@@ -12,13 +12,26 @@ import apiClient from '../../services/apiClient';
 
 import { useTranslation } from 'react-i18next';
 
+interface ECAActivity {
+  id: string;
+  type?: string;
+  title?: string;
+  name?: string;
+  event?: string;
+  achievement?: string;
+  ecaName?: string;
+  studentName?: string;
+  date?: string | null;
+  status?: string;
+}
+
 export function ECADashboard() {
   const navigate = useSlugNavigate();
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const { t } = useTranslation();
   const [stats, setStats] = useState({ totalECAs: 0, activeECAs: 0, totalStudents: 0, upcomingEvents: 0 });
-  const [recentActivities, setRecentActivities] = useState<any[]>([]);
+  const [recentActivities, setRecentActivities] = useState<ECAActivity[]>([]);
 
   useEffect(() => {
     Promise.all([
@@ -26,7 +39,7 @@ export function ECADashboard() {
       apiClient.get('/eca/recent-activities?limit=5').catch(() => ({ data: { data: [] } })),
     ]).then(([statsRes, activitiesRes]) => {
       if (statsRes.data?.data) setStats(statsRes.data.data);
-      setRecentActivities(activitiesRes.data?.data || []);
+      setRecentActivities(Array.isArray(activitiesRes.data?.data) ? activitiesRes.data.data : []);
     });
   }, []);
 
@@ -58,7 +71,7 @@ export function ECADashboard() {
       <Grid container spacing={3}>
         {statCards.map((card, i) => (
           <Grid item xs={12} sm={6} md={3} key={i}>
-            <Card sx={{ ...S.GLASS, cursor: 'pointer', '&:hover': { transform: 'translateY(-4px)' }, transition: 'transform 0.2s' }} onClick={card.action}>
+            <Card component="button" type="button" aria-label={`${card.title}: ${card.value}`} sx={{ ...S.GLASS, cursor: 'pointer', textAlign: 'left', color: 'inherit', '&:hover': { transform: 'translateY(-4px)' }, transition: 'transform 0.2s' }} onClick={card.action}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <Box>
@@ -83,11 +96,11 @@ export function ECADashboard() {
               <Typography color="text.secondary" align="center" py={4}>{t('eca.noRecentActivities')}</Typography>
             ) : (
               <List>
-                {recentActivities.map((activity: any) => (
+                {recentActivities.map((activity) => (
                   <ListItem key={activity.id}>
-                    <ListItemText 
-                      primary={activity.title || activity.name || activity.ecaName || `${activity.type} Activity`} 
-                      secondary={activity.description || activity.studentName || activity.student_name || activity.date ? new Date(activity.date).toLocaleDateString() : ''} 
+                    <ListItemText
+                      primary={activity.title || activity.name || activity.event || activity.achievement || activity.ecaName || `${activity.type || 'ECA'} Activity`}
+                      secondary={activity.date && !Number.isNaN(new Date(activity.date).getTime()) ? new Date(activity.date).toLocaleDateString() : ''}
                     />
                     <Chip label={activity.type} size="small" />
                   </ListItem>

@@ -5,7 +5,7 @@ import { BulkAdd } from './BulkAdd';
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, options?: { number?: number }) =>
+    t: (key: string, options?: Record<string, string | number>) =>
       key === 'students.removeStudent'
         ? `Remove student ${options?.number}`
         : key === 'bulkImport.invalidFile'
@@ -106,5 +106,54 @@ describe('BulkAdd', () => {
       expect(apiClient.post).not.toHaveBeenCalledWith('/students/bulk-create', expect.anything());
       expect(screen.getByText('students.csv')).toBeInTheDocument();
     });
+  });
+
+  it('submits the original Excel file to the validated import endpoint and displays row errors', async () => {
+    const previewRows = [{ firstNameEn: 'QA', lastNameEn: 'Student', dateOfBirth: '2010-01-01' }];
+    (apiClient.post as jest.Mock)
+      .mockResolvedValueOnce({ data: { data: previewRows } })
+      .mockRejectedValueOnce({
+        response: {
+          data: {
+            data: {
+              successCount: 0,
+              errorCount: 1,
+              errors: [{ row: 2, field: 'fatherPhone', message: 'Required value is missing' }],
+            },
+          },
+        },
+      });
+    const { container } = render(
+      <MemoryRouter initialEntries={['/KMC/students/bulk-add']}>
+        <Routes>
+          <Route path="/:municipalitySlug/students/bulk-add" element={<BulkAdd />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('tab', { name: 'students.importFromExcel' }));
+    const file = new File(['student rows'], 'students.csv', { type: 'text/csv' });
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: { files: [file] },
+    });
+    await screen.findByText('students.csv');
+
+    fireEvent.click(screen.getByRole('button', { name: 'students.importStudents' }));
+
+    await waitFor(() => {
+      expect(apiClient.post).toHaveBeenLastCalledWith(
+        '/students/bulk-import',
+        expect.any(FormData),
+        expect.objectContaining({ headers: { 'Content-Type': 'multipart/form-data' } }),
+      );
+      const failureAlert = screen.getAllByRole('alert').find((alert) =>
+        alert.textContent?.includes('students.bulkAddPartial'),
+      );
+      expect(failureAlert).toHaveTextContent('students.bulkAddRowError');
+    });
+
+    const submittedFile = (apiClient.post as jest.Mock).mock.calls[1][1].get('file');
+    expect(submittedFile).toBe(file);
+    expect(apiClient.post).not.toHaveBeenCalledWith('/students/bulk-create', expect.anything());
   });
 });

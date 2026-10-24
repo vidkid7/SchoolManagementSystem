@@ -24,7 +24,7 @@ import {
   Assignment as AssignmentIcon,
   Event as EventIcon,
 } from '@mui/icons-material';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { C, useAdminStyles } from '../../theme/designTokens';
 import { useTranslation } from 'react-i18next';
 
 interface FeatureCard {

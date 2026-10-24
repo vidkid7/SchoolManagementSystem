@@ -51,25 +51,25 @@ export interface RefundCreationAttributes extends Optional<RefundAttributes,
  */
 class Refund extends Model<RefundAttributes, RefundCreationAttributes> 
   implements RefundAttributes {
-  public refundId!: number;
-  public paymentId!: number;
-  public invoiceId!: number;
-  public studentId!: number;
-  public amount!: number;
-  public reason!: string;
-  public requestedBy!: number;
-  public requestedAt!: Date;
-  public status!: RefundStatus;
-  public approvedBy?: number;
-  public approvedAt?: Date;
-  public rejectedBy?: number;
-  public rejectedAt?: Date;
-  public rejectionReason?: string;
-  public completedAt?: Date;
-  public remarks?: string;
+  declare public refundId: number;
+  declare public paymentId: number;
+  declare public invoiceId: number;
+  declare public studentId: number;
+  declare public amount: number;
+  declare public reason: string;
+  declare public requestedBy: number;
+  declare public requestedAt: Date;
+  declare public status: RefundStatus;
+  declare public approvedBy?: number;
+  declare public approvedAt?: Date;
+  declare public rejectedBy?: number;
+  declare public rejectedAt?: Date;
+  declare public rejectionReason?: string;
+  declare public completedAt?: Date;
+  declare public remarks?: string;
   
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   /**
    * Check if refund is pending

@@ -1,4 +1,5 @@
 import paymentRepository from '../payment.repository';
+import { Op } from 'sequelize';
 import { Payment, PaymentMethod, PaymentStatus } from '@models/Payment.model';
 import { InstallmentPlan, InstallmentFrequency, InstallmentPlanStatus } from '@models/Payment.model';
 
@@ -98,12 +99,13 @@ describe('PaymentRepository', () => {
         { paymentId: 2, studentId: 1, amount: 3000 }
       ] as Payment[];
 
-      (Payment.findAll as jest.Mock) = jest.fn().mockResolvedValue(mockPayments);
+      (Payment.findAndCountAll as jest.Mock) = jest.fn().mockResolvedValue({ count: 2, rows: mockPayments });
 
       const result = await paymentRepository.findAll({ studentId: 1 });
 
-      expect(result).toHaveLength(2);
-      expect(Payment.findAll).toHaveBeenCalled();
+      expect(result.payments).toHaveLength(2);
+      expect(result.total).toBe(2);
+      expect(Payment.findAndCountAll).toHaveBeenCalled();
     });
 
     it('should filter by payment method', async () => {
@@ -111,11 +113,12 @@ describe('PaymentRepository', () => {
         { paymentId: 1, paymentMethod: PaymentMethod.CASH }
       ] as Payment[];
 
-      (Payment.findAll as jest.Mock) = jest.fn().mockResolvedValue(mockPayments);
+      (Payment.findAndCountAll as jest.Mock) = jest.fn().mockResolvedValue({ count: 1, rows: mockPayments });
 
       const result = await paymentRepository.findAll({ paymentMethod: PaymentMethod.CASH });
 
-      expect(result).toHaveLength(1);
+      expect(result.payments).toHaveLength(1);
+      expect(result.total).toBe(1);
     });
 
     it('should filter by date range', async () => {
@@ -123,14 +126,23 @@ describe('PaymentRepository', () => {
         { paymentId: 1, paymentDate: '2024-01-15' }
       ] as Payment[];
 
-      (Payment.findAll as jest.Mock) = jest.fn().mockResolvedValue(mockPayments);
+      (Payment.findAndCountAll as jest.Mock) = jest.fn().mockResolvedValue({ count: 1, rows: mockPayments });
 
       const result = await paymentRepository.findAll({
         startDate: '2024-01-01',
         endDate: '2024-01-31'
       });
 
-      expect(result).toHaveLength(1);
+      expect(result.payments).toHaveLength(1);
+      expect(result.total).toBe(1);
+      expect(Payment.findAndCountAll).toHaveBeenCalledWith(expect.objectContaining({
+        where: {
+          paymentDate: {
+            [Op.gte]: '2024-01-01',
+            [Op.lte]: '2024-01-31',
+          },
+        },
+      }));
     });
   });
 
@@ -141,7 +153,7 @@ describe('PaymentRepository', () => {
         { paymentId: 2, studentId: 1 }
       ] as Payment[];
 
-      (Payment.findAll as jest.Mock) = jest.fn().mockResolvedValue(mockPayments);
+      (Payment.findAndCountAll as jest.Mock) = jest.fn().mockResolvedValue({ count: 2, rows: mockPayments });
 
       const result = await paymentRepository.findByStudentId(1);
 
@@ -156,7 +168,7 @@ describe('PaymentRepository', () => {
         { paymentId: 2, invoiceId: 1 }
       ] as Payment[];
 
-      (Payment.findAll as jest.Mock) = jest.fn().mockResolvedValue(mockPayments);
+      (Payment.findAndCountAll as jest.Mock) = jest.fn().mockResolvedValue({ count: 2, rows: mockPayments });
 
       const result = await paymentRepository.findByInvoiceId(1);
 

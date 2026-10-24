@@ -1,9 +1,10 @@
 import request from 'supertest';
-import app from '@src/app';
+import app from '../../../app';
 import sequelize from '@config/database';
 import AuditLog, { AuditAction } from '@models/AuditLog.model';
-import User from '@models/User.model';
-import { generateToken } from '@utils/jwt';
+import User, { UserRole, UserStatus } from '@models/User.model';
+import jwtService from '../../auth/jwt.service';
+import SchoolConfig from '@models/SchoolConfig.model';
 
 /**
  * Audit Integration Tests
@@ -13,20 +14,33 @@ import { generateToken } from '@utils/jwt';
 describe('Audit API Integration Tests', () => {
   let adminToken: string;
   let adminUser: User;
+  let schoolConfigId: string;
 
   beforeAll(async () => {
     await sequelize.sync({ force: true });
+
+    const schoolConfig = await SchoolConfig.create({
+      schoolNameEn: 'Audit Integration QA School',
+      schoolCode: 'AUDITINTEGRATIONQA',
+    });
+    schoolConfigId = schoolConfig.id;
 
     // Create admin user
     adminUser = await User.create({
       username: 'admin',
       email: 'admin@test.com',
       password: 'hashedpassword',
-      role: 'school_admin',
-      isActive: true
+      role: UserRole.SCHOOL_ADMIN,
+      status: UserStatus.ACTIVE,
+      schoolConfigId,
     });
 
-    adminToken = generateToken({ userId: adminUser.userId, role: adminUser.role });
+    adminToken = jwtService.generateAccessToken({
+      userId: adminUser.userId,
+      username: adminUser.username,
+      email: adminUser.email,
+      role: adminUser.role,
+    });
   });
 
   afterAll(async () => {
@@ -185,12 +199,15 @@ describe('Audit API Integration Tests', () => {
         username: 'teacher',
         email: 'teacher@test.com',
         password: 'hashedpassword',
-        role: 'subject_teacher',
-        isActive: true
+        role: UserRole.SUBJECT_TEACHER,
+        status: UserStatus.ACTIVE,
+        schoolConfigId,
       });
 
-      const teacherToken = generateToken({ 
+      const teacherToken = jwtService.generateAccessToken({
         userId: teacherUser.userId, 
+        username: teacherUser.username,
+        email: teacherUser.email,
         role: teacherUser.role 
       });
 
@@ -274,8 +291,9 @@ describe('Audit API Integration Tests', () => {
         username: 'other',
         email: 'other@test.com',
         password: 'hashedpassword',
-        role: 'subject_teacher',
-        isActive: true
+        role: UserRole.SUBJECT_TEACHER,
+        status: UserStatus.ACTIVE,
+        schoolConfigId,
       });
 
       await AuditLog.bulkCreate([

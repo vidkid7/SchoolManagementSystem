@@ -4,7 +4,7 @@ import { YearSelectableDateField } from '../../components/YearSelectableDatePick
  * Record payments, view history, process refunds
  */
 
-import { useState, useEffect, useRef, type MouseEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -36,7 +36,13 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { formatLocalDate } from '../../utils/dateUtils';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useAdminStyles } from '../../theme/designTokens';
+import { openFinanceReceipt } from './financeReceipt';
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  const response = (error as { response?: { data?: { message?: unknown } } } | null)?.response;
+  return typeof response?.data?.message === 'string' ? response.data.message : fallback;
+};
 
 interface Payment {
   paymentId: number;
@@ -91,11 +97,7 @@ export function Payments() {
     setOpenDialog(false);
   };
 
-  useEffect(() => {
-    fetchPayments();
-  }, [page, rowsPerPage]);
-
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiClient.get('/finance/payments', {
@@ -106,13 +108,19 @@ export function Payments() {
       });
       setPayments(response.data?.data || []);
       setTotal(response.data?.meta?.total || 0);
-    } catch (err) {
-      console.error('Failed to fetch payments:', err);
+    } catch (err: unknown) {
       setPayments([]);
+      setError(getErrorMessage(err, t('finance.failedToLoad')));
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, rowsPerPage, t]);
+
+  useEffect(() => {
+    // Fetching a new page is an external synchronization effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchPayments();
+  }, [fetchPayments]);
 
   const handleRecordPayment = async () => {
     const invoiceId = Number(formData.invoiceId);
@@ -156,8 +164,8 @@ export function Payments() {
         paymentDate: formatLocalDate(new Date()),
         remarks: '',
       });
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('finance.failedToRecordPayment'));
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, t('finance.failedToRecordPayment')));
     }
   };
 
@@ -169,13 +177,26 @@ export function Payments() {
       setSuccess(t('finance.refundProcessedSuccess'));
       fetchPayments();
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('finance.failedToLoad'));
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, t('finance.failedToLoad')));
     }
   };
 
-  const handlePrintReceipt = (paymentId: number) => {
-    window.open(`/api/v1/finance/payments/${paymentId}/receipt`, '_blank');
+  const handlePrintReceipt = (payment: Payment) => {
+    openFinanceReceipt({
+      title: t('finance.paymentReceipt'),
+      reference: payment.invoiceNumber || `#${payment.paymentId}`,
+      fields: [
+        { label: t('finance.paymentId'), value: payment.paymentId },
+        { label: t('finance.studentName'), value: payment.studentName },
+        { label: t('finance.invoiceId'), value: payment.invoiceId },
+        { label: t('finance.amount'), value: `NPR ${payment.amount.toLocaleString()}` },
+        { label: t('finance.paymentMethod'), value: payment.paymentMethod },
+        { label: t('finance.transactionRef'), value: payment.transactionId || '-' },
+        { label: t('finance.paymentDate'), value: new Date(payment.paymentDate).toLocaleDateString() },
+        { label: t('finance.paymentStatus'), value: payment.status },
+      ],
+    });
   };
 
   return (
@@ -248,8 +269,9 @@ export function Payments() {
                     <TableCell align="center" sx={S.TD}>
                       <IconButton
                         size="small"
-                        onClick={() => handlePrintReceipt(payment.paymentId)}
+                        onClick={() => handlePrintReceipt(payment)}
                         title={t('common.download')}
+                        aria-label={`${t('common.download')} ${payment.invoiceNumber || `#${payment.paymentId}`}`}
                       >
                         <PrintIcon fontSize="small" />
                       </IconButton>
@@ -258,6 +280,7 @@ export function Payments() {
                           size="small"
                           onClick={() => handleRefund(payment.paymentId)}
                           title={t('finance.processRefund')}
+                          aria-label={`${t('finance.processRefund')} ${payment.invoiceNumber || `#${payment.paymentId}`}`}
                           color="error"
                         >
                           <RefundIcon fontSize="small" />

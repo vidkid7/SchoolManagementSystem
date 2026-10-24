@@ -11,6 +11,17 @@ export interface SchoolConfigAttributes {
   logoUrl?: string;
   addressEn?: string;
   addressNp?: string;
+  city?: string;
+  district?: string;
+  province?: string;
+  postalCode?: string;
+  establishedYear?: number;
+  affiliationNumber?: string;
+  principalName?: string;
+  principalNameNp?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
   phone?: string;
   email?: string;
   website?: string;
@@ -32,62 +43,83 @@ export interface SchoolConfigAttributes {
   updatedAt: Date;
 }
 
-export interface SchoolConfigCreationAttributes
-  extends Optional<
-    SchoolConfigAttributes,
-    | 'id'
-    | 'municipalityId'
-    | 'schoolNameNp'
-    | 'schoolCode'
-    | 'logoUrl'
-    | 'addressEn'
-    | 'addressNp'
-    | 'phone'
-    | 'email'
-    | 'website'
-    | 'academicYearStartMonth'
-    | 'academicYearDurationMonths'
-    | 'termsPerYear'
-    | 'defaultCalendarSystem'
-    | 'defaultLanguage'
-    | 'timezone'
-    | 'currency'
-    | 'dateFormat'
-    | 'timeFormat'
-    | 'numberFormat'
-    | 'isActive'
-    | 'createdAt'
-    | 'updatedAt'
-  > {}
+export type SchoolConfigCreationAttributes = Optional<
+  SchoolConfigAttributes,
+  | 'id'
+  | 'municipalityId'
+  | 'schoolNameNp'
+  | 'schoolCode'
+  | 'logoUrl'
+  | 'addressEn'
+  | 'addressNp'
+  | 'city'
+  | 'district'
+  | 'province'
+  | 'postalCode'
+  | 'establishedYear'
+  | 'affiliationNumber'
+  | 'principalName'
+  | 'principalNameNp'
+  | 'primaryColor'
+  | 'secondaryColor'
+  | 'accentColor'
+  | 'phone'
+  | 'email'
+  | 'website'
+  | 'academicYearStartMonth'
+  | 'academicYearDurationMonths'
+  | 'termsPerYear'
+  | 'defaultCalendarSystem'
+  | 'defaultLanguage'
+  | 'timezone'
+  | 'currency'
+  | 'dateFormat'
+  | 'timeFormat'
+  | 'numberFormat'
+  | 'isActive'
+  | 'createdAt'
+  | 'updatedAt'
+>;
 
 export class SchoolConfig
   extends Model<SchoolConfigAttributes, SchoolConfigCreationAttributes>
   implements SchoolConfigAttributes
 {
-  public id!: string;
-  public municipalityId?: string;
-  public schoolNameEn!: string;
-  public schoolNameNp?: string;
-  public schoolCode?: string;
-  public logoUrl?: string;
-  public addressEn?: string;
-  public addressNp?: string;
-  public phone?: string;
-  public email?: string;
-  public website?: string;
-  public academicYearStartMonth!: number;
-  public academicYearDurationMonths!: number;
-  public termsPerYear!: number;
-  public defaultCalendarSystem!: 'BS' | 'AD';
-  public defaultLanguage!: 'nepali' | 'english';
-  public timezone!: string;
-  public currency!: string;
-  public dateFormat!: string;
-  public timeFormat!: string;
-  public numberFormat!: string;
-  public isActive!: boolean;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public id: string;
+  declare public municipalityId?: string;
+  declare public schoolNameEn: string;
+  declare public schoolNameNp?: string;
+  declare public schoolCode?: string;
+  declare public logoUrl?: string;
+  declare public addressEn?: string;
+  declare public addressNp?: string;
+  declare public city?: string;
+  declare public district?: string;
+  declare public province?: string;
+  declare public postalCode?: string;
+  declare public establishedYear?: number;
+  declare public affiliationNumber?: string;
+  declare public principalName?: string;
+  declare public principalNameNp?: string;
+  declare public primaryColor?: string;
+  declare public secondaryColor?: string;
+  declare public accentColor?: string;
+  declare public phone?: string;
+  declare public email?: string;
+  declare public website?: string;
+  declare public academicYearStartMonth: number;
+  declare public academicYearDurationMonths: number;
+  declare public termsPerYear: number;
+  declare public defaultCalendarSystem: 'BS' | 'AD';
+  declare public defaultLanguage: 'nepali' | 'english';
+  declare public timezone: string;
+  declare public currency: string;
+  declare public dateFormat: string;
+  declare public timeFormat: string;
+  declare public numberFormat: string;
+  declare public isActive: boolean;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 }
 
 SchoolConfig.init(
@@ -133,6 +165,17 @@ SchoolConfig.init(
       allowNull: true,
       field: 'address_np',
     },
+    city: { type: DataTypes.STRING(100), allowNull: true },
+    district: { type: DataTypes.STRING(100), allowNull: true },
+    province: { type: DataTypes.STRING(100), allowNull: true },
+    postalCode: { type: DataTypes.STRING(20), allowNull: true, field: 'postal_code' },
+    establishedYear: { type: DataTypes.INTEGER, allowNull: true, field: 'established_year' },
+    affiliationNumber: { type: DataTypes.STRING(100), allowNull: true, field: 'affiliation_number' },
+    principalName: { type: DataTypes.STRING(255), allowNull: true, field: 'principal_name' },
+    principalNameNp: { type: DataTypes.STRING(255), allowNull: true, field: 'principal_name_np' },
+    primaryColor: { type: DataTypes.STRING(20), allowNull: true, field: 'primary_color' },
+    secondaryColor: { type: DataTypes.STRING(20), allowNull: true, field: 'secondary_color' },
+    accentColor: { type: DataTypes.STRING(20), allowNull: true, field: 'accent_color' },
     phone: {
       type: DataTypes.STRING(20),
       allowNull: true,

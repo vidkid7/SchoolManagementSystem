@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box, Grid, Card, CardContent, Typography, Button, Divider, List, ListItem,
+  Box, Grid, Typography, Button, Divider, List, ListItem,
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
-  TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog,
-  DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select,
-  FormControl, InputLabel, IconButton, Tooltip, useTheme,
+  TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, useTheme,
 } from '@mui/material';
 import {
   Palette as ECAIcon,
@@ -16,7 +14,6 @@ import {
   EmojiEvents as AchievementIcon,
   GroupAdd as EnrollIcon,
   Category as ActivityIcon,
-  Notifications as AnnouncementIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
@@ -129,6 +126,8 @@ const ECACoordinatorPortal: React.FC = () => {
       setLoading(false);
     }
   }, [accessToken, t]);
+
+  useEffect(() => { void Promise.resolve().then(loadData); }, [loadData]);
 
   if (loading) return <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh"><CircularProgress /></Box>;
 

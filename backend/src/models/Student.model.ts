@@ -1,6 +1,15 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '@config/database';
 
+const isValidCitizenshipNumber = (value: unknown): boolean => {
+  if (value == null || value === '') return true;
+  if (typeof value !== 'string' || value.length > 255) return false;
+
+  // Plain values are validated before encryption; stored AES ciphertext is
+  // validated again by Sequelize during updates.
+  return value.length <= 50 || /^[a-f0-9]{32}:(?:[a-f0-9]{32})+$/i.test(value);
+};
+
 /**
  * Student Status
  */
@@ -87,13 +96,13 @@ export interface StudentAttributes {
 /**
  * Student Creation Attributes (optional fields for creation)
  */
-export interface StudentCreationAttributes extends Optional<StudentAttributes,
+export type StudentCreationAttributes = Optional<StudentAttributes,
   'studentId' | 'userId' | 'symbolNumber' | 'nebRegistrationNumber' | 'middleNameEn' | 
   'firstNameNp' | 'middleNameNp' | 'lastNameNp' | 'bloodGroup' | 'addressNp' | 'phone' | 
   'email' | 'city' | 'district' | 'fatherCitizenshipNo' | 'motherCitizenshipNo' | 'localGuardianName' |
   'localGuardianPhone' | 'localGuardianRelation' | 'currentClassId' | 'rollNumber' | 
   'previousSchool' | 'allergies' | 'medicalConditions' | 'photoUrl' | 'createdAt' | 
-  'updatedAt' | 'deletedAt'> {}
+  'updatedAt' | 'deletedAt'>;
 
 /**
  * Student Model Class
@@ -379,7 +388,7 @@ Student.init(
       allowNull: true,
       field: 'father_citizenship_no',
       validate: {
-        len: [0, 50]
+        isValidCitizenshipNumber
       }
     },
     motherName: {
@@ -406,7 +415,7 @@ Student.init(
       allowNull: true,
       field: 'mother_citizenship_no',
       validate: {
-        len: [0, 50]
+        isValidCitizenshipNumber
       }
     },
     localGuardianName: {
@@ -601,11 +610,11 @@ Student.init(
         
         const { decrypt } = await import('@utils/encryption');
         
-        const decryptStudent = (student: Student) => {
+        const decryptStudent = (student: Student): void => {
           if (student.fatherCitizenshipNo) {
             try {
               student.fatherCitizenshipNo = decrypt(student.fatherCitizenshipNo);
-            } catch (error) {
+            } catch {
               // If decryption fails, data might not be encrypted (legacy data)
               // Keep original value
             }
@@ -614,7 +623,7 @@ Student.init(
           if (student.motherCitizenshipNo) {
             try {
               student.motherCitizenshipNo = decrypt(student.motherCitizenshipNo);
-            } catch (error) {
+            } catch {
               // If decryption fails, data might not be encrypted (legacy data)
               // Keep original value
             }

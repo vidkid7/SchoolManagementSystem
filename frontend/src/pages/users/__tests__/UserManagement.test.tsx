@@ -5,9 +5,8 @@ import { UserManagement } from '../UserManagement';
 import apiClient from '../../../services/apiClient';
 
 jest.mock('../../../services/apiClient');
-jest.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => ({
+jest.mock('react-i18next', () => {
+  const translate = (key: string) => ({
       'userManagement.title': 'User Management',
       'userManagement.subtitle': 'Manage user accounts, roles, and permissions',
       'userManagement.actionsFor': 'Actions for qaTeacher',
@@ -25,9 +24,9 @@ jest.mock('react-i18next', () => ({
       'common.search': 'Search',
       'common.loading': 'Loading...',
       'userManagement.never': 'Never',
-    }[key] ?? key),
-  }),
-}));
+    }[key] ?? key);
+  return { useTranslation: () => ({ t: translate }) };
+});
 
 const mockedApiClient = apiClient as jest.Mocked<typeof apiClient>;
 
@@ -109,6 +108,7 @@ describe('UserManagement', () => {
     render(<UserManagement />);
 
     expect(screen.getByRole('progressbar', { name: 'Loading...' })).toBeInTheDocument();
+    await waitFor(() => expect(resolveUsers).toBeDefined());
     await act(async () => {
       resolveUsers({ data: { data: [testUser], meta: { total: 1 } } });
     });

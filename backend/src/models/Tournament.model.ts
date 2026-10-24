@@ -53,64 +53,57 @@ export class Tournament
   extends Model<TournamentAttributes, TournamentCreationAttributes>
   implements TournamentAttributes
 {
-  public tournamentId!: number;
-  public sportId!: number;
-  public name!: string;
-  public nameNp?: string;
-  public type!: 'inter_school' | 'intra_school' | 'district' | 'regional' | 'national';
-  public description?: string;
-  public descriptionNp?: string;
-  public startDate!: Date;
-  public startDateBS?: string;
-  public endDate!: Date;
-  public endDateBS?: string;
-  public venue?: string;
-  public venueNp?: string;
-  public teams?: number[];
-  public participants?: number[];
-  public schedule?: MatchResult[];
-  public status!: 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
-  public photos?: string[];
-  public videos?: string[];
-  public remarks?: string;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public tournamentId: number;
+  declare public sportId: number;
+  declare public name: string;
+  declare public nameNp?: string;
+  declare public type: 'inter_school' | 'intra_school' | 'district' | 'regional' | 'national';
+  declare public description?: string;
+  declare public descriptionNp?: string;
+  declare public startDate: Date;
+  declare public startDateBS?: string;
+  declare public endDate: Date;
+  declare public endDateBS?: string;
+  declare public venue?: string;
+  declare public venueNp?: string;
+  declare public teams?: number[];
+  declare public participants?: number[];
+  declare public schedule?: MatchResult[];
+  declare public status: 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
+  declare public photos?: string[];
+  declare public videos?: string[];
+  declare public remarks?: string;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   public addTeam(teamId: number): void {
-    if (!this.teams) {
-      this.teams = [];
-    }
-    if (!this.teams.includes(teamId)) {
-      this.teams.push(teamId);
+    const teams = this.teams ?? [];
+    if (!teams.includes(teamId)) {
+      this.setDataValue('teams', [...teams, teamId]);
     }
   }
 
   public removeTeam(teamId: number): void {
     if (this.teams) {
-      this.teams = this.teams.filter(id => id !== teamId);
+      this.setDataValue('teams', this.teams.filter(id => id !== teamId));
     }
   }
 
   public addParticipant(studentId: number): void {
-    if (!this.participants) {
-      this.participants = [];
-    }
-    if (!this.participants.includes(studentId)) {
-      this.participants.push(studentId);
+    const participants = this.participants ?? [];
+    if (!participants.includes(studentId)) {
+      this.setDataValue('participants', [...participants, studentId]);
     }
   }
 
   public removeParticipant(studentId: number): void {
     if (this.participants) {
-      this.participants = this.participants.filter(id => id !== studentId);
+      this.setDataValue('participants', this.participants.filter(id => id !== studentId));
     }
   }
 
   public addMatch(match: MatchResult): void {
-    if (!this.schedule) {
-      this.schedule = [];
-    }
-    this.schedule.push(match);
+    this.setDataValue('schedule', [...(this.schedule ?? []), match]);
   }
 
   public updateMatchResult(matchId: string, result: Partial<MatchResult>): boolean {
@@ -119,10 +112,9 @@ export class Tournament
     const matchIndex = this.schedule.findIndex(m => m.matchId === matchId);
     if (matchIndex === -1) return false;
 
-    this.schedule[matchIndex] = {
-      ...this.schedule[matchIndex],
-      ...result,
-    };
+    const schedule = [...this.schedule];
+    schedule[matchIndex] = { ...schedule[matchIndex], ...result };
+    this.setDataValue('schedule', schedule);
     return true;
   }
 
@@ -139,17 +131,11 @@ export class Tournament
   }
 
   public addPhoto(photoUrl: string): void {
-    if (!this.photos) {
-      this.photos = [];
-    }
-    this.photos.push(photoUrl);
+    this.setDataValue('photos', [...(this.photos ?? []), photoUrl]);
   }
 
   public addVideo(videoUrl: string): void {
-    if (!this.videos) {
-      this.videos = [];
-    }
-    this.videos.push(videoUrl);
+    this.setDataValue('videos', [...(this.videos ?? []), videoUrl]);
   }
 
   public isTeamTournament(): boolean {

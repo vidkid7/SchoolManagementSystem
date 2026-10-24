@@ -4,7 +4,7 @@ import { YearSelectableDateField } from '../../components/YearSelectableDatePick
  * Create or edit examination details
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import { useTranslation } from 'react-i18next';
@@ -26,7 +26,46 @@ import {
 import { Save as SaveIcon, ArrowBack as BackIcon } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { useCurrentAcademicYear } from '../../hooks/useCurrentAcademicYear';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useAdminStyles } from '../../theme/designTokens';
+
+interface ExamSubject {
+  subjectId: number;
+  nameEn: string;
+  nameNp?: string;
+}
+
+interface ExamClass {
+  classId: number;
+  gradeLevel: number;
+  section: string;
+}
+
+interface AcademicTerm {
+  termId: number;
+  name: string;
+}
+
+interface ExamRecord {
+  name: string;
+  type: string;
+  classId: number;
+  subjectId: number;
+  academicYearId: number;
+  termId: number;
+  examDate: string;
+  duration: number;
+  fullMarks: number;
+  passMarks: number;
+  theoryMarks: number;
+  practicalMarks: number;
+  weightage: number;
+  isInternal: boolean;
+}
+
+const getApiErrorMessage = (error: unknown, fallback: string): string => {
+  const response = (error as { response?: { data?: { message?: unknown } } } | null)?.response;
+  return typeof response?.data?.message === 'string' ? response.data.message : fallback;
+};
 
 const examTypes = [
   { value: 'unit_test', label: 'examinations.unitTest' },
@@ -49,9 +88,10 @@ export function CreateExam() {
   
   const { currentYear } = useCurrentAcademicYear();
 
-  const [subjects, setSubjects] = useState<any[]>([]);
-  const [classes, setClasses] = useState<any[]>([]);
-  const [terms, setTerms] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<ExamSubject[]>([]);
+  const [classes, setClasses] = useState<ExamClass[]>([]);
+  const [dropdownsLoading, setDropdownsLoading] = useState(true);
+  const [terms, setTerms] = useState<AcademicTerm[]>([]);
   const [termsLoading, setTermsLoading] = useState(false);
   const [termsError, setTermsError] = useState('');
   
@@ -75,13 +115,14 @@ export function CreateExam() {
   // Auto-set academicYearId when current year is loaded
   useEffect(() => {
     if (currentYear && !formData.academicYearId) {
+      // Synchronize the fetched current academic year into this form.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData(prev => ({ ...prev, academicYearId: String(currentYear.academicYearId) }));
     }
-  }, [currentYear]);
+  }, [currentYear, formData.academicYearId]);
 
   useEffect(() => {
     if (!formData.academicYearId) {
-      setTerms([]);
       return;
     }
 
@@ -92,11 +133,11 @@ export function CreateExam() {
       try {
         const response = await apiClient.get(`/academic/terms?academicYearId=${formData.academicYearId}`);
         if (!active) return;
-        const availableTerms = Array.isArray(response.data?.data) ? response.data.data : [];
+        const availableTerms: AcademicTerm[] = Array.isArray(response.data?.data) ? response.data.data : [];
         setTerms(availableTerms);
         setFormData(prev => ({
           ...prev,
-          termId: availableTerms.some((term: any) => String(term.termId) === prev.termId) ? prev.termId : '',
+          termId: availableTerms.some((term) => String(term.termId) === prev.termId) ? prev.termId : '',
         }));
       } catch {
         if (!active) return;
@@ -111,53 +152,29 @@ export function CreateExam() {
     return () => { active = false; };
   }, [formData.academicYearId, t]);
 
-  useEffect(() => {
-    fetchDropdownData();
-    if (id) {
-      fetchExam();
-    }
-  }, [id]);
-
-  const fetchDropdownData = async () => {
+  const fetchDropdownData = useCallback(async () => {
+    setDropdownsLoading(true);
     try {
       const [subjectsRes, classesRes] = await Promise.all([
-        apiClient.get('/academic/subjects').catch(() => { 
-          return { data: { data: [
-            { subjectId: 1, nameEn: 'Mathematics', nameNp: 'गणित' },
-            { subjectId: 2, nameEn: 'Science', nameNp: 'विज्ञान' },
-            { subjectId: 3, nameEn: 'English', nameNp: 'अंग्रेजी' },
-            { subjectId: 4, nameEn: 'Nepali', nameNp: 'नेपाली' },
-            { subjectId: 5, nameEn: 'Social Studies', nameNp: 'सामाजिक अध्ययन' },
-          ] } }; 
-        }),
-        apiClient.get('/academic/classes').catch(() => { 
-          const fallbackClasses = [];
-          for (let grade = 1; grade <= 12; grade++) {
-            for (const section of ['A', 'B', 'C']) {
-              fallbackClasses.push({
-                classId: (grade - 1) * 3 + ['A', 'B', 'C'].indexOf(section) + 1,
-                gradeLevel: grade,
-                section: section,
-              });
-            }
-          }
-          return { data: { data: fallbackClasses } }; 
-        }),
+        apiClient.get('/academic/subjects'),
+        apiClient.get('/academic/classes'),
       ]);
-      
-      setSubjects(subjectsRes.data?.data || []);
-      setClasses(classesRes.data?.data || []);
-      
-    } catch (error) {
-      // Silently handle any unexpected errors
+      setSubjects(Array.isArray(subjectsRes.data?.data) ? subjectsRes.data.data as ExamSubject[] : []);
+      setClasses(Array.isArray(classesRes.data?.data) ? classesRes.data.data as ExamClass[] : []);
+    } catch {
+      setSubjects([]);
+      setClasses([]);
+      setError(t('examinations.failedToLoadDropdowns'));
+    } finally {
+      setDropdownsLoading(false);
     }
-  };
+  }, [t]);
 
-  const fetchExam = async () => {
+  const fetchExam = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiClient.get(`/examinations/${id}`);
-      const exam = response.data?.data;
+      const exam = response.data?.data as ExamRecord | undefined;
       
       if (exam) {
         setFormData({
@@ -177,13 +194,21 @@ export function CreateExam() {
           isInternal: exam.isInternal || false,
         });
       }
-    } catch (error: any) {
-      console.error('Failed to load exam:', error);
-      setError(t('examinations.failedToLoadExamDetails'));
+    } catch (requestError: unknown) {
+      setError(getApiErrorMessage(requestError, t('examinations.failedToLoadExamDetails')));
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, t]);
+
+  useEffect(() => {
+    // Load the reference lists and optional exam record when the route changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchDropdownData();
+    if (id) {
+      void fetchExam();
+    }
+  }, [fetchDropdownData, fetchExam, id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent<string>) => {
     const { name, value } = e.target;
@@ -241,9 +266,8 @@ export function CreateExam() {
       setTimeout(() => {
         navigate('/examinations/list');
       }, 1500);
-    } catch (error: any) {
-      console.error('Failed to save exam:', error);
-      setError(error.response?.data?.message || t('examinations.failedToSaveExam'));
+    } catch (requestError: unknown) {
+      setError(getApiErrorMessage(requestError, t('examinations.failedToSaveExam')));
     } finally {
       setLoading(false);
     }
@@ -314,8 +338,10 @@ export function CreateExam() {
                 onChange={handleChange}
                 sx={S.TF}
               >
-                {subjects.length === 0 ? (
+                {dropdownsLoading ? (
                   <MenuItem value="" disabled>{t('common.loading')}...</MenuItem>
+                ) : subjects.length === 0 ? (
+                  <MenuItem value="" disabled>{t('examinations.noSubjectsAvailable')}</MenuItem>
                 ) : (
                   subjects.map((subject) => (
                     <MenuItem key={subject.subjectId} value={subject.subjectId}>
@@ -336,8 +362,10 @@ export function CreateExam() {
                 onChange={handleChange}
                 sx={S.TF}
               >
-                {classes.length === 0 ? (
+                {dropdownsLoading ? (
                   <MenuItem value="" disabled>{t('common.loading')}...</MenuItem>
+                ) : classes.length === 0 ? (
+                  <MenuItem value="" disabled>{t('examinations.noClassesAvailable')}</MenuItem>
                 ) : (
                   classes.map((cls) => (
                     <MenuItem key={cls.classId} value={cls.classId}>
@@ -505,7 +533,7 @@ export function CreateExam() {
               type="submit"
               variant="contained"
               startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
-              disabled={loading || termsLoading || terms.length === 0 || !formData.termId}
+              disabled={loading || dropdownsLoading || subjects.length === 0 || classes.length === 0 || termsLoading || terms.length === 0 || !formData.termId}
               sx={S.BTN_PRIMARY}
             >
               {id ? t('examinations.updateExam') : t('examinations.createExam')}

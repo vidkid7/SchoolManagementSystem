@@ -1,21 +1,72 @@
 import invoiceRepository from '../invoice.repository';
 import { Invoice, InvoiceStatus, DiscountApprovalStatus } from '@models/Invoice.model';
 import { FeeStructure, FeeComponent, FeeComponentType, FeeFrequency } from '@models/FeeStructure.model';
+import { AcademicYear } from '@models/AcademicYear.model';
+import Student, { Gender, StudentStatus } from '@models/Student.model';
+import User, { UserRole, UserStatus } from '@models/User.model';
+import Class, { Shift } from '@models/Class.model';
 import sequelize from '@config/database';
 
 describe('Invoice Repository', () => {
   let feeStructureId: number;
   let feeComponentId: number;
+  let academicYearId: number;
 
   beforeAll(async () => {
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('Invoice repository tests require TEST_DB_DIALECT=sqlite');
+    }
     await sequelize.sync({ force: true });
+
+    const academicYear = await AcademicYear.create({
+      name: 'QA Invoice Repository 2026-2027',
+      startDateBS: '2083-01-01',
+      endDateBS: '2083-12-30',
+      startDateAD: new Date('2026-04-14'),
+      endDateAD: new Date('2027-04-13'),
+      isCurrent: true
+    });
+    academicYearId = academicYear.academicYearId;
+
+    const classroom = await Class.create({
+      academicYearId,
+      gradeLevel: 4,
+      section: 'B',
+      shift: Shift.MORNING
+    });
+
+    await Student.create({
+      studentCode: 'QA-INVOICE-REPOSITORY-1',
+      firstNameEn: 'InvoiceRepository',
+      lastNameEn: 'Test',
+      dateOfBirthBS: '2065-01-01',
+      dateOfBirthAD: new Date('2008-04-13'),
+      gender: Gender.OTHER,
+      addressEn: 'Test address',
+      fatherName: 'Test Father',
+      fatherPhone: '9800000000',
+      motherName: 'Test Mother',
+      motherPhone: '9800000001',
+      admissionDate: new Date('2026-04-14'),
+      admissionClass: 1,
+      currentClassId: classroom.classId,
+      emergencyContact: '9800000002',
+      status: StudentStatus.ACTIVE
+    });
+    await User.create({
+      username: 'qainvoicerepository',
+      email: 'qa-invoice-repository@example.test',
+      password: 'qa-test-password',
+      role: UserRole.ACCOUNTANT,
+      status: UserStatus.ACTIVE
+    });
 
     // Create test fee structure
     const feeStructure = await FeeStructure.create({
       name: 'Test Fee Structure',
       applicableClasses: [1, 2, 3],
       applicableShifts: ['morning'],
-      academicYearId: 1,
+      academicYearId,
       totalAmount: 10000,
       isActive: true
     });
@@ -47,8 +98,8 @@ describe('Invoice Repository', () => {
         invoiceNumber: 'INV-2081-00001',
         studentId: 1,
         feeStructureId,
-        academicYearId: 1,
-        dueDate: '2025-03-01',
+        academicYearId,
+        dueDate: '2027-03-01',
         items: [
           {
             feeComponentId,
@@ -72,8 +123,8 @@ describe('Invoice Repository', () => {
         invoiceNumber: 'INV-2081-00002',
         studentId: 1,
         feeStructureId,
-        academicYearId: 1,
-        dueDate: '2025-03-01',
+        academicYearId,
+        dueDate: '2027-03-01',
         items: [
           {
             feeComponentId,
@@ -100,7 +151,7 @@ describe('Invoice Repository', () => {
         invoiceNumber: 'INV-2081-00003',
         studentId: 1,
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: pastDate.toISOString().split('T')[0],
         items: [
           {
@@ -121,8 +172,8 @@ describe('Invoice Repository', () => {
         invoiceNumber: 'INV-2081-00004',
         studentId: 1,
         feeStructureId,
-        academicYearId: 1,
-        dueDate: '2025-03-01',
+        academicYearId,
+        dueDate: '2027-03-01',
         items: [
           {
             feeComponentId,
@@ -150,8 +201,8 @@ describe('Invoice Repository', () => {
         invoiceNumber: 'INV-2081-00005',
         studentId: 1,
         feeStructureId,
-        academicYearId: 1,
-        dueDate: '2025-03-01',
+        academicYearId,
+        dueDate: '2027-03-01',
         items: [
           {
             feeComponentId,
@@ -168,14 +219,41 @@ describe('Invoice Repository', () => {
     });
   });
 
+  describe('findAll', () => {
+    it('includes student and current-class details for the invoice list', async () => {
+      await invoiceRepository.create({
+        invoiceNumber: 'INV-2081-LIST-01',
+        studentId: 1,
+        feeStructureId,
+        academicYearId,
+        dueDate: '2027-03-01',
+        items: [{ feeComponentId, description: 'Tuition Fee', amount: 10000 }]
+      });
+
+      const result = await invoiceRepository.findAll({ studentId: 1 }, { limit: 10, offset: 0 });
+      const invoice = result.invoices[0] as typeof result.invoices[number] & {
+        student?: {
+          firstNameEn: string;
+          lastNameEn: string;
+          currentClass?: { gradeLevel: number; section: string } | null;
+        };
+      };
+
+      expect(result.total).toBe(1);
+      expect(invoice.student?.firstNameEn).toBe('InvoiceRepository');
+      expect(invoice.student?.lastNameEn).toBe('Test');
+      expect(invoice.student?.currentClass).toMatchObject({ gradeLevel: 4, section: 'B' });
+    });
+  });
+
   describe('applyDiscount', () => {
     it('should apply discount to invoice', async () => {
       const invoice = await invoiceRepository.create({
         invoiceNumber: 'INV-2081-00006',
         studentId: 1,
         feeStructureId,
-        academicYearId: 1,
-        dueDate: '2025-03-01',
+        academicYearId,
+        dueDate: '2027-03-01',
         items: [
           {
             feeComponentId,
@@ -206,8 +284,8 @@ describe('Invoice Repository', () => {
         invoiceNumber: 'INV-2081-00007',
         studentId: 1,
         feeStructureId,
-        academicYearId: 1,
-        dueDate: '2025-03-01',
+        academicYearId,
+        dueDate: '2027-03-01',
         items: [
           {
             feeComponentId,
@@ -234,8 +312,8 @@ describe('Invoice Repository', () => {
         invoiceNumber: 'INV-2081-00008',
         studentId: 1,
         feeStructureId,
-        academicYearId: 1,
-        dueDate: '2025-03-01',
+        academicYearId,
+        dueDate: '2027-03-01',
         items: [
           {
             feeComponentId,
@@ -251,7 +329,7 @@ describe('Invoice Repository', () => {
 
       expect(updated).toBeDefined();
       expect(updated?.discount).toBe(0);
-      expect(updated?.discountReason).toBeUndefined();
+      expect(updated?.discountReason).toBeNull();
       expect(updated?.discountApprovalStatus).toBe(DiscountApprovalStatus.REJECTED);
       expect(updated?.totalAmount).toBe(10000);
       expect(updated?.balance).toBe(10000);
@@ -264,8 +342,8 @@ describe('Invoice Repository', () => {
         invoiceNumber: 'INV-2081-00009',
         studentId: 1,
         feeStructureId,
-        academicYearId: 1,
-        dueDate: '2025-03-01',
+        academicYearId,
+        dueDate: '2027-03-01',
         items: [
           {
             feeComponentId,
@@ -288,8 +366,8 @@ describe('Invoice Repository', () => {
         invoiceNumber: 'INV-2081-00010',
         studentId: 1,
         feeStructureId,
-        academicYearId: 1,
-        dueDate: '2025-03-01',
+        academicYearId,
+        dueDate: '2027-03-01',
         items: [
           {
             feeComponentId,
@@ -314,8 +392,8 @@ describe('Invoice Repository', () => {
         invoiceNumber: 'INV-2081-00011',
         studentId: 1,
         feeStructureId,
-        academicYearId: 1,
-        dueDate: '2025-03-01',
+        academicYearId,
+        dueDate: '2027-03-01',
         items: [
           {
             feeComponentId,
@@ -329,8 +407,8 @@ describe('Invoice Repository', () => {
         invoiceNumber: 'INV-2081-00012',
         studentId: 1,
         feeStructureId,
-        academicYearId: 1,
-        dueDate: '2025-04-01',
+        academicYearId,
+        dueDate: '2027-04-01',
         items: [
           {
             feeComponentId,
@@ -353,8 +431,8 @@ describe('Invoice Repository', () => {
         invoiceNumber: 'INV-2081-00013',
         studentId: 1,
         feeStructureId,
-        academicYearId: 1,
-        dueDate: '2025-03-01',
+        academicYearId,
+        dueDate: '2027-03-01',
         items: [
           {
             feeComponentId,
@@ -368,8 +446,8 @@ describe('Invoice Repository', () => {
         invoiceNumber: 'INV-2081-00014',
         studentId: 1,
         feeStructureId,
-        academicYearId: 1,
-        dueDate: '2025-04-01',
+        academicYearId,
+        dueDate: '2027-04-01',
         items: [
           {
             feeComponentId,
@@ -391,8 +469,8 @@ describe('Invoice Repository', () => {
         invoiceNumber: 'INV-2081-00015',
         studentId: 1,
         feeStructureId,
-        academicYearId: 1,
-        dueDate: '2025-03-01',
+        academicYearId,
+        dueDate: '2027-03-01',
         items: [
           {
             feeComponentId,
@@ -420,8 +498,8 @@ describe('Invoice Repository', () => {
         invoiceNumber: 'INV-2081-00016',
         studentId: 1,
         feeStructureId,
-        academicYearId: 1,
-        dueDate: '2025-03-01',
+        academicYearId,
+        dueDate: '2027-03-01',
         items: [
           {
             feeComponentId,
@@ -442,8 +520,8 @@ describe('Invoice Repository', () => {
         invoiceNumber: 'INV-2081-00017',
         studentId: 1,
         feeStructureId,
-        academicYearId: 1,
-        dueDate: '2025-03-01',
+        academicYearId,
+        dueDate: '2027-03-01',
         items: [
           {
             feeComponentId,
@@ -471,7 +549,7 @@ describe('Invoice Repository', () => {
         invoiceNumber: 'INV-2081-00018',
         studentId: 1,
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: pastDate.toISOString().split('T')[0],
         subtotal: 10000,
         discount: 0,

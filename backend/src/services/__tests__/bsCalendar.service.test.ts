@@ -5,14 +5,12 @@ import { BSCalendarService } from '../bsCalendar.service';
 
 describe('BSCalendarService', () => {
   beforeAll(async () => {
-    // Disable foreign key checks temporarily
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
-    
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('BS calendar service tests require TEST_DB_DIALECT=sqlite');
+    }
     // Sync database schema
     await sequelize.sync({ force: true });
-    
-    // Re-enable foreign key checks
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
+    await sequelize.query('PRAGMA foreign_keys = OFF');
   });
 
   afterAll(async () => {
@@ -49,7 +47,7 @@ describe('BSCalendarService', () => {
       await BSCalendarService.populateCalendar();
 
       const baisakhRecord = await BSCalendar.findOne({
-        where: { yearBS: 2080, monthBS: 1 }
+        where: { yearBs: 2080, monthBs: 1 }
       });
 
       expect(baisakhRecord).not.toBeNull();
@@ -72,8 +70,8 @@ describe('BSCalendarService', () => {
       await BSCalendarService.populateCalendar();
 
       const records = await BSCalendar.findAll({
-        where: { yearBS: 2080 },
-        order: [['monthBS', 'ASC']]
+        where: { yearBs: 2080 },
+        order: [['monthBs', 'ASC']]
       });
 
       // Check that end date of one month is followed by start date of next month
@@ -93,7 +91,7 @@ describe('BSCalendarService', () => {
       await BSCalendarService.populateCalendar();
 
       const records = await BSCalendar.findAll({
-        where: { yearBS: 2080 }
+        where: { yearBs: 2080 }
       });
 
       for (const record of records) {
@@ -334,7 +332,7 @@ describe('BSCalendarService', () => {
 
     it('should have correct reference date (2000-01-01 BS = 1943-04-14 AD)', async () => {
       const firstRecord = await BSCalendar.findOne({
-        where: { yearBS: 2000, monthBS: 1 }
+        where: { yearBs: 2000, monthBs: 1 }
       });
 
       expect(firstRecord).not.toBeNull();

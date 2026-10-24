@@ -1,4 +1,4 @@
-import { Transaction } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
 import Refund, { RefundAttributes, RefundCreationAttributes, RefundStatus } from '@models/Refund.model';
 
 /**
@@ -166,8 +166,8 @@ class RefundRepository {
 
     if (startDate && endDate) {
       where.requestedAt = {
-        $gte: startDate,
-        $lte: endDate
+        [Op.gte]: startDate,
+        [Op.lte]: endDate
       };
     }
 

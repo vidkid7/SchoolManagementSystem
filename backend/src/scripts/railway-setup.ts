@@ -41,21 +41,7 @@ async function setupRailwayDatabase(): Promise<void> {
 
     logger.info('🎉 Railway database setup completed successfully!');
     logger.info('');
-    logger.info('📝 Login Credentials:');
-    logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    logger.info('Admin:');
-    logger.info('  Username: admin');
-    logger.info('  Password: Admin@123');
-    logger.info('');
-    logger.info('Teacher:');
-    logger.info('  Username: teacher1');
-    logger.info('  Password: Teacher@123');
-    logger.info('');
-    logger.info('Student:');
-    logger.info('  Username: student1');
-    logger.info('  Password: Student@123');
-    logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    logger.info('⚠️  IMPORTANT: Change these passwords in production!');
+    logger.info('Demo account credentials are not printed. Initialize the first administrator with the bootstrap-admin command and a one-time INITIAL_ADMIN_PASSWORD secret.');
 
     process.exit(0);
   } catch (error) {

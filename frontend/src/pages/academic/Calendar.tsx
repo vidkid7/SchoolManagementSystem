@@ -4,7 +4,8 @@
  * View and manage school events and holidays
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { isAxiosError } from 'axios';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -24,6 +25,7 @@ import {
   Select,
   MenuItem,
   Chip,
+  ChipProps,
   List,
   ListItem,
   ListItemText,
@@ -39,7 +41,8 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { C, useAdminStyles } from '../../theme/designTokens';
-import { YearSelectableDatePicker, parseDateOnly, formatDateOnly } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
+import { YearSelectableDatePicker } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
+import { parseDateOnly, formatDateOnly } from '../../components/YearSelectableDatePicker/dateUtils';
 
 interface Event {
   eventId: number;
@@ -80,11 +83,7 @@ export const Calendar = () => {
     isHoliday: false,
   });
 
-  useEffect(() => {
-    fetchEvents();
-  }, [selectedMonth, selectedYear]);
-
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       setLoading(true);
       const startDate = new Date(selectedYear, selectedMonth, 1).toISOString();
@@ -99,7 +98,11 @@ export const Calendar = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedMonth, selectedYear]);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchEvents);
+  }, [fetchEvents]);
 
   const handleOpenDialog = (event?: Event, trigger?: HTMLElement) => {
     dialogTriggerRef.current = trigger ?? null;
@@ -160,9 +163,10 @@ export const Calendar = () => {
       }
       handleCloseDialog();
       fetchEvents();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to save event:', error);
-      setError(error.response?.data?.message || 'Failed to save event');
+      const message = isAxiosError<{ message?: string }>(error) ? error.response?.data?.message : undefined;
+      setError(message || 'Failed to save event');
     }
   };
 
@@ -185,7 +189,7 @@ export const Calendar = () => {
   );
 
   const getCategoryColor = (category: string) => {
-    const colors: Record<string, any> = {
+    const colors: Record<string, ChipProps['color']> = {
       academic: 'primary',
       sports: 'success',
       cultural: 'secondary',
@@ -340,6 +344,7 @@ export const Calendar = () => {
                     <IconButton
                       size="small"
                       color="primary"
+                      aria-label={t('calendar.editEvent', 'Edit event')}
                       onClick={(clickEvent) => handleOpenDialog(event, clickEvent.currentTarget)}
                     >
                       <EditIcon />
@@ -347,6 +352,7 @@ export const Calendar = () => {
                     <IconButton
                       size="small"
                       color="error"
+                      aria-label={t('calendar.deleteEvent', 'Delete event')}
                       onClick={() => handleDeleteEvent(event.eventId)}
                     >
                       <DeleteIcon />

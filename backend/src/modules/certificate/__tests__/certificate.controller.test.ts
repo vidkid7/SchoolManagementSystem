@@ -11,6 +11,11 @@ import { CertificateController } from '../certificate.controller';
 import { CertificateService } from '../certificate.service';
 import { Certificate } from '../../../models/Certificate.model';
 
+const certificateInstance = (data: Record<string, unknown>): Certificate => ({
+  ...data,
+  toJSON: () => data,
+} as unknown as Certificate);
+
 // Mock the service
 jest.mock('../certificate.service');
 
@@ -42,10 +47,11 @@ describe('CertificateController', () => {
   describe('generateCertificate', () => {
     it('should generate certificate successfully', async () => {
       // Arrange
-      const mockCertificate = {
+      const certificateData = {
         certificateId: 1,
         certificateNumber: 'CERT-CHAR-2024-0001',
-      } as Certificate;
+      };
+      const mockCertificate = certificateInstance(certificateData);
 
       mockRequest.body = {
         templateId: 1,
@@ -62,7 +68,7 @@ describe('CertificateController', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(201);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: true,
-        data: mockCertificate,
+        data: certificateData,
         message: 'Certificate generated successfully',
       });
     });
@@ -317,10 +323,11 @@ describe('CertificateController', () => {
   describe('getCertificateById', () => {
     it('should return certificate by ID', async () => {
       // Arrange
-      const mockCertificate = {
+      const certificateData = {
         certificateId: 1,
         certificateNumber: 'CERT-CHAR-2024-0001',
-      } as Certificate;
+      };
+      const mockCertificate = certificateInstance(certificateData);
 
       mockRequest.params = { id: '1' };
       mockService.getCertificateById = jest.fn().mockResolvedValue(mockCertificate);
@@ -332,7 +339,7 @@ describe('CertificateController', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: true,
-        data: mockCertificate,
+        data: certificateData,
       });
     });
 
@@ -361,10 +368,7 @@ describe('CertificateController', () => {
   describe('getAllCertificates', () => {
     it('should return all certificates', async () => {
       // Arrange
-      const mockCertificates = [
-        { certificateId: 1 } as Certificate,
-        { certificateId: 2 } as Certificate,
-      ];
+      const mockCertificates = [certificateInstance({ certificateId: 1 }), certificateInstance({ certificateId: 2 })];
 
       mockService.getAllCertificates = jest.fn().mockResolvedValue(mockCertificates);
 
@@ -375,7 +379,7 @@ describe('CertificateController', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: true,
-        data: mockCertificates,
+        data: [{ certificateId: 1 }, { certificateId: 2 }],
         meta: { total: 2 },
       });
     });
@@ -388,7 +392,7 @@ describe('CertificateController', () => {
         status: 'active',
       };
 
-      const mockCertificates = [{ certificateId: 1 } as Certificate];
+      const mockCertificates = [certificateInstance({ certificateId: 1 })];
       mockService.getAllCertificates = jest.fn().mockResolvedValue(mockCertificates);
 
       // Act
@@ -410,8 +414,8 @@ describe('CertificateController', () => {
     it('should return certificates for a student', async () => {
       // Arrange
       const mockCertificates = [
-        { certificateId: 1, studentId: 1 } as Certificate,
-        { certificateId: 2, studentId: 1 } as Certificate,
+        certificateInstance({ certificateId: 1, studentId: 1 }),
+        certificateInstance({ certificateId: 2, studentId: 1 }),
       ];
 
       mockRequest.params = { studentId: '1' };
@@ -424,7 +428,7 @@ describe('CertificateController', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: true,
-        data: mockCertificates,
+        data: [{ certificateId: 1, studentId: 1 }, { certificateId: 2, studentId: 1 }],
         meta: { total: 2 },
       });
     });
@@ -630,10 +634,11 @@ describe('CertificateController', () => {
   describe('revokeCertificate', () => {
     it('should revoke certificate successfully', async () => {
       // Arrange
-      const mockCertificate = {
+      const certificateData = {
         certificateId: 1,
         status: 'revoked',
-      } as Certificate;
+      };
+      const mockCertificate = certificateInstance(certificateData);
 
       mockRequest.params = { id: '1' };
       mockRequest.body = { reason: 'Student transferred' };
@@ -646,7 +651,7 @@ describe('CertificateController', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: true,
-        data: mockCertificate,
+        data: certificateData,
         message: 'Certificate revoked successfully',
       });
     });

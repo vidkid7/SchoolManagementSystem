@@ -13,6 +13,28 @@ jest.mock('react-i18next', () => ({
 }));
 
 describe('StaffForm', () => {
+  it('offers year selection for BS date of birth and joining dates', async () => {
+    const cases = [/staff\.form\.dateOfBirth/, /staff\.form\.joiningDate/];
+    for (const label of cases) {
+      const view = render(
+        <ThemeProvider theme={createTheme()}>
+          <MemoryRouter initialEntries={['/KMC/staff/create']}>
+            <Routes>
+              <Route path="/:municipalitySlug/staff/create" element={<StaffForm />} />
+            </Routes>
+          </MemoryRouter>
+        </ThemeProvider>,
+      );
+
+      fireEvent.click(screen.getByRole('textbox', { name: label }));
+      const yearSelect = await screen.findByRole('combobox', { name: 'Select year' });
+      fireEvent.mouseDown(yearSelect);
+      fireEvent.click(await screen.findByRole('option', { name: '2082' }));
+      expect(yearSelect).toHaveTextContent('2082');
+      view.unmount();
+    }
+  }, 15000);
+
   it('shows the required message beside the position selector on empty submit', async () => {
     render(
       <ThemeProvider theme={createTheme()}>

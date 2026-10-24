@@ -366,7 +366,14 @@ describe('CertificateRepository', () => {
         { certificateId: 3, status: 'revoked', type: 'transfer' },
         { certificateId: 4, status: 'active', type: 'sports' },
       ];
-      (Certificate.findAll as jest.Mock).mockResolvedValue(mockCertificates);
+      (Certificate.findAll as jest.Mock)
+        .mockResolvedValueOnce(mockCertificates)
+        .mockResolvedValueOnce(mockCertificates.map(({ type }) => ({ type })));
+      (Certificate.count as jest.Mock)
+        .mockResolvedValueOnce(4)
+        .mockResolvedValueOnce(3)
+        .mockResolvedValueOnce(1)
+        .mockResolvedValueOnce(2);
 
       // Act
       const result = await repository.getStats();
@@ -380,6 +387,7 @@ describe('CertificateRepository', () => {
         transfer: 1,
         sports: 1,
       });
+      expect(result.thisMonth).toBe(2);
     });
   });
 });

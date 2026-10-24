@@ -1,70 +1,34 @@
 import paymentService from '../payment.service';
 import paymentRepository from '../payment.repository';
 import invoiceRepository from '../invoice.repository';
-import { Payment, PaymentMethod, PaymentStatus } from '@models/Payment.model';
-import { InstallmentPlan, InstallmentFrequency, InstallmentPlanStatus } from '@models/Payment.model';
-import { Invoice, InvoiceStatus } from '@models/Invoice.model';
+import { Payment, PaymentMethod, PaymentStatus, InstallmentFrequency, InstallmentPlanStatus } from '@models/Payment.model';
+import { InvoiceStatus } from '@models/Invoice.model';
 import sequelize from '@config/database';
-
-/**
- * Payment Service Unit Tests
- * Tests payment processing, receipt generation, and installment plans
- * 
- * Requirements: 9.5, 9.7, 9.8, 9.9, 9.11
- */
+import type { InstallmentPlan as InstallmentPlanRecord, Payment as PaymentRecord } from '@models/Payment.model';
+import type { Invoice as InvoiceRecord } from '@models/Invoice.model';
 
 // Mock dependencies
 jest.mock('../payment.repository');
 jest.mock('../invoice.repository');
-jest.mock('@config/database', () => ({
-  __esModule: true,
-  default: {
-    transaction: jest.fn()
-  }
-}));
 jest.mock('@models/Payment.model', () => ({
-  Payment: {
-    findOne: jest.fn()
-  },
-  PaymentMethod: {
-    CASH: 'cash',
-    BANK_TRANSFER: 'bank_transfer',
-    ESEWA: 'esewa',
-    KHALTI: 'khalti',
-    IME_PAY: 'ime_pay'
-  },
-  PaymentStatus: {
-    PENDING: 'pending',
-    COMPLETED: 'completed',
-    FAILED: 'failed',
-    REFUNDED: 'refunded'
-  },
+  Payment: { findOne: jest.fn() },
+  PaymentMethod: { CASH: 'cash', BANK_TRANSFER: 'bank_transfer', ESEWA: 'esewa', KHALTI: 'khalti', IME_PAY: 'ime_pay' },
+  PaymentStatus: { PENDING: 'pending', COMPLETED: 'completed', FAILED: 'failed', REFUNDED: 'refunded' },
   InstallmentPlan: {},
-  InstallmentFrequency: {
-    MONTHLY: 'monthly',
-    QUARTERLY: 'quarterly',
-    CUSTOM: 'custom'
-  },
-  InstallmentPlanStatus: {
-    ACTIVE: 'active',
-    COMPLETED: 'completed',
-    CANCELLED: 'cancelled'
-  }
+  InstallmentFrequency: { MONTHLY: 'monthly', QUARTERLY: 'quarterly', CUSTOM: 'custom' },
+  InstallmentPlanStatus: { ACTIVE: 'active', COMPLETED: 'completed', CANCELLED: 'cancelled' }
 }));
 jest.mock('@models/Invoice.model', () => ({
   Invoice: {},
-  InvoiceStatus: {
-    PENDING: 'pending',
-    PARTIAL: 'partial',
-    PAID: 'paid',
-    OVERDUE: 'overdue',
-    CANCELLED: 'cancelled'
-  }
+  InvoiceStatus: { PENDING: 'pending', PARTIAL: 'partial', PAID: 'paid', OVERDUE: 'overdue', CANCELLED: 'cancelled' }
 }));
-jest.mock('@models/FeeStructure.model', () => ({
-  FeeStructure: {},
-  FeeComponent: {}
-}));
+jest.mock('@models/FeeStructure.model', () => ({ FeeStructure: {}, FeeComponent: {} }));
+/**
+ * Payment Service Unit Tests
+ * Tests payment processing, receipt generation, and installment plans
+ *
+ * Requirements: 9.5, 9.7, 9.8, 9.9, 9.11
+ */
 
 describe('PaymentService', () => {
   let mockTransaction: any;
@@ -77,7 +41,7 @@ describe('PaymentService', () => {
       commit: jest.fn(),
       rollback: jest.fn()
     };
-    (sequelize.transaction as jest.Mock).mockResolvedValue(mockTransaction);
+    jest.spyOn(sequelize, 'transaction').mockResolvedValue(mockTransaction as any);
   });
 
   describe('generateReceiptNumber', () => {
@@ -116,7 +80,7 @@ describe('PaymentService', () => {
         paymentDate: '2024-01-15',
         paymentMethod: PaymentMethod.CASH,
         invoiceId: 1
-      } as Payment;
+      } as PaymentRecord;
 
       const qrCode = await paymentService.generateReceiptQRCode(mockPayment);
 
@@ -136,7 +100,7 @@ describe('PaymentService', () => {
         calculateBalance: jest.fn().mockReturnValue(10000),
         recordPayment: jest.fn(),
         save: jest.fn()
-      } as unknown as Invoice;
+      } as unknown as InvoiceRecord;
 
       const mockPayment = {
         paymentId: 1,
@@ -144,7 +108,7 @@ describe('PaymentService', () => {
         amount: 5000,
         update: jest.fn(),
         save: jest.fn()
-      } as unknown as Payment;
+      } as unknown as PaymentRecord;
 
       (invoiceRepository.findById as jest.Mock).mockResolvedValue(mockInvoice);
       (paymentRepository.create as jest.Mock).mockResolvedValue(mockPayment);
@@ -160,6 +124,7 @@ describe('PaymentService', () => {
 
       expect(result.payment).toBeDefined();
       expect(result.invoice).toBeDefined();
+      expect(invoiceRepository.findById).toHaveBeenCalledWith(1, mockTransaction, true);
       expect(mockInvoice.recordPayment).toHaveBeenCalledWith(5000);
       expect(mockTransaction.commit).toHaveBeenCalled();
     });
@@ -189,7 +154,7 @@ describe('PaymentService', () => {
         balance: 2000,
         status: InvoiceStatus.PARTIAL,
         calculateBalance: jest.fn().mockReturnValue(2000)
-      } as unknown as Invoice;
+      } as unknown as InvoiceRecord;
 
       (invoiceRepository.findById as jest.Mock).mockResolvedValue(mockInvoice);
 
@@ -211,7 +176,7 @@ describe('PaymentService', () => {
       const mockInvoice = {
         invoiceId: 1,
         status: InvoiceStatus.CANCELLED
-      } as Invoice;
+      } as InvoiceRecord;
 
       (invoiceRepository.findById as jest.Mock).mockResolvedValue(mockInvoice);
 
@@ -232,7 +197,7 @@ describe('PaymentService', () => {
         invoiceId: 1,
         status: InvoiceStatus.PENDING,
         calculateBalance: jest.fn().mockReturnValue(10000)
-      } as unknown as Invoice;
+      } as unknown as InvoiceRecord;
 
       (invoiceRepository.findById as jest.Mock).mockResolvedValue(mockInvoice);
 
@@ -260,7 +225,7 @@ describe('PaymentService', () => {
         calculateBalance: jest.fn().mockReturnValue(10000),
         recordPayment: jest.fn(),
         save: jest.fn()
-      } as unknown as Invoice;
+      } as unknown as InvoiceRecord;
 
       const mockPayment = {
         paymentId: 1,
@@ -269,7 +234,7 @@ describe('PaymentService', () => {
         transactionId: 'TXN123456',
         update: jest.fn(),
         save: jest.fn()
-      } as unknown as Payment;
+      } as unknown as PaymentRecord;
 
       (paymentRepository.findByTransactionId as jest.Mock).mockResolvedValue(null);
       (invoiceRepository.findById as jest.Mock).mockResolvedValue(mockInvoice);
@@ -287,7 +252,7 @@ describe('PaymentService', () => {
       const mockExistingPayment = {
         paymentId: 1,
         transactionId: 'TXN123456'
-      } as Payment;
+      } as PaymentRecord;
 
       (paymentRepository.findByTransactionId as jest.Mock).mockResolvedValue(mockExistingPayment);
 
@@ -307,7 +272,7 @@ describe('PaymentService', () => {
         paidAmount: 0,
         balance: 12000,
         calculateBalance: jest.fn().mockReturnValue(12000)
-      } as unknown as Invoice;
+      } as unknown as InvoiceRecord;
 
       const mockPlan = {
         installmentPlanId: 1,
@@ -318,7 +283,7 @@ describe('PaymentService', () => {
         installmentAmount: 3000,
         frequency: InstallmentFrequency.MONTHLY,
         status: InstallmentPlanStatus.ACTIVE
-      } as InstallmentPlan;
+      } as InstallmentPlanRecord;
 
       (invoiceRepository.findById as jest.Mock).mockResolvedValue(mockInvoice);
       (paymentRepository.findInstallmentPlanByInvoiceId as jest.Mock).mockResolvedValue(null);
@@ -358,13 +323,13 @@ describe('PaymentService', () => {
       const mockInvoice = {
         invoiceId: 1,
         calculateBalance: jest.fn().mockReturnValue(12000)
-      } as unknown as Invoice;
+      } as unknown as InvoiceRecord;
 
       const mockExistingPlan = {
         installmentPlanId: 1,
         status: InstallmentPlanStatus.ACTIVE,
         isActive: jest.fn().mockReturnValue(true)
-      } as unknown as InstallmentPlan;
+      } as unknown as InstallmentPlanRecord;
 
       (invoiceRepository.findById as jest.Mock).mockResolvedValue(mockInvoice);
       (paymentRepository.findInstallmentPlanByInvoiceId as jest.Mock).mockResolvedValue(mockExistingPlan);
@@ -388,7 +353,7 @@ describe('PaymentService', () => {
         paidAmount: 10000,
         balance: 0,
         calculateBalance: jest.fn().mockReturnValue(0)
-      } as unknown as Invoice;
+      } as unknown as InvoiceRecord;
 
       (invoiceRepository.findById as jest.Mock).mockResolvedValue(mockInvoice);
       (paymentRepository.findInstallmentPlanByInvoiceId as jest.Mock).mockResolvedValue(null);
@@ -419,7 +384,7 @@ describe('PaymentService', () => {
         getRemainingInstallments: jest.fn().mockResolvedValue(3),
         markAsCompleted: jest.fn(),
         save: jest.fn()
-      } as unknown as InstallmentPlan;
+      } as unknown as InstallmentPlanRecord;
 
       const mockInvoice = {
         invoiceId: 1,
@@ -430,7 +395,7 @@ describe('PaymentService', () => {
         calculateBalance: jest.fn().mockReturnValue(12000),
         recordPayment: jest.fn(),
         save: jest.fn()
-      } as unknown as Invoice;
+      } as unknown as InvoiceRecord;
 
       const mockPayment = {
         paymentId: 1,
@@ -439,7 +404,7 @@ describe('PaymentService', () => {
         installmentNumber: 1,
         update: jest.fn(),
         save: jest.fn()
-      } as unknown as Payment;
+      } as unknown as PaymentRecord;
 
       (paymentRepository.findInstallmentPlanById as jest.Mock).mockResolvedValue(mockPlan);
       (Payment.findOne as jest.Mock) = jest.fn().mockResolvedValue(null);
@@ -471,7 +436,7 @@ describe('PaymentService', () => {
         installmentPlanId: 1,
         status: InstallmentPlanStatus.COMPLETED,
         isActive: jest.fn().mockReturnValue(false)
-      } as unknown as InstallmentPlan;
+      } as unknown as InstallmentPlanRecord;
 
       (paymentRepository.findInstallmentPlanById as jest.Mock).mockResolvedValue(mockPlan);
 
@@ -488,7 +453,7 @@ describe('PaymentService', () => {
         numberOfInstallments: 4,
         status: InstallmentPlanStatus.ACTIVE,
         isActive: jest.fn().mockReturnValue(true)
-      } as unknown as InstallmentPlan;
+      } as unknown as InstallmentPlanRecord;
 
       (paymentRepository.findInstallmentPlanById as jest.Mock).mockResolvedValue(mockPlan);
 
@@ -505,13 +470,13 @@ describe('PaymentService', () => {
         numberOfInstallments: 4,
         status: InstallmentPlanStatus.ACTIVE,
         isActive: jest.fn().mockReturnValue(true)
-      } as unknown as InstallmentPlan;
+      } as unknown as InstallmentPlanRecord;
 
       const mockExistingPayment = {
         paymentId: 1,
         installmentNumber: 1,
         status: PaymentStatus.COMPLETED
-      } as Payment;
+      } as PaymentRecord;
 
       (paymentRepository.findInstallmentPlanById as jest.Mock).mockResolvedValue(mockPlan);
       (Payment.findOne as jest.Mock) = jest.fn().mockResolvedValue(mockExistingPayment);
@@ -534,7 +499,7 @@ describe('PaymentService', () => {
         remarks: 'Original payment',
         markAsRefunded: jest.fn(),
         save: jest.fn()
-      } as unknown as Payment;
+      } as unknown as PaymentRecord;
 
       const mockInvoice = {
         invoiceId: 1,
@@ -544,7 +509,7 @@ describe('PaymentService', () => {
         calculateBalance: jest.fn().mockReturnValue(10000),
         updateStatus: jest.fn().mockReturnValue(InvoiceStatus.PENDING),
         save: jest.fn()
-      } as unknown as Invoice;
+      } as unknown as InvoiceRecord;
 
       (paymentRepository.findById as jest.Mock).mockResolvedValue(mockPayment);
       (invoiceRepository.findById as jest.Mock).mockResolvedValue(mockInvoice);
@@ -569,7 +534,7 @@ describe('PaymentService', () => {
       const mockPayment = {
         paymentId: 1,
         status: PaymentStatus.REFUNDED
-      } as Payment;
+      } as PaymentRecord;
 
       (paymentRepository.findById as jest.Mock).mockResolvedValue(mockPayment);
 
@@ -582,7 +547,7 @@ describe('PaymentService', () => {
       const mockPayment = {
         paymentId: 1,
         status: PaymentStatus.PENDING
-      } as Payment;
+      } as PaymentRecord;
 
       (paymentRepository.findById as jest.Mock).mockResolvedValue(mockPayment);
 
@@ -600,7 +565,7 @@ describe('PaymentService', () => {
         isCompleted: jest.fn().mockReturnValue(false),
         markAsCancelled: jest.fn(),
         save: jest.fn()
-      } as unknown as InstallmentPlan;
+      } as unknown as InstallmentPlanRecord;
 
       (paymentRepository.findInstallmentPlanById as jest.Mock).mockResolvedValue(mockPlan);
 
@@ -623,7 +588,7 @@ describe('PaymentService', () => {
         installmentPlanId: 1,
         status: InstallmentPlanStatus.COMPLETED,
         isCompleted: jest.fn().mockReturnValue(true)
-      } as unknown as InstallmentPlan;
+      } as unknown as InstallmentPlanRecord;
 
       (paymentRepository.findInstallmentPlanById as jest.Mock).mockResolvedValue(mockPlan);
 
@@ -639,7 +604,7 @@ describe('PaymentService', () => {
         paymentId: 1,
         receiptNumber: 'RCP-2081-00001',
         amount: 5000
-      } as Payment;
+      } as PaymentRecord;
 
       (paymentRepository.findByReceiptNumber as jest.Mock).mockResolvedValue(mockPayment);
 

@@ -99,9 +99,10 @@ describe('AttendanceReports accessibility', () => {
   });
 
   it('sends the selected class ID and available section to the student report API', async () => {
+    const consoleLog = jest.spyOn(console, 'log').mockImplementation(() => undefined);
     jest.mocked(apiClient.get)
       .mockResolvedValueOnce({ data: { data: [{ classId: 11, classLevel: 5, section: 'K' }] } } as any)
-      .mockResolvedValueOnce({ data: { data: [] } } as any);
+      .mockResolvedValueOnce({ data: { data: [{ studentId: 'SYNTHETIC-QA-1', status: 'present' }] } } as any);
 
     render(
       <ThemeProvider theme={createTheme()}>
@@ -129,5 +130,7 @@ describe('AttendanceReports accessibility', () => {
         params: expect.objectContaining({ classId: 11, section: 'K' }),
       }),
     ));
+    expect(consoleLog).not.toHaveBeenCalled();
+    consoleLog.mockRestore();
   });
 });

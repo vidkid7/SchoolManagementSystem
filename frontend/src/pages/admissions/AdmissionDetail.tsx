@@ -3,7 +3,8 @@
  * View and manage individual admission with workflow actions
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { isAxiosError } from 'axios';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
@@ -25,11 +26,8 @@ import {
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
-  Edit as EditIcon,
-  CheckCircle as ApproveIcon,
-  Cancel as RejectIcon,
 } from '@mui/icons-material';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useAdminStyles } from '../../theme/designTokens';
 import api from '../../config/api';
 import { useTranslation } from 'react-i18next';
 import { YearSelectableDateTimeField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
@@ -112,22 +110,18 @@ export function AdmissionDetail() {
   const [interviewScore, setInterviewScore] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
 
-  const getActionError = (error: any, fallback: string) => {
+  const getActionError = (error: unknown, fallback: string) => {
+    if (!isAxiosError<{ errors?: { field?: string; message?: string }[]; message?: string }>(error)) return fallback;
     const errors = error.response?.data?.errors;
-    if (Array.isArray(errors) && errors.length > 0) {
-      return errors.map((item: { field?: string; message?: string }) =>
+    if (errors?.length) {
+      return errors.map((item) =>
         item.field ? `${item.field}: ${item.message}` : item.message
       ).filter(Boolean).join('; ');
     }
     return error.response?.data?.message || fallback;
   };
 
-  useEffect(() => {
-    actionOpened.current = false;
-    fetchAdmission();
-  }, [id]);
-
-  const fetchAdmission = async () => {
+  const fetchAdmission = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get(`/admissions/${id}`);
@@ -163,13 +157,18 @@ export function AdmissionDetail() {
             break;
         }
       }
-    } catch (error: any) {
-      console.error('Failed to fetch admission:', error);
+    } catch (error: unknown) {
+      console.error('Failed to fetch admission');
       setError(getActionError(error, t('admissions.failedToLoad')));
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, searchParams, t]);
+
+  useEffect(() => {
+    actionOpened.current = false;
+    void Promise.resolve().then(fetchAdmission);
+  }, [fetchAdmission]);
 
   const handleConvertToApplication = async () => {
     try {
@@ -177,8 +176,8 @@ export function AdmissionDetail() {
       setSuccess(t('admissions.convertedSuccessfully'));
       setConvertDialog(false);
       fetchAdmission();
-    } catch (error: any) {
-      setError(error.response?.data?.message || t('admissions.failedToConvert'));
+    } catch (error: unknown) {
+      setError(getActionError(error, t('admissions.failedToConvert')));
     }
   };
 
@@ -193,7 +192,7 @@ export function AdmissionDetail() {
       setError('');
       setTestDialog(false);
       fetchAdmission();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(getActionError(error, t('admissions.failedToScheduleTest')));
     }
   };
@@ -215,7 +214,7 @@ export function AdmissionDetail() {
       setError('');
       setTestDialog(false);
       fetchAdmission();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(getActionError(error, t('admissions.failedToRecordTestScore')));
     }
   };
@@ -233,7 +232,7 @@ export function AdmissionDetail() {
       setError('');
       setInterviewDialog(false);
       fetchAdmission();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(getActionError(error, t('admissions.failedToScheduleInterview')));
     }
   };
@@ -253,7 +252,7 @@ export function AdmissionDetail() {
       setError('');
       setInterviewDialog(false);
       fetchAdmission();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(getActionError(error, t('admissions.failedToRecordInterview')));
     }
   };
@@ -264,8 +263,8 @@ export function AdmissionDetail() {
       setSuccess(t('admissions.admittedSuccessfully'));
       setAdmitDialog(false);
       fetchAdmission();
-    } catch (error: any) {
-      setError(error.response?.data?.message || t('admissions.failedToAdmit'));
+    } catch (error: unknown) {
+      setError(getActionError(error, t('admissions.failedToAdmit')));
     }
   };
 
@@ -283,7 +282,7 @@ export function AdmissionDetail() {
       setError('');
       setRejectDialog(false);
       fetchAdmission();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(getActionError(error, t('admissions.failedToReject')));
     }
   };
@@ -294,8 +293,8 @@ export function AdmissionDetail() {
       setSuccess(t('admissions.enrolledSuccessfully'));
       setEnrollDialog(false);
       fetchAdmission();
-    } catch (error: any) {
-      setError(error.response?.data?.message || t('admissions.failedToEnroll'));
+    } catch (error: unknown) {
+      setError(getActionError(error, t('admissions.failedToEnroll')));
     }
   };
 
@@ -474,6 +473,7 @@ export function AdmissionDetail() {
       <Dialog open={convertDialog} onClose={() => setConvertDialog(false)}>
         <DialogTitle>{t('admissions.convertToApplication')}</DialogTitle>
         <DialogContent>
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <Typography>
             {t('admissions.confirmConvert')}
           </Typography>
@@ -492,6 +492,7 @@ export function AdmissionDetail() {
           {admission.status === 'applied' ? t('admissions.scheduleTest') : t('admissions.recordTestScore')}
         </DialogTitle>
         <DialogContent>
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           {admission.status === 'applied' ? (
             <YearSelectableDateTimeField
               fullWidth
@@ -551,6 +552,7 @@ export function AdmissionDetail() {
           {admission.status === 'applied' || admission.status === 'tested' ? t('admissions.scheduleInterview') : t('admissions.recordInterview')}
         </DialogTitle>
         <DialogContent>
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           {admission.status === 'applied' || admission.status === 'tested' ? (
             <YearSelectableDateTimeField
               fullWidth
@@ -598,6 +600,7 @@ export function AdmissionDetail() {
       <Dialog open={admitDialog} onClose={() => setAdmitDialog(false)}>
         <DialogTitle>{t('admissions.admitStudent')}</DialogTitle>
         <DialogContent>
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <Typography>
             {t('admissions.confirmAdmit')}
           </Typography>
@@ -614,6 +617,7 @@ export function AdmissionDetail() {
       <Dialog open={enrollDialog} onClose={() => setEnrollDialog(false)}>
         <DialogTitle>{t('admissions.enrollStudent')}</DialogTitle>
         <DialogContent>
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <Typography>
             {t('admissions.confirmEnroll')}
           </Typography>
@@ -630,6 +634,7 @@ export function AdmissionDetail() {
       <Dialog open={rejectDialog} onClose={() => setRejectDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{t('admissions.rejectApplication')}</DialogTitle>
         <DialogContent>
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <TextField
             fullWidth
             multiline

@@ -5,15 +5,24 @@ import reportService from '../report.service';
 import { UserRole } from '@models/User.model';
 
 jest.mock('../report.service');
+jest.mock('@middleware/auth', () => {
+  const actual = jest.requireActual('@middleware/auth');
+  return {
+    ...actual,
+    authenticate: (req: express.Request, _res: express.Response, next: express.NextFunction) => {
+      req.user = {
+        userId: 1,
+        username: 'report-test-admin',
+        email: 'report-test@example.test',
+        role: UserRole.SCHOOL_ADMIN,
+      };
+      next();
+    },
+  };
+});
 
 const app = express();
 app.use(express.json());
-
-// Mock authentication middleware
-app.use((req, _res, next) => {
-  req.user = { id: 'user-1', role: UserRole.SCHOOL_ADMIN };
-  next();
-});
 
 app.use('/api/v1/reports', reportRoutes);
 

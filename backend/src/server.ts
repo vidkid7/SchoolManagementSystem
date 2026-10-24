@@ -26,6 +26,7 @@ import { initLeaveApplication } from '@models/LeaveApplication.model';
 import { initArchiveMetadata } from '@models/ArchiveMetadata.model';
 import { initDocument } from '@models/Document.model';
 import { initDocumentAccessLog } from '@models/DocumentAccessLog.model';
+import { repairMissingTenantColumns } from '@utils/tenantSchemaRepair';
 
 /**
  * Server Entry Point
@@ -111,7 +112,7 @@ const startServer = async (): Promise<void> => {
     // Enable slow query logging
     enableSlowQueryLogging(sequelize);
 
-    // Production DB fixes: add missing tenant columns, create municipality, reset locks
+    // Production DB fixes: add missing tenant columns and create municipality
     if (env.NODE_ENV === 'production') {
       try {
         const tenantTables = [
@@ -132,24 +133,7 @@ const startServer = async (): Promise<void> => {
           'transport_routes', 'transport_vehicles', 'transport_pickup_points',
           'transport_drivers', 'transport_maintenance_records', 'transport_attendance'
         ];
-        for (const table of tenantTables) {
-          try {
-            const [tables] = await sequelize.query(
-              `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '${table}'`
-            );
-            if ((tables as any[]).length === 0) continue;
-            const [cols] = await sequelize.query(
-              `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '${table}' AND COLUMN_NAME IN ('municipality_id', 'school_config_id')`
-            );
-            const colNames = (cols as any[]).map((c: any) => c.COLUMN_NAME);
-            if (!colNames.includes('municipality_id')) {
-              await sequelize.query(`ALTER TABLE \`${table}\` ADD COLUMN municipality_id CHAR(36) NULL`);
-            }
-            if (!colNames.includes('school_config_id')) {
-              await sequelize.query(`ALTER TABLE \`${table}\` ADD COLUMN school_config_id CHAR(36) NULL`);
-            }
-          } catch { /* skip */ }
-        }
+        await repairMissingTenantColumns(sequelize, tenantTables);
 
         // Ensure municipalities table exists with correct schema
         await sequelize.query(`CREATE TABLE IF NOT EXISTS municipalities (
@@ -212,10 +196,6 @@ const startServer = async (): Promise<void> => {
           );
         }
 
-        // Reset account locks
-        await sequelize.query(
-          'UPDATE users SET failed_login_attempts = 0, account_locked_until = NULL WHERE failed_login_attempts > 0 OR account_locked_until IS NOT NULL'
-        );
         logger.info('✅ Production DB fixes applied');
       } catch (dbFixError) {
         logger.warn('⚠️ Production DB fix warning (non-fatal):', dbFixError);

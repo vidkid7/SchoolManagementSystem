@@ -1,5 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '@config/database';
+import { FeeComponent } from './FeeStructure.model';
 
 /**
  * Invoice Status Enum
@@ -45,14 +46,14 @@ export interface InvoiceItemCreationAttributes extends Optional<InvoiceItemAttri
  */
 class InvoiceItem extends Model<InvoiceItemAttributes, InvoiceItemCreationAttributes> 
   implements InvoiceItemAttributes {
-  public invoiceItemId!: number;
-  public invoiceId!: number;
-  public feeComponentId!: number;
-  public description!: string;
-  public amount!: number;
+  declare public invoiceItemId: number;
+  declare public invoiceId: number;
+  declare public feeComponentId: number;
+  declare public description: string;
+  declare public amount: number;
   
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 }
 
 /**
@@ -143,7 +144,7 @@ export interface InvoiceAttributes {
   dueDate: string;
   subtotal: number;
   discount: number;
-  discountReason?: string;
+  discountReason?: string | null;
   remarks?: string;
   discountApprovalStatus?: DiscountApprovalStatus;
   discountApprovedBy?: number;
@@ -171,31 +172,31 @@ export interface InvoiceCreationAttributes extends Optional<InvoiceAttributes,
  */
 class Invoice extends Model<InvoiceAttributes, InvoiceCreationAttributes> 
   implements InvoiceAttributes {
-  public invoiceId!: number;
-  public invoiceNumber!: string;
-  public studentId!: number;
-  public feeStructureId!: number;
-  public academicYearId!: number;
-  public dueDate!: string;
-  public subtotal!: number;
-  public discount!: number;
-  public discountReason?: string;
-  public remarks?: string;
-  public discountApprovalStatus?: DiscountApprovalStatus;
-  public discountApprovedBy?: number;
-  public discountApprovedAt?: Date;
-  public totalAmount!: number;
-  public paidAmount!: number;
-  public balance!: number;
-  public status!: InvoiceStatus;
-  public generatedAt!: Date;
+  declare public invoiceId: number;
+  declare public invoiceNumber: string;
+  declare public studentId: number;
+  declare public feeStructureId: number;
+  declare public academicYearId: number;
+  declare public dueDate: string;
+  declare public subtotal: number;
+  declare public discount: number;
+  declare public discountReason?: string | null;
+  declare public remarks?: string;
+  declare public discountApprovalStatus?: DiscountApprovalStatus;
+  declare public discountApprovedBy?: number;
+  declare public discountApprovedAt?: Date;
+  declare public totalAmount: number;
+  declare public paidAmount: number;
+  declare public balance: number;
+  declare public status: InvoiceStatus;
+  declare public generatedAt: Date;
   
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
-  public readonly deletedAt?: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
+  declare public readonly deletedAt?: Date;
 
   // Association properties
-  public readonly invoiceItems?: InvoiceItem[];
+  declare public readonly invoiceItems?: InvoiceItem[];
 
   /**
    * Calculate balance: total_amount - paid_amount
@@ -321,7 +322,7 @@ class Invoice extends Model<InvoiceAttributes, InvoiceCreationAttributes>
     // Revert discount
     this.totalAmount = subtotal;
     this.discount = 0;
-    this.discountReason = undefined;
+    this.discountReason = null;
     this.discountApprovalStatus = DiscountApprovalStatus.REJECTED;
     this.balance = this.calculateBalance();
     this.status = this.updateStatus();
@@ -544,6 +545,11 @@ Invoice.hasMany(InvoiceItem, {
 InvoiceItem.belongsTo(Invoice, {
   foreignKey: 'invoiceId',
   as: 'invoice'
+});
+
+InvoiceItem.belongsTo(FeeComponent, {
+  foreignKey: 'feeComponentId',
+  as: 'feeComponent'
 });
 
 export { Invoice, InvoiceItem };

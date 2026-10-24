@@ -43,6 +43,10 @@ describe('ClassManagement', () => {
     expect(within(dialog).getByRole('textbox', { name: 'academic.subjectNameEnglish' })).toBeRequired();
     expect(within(dialog).getByRole('textbox', { name: 'academic.subjectNameNepali' })).toBeRequired();
     expect(within(dialog).getByRole('combobox', { name: 'academic.subjectType' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('textbox', { name: 'academic.subjectCode' })).toHaveAttribute('id', 'subject-code');
+    expect(within(dialog).getByRole('textbox', { name: 'academic.subjectCode' })).toHaveAttribute('name', 'code');
+    expect(within(dialog).getByRole('textbox', { name: 'academic.subjectNameEnglish' })).toHaveAttribute('name', 'name_en');
+    expect(within(dialog).getByRole('textbox', { name: 'academic.subjectNameNepali' })).toHaveAttribute('name', 'name_np');
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'common.save' }));
 
@@ -75,7 +79,12 @@ describe('ClassManagement', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'academic.addClass' }));
     const classDialog = await screen.findByRole('dialog');
+    expect(document.querySelector('input[name="grade_level"]')).toBeInTheDocument();
+    expect(within(classDialog).getByRole('textbox', { name: 'academic.section' })).toHaveAttribute('id', 'class-section');
+    expect(within(classDialog).getByRole('textbox', { name: 'academic.section' })).toHaveAttribute('name', 'section');
     const capacity = within(classDialog).getByRole('spinbutton', { name: 'academic.capacity' });
+    expect(capacity).toHaveAttribute('id', 'class-capacity');
+    expect(capacity).toHaveAttribute('name', 'capacity');
     expect(capacity).toHaveAttribute('min', '1');
     expect(capacity).toHaveAttribute('max', '100');
     expect(capacity).toHaveAttribute('step', '1');
@@ -85,6 +94,8 @@ describe('ClassManagement', () => {
     fireEvent.click(screen.getAllByRole('tab')[1]);
     fireEvent.click(await screen.findByRole('button', { name: 'academic.addSubject' }));
     const subjectDialog = await screen.findByRole('dialog');
+    expect(within(subjectDialog).getByRole('spinbutton', { name: 'academic.creditHours' })).toHaveAttribute('name', 'credit_hours');
+    expect(within(subjectDialog).getByRole('spinbutton', { name: 'academic.fullMarks' })).toHaveAttribute('name', 'full_marks');
     for (const label of ['academic.creditHours', 'academic.fullMarks']) {
       const mark = within(subjectDialog).getByRole('spinbutton', { name: label });
       expect(mark).toHaveAttribute('min', '1');

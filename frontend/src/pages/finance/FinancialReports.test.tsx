@@ -58,6 +58,66 @@ describe('Financial report quick ranges', () => {
     });
   });
 
+  it('does not log financial report parameters or returned financial data', async () => {
+    const log = jest.spyOn(console, 'log').mockImplementation(() => {});
+    const error = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const report = {
+      summary: {
+        totalRevenue: 12345,
+        totalCollected: 10000,
+        totalOutstanding: 2345,
+        collectionRate: 81,
+        totalRefunds: 0,
+        totalInvoices: 7,
+        paidInvoices: 5,
+        pendingInvoices: 2,
+      },
+    };
+    jest.mocked(apiClient.get)
+      .mockResolvedValueOnce({ data: { data: {} } } as unknown as Awaited<ReturnType<typeof apiClient.get>>)
+      .mockResolvedValueOnce({ data: { data: report } } as unknown as Awaited<ReturnType<typeof apiClient.get>>);
+
+    try {
+      renderReports();
+      await act(async () => {});
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'common.generate' }));
+      });
+
+      expect(apiClient.get).toHaveBeenLastCalledWith('/finance/reports', { params: { type: 'revenue' } });
+      expect(log).not.toHaveBeenCalled();
+      expect(error).not.toHaveBeenCalled();
+    } finally {
+      log.mockRestore();
+      error.mockRestore();
+    }
+  });
+
+  it('does not log raw API error details when report generation fails', async () => {
+    const error = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const syntheticRequestError = Object.assign(new Error('Request failed'), {
+      config: { params: { type: 'revenue', startDate: '2084-01-01' } },
+      response: { data: { message: 'Synthetic report failure', totalRevenue: 12345 } },
+    });
+    jest.mocked(apiClient.get)
+      .mockResolvedValueOnce({ data: { data: {} } } as unknown as Awaited<ReturnType<typeof apiClient.get>>)
+      .mockRejectedValueOnce(syntheticRequestError);
+
+    try {
+      renderReports();
+      await act(async () => {});
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'common.generate' }));
+      });
+
+      expect(await screen.findByText('Synthetic report failure')).toBeInTheDocument();
+      expect(error).toHaveBeenCalledWith('Unable to generate financial report.');
+      expect(error).not.toHaveBeenCalledWith(expect.anything(), syntheticRequestError);
+    } finally {
+      error.mockRestore();
+    }
+  });
+
   it('labels the CSV export accurately and downloads a CSV file', async () => {
     const originalCreateObjectURL = URL.createObjectURL;
     const originalRevokeObjectURL = URL.revokeObjectURL;

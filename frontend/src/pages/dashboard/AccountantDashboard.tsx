@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box, Grid, Card, CardContent, Typography, CircularProgress, Alert,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -17,12 +17,11 @@ import {
   People as PeopleIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
-import { useParams } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import apiClient from '../../services/apiClient';
 import { RootState } from '../../store';
 import { getAccountantStyles } from '../../styles/accountantTheme';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { C, useAdminStyles } from '../../theme/designTokens';
 
 interface FinanceStats {
   totalCollection: number;
@@ -31,6 +30,31 @@ interface FinanceStats {
   paidInvoices: number;
   overdueInvoices: number;
   collectionRate: number;
+}
+
+interface RecentTransaction {
+  id?: number | string;
+  paymentId?: number | string;
+  receiptNumber?: string | null;
+  studentName?: string | null;
+  studentId?: number | string | null;
+  amount?: number | string | null;
+  paymentMethod?: string | null;
+  method?: string | null;
+  paymentDate?: string | null;
+  date?: string | null;
+  status?: string | null;
+}
+
+interface OverdueInvoice {
+  invoiceId: number | string;
+  studentName?: string | null;
+  studentId?: number | string | null;
+  status?: string | null;
+  invoiceNumber?: string | null;
+  balance?: number | string | null;
+  totalAmount?: number | string | null;
+  dueDate?: string | null;
 }
 
 const STATUS_COLORS: Record<string, { fg: string; bg: string }> = {
@@ -75,34 +99,37 @@ const AccountantDashboard: React.FC = () => {
     overdueInvoices: 0,
     collectionRate: 0,
   });
-  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
-  const [overdueInvoices, setOverdueInvoices] = useState<any[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<RecentTransaction[]>([]);
+  const [overdueInvoices, setOverdueInvoices] = useState<OverdueInvoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const { user, accessToken } = useSelector((state: RootState) => state.auth);
   const navigate = useSlugNavigate();
-  const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
-
   const nav = (path: string) => navigate(path);
 
-  const loadData = async () => {
-    if (!accessToken) return;
+  const loadData = useCallback(async () => {
+    if (!accessToken) {
+      setError('Authentication required to load finance data');
+      setLoading(false);
+      return;
+    }
     
     setLoading(true);
     setError(null);
 
     try {
+      let requestFailed = false;
       const [statsRes, txnRes, invoicesRes] = await Promise.all([
         apiClient.get('/finance/statistics', {
           headers: { Authorization: `Bearer ${accessToken}` },
-        }).catch(() => ({ data: { data: null } })),
+        }).catch(() => { requestFailed = true; return { data: { data: null } }; }),
         apiClient.get('/finance/recent-transactions?limit=10', {
           headers: { Authorization: `Bearer ${accessToken}` },
-        }).catch(() => ({ data: { data: [] } })),
+        }).catch(() => { requestFailed = true; return { data: { data: [] } }; }),
         apiClient.get('/finance/invoices?status=overdue&limit=5', {
           headers: { Authorization: `Bearer ${accessToken}` },
-        }).catch(() => ({ data: { data: [] } })),
+        }).catch(() => { requestFailed = true; return { data: { data: [] } }; }),
       ]);
 
       const s = statsRes.data?.data;
@@ -121,17 +148,18 @@ const AccountantDashboard: React.FC = () => {
       
       const inv = invoicesRes.data?.data;
       setOverdueInvoices(Array.isArray(inv) ? inv : (inv?.invoices ?? []));
-    } catch (err: any) {
+      if (requestFailed) setError('Some finance dashboard data could not be loaded');
+    } catch (err: unknown) {
       console.error('Failed to load accountant dashboard:', err);
       setError('Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
-  };
+  }, [accessToken]);
 
   useEffect(() => {
-    loadData();
-  }, [accessToken]);
+    void Promise.resolve().then(loadData);
+  }, [loadData]);
 
   if (loading) {
     return (
@@ -323,8 +351,8 @@ const AccountantDashboard: React.FC = () => {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        recentTransactions.map((txn: any, idx) => (
-                          <TableRow key={txn.paymentId || idx} sx={{ ...S.TR_HOVER, ...styles.table.row }}>
+                        recentTransactions.map((txn, idx) => (
+                          <TableRow key={txn.paymentId || txn.id || idx} sx={{ ...S.TR_HOVER, ...styles.table.row }}>
                             <TableCell sx={{ ...S.TD, ...styles.table.cell, fontFamily: 'monospace', fontSize: '0.85rem' }}>
                               {txn.receiptNumber || '—'}
                             </TableCell>
@@ -336,12 +364,12 @@ const AccountantDashboard: React.FC = () => {
                               {String(txn.paymentMethod || txn.method || '—').replace(/_/g, ' ')}
                             </TableCell>
                             <TableCell sx={{ ...S.TD, ...styles.table.cell }}>
-                              {txn.paymentDate
-                                ? new Date(txn.paymentDate).toLocaleDateString()
+                              {txn.paymentDate || txn.date
+                                ? new Date(txn.paymentDate || txn.date!).toLocaleDateString()
                                 : '—'}
                             </TableCell>
                             <TableCell sx={{ ...S.TD, ...styles.table.cell }}>
-                              <StatusBadge status={txn.status} />
+                              <StatusBadge status={txn.status || ''} />
                             </TableCell>
                           </TableRow>
                         ))
@@ -376,7 +404,7 @@ const AccountantDashboard: React.FC = () => {
                   </Box>
                 ) : (
                   <Box>
-                    {overdueInvoices.map((inv: any) => (
+                    {overdueInvoices.map((inv) => (
                       <Box
                         key={inv.invoiceId}
                         sx={{
@@ -395,7 +423,7 @@ const AccountantDashboard: React.FC = () => {
                           <Typography variant="body2" fontWeight={600}>
                             {inv.studentName || `Student #${inv.studentId}`}
                           </Typography>
-                          <StatusBadge status={inv.status} />
+                          <StatusBadge status={inv.status || ''} />
                         </Box>
                         <Typography variant="caption" color="text.secondary" display="block">
                           Invoice #{inv.invoiceNumber || inv.invoiceId}
@@ -405,7 +433,7 @@ const AccountantDashboard: React.FC = () => {
                             Rs {Number(inv.balance || inv.totalAmount).toLocaleString()}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            Due: {new Date(inv.dueDate).toLocaleDateString()}
+                            Due: {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : '—'}
                           </Typography>
                         </Box>
                       </Box>

@@ -415,7 +415,7 @@ class FeeReminderService {
 
     // Reset status to pending
     return feeReminderRepository.updateStatus(reminderId, ReminderStatus.PENDING, {
-      failureReason: undefined
+      failureReason: null
     });
   }
 

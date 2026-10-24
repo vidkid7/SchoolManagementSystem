@@ -388,7 +388,7 @@ class AuditLoggerService {
     }
 
     // Fall back to direct connection IP
-    return req.ip || req.socket.remoteAddress || null;
+    return req.ip || req.socket?.remoteAddress || null;
   }
 }
 

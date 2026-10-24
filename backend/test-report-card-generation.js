@@ -6,6 +6,9 @@
 const axios = require('axios');
 
 const BASE_URL = 'http://localhost:5000/api/v1';
+const username = process.env.QA_USERNAME;
+const password = process.env.QA_PASSWORD;
+if (!username || !password) throw new Error('Set QA_USERNAME and QA_PASSWORD for the local QA account.');
 
 async function testReportCardGeneration() {
   try {
@@ -14,8 +17,8 @@ async function testReportCardGeneration() {
     // First, login to get token
     console.log('1. Logging in as admin...');
     const loginResponse = await axios.post(`${BASE_URL}/auth/login`, {
-      username: 'admin',
-      password: 'Admin@123'
+      username,
+      password
     });
 
     const token = loginResponse.data.data.accessToken;

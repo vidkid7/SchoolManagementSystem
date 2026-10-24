@@ -6,7 +6,7 @@
 
 import User, { UserStatus, UserRole } from '../../models/User.model';
 import AuditLog from '../../models/AuditLog.model';
-import { Op } from 'sequelize';
+import { col, fn, Op, where as sqlWhere } from 'sequelize';
 import crypto from 'crypto';
 import smsService from '../../services/sms.service';
 import { logger } from '../../utils/logger';
@@ -62,9 +62,10 @@ export class UserService {
     const where: any = { schoolConfigId };
 
     if (filters.search) {
+      const searchTerm = `%${filters.search.toLowerCase()}%`;
       where[Op.or] = [
-        { username: { [Op.like]: `%${filters.search}%` } },
-        { email: { [Op.like]: `%${filters.search}%` } },
+        sqlWhere(fn('LOWER', col('username')), { [Op.like]: searchTerm }),
+        sqlWhere(fn('LOWER', col('email')), { [Op.like]: searchTerm }),
       ];
     }
 

@@ -12,13 +12,14 @@ import ECA from '@models/ECA.model';
 import ECAEvent from '@models/ECAEvent.model';
 import ECAEnrollment from '@models/ECAEnrollment.model';
 import { sequelize } from '@config/database';
+import { setupEcaTestDatabase } from '../testSupport/ecaTestDatabase';
 
 describe('ECAEventService', () => {
   let testEcaId: number;
   let testEventId: number;
 
   beforeAll(async () => {
-    await sequelize.sync({ force: true });
+    await setupEcaTestDatabase();
 
     // Create test ECA
     const eca = await ECA.create({
@@ -37,8 +38,8 @@ describe('ECAEventService', () => {
   });
 
   afterEach(async () => {
-    await ECAEvent.destroy({ where: {}, force: true });
-    await ECAEnrollment.destroy({ where: {}, force: true });
+    await ECAEvent.destroy({ where: { ecaId: testEcaId }, force: true });
+    await ECAEnrollment.destroy({ where: { ecaId: testEcaId }, force: true });
   });
 
   describe('createEvent', () => {
@@ -175,7 +176,7 @@ describe('ECAEventService', () => {
 
     it('should return empty array if no enrolled students', async () => {
       // Remove all enrollments
-      await ECAEnrollment.destroy({ where: {}, force: true });
+      await ECAEnrollment.destroy({ where: { ecaId: testEcaId }, force: true });
 
       const studentIds = await ecaEventService.notifyEnrolledStudents(
         testEventId
@@ -384,7 +385,12 @@ describe('ECAEventService', () => {
         eventDate: newDate
       });
 
-      expect(event.eventDate.toDateString()).toBe(newDate.toDateString());
+      const expectedCalendarDate = [
+        newDate.getFullYear(),
+        String(newDate.getMonth() + 1).padStart(2, '0'),
+        String(newDate.getDate()).padStart(2, '0')
+      ].join('-');
+      expect(new Date(event.eventDate).toISOString().slice(0, 10)).toBe(expectedCalendarDate);
     });
 
     it('should throw error for past event date', async () => {

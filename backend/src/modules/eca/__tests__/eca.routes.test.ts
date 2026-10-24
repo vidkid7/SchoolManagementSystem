@@ -138,6 +138,39 @@ describe('ECA Routes', () => {
     });
   });
 
+  describe('ECA list query validation', () => {
+    it('rejects invalid enrollment filters before querying the service', async () => {
+      const response = await request(app).get('/api/v1/eca/enrollments?ecaId=bad&page=0&limit=101');
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      expect(ecaEnrollmentService.getEnrollments).not.toHaveBeenCalled();
+    });
+
+    it('rejects invalid event types and pagination before querying the service', async () => {
+      const response = await request(app).get('/api/v1/eca/events?type=webinar&page=-1&limit=101');
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      expect(ecaEventService.getEvents).not.toHaveBeenCalled();
+    });
+
+    it('rejects malformed achievement filters and oversized result limits', async () => {
+      const response = await request(app).get('/api/v1/eca/achievements?studentId=bad&limit=101');
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      expect(ECAAchievement.findAll).not.toHaveBeenCalled();
+    });
+
+    it('bounds recent activity queries before reading models', async () => {
+      const response = await request(app).get('/api/v1/eca/recent-activities?limit=1000');
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    });
+  });
+
   describe('POST /api/v1/eca', () => {
     it('should create a new ECA', async () => {
       const newECA = {

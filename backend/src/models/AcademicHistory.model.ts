@@ -49,24 +49,24 @@ export interface AcademicHistoryCreationAttributes extends Optional<AcademicHist
  */
 class AcademicHistory extends Model<AcademicHistoryAttributes, AcademicHistoryCreationAttributes> 
   implements AcademicHistoryAttributes {
-  public historyId!: number;
-  public studentId!: number;
-  public academicYearId!: number;
-  public classId!: number;
-  public gradeLevel!: number;
-  public rollNumber?: number;
-  public attendancePercentage?: number;
-  public gpa?: number;
-  public totalMarks?: number;
-  public rank?: number;
-  public completionStatus!: CompletionStatus;
-  public promotionEligible!: boolean;
-  public promotedToClass?: number;
-  public remarks?: string;
-  public promotedBy?: number;
-  public promotedAt?: Date;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public historyId: number;
+  declare public studentId: number;
+  declare public academicYearId: number;
+  declare public classId: number;
+  declare public gradeLevel: number;
+  declare public rollNumber?: number;
+  declare public attendancePercentage?: number;
+  declare public gpa?: number;
+  declare public totalMarks?: number;
+  declare public rank?: number;
+  declare public completionStatus: CompletionStatus;
+  declare public promotionEligible: boolean;
+  declare public promotedToClass?: number;
+  declare public remarks?: string;
+  declare public promotedBy?: number;
+  declare public promotedAt?: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   /**
    * Check if student was promoted

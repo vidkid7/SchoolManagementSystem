@@ -4,10 +4,11 @@
  * Manage student and staff leave applications
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
+import type { RootState } from '../../store';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import {
   Box,
@@ -60,7 +61,7 @@ export function LeaveManagement() {
   const theme = useTheme();
   const { t } = useTranslation();
   const S = useAdminStyles(theme);
-  const userRole = useSelector((state: any) => state.auth.user?.role);
+  const userRole = useSelector((state: RootState) => state.auth.user?.role);
   const canManageLeaves = userRole === 'School_Admin' || userRole === 'Class_Teacher';
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
@@ -73,11 +74,7 @@ export function LeaveManagement() {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchLeaves();
-  }, [activeTab, canManageLeaves]);
-
-  const fetchLeaves = async () => {
+  const fetchLeaves = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -90,12 +87,19 @@ export function LeaveManagement() {
       const leavesPayload = response.data?.data || [];
       const leavesData = Array.isArray(leavesPayload) ? leavesPayload : (leavesPayload.leaves || []);
       setLeaves(leavesData);
-    } catch (error: any) {
-      setError(error.response?.data?.message || t('attendance.failedToProcessLeave'));
+    } catch (error: unknown) {
+      const message = typeof error === 'object' && error !== null && 'response' in error
+        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+        : undefined;
+      setError(message || t('attendance.failedToProcessLeave'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, canManageLeaves, t]);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchLeaves);
+  }, [fetchLeaves]);
 
   const handleOpenDialog = (leave: LeaveApplication, action: 'approve' | 'reject') => {
     setSelectedLeave(leave);
@@ -133,9 +137,10 @@ export function LeaveManagement() {
       setTimeout(() => setSuccess(''), 3000);
       handleCloseDialog();
       fetchLeaves();
-    } catch (error: any) {
-      console.error('Failed to process leave:', error);
-      const errorMsg = error.response?.data?.message || t('attendance.failedToProcessLeave');
+    } catch (error: unknown) {
+      const errorMsg = typeof error === 'object' && error !== null && 'response' in error
+        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message || t('attendance.failedToProcessLeave')
+        : t('attendance.failedToProcessLeave');
       setError(errorMsg);
       setTimeout(() => setError(''), 5000);
     }
@@ -173,14 +178,19 @@ export function LeaveManagement() {
         {error && <Alert severity="error" sx={{ mb: 2, borderRadius: R.md }}>{error}</Alert>}
 
         {canManageLeaves && (
-          <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
-            <Tab label={t('common.pending')} sx={S.TAB_ACTIVE} />
-            <Tab label={t('attendance.approveLeave')} sx={S.TAB_ACTIVE} />
-            <Tab label={t('attendance.rejectLeave')} sx={S.TAB_ACTIVE} />
+          <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} aria-label={t('attendance.leaveManagement')}>
+            <Tab id="leave-pending-tab" aria-controls="leave-pending-panel" label={t('common.pending')} sx={S.TAB_ACTIVE} />
+            <Tab id="leave-approved-tab" aria-controls="leave-approved-panel" label={t('attendance.approveLeave')} sx={S.TAB_ACTIVE} />
+            <Tab id="leave-rejected-tab" aria-controls="leave-rejected-panel" label={t('attendance.rejectLeave')} sx={S.TAB_ACTIVE} />
           </Tabs>
         )}
       </Paper>
 
+      <Box
+        role={canManageLeaves ? 'tabpanel' : undefined}
+        id={canManageLeaves ? `leave-${activeTab === 0 ? 'pending' : activeTab === 1 ? 'approved' : 'rejected'}-panel` : undefined}
+        aria-labelledby={canManageLeaves ? `leave-${activeTab === 0 ? 'pending' : activeTab === 1 ? 'approved' : 'rejected'}-tab` : undefined}
+      >
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
           <CircularProgress />
@@ -239,6 +249,7 @@ export function LeaveManagement() {
                   </TableCell>
                   <TableCell align="center" sx={S.TD}>
                     <IconButton
+                      aria-label={t('common.view')}
                       size="small"
                       color="info"
                       onClick={() => {
@@ -253,6 +264,7 @@ export function LeaveManagement() {
                     {canManageLeaves && leave.status === 'pending' && (
                       <>
                         <IconButton
+                          aria-label={t('attendance.approveLeave')}
                           size="small"
                           color="success"
                           onClick={() => handleOpenDialog(leave, 'approve')}
@@ -261,6 +273,7 @@ export function LeaveManagement() {
                           <ApproveIcon />
                         </IconButton>
                         <IconButton
+                          aria-label={t('attendance.rejectLeave')}
                           size="small"
                           color="error"
                           onClick={() => handleOpenDialog(leave, 'reject')}
@@ -278,6 +291,7 @@ export function LeaveManagement() {
         </Table>
       </TableContainer>
       )}
+      </Box>
 
       <Dialog 
         open={dialogOpen} 
@@ -292,6 +306,7 @@ export function LeaveManagement() {
             : t('attendance.leaveApproveReject', { action: actionType === 'approve' ? t('attendance.approveLeave') : t('attendance.rejectLeave') })}
         </DialogTitle>
         <DialogContent>
+          {error && <Alert severity="error" role="alert" sx={{ mb: 2 }}>{error}</Alert>}
           {selectedLeave && (
             <Box sx={{ mb: 2 }}>
               <Typography variant="subtitle2" color="text.secondary">

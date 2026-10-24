@@ -9,7 +9,11 @@ import { NotFoundError, ValidationError } from '@middleware/errorHandler';
 
 describe('RolePermissionService', () => {
   beforeAll(async () => {
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('Role permission tests require TEST_DB_DIALECT=sqlite');
+    }
     await sequelize.sync({ force: true });
+    await sequelize.query('PRAGMA foreign_keys = OFF');
   });
 
   afterAll(async () => {
@@ -63,14 +67,14 @@ describe('RolePermissionService', () => {
       it('should return all active roles', async () => {
         await Role.create({
           name: 'Role 1',
-          code: 'ROLE_1',
+          code: 'ROLE_ONE',
           isSystem: false,
           isActive: true,
         });
 
         await Role.create({
           name: 'Role 2',
-          code: 'ROLE_2',
+          code: 'ROLE_TWO',
           isSystem: false,
           isActive: false,
         });
@@ -84,14 +88,14 @@ describe('RolePermissionService', () => {
       it('should return all roles including inactive when specified', async () => {
         await Role.create({
           name: 'Role 1',
-          code: 'ROLE_1',
+          code: 'ROLE_ONE',
           isSystem: false,
           isActive: true,
         });
 
         await Role.create({
           name: 'Role 2',
-          code: 'ROLE_2',
+          code: 'ROLE_TWO',
           isSystem: false,
           isActive: false,
         });
@@ -246,7 +250,7 @@ describe('RolePermissionService', () => {
       it('should return all active permissions', async () => {
         await Permission.create({
           name: 'Permission 1',
-          code: 'permission_1',
+          code: 'permission_one',
           category: PermissionCategory.STUDENT,
           action: PermissionAction.READ,
           resource: 'student',
@@ -256,7 +260,7 @@ describe('RolePermissionService', () => {
 
         await Permission.create({
           name: 'Permission 2',
-          code: 'permission_2',
+          code: 'permission_two',
           category: PermissionCategory.STAFF,
           action: PermissionAction.CREATE,
           resource: 'staff',
@@ -313,7 +317,7 @@ describe('RolePermissionService', () => {
 
         const perm1 = await Permission.create({
           name: 'Permission 1',
-          code: 'permission_1',
+          code: 'permission_one',
           category: PermissionCategory.STUDENT,
           action: PermissionAction.READ,
           resource: 'student',
@@ -323,7 +327,7 @@ describe('RolePermissionService', () => {
 
         const perm2 = await Permission.create({
           name: 'Permission 2',
-          code: 'permission_2',
+          code: 'permission_two',
           category: PermissionCategory.STAFF,
           action: PermissionAction.READ,
           resource: 'staff',
@@ -352,7 +356,7 @@ describe('RolePermissionService', () => {
 
         const perm1 = await Permission.create({
           name: 'Permission 1',
-          code: 'permission_1',
+          code: 'permission_one',
           category: PermissionCategory.STUDENT,
           action: PermissionAction.READ,
           resource: 'student',
@@ -362,7 +366,7 @@ describe('RolePermissionService', () => {
 
         const perm2 = await Permission.create({
           name: 'Permission 2',
-          code: 'permission_2',
+          code: 'permission_two',
           category: PermissionCategory.STAFF,
           action: PermissionAction.READ,
           resource: 'staff',
@@ -379,7 +383,7 @@ describe('RolePermissionService', () => {
         const permissions = await rolePermissionService.getRolePermissions(role.id);
 
         expect(permissions).toHaveLength(1);
-        expect(permissions[0].code).toBe('permission_2');
+        expect(permissions[0].code).toBe('permission_two');
       });
 
       it('should not allow modifying system role permissions', async () => {

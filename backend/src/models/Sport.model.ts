@@ -29,18 +29,18 @@ export class Sport
   extends Model<SportAttributes, SportCreationAttributes>
   implements SportAttributes
 {
-  public sportId!: number;
-  public name!: string;
-  public nameNp?: string;
-  public category!: 'individual' | 'team' | 'traditional';
-  public description?: string;
-  public descriptionNp?: string;
-  public coordinatorId!: number;
-  public academicYearId!: number;
-  public status!: 'active' | 'inactive';
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
-  public readonly deletedAt?: Date;
+  declare public sportId: number;
+  declare public name: string;
+  declare public nameNp?: string;
+  declare public category: 'individual' | 'team' | 'traditional';
+  declare public description?: string;
+  declare public descriptionNp?: string;
+  declare public coordinatorId: number;
+  declare public academicYearId: number;
+  declare public status: 'active' | 'inactive';
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
+  declare public readonly deletedAt?: Date;
 
   public isTeamSport(): boolean {
     return this.getDataValue('category') === 'team';

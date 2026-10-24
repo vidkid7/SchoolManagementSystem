@@ -41,9 +41,17 @@ async createTemplate(req: Request, res: Response): Promise<void> {
    */
 async getAllTemplates(req: Request, res: Response): Promise<void> {
     try {
+      const activeQuery = req.query.isActive;
+      const isActive = typeof activeQuery === 'boolean'
+        ? activeQuery
+        : activeQuery === 'true'
+          ? true
+          : activeQuery === 'false'
+            ? false
+            : undefined;
       const filters: CertificateTemplateFilters = {
         type: req.query.type as string,
-        isActive: req.query.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined,
+        isActive,
         search: req.query.search as string,
       };
 

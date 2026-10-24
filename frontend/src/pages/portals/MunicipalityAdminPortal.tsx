@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -23,7 +23,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { C, useAdminStyles } from '../../theme/designTokens';
 import {
   Add as AddIcon,
   Assessment as AssessmentIcon,
@@ -35,7 +35,6 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { useTranslation } from 'react-i18next';
-import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 
 interface DashboardData {
   municipality: {
@@ -123,6 +122,14 @@ interface SchoolAdminForm {
   phoneNumber: string;
 }
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === 'object' && error !== null && 'response' in error) {
+    const response = (error as { response?: { data?: { message?: unknown } } }).response;
+    if (typeof response?.data?.message === 'string') return response.data.message;
+  }
+  return fallback;
+}
+
 const initialSchoolForm: SchoolForm = {
   schoolNameEn: '',
   schoolCode: '',
@@ -140,7 +147,6 @@ const initialSchoolAdminForm: SchoolAdminForm = {
 
 export default function MunicipalityAdminPortal() {
   const { t } = useTranslation();
-  const navigate = useSlugNavigate();
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
@@ -157,7 +163,7 @@ export default function MunicipalityAdminPortal() {
   const [message, setMessage] = useState<string>('');
   const [error, setError] = useState<string>('');
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -178,16 +184,18 @@ export default function MunicipalityAdminPortal() {
       setSchools(Array.isArray(schoolsData) ? schoolsData : schoolsData?.schools || schoolsData?.items || []);
       setReports(reportsResponse.data.data as ReportsData);
       setIncidents(incidentsResponse.data.data as IncidentsData);
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('portal.failedToLoadData'));
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, t('portal.failedToLoadData')));
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
+    // loadData starts API requests and updates state when those requests settle.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadData();
-  }, []);
+  }, [loadData]);
 
   const handleCreateSchool = async (event: FormEvent) => {
     event.preventDefault();
@@ -208,8 +216,8 @@ export default function MunicipalityAdminPortal() {
       setSchoolForm(initialSchoolForm);
       setMessage(t('portal.schoolCreatedSuccess'));
       await loadData();
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('portal.failedToLoadData'));
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, t('portal.failedToLoadData')));
     } finally {
       setSavingSchool(false);
     }
@@ -225,8 +233,8 @@ export default function MunicipalityAdminPortal() {
         school.isActive ? t('portal.schoolDeactivatedSuccess') : t('portal.schoolActivatedSuccess')
       );
       await loadData();
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('portal.failedToLoadData'));
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, t('portal.failedToLoadData')));
     }
   };
 
@@ -236,7 +244,8 @@ export default function MunicipalityAdminPortal() {
     setAdminDialogOpen(true);
   };
 
-  const handleCreateSchoolAdmin = async () => {
+  const handleCreateSchoolAdmin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (!selectedSchool) {
       return;
     }
@@ -254,8 +263,8 @@ export default function MunicipalityAdminPortal() {
       setAdminDialogOpen(false);
       setMessage(t('portal.schoolAdminCreatedSuccess'));
       await loadData();
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('portal.failedToLoadData'));
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, t('portal.failedToLoadData')));
     } finally {
       setSavingAdmin(false);
     }
@@ -448,6 +457,7 @@ export default function MunicipalityAdminPortal() {
                 <Stack spacing={1.5}>
                   <TextField
                     required
+                    inputProps={{ maxLength: 255 }}
                     label={t('portal.schoolName')}
                     value={schoolForm.schoolNameEn}
                     onChange={(event) =>
@@ -458,6 +468,7 @@ export default function MunicipalityAdminPortal() {
                     }
                   />
                   <TextField
+                    inputProps={{ maxLength: 50 }}
                     label={t('portal.schoolCode')}
                     value={schoolForm.schoolCode}
                     onChange={(event) =>
@@ -478,6 +489,7 @@ export default function MunicipalityAdminPortal() {
                     }
                   />
                   <TextField
+                    inputProps={{ maxLength: 20 }}
                     label={t('portal.phone')}
                     value={schoolForm.phone}
                     onChange={(event) =>
@@ -488,6 +500,7 @@ export default function MunicipalityAdminPortal() {
                     }
                   />
                   <TextField
+                    inputProps={{ maxLength: 255 }}
                     label={t('portal.email')}
                     type="email"
                     value={schoolForm.email}
@@ -590,59 +603,70 @@ export default function MunicipalityAdminPortal() {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             {selectedSchool ? `School: ${selectedSchool.schoolNameEn}` : ''}
           </Typography>
-          <Stack spacing={1.5}>
-            <TextField
-              required
-              label={t('portal.username')}
-              value={adminForm.username}
-              onChange={(event) =>
-                setAdminForm((previous) => ({
-                  ...previous,
-                  username: event.target.value,
-                }))
-              }
-            />
-            <TextField
-              required
-              label={t('portal.email')}
-              type="email"
-              value={adminForm.email}
-              onChange={(event) =>
-                setAdminForm((previous) => ({
-                  ...previous,
-                  email: event.target.value,
-                }))
-              }
-            />
-            <TextField
-              required
-              label={t('portal.password')}
-              type="password"
-              value={adminForm.password}
-              onChange={(event) =>
-                setAdminForm((previous) => ({
-                  ...previous,
-                  password: event.target.value,
-                }))
-              }
-            />
-            <TextField
-              label={t('portal.phone')}
-              value={adminForm.phoneNumber}
-              onChange={(event) =>
-                setAdminForm((previous) => ({
-                  ...previous,
-                  phoneNumber: event.target.value,
-                }))
-              }
-            />
-          </Stack>
+          <Box component="form" id="school-admin-form" onSubmit={handleCreateSchoolAdmin}>
+            <Stack spacing={1.5}>
+              <TextField
+                required
+                inputProps={{ minLength: 3, maxLength: 50, pattern: '[A-Za-z0-9]+' }}
+                label={t('portal.username')}
+                value={adminForm.username}
+                onChange={(event) =>
+                  setAdminForm((previous) => ({
+                    ...previous,
+                    username: event.target.value,
+                  }))
+                }
+              />
+              <TextField
+                required
+                inputProps={{ maxLength: 100 }}
+                label={t('portal.email')}
+                type="email"
+                value={adminForm.email}
+                onChange={(event) =>
+                  setAdminForm((previous) => ({
+                    ...previous,
+                    email: event.target.value,
+                  }))
+                }
+              />
+              <TextField
+                required
+                inputProps={{
+                  minLength: 8,
+                  maxLength: 128,
+                  pattern: '(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).+',
+                }}
+                label={t('portal.password')}
+                type="password"
+                value={adminForm.password}
+                onChange={(event) =>
+                  setAdminForm((previous) => ({
+                    ...previous,
+                    password: event.target.value,
+                  }))
+                }
+              />
+              <TextField
+                inputProps={{ maxLength: 20, pattern: '(\\+977[-\\s]?)?[0-9]{7,10}' }}
+                label={t('portal.phone')}
+                value={adminForm.phoneNumber}
+                onChange={(event) =>
+                  setAdminForm((previous) => ({
+                    ...previous,
+                    phoneNumber: event.target.value,
+                  }))
+                }
+              />
+            </Stack>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAdminDialogOpen(false)}>{t('common.cancel')}</Button>
           <Button
+            type="submit"
+            form="school-admin-form"
             sx={S.BTN_PRIMARY}
-            onClick={() => void handleCreateSchoolAdmin()}
             disabled={
               savingAdmin ||
               !adminForm.username.trim() ||

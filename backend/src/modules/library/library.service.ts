@@ -11,6 +11,8 @@ import { Book, BookCreationAttributes } from '../../models/Book.model';
 import { Circulation, CirculationCreationAttributes } from '../../models/Circulation.model';
 import { Notification } from '../../models/Notification.model';
 import Student from '../../models/Student.model';
+import { LibraryFine } from '../../models/LibraryFine.model';
+import { lateFeeService } from './lateFee.service';
 
 export interface BookFilters {
   category?: string;
@@ -212,6 +214,29 @@ export class LibraryService {
     const daysOverdue = circulation.getDaysOverdue();
     if (daysOverdue > 0) {
       circulation.fine = daysOverdue * this.DEFAULT_DAILY_FINE;
+      const existingFine = await LibraryFine.findOne({ where: { circulationId, fineReason: 'overdue' } });
+      if (existingFine) {
+        const paidAmount = Number(existingFine.paidAmount) || 0;
+        const waivedAmount = Number(existingFine.waivedAmount) || 0;
+        const fineAmount = Math.max(Number(circulation.fine), paidAmount + waivedAmount);
+        const balance = Math.max(0, fineAmount - paidAmount - waivedAmount);
+        await existingFine.update({
+          fineAmount,
+          balance,
+          daysOverdue,
+          dailyRate: this.DEFAULT_DAILY_FINE,
+          status: balance === 0 ? (waivedAmount > 0 ? 'waived' : 'paid') : (paidAmount > 0 || waivedAmount > 0 ? 'partial' : 'pending'),
+        });
+      } else {
+        await lateFeeService.createFine({
+          circulationId,
+          studentId: circulation.studentId,
+          fineAmount: Number(circulation.fine),
+          fineReason: 'overdue',
+          daysOverdue,
+          dailyRate: this.DEFAULT_DAILY_FINE,
+        });
+      }
     }
 
     // Update circulation
@@ -225,11 +250,6 @@ export class LibraryService {
     const book = await Book.findByPk(circulation.bookId);
     if (book) {
       await book.incrementAvailableCopies();
-    }
-
-    // Send notification for fine if applicable
-    if (circulation.fine > 0) {
-      await this.sendFineNotification(circulation.studentId, circulation.fine);
     }
 
     return circulation;
@@ -344,23 +364,6 @@ export class LibraryService {
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + this.DEFAULT_BORROWING_DAYS);
     return dueDate;
-  }
-
-  /**
-   * Send fine notification
-   */
-  private async sendFineNotification(studentId: number, fine: number): Promise<void> {
-    const student = await Student.findByPk(studentId);
-    if (student && student.userId) {
-      await Notification.create({
-        userId: student.userId,
-        type: 'warning',
-        category: 'library',
-        title: 'Library Fine Generated',
-        message: `A fine of NPR ${fine.toFixed(2)} has been generated for late return of a library book.`,
-        data: { studentId, fineAmount: fine },
-      });
-    }
   }
 
   /**

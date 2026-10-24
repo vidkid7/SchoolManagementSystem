@@ -4,6 +4,11 @@ const bcrypt = require('bcrypt');
 
 // Railway DATABASE_URL should be set as environment variable
 const DATABASE_URL = process.env.DATABASE_URL;
+const initialAdminPassword = process.env.INITIAL_ADMIN_PASSWORD;
+
+if (process.env.NODE_ENV === 'production' || process.env.ALLOW_DEMO_SEED !== 'true' || !initialAdminPassword || initialAdminPassword.length < 14) {
+  throw new Error('This legacy seeder is disabled in production. For local setup, set ALLOW_DEMO_SEED=true and a 14+ character INITIAL_ADMIN_PASSWORD.');
+}
 
 if (!DATABASE_URL) {
   console.error('❌ DATABASE_URL environment variable is required!');
@@ -58,7 +63,7 @@ async function seedRailwayDatabase() {
       }
 
       const roleId = adminRole[0].id;
-      const hashedPassword = await bcrypt.hash('Admin@123', 10);
+      const hashedPassword = await bcrypt.hash(initialAdminPassword, 10);
 
       // Create admin user (MySQL syntax)
       const userId = require('crypto').randomUUID();
@@ -87,9 +92,7 @@ async function seedRailwayDatabase() {
       `);
 
       console.log('✅ Admin user created successfully!\n');
-      console.log('Login credentials:');
-      console.log('  Username: admin');
-      console.log('  Password: Admin@123\n');
+      console.log('Initial administrator created; use the supplied one-time password and change it after first login.');
     } else {
       console.log('ℹ️  Users already exist in database.\n');
       

@@ -1,25 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box, Grid, Card, CardContent, Typography, Button, Divider, List, ListItem,
+  Box, Grid, Typography, Button, Divider, List, ListItem,
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
-  TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog,
-  DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select,
-  FormControl, InputLabel, IconButton, Tooltip, useTheme,
+  TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, useTheme,
 } from '@mui/material';
 import {
   School as SchoolIcon,
   People as PeopleIcon,
   Message as MessageIcon,
   CalendarMonth as CalendarIcon,
-  Description as DocIcon,
   Notifications as AnnouncementIcon,
   Person as PersonIcon,
-  CheckCircle as PresentIcon,
   EventNote as AttendanceIcon,
   Assignment as AssignmentIcon,
   MenuBook as LessonIcon,
   Schedule as ScheduleIcon,
-  TrendingUp as PerformanceIcon,
   PendingActions as PendingIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
@@ -30,39 +25,30 @@ import { C, useAdminStyles } from '../../theme/designTokens';
 import { useTranslation } from 'react-i18next';
 
 interface DashboardData {
-  totalStudents?: number;
-  presentToday?: number;
-  averageAttendance?: number;
-  pendingTasks?: number;
-  classes?: Array<{ id: number; name: string; section: string; studentCount: number }>;
-  recentActivity?: Array<{ id: number; type: string; description: string; date: string }>;
+  stats?: { classesToday?: number; pendingTasks?: number; totalStudents?: number; avgAttendance?: number };
+  schedule?: ScheduleEntry[];
+  tasks?: PendingTask[];
+  performances?: ClassPerformance[];
 }
 
 interface ClassPerformance {
-  className?: string;
-  section?: string;
-  averageScore?: number;
-  topPerformer?: string;
-  subjectWise?: Array<{ subject: string; average: number }>;
+  class?: string;
+  attendance?: number;
 }
 
 interface ScheduleEntry {
   id?: number;
   period?: number;
   subject?: string;
-  className?: string;
-  section?: string;
-  startTime?: string;
-  endTime?: string;
+  class?: string;
+  time?: string;
   room?: string;
 }
 
 interface PendingTask {
-  id: number;
   title: string;
   type: string;
-  dueDate: string;
-  status: string;
+  count: number;
   priority?: string;
 }
 
@@ -101,20 +87,12 @@ const ClassTeacherPortal: React.FC = () => {
   const loadData = useCallback(async () => {
     if (!accessToken) return;
     try {
-      const [dashRes, perfRes, schedRes, tasksRes] = await Promise.all([
-        apiClient.get('/api/v1/teachers/dashboard', authHdr(accessToken)).catch(() => ({ data: { data: {} } })),
-        apiClient.get('/api/v1/teachers/classes/performance', authHdr(accessToken)).catch(() => ({ data: { data: [] } })),
-        apiClient.get('/api/v1/teachers/schedule/today', authHdr(accessToken)).catch(() => ({ data: { data: [] } })),
-        apiClient.get('/api/v1/teachers/tasks/pending', authHdr(accessToken)).catch(() => ({ data: { data: [] } })),
-      ]);
+      const dashRes = await apiClient.get('/api/v1/teachers/dashboard', authHdr(accessToken));
       const d = dashRes.data?.data;
       setDashboard(d || {});
-      const perf = perfRes.data?.data;
-      setPerformance(Array.isArray(perf) ? perf : perf?.classes ?? []);
-      const sched = schedRes.data?.data;
-      setSchedule(Array.isArray(sched) ? sched : sched?.schedule ?? []);
-      const tasks = tasksRes.data?.data;
-      setPendingTasks(Array.isArray(tasks) ? tasks : tasks?.tasks ?? []);
+      setPerformance(Array.isArray(d?.performances) ? d.performances : []);
+      setSchedule(Array.isArray(d?.schedule) ? d.schedule : []);
+      setPendingTasks(Array.isArray(d?.tasks) ? d.tasks : []);
       // Try to get profile
       try {
         const profileRes = await apiClient.get('/api/v1/auth/me', authHdr(accessToken));
@@ -127,14 +105,16 @@ const ClassTeacherPortal: React.FC = () => {
     }
   }, [accessToken, t]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  // The callback updates view state only after its API requests settle.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void loadData(); }, [loadData]);
 
   if (loading) return <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh"><CircularProgress /></Box>;
 
-  const totalStudents = dashboard.totalStudents ?? dashboard.classes?.reduce((s, c) => s + (c.studentCount || 0), 0) ?? 0;
-  const presentToday = dashboard.presentToday ?? 0;
-  const avgAttendance = dashboard.averageAttendance ?? 0;
-  const pendingCount = dashboard.pendingTasks ?? pendingTasks.length;
+  const totalStudents = dashboard.stats?.totalStudents ?? 0;
+  const classesToday = dashboard.stats?.classesToday ?? schedule.length;
+  const avgAttendance = dashboard.stats?.avgAttendance ?? 0;
+  const pendingCount = dashboard.stats?.pendingTasks ?? pendingTasks.length;
 
   return (
     <Box sx={{ p: 3, mt: { xs: 7, sm: 8 } }}>
@@ -156,7 +136,7 @@ const ClassTeacherPortal: React.FC = () => {
       <Grid container spacing={2} mb={3}>
         {[
           { label: t('portal.myStudents'), value: totalStudents, icon: <PeopleIcon />, color: C.primary },
-          { label: t('portal.presentToday'), value: presentToday, icon: <PresentIcon />, color: C.success },
+          { label: t('portal.classesToday'), value: classesToday, icon: <ScheduleIcon />, color: C.success },
           { label: t('portal.averageAttendance'), value: `${avgAttendance}%`, icon: <AttendanceIcon />, color: C.info },
           { label: t('portal.pendingTasksCount'), value: pendingCount, icon: <PendingIcon />, color: C.warning },
         ].map(stat => (
@@ -176,7 +156,7 @@ const ClassTeacherPortal: React.FC = () => {
       <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
         <Tab icon={<SchoolIcon />} iconPosition="start" label={t('portal.classOverview')} />
         <Tab icon={<AttendanceIcon />} iconPosition="start" label={t('portal.attendanceOverview')} />
-        <Tab icon={<AssignmentIcon />} iconPosition="start" label={t('portal.assignments')} />
+        <Tab icon={<AssignmentIcon />} iconPosition="start" label={t('portal.pendingTasksCount')} />
         <Tab icon={<LessonIcon />} iconPosition="start" label={t('portal.lessonPlans')} />
         <Tab icon={<MessageIcon />} iconPosition="start" label={t('communication.messages')} />
         <Tab icon={<PersonIcon />} iconPosition="start" label={t('portal.profileAndLinks')} />
@@ -191,18 +171,14 @@ const ClassTeacherPortal: React.FC = () => {
               <TableHead>
                 <TableRow sx={{ bgcolor: S.TH_BG }}>
                   <TableCell>{t('common.class')}</TableCell>
-                  <TableCell>{t('common.section')}</TableCell>
-                  <TableCell>{t('portal.averageScore')}</TableCell>
-                  <TableCell>{t('portal.topPerformer')}</TableCell>
+                  <TableCell>{t('portal.averageAttendance')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {performance.map((p, i) => (
                   <TableRow key={i} hover>
-                    <TableCell>{p.className || '—'}</TableCell>
-                    <TableCell>{p.section || '—'}</TableCell>
-                    <TableCell><Chip label={`${p.averageScore ?? 0}%`} size="small" color={Number(p.averageScore) >= 70 ? 'success' : 'warning'} /></TableCell>
-                    <TableCell>{p.topPerformer || '—'}</TableCell>
+                    <TableCell>{p.class || '—'}</TableCell>
+                    <TableCell><Chip label={`${p.attendance ?? 0}%`} size="small" color={Number(p.attendance) >= 70 ? 'success' : 'warning'} /></TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -231,8 +207,8 @@ const ClassTeacherPortal: React.FC = () => {
                 <TableRow key={i} hover>
                   <TableCell>{s.period || i + 1}</TableCell>
                   <TableCell><strong>{s.subject || '—'}</strong></TableCell>
-                  <TableCell>{s.className || '—'} {s.section || ''}</TableCell>
-                  <TableCell>{s.startTime || '—'} - {s.endTime || '—'}</TableCell>
+                  <TableCell>{s.class || '—'}</TableCell>
+                  <TableCell>{s.time || '—'}</TableCell>
                   <TableCell>{s.room || '—'}</TableCell>
                 </TableRow>
               ))}
@@ -251,12 +227,12 @@ const ClassTeacherPortal: React.FC = () => {
                 <Typography variant="h5" fontWeight={700}>{totalStudents}</Typography>
               </Grid>
               <Grid item xs={6} sm={3}>
-                <Typography variant="body2" color="text.secondary">{t('portal.presentToday')}</Typography>
-                <Typography variant="h5" fontWeight={700} color="success.main">{presentToday}</Typography>
+                <Typography variant="body2" color="text.secondary">{t('portal.classesToday')}</Typography>
+                <Typography variant="h5" fontWeight={700} color="success.main">{classesToday}</Typography>
               </Grid>
               <Grid item xs={6} sm={3}>
-                <Typography variant="body2" color="text.secondary">{t('portal.absentToday')}</Typography>
-                <Typography variant="h5" fontWeight={700} color="error.main">{totalStudents - presentToday}</Typography>
+                <Typography variant="body2" color="text.secondary">{t('portal.pendingTasksCount')}</Typography>
+                <Typography variant="h5" fontWeight={700} color="warning.main">{pendingCount}</Typography>
               </Grid>
               <Grid item xs={6} sm={3}>
                 <Typography variant="body2" color="text.secondary">{t('portal.avgAttendance')}</Typography>
@@ -269,41 +245,32 @@ const ClassTeacherPortal: React.FC = () => {
         </Button>
       </TabPanel>
 
-      {/* Assignments */}
+      {/* Pending tasks */}
       <TabPanel value={tab} index={2}>
-        <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.assignments')}</Typography>
+        <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.pendingTasksCount')}</Typography>
         <Box sx={{ ...S.GLASS, p: 3, mb: 3 }}>
-            <Typography variant="body1" mb={2}>
-              {t('portal.assignmentsDesc')}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" mb={2}>
-              {t('portal.pendingTasksCount')}: <strong>{pendingTasks.filter(t => t.type === 'assignment').length}</strong> {t('portal.assignmentsToReview')}
-            </Typography>
+            <Typography variant="body2" color="text.secondary" mb={2}>{t('portal.pendingTasksCount')}: <strong>{pendingCount}</strong></Typography>
             <Button sx={S.BTN_PRIMARY} startIcon={<AssignmentIcon />} onClick={() => navigate('/teacher/assignments')}>
               {t('portal.goToAssignments')}
             </Button>
         </Box>
-        {pendingTasks.filter(t => t.type === 'assignment').length > 0 && (
+        {pendingTasks.length > 0 && (
           <TableContainer component={Paper} sx={S.GLASS}>
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ bgcolor: S.TH_BG }}>
                   <TableCell>{t('common.title')}</TableCell>
-                  <TableCell>{t('portal.dueDate')}</TableCell>
                   <TableCell>{t('common.priority')}</TableCell>
-                  <TableCell>{t('common.status')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {pendingTasks.filter(t => t.type === 'assignment').map(t => (
-                  <TableRow key={t.id} hover>
+                {pendingTasks.map((t, i) => (
+                  <TableRow key={`${t.type}-${i}`} hover>
                     <TableCell><strong>{t.title}</strong></TableCell>
-                    <TableCell>{t.dueDate ? new Date(t.dueDate).toLocaleDateString() : '—'}</TableCell>
                     <TableCell>
                       <Chip label={t.priority || 'normal'} size="small"
                         color={t.priority === 'high' ? 'error' : t.priority === 'medium' ? 'warning' : 'default'} />
                     </TableCell>
-                    <TableCell><Chip label={t.status} size="small" color="warning" /></TableCell>
                   </TableRow>
                 ))}
               </TableBody>

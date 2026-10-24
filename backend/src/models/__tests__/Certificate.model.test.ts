@@ -34,10 +34,7 @@ function createCertificateInstance(overrides: Partial<Certificate> = {}): Certif
     ...overrides,
   };
 
-  // Create instance with prototype methods
-  const instance = Object.create(Certificate.prototype);
-  Object.assign(instance, data);
-  return instance as Certificate;
+  return Certificate.build(data as any);
 }
 
 describe('Certificate Model', () => {

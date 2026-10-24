@@ -6,7 +6,10 @@
  * Requirements: 11.7, 11.8, 11.9
  */
 
-import { ECAAchievement } from '../ECAAchievement.model';
+import sequelize from '@config/database';
+import { ECAAchievement, initECAAchievement } from '../ECAAchievement.model';
+
+initECAAchievement(sequelize);
 
 describe('ECAAchievement Model', () => {
   describe('isHighLevel', () => {

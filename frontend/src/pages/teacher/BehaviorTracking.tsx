@@ -40,7 +40,7 @@ import {
 import apiClient from '../../services/apiClient';
 import { formatLocalDate } from '../../utils/dateUtils';
 import { useTheme } from '@mui/material';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { C, useAdminStyles } from '../../theme/designTokens';
 
 interface BehaviorRecord {
   id: number;
@@ -71,6 +71,7 @@ export function BehaviorTracking() {
   const [openDialog, setOpenDialog] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [selectedRecord, setSelectedRecord] = useState<BehaviorRecord | null>(null);
 
   const [formData, setFormData] = useState({
     studentId: null as number | null,
@@ -80,10 +81,6 @@ export function BehaviorTracking() {
     actionTaken: '',
     date: formatLocalDate(new Date()),
   });
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const fetchData = async () => {
     try {
@@ -96,13 +93,26 @@ export function BehaviorTracking() {
       setStudents(studentsRes.data?.data?.students || []);
     } catch (err) {
       console.error('Failed to fetch data:', err);
+      setError(t('portal.failedToLoadData'));
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    // Load the current teacher's records and class roster once on mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
+    fetchData();
+  }, []);
+
   const handleSubmit = async () => {
+    if (!formData.studentId || !formData.category || !formData.description.trim() || !formData.date) {
+      setError(t('teacher.completeRequiredFields'));
+      return;
+    }
+
     try {
+      setError('');
       await apiClient.post('/teachers/behavior-records', formData);
       setSuccess(t('teacher.behaviorRecordAdded'));
       setOpenDialog(false);
@@ -116,8 +126,11 @@ export function BehaviorTracking() {
         actionTaken: '',
         date: formatLocalDate(new Date()),
       });
-    } catch (err: any) {
-      setError(t('portal.failedToLoadData'));
+    } catch (err: unknown) {
+      const response = typeof err === 'object' && err !== null && 'response' in err
+        ? (err as { response?: { data?: { message?: unknown } } }).response
+        : undefined;
+      setError(typeof response?.data?.message === 'string' ? response.data.message : t('portal.failedToLoadData'));
     }
   };
 
@@ -237,7 +250,12 @@ export function BehaviorTracking() {
                   <TableCell sx={S.TD}>{record.description}</TableCell>
                   <TableCell sx={S.TD}>{record.actionTaken || '—'}</TableCell>
                   <TableCell align="center" sx={S.TD}>
-                    <IconButton size="small" title="View Details">
+                    <IconButton
+                      size="small"
+                      aria-label={t('common.details')}
+                      title={t('common.details')}
+                      onClick={() => setSelectedRecord(record)}
+                    >
                       <ViewIcon fontSize="small" />
                     </IconButton>
                   </TableCell>
@@ -248,12 +266,31 @@ export function BehaviorTracking() {
         </Table>
       </TableContainer>
 
+      <Dialog open={Boolean(selectedRecord)} onClose={() => setSelectedRecord(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>{t('teacher.behaviorDetails')}</DialogTitle>
+        <DialogContent>
+          {selectedRecord && (
+            <Grid container spacing={2} sx={{ mt: 0.5 }}>
+              <Grid item xs={12} sm={6}><Typography variant="caption" color="text.secondary">{t('portal.student')}</Typography><Typography>{selectedRecord.studentName}</Typography></Grid>
+              <Grid item xs={12} sm={6}><Typography variant="caption" color="text.secondary">{t('common.date')}</Typography><Typography>{formatLocalDate(new Date(selectedRecord.date))}</Typography></Grid>
+              <Grid item xs={12} sm={6}><Typography variant="caption" color="text.secondary">{t('common.type')}</Typography><Typography>{t(`teacher.${selectedRecord.type}`)}</Typography></Grid>
+              <Grid item xs={12} sm={6}><Typography variant="caption" color="text.secondary">{t('portal.categoryLabel')}</Typography><Typography>{selectedRecord.category}</Typography></Grid>
+              <Grid item xs={12}><Typography variant="caption" color="text.secondary">{t('common.description')}</Typography><Typography sx={{ whiteSpace: 'pre-wrap' }}>{selectedRecord.description}</Typography></Grid>
+              <Grid item xs={12}><Typography variant="caption" color="text.secondary">{t('teacher.actionTaken')}</Typography><Typography>{selectedRecord.actionTaken || '—'}</Typography></Grid>
+              <Grid item xs={12}><Typography variant="caption" color="text.secondary">{t('teacher.recordedBy')}</Typography><Typography>{selectedRecord.recordedBy}</Typography></Grid>
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions><Button onClick={() => setSelectedRecord(null)}>{t('common.close')}</Button></DialogActions>
+      </Dialog>
+
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{t('teacher.recordStudentBehavior')}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <Autocomplete
               options={students}
+              isOptionEqualToValue={(option, value) => option.studentId === value.studentId}
               getOptionLabel={(option) => `${option.rollNumber} - ${option.firstNameEn} ${option.lastNameEn}`}
               onChange={(_, value) => setFormData({ ...formData, studentId: value?.studentId || null })}
               renderInput={(params) => (
@@ -265,7 +302,7 @@ export function BehaviorTracking() {
               label={t('common.type')}
               select
               value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+              onChange={(e) => setFormData({ ...formData, type: e.target.value as 'positive' | 'negative' | 'neutral' })}
               required
               fullWidth
             >
@@ -328,7 +365,7 @@ export function BehaviorTracking() {
           <Button
             onClick={handleSubmit}
             variant="contained" sx={S.BTN_PRIMARY}
-            disabled={!formData.studentId || !formData.description}
+            disabled={!formData.studentId || !formData.category || !formData.description.trim() || !formData.date}
           >
             {t('teacher.recordBehavior')}
           </Button>

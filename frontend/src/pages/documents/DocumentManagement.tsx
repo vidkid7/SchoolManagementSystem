@@ -7,7 +7,7 @@
  * Requirements: 27.1, 27.5, 27.6
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import {
   Box,
@@ -63,13 +63,11 @@ import {
   PictureAsPdf as PdfIcon,
   Image as ImageIcon,
   Description as DocIcon,
-  FilterList as FilterIcon,
   Clear as ClearIcon,
   Refresh as RefreshIcon,
-  Add as AddIcon,
   History as HistoryIcon,
 } from '@mui/icons-material';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { C, useAdminStyles } from '../../theme/designTokens';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from '../../services/apiClient';
 
@@ -207,10 +205,17 @@ const getCategoryColor = (category: string): 'default' | 'primary' | 'secondary'
   return colors[category] || 'default';
 };
 
+const getDocumentErrorMessage = (error: unknown, fallback: string): string => {
+  if (typeof error !== 'object' || error === null || !('response' in error)) return fallback;
+  const response = (error as { response?: { data?: { error?: { message?: unknown } } } }).response;
+  return typeof response?.data?.error?.message === 'string' ? response.data.error.message : fallback;
+};
+
 export const DocumentManagement = () => {
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const { t } = useTranslation();
+  const failedToLoadDocumentsMessage = t('documents.failedToLoadDocuments');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadDialogTriggerRef = useRef<HTMLElement | null>(null);
 
@@ -261,6 +266,7 @@ export const DocumentManagement = () => {
     accessLevel: 'private',
   });
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [updatingDocument, setUpdatingDocument] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [tagInput, setTagInput] = useState('');
@@ -272,20 +278,11 @@ export const DocumentManagement = () => {
   // State for tabs
   const [tabValue, setTabValue] = useState(0);
 
-  // Fetch documents on mount and when filters change
-  useEffect(() => {
-    if (filters.search !== debouncedSearch) {
-      setLoading(true);
-      return;
-    }
-    fetchDocuments();
-  }, [page, rowsPerPage, filters.category, filters.status, filters.accessLevel, filters.startDate, filters.endDate, filters.search, debouncedSearch]);
-
   useEffect(() => () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
   }, [previewUrl]);
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -307,19 +304,39 @@ export const DocumentManagement = () => {
         setDocuments(response.data.data);
         setTotalCount(response.data.meta?.total || response.data.data.length);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || t('documents.failedToLoadDocuments'));
+    } catch (err: unknown) {
+      setError(getDocumentErrorMessage(err, failedToLoadDocumentsMessage));
     } finally {
       setLoading(false);
     }
-  };
+  }, [
+    page,
+    rowsPerPage,
+    debouncedSearch,
+    filters.category,
+    filters.status,
+    filters.accessLevel,
+    filters.startDate,
+    filters.endDate,
+    failedToLoadDocumentsMessage,
+  ]);
+
+  // Fetch after search settles; the input handler sets loading during the debounce window.
+  useEffect(() => {
+    if (filters.search !== debouncedSearch) return;
+    // Fetching here synchronizes the list with external API state after filters change.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchDocuments();
+  }, [filters.search, debouncedSearch, fetchDocuments]);
 
   const handleFilterChange = (field: keyof DocumentFilters, value: string) => {
+    if (field === 'search') setLoading(true);
     setFilters(prev => ({ ...prev, [field]: value }));
     setPage(0);
   };
 
   const handleClearFilters = () => {
+    setLoading(true);
     setFilters({
       search: '',
       category: '',
@@ -336,9 +353,10 @@ export const DocumentManagement = () => {
     if (file) {
       // Check file size (10MB max)
       if (file.size > 10 * 1024 * 1024) {
-        setError(t('documents.fileSizeExceedsLimit'));
+        setUploadError(t('documents.fileSizeExceedsLimit'));
         return;
       }
+      setUploadError(null);
       setUploadForm(prev => ({
         ...prev,
         name: file.name.replace(/\.[^/.]+$/, ''),
@@ -349,7 +367,7 @@ export const DocumentManagement = () => {
 
   const handleUpload = async () => {
     if (!uploadForm.file) {
-      setError(t('documents.pleaseSelectFileToUpload'));
+      setUploadError(t('documents.pleaseSelectFileToUpload'));
       return;
     }
 
@@ -357,6 +375,7 @@ export const DocumentManagement = () => {
       setUploading(true);
       setUploadProgress(0);
       setError(null);
+      setUploadError(null);
 
       const formData = new FormData();
       formData.append('file', uploadForm.file);
@@ -384,8 +403,8 @@ export const DocumentManagement = () => {
         closeUploadDialog(true);
         fetchDocuments();
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || t('documents.failedToUploadDocument'));
+    } catch (err: unknown) {
+      setUploadError(getDocumentErrorMessage(err, t('documents.failedToUploadDocument')));
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -422,8 +441,8 @@ export const DocumentManagement = () => {
         setSuccess(t('documents.documentUpdatedSuccessfully'));
         fetchDocuments();
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || t('documents.failedToUpdateDocument'));
+    } catch (err: unknown) {
+      setError(getDocumentErrorMessage(err, t('documents.failedToUpdateDocument')));
     } finally {
       setUpdatingDocument(false);
     }
@@ -439,6 +458,7 @@ export const DocumentManagement = () => {
       file: null,
     });
     setTagInput('');
+    setUploadError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -446,6 +466,7 @@ export const DocumentManagement = () => {
 
   const openUploadDialog = (trigger: HTMLElement) => {
     uploadDialogTriggerRef.current = trigger;
+    setUploadError(null);
     trigger.blur();
     setUploadDialogOpen(true);
   };
@@ -489,8 +510,8 @@ export const DocumentManagement = () => {
       });
       setPreviewUrl(URL.createObjectURL(response.data));
       setPreviewDialogOpen(true);
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || t('documents.failedToPreviewDocument'));
+    } catch (err: unknown) {
+      setError(getDocumentErrorMessage(err, t('documents.failedToPreviewDocument')));
     }
   };
 
@@ -512,8 +533,8 @@ export const DocumentManagement = () => {
       window.document.body.appendChild(link);
       link.click();
       link.remove();
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || t('documents.failedToDownloadDocument'));
+    } catch (err: unknown) {
+      setError(getDocumentErrorMessage(err, t('documents.failedToDownloadDocument')));
     }
   };
 
@@ -531,8 +552,8 @@ export const DocumentManagement = () => {
         }
         setVersionsDialogOpen(true);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || t('documents.failedToLoadVersions'));
+    } catch (err: unknown) {
+      setError(getDocumentErrorMessage(err, t('documents.failedToLoadVersions')));
     }
   };
 
@@ -544,8 +565,8 @@ export const DocumentManagement = () => {
         setSuccess(t('documents.documentArchivedSuccessfully'));
         fetchDocuments();
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || t('documents.failedToArchiveDocument'));
+    } catch (err: unknown) {
+      setError(getDocumentErrorMessage(err, t('documents.failedToArchiveDocument')));
     }
     setAnchorEl(null);
   };
@@ -558,8 +579,8 @@ export const DocumentManagement = () => {
         setSuccess(t('documents.documentRestoredSuccessfully'));
         fetchDocuments();
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || t('documents.failedToRestoreDocument'));
+    } catch (err: unknown) {
+      setError(getDocumentErrorMessage(err, t('documents.failedToRestoreDocument')));
     }
     setAnchorEl(null);
   };
@@ -577,8 +598,8 @@ export const DocumentManagement = () => {
         setSuccess(t('documents.documentDeletedSuccessfully'));
         fetchDocuments();
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || t('documents.failedToDeleteDocument'));
+    } catch (err: unknown) {
+      setError(getDocumentErrorMessage(err, t('documents.failedToDeleteDocument')));
     }
     setAnchorEl(null);
   };
@@ -927,6 +948,12 @@ export const DocumentManagement = () => {
         <DialogTitle>{t('documents.uploadDocument')}</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 1 }}>
+            {uploadError && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setUploadError(null)}>
+                {uploadError}
+              </Alert>
+            )}
+
             {/* File Input */}
             <Paper
               variant="outlined"

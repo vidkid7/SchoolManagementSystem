@@ -4,8 +4,9 @@
  * Manage grading schemes, attendance rules, notification templates, and date format
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isAxiosError } from 'axios';
 import {
   Box,
   Paper,
@@ -33,12 +34,9 @@ import {
   TextField,
   FormControlLabel,
   Checkbox,
-  Switch,
   useTheme,
   CircularProgress,
   Alert,
-  Card,
-  CardContent,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -47,10 +45,7 @@ import {
   Security as SecurityIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
-import { motion } from 'framer-motion';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
-
-const MotionCard = motion.create(Card);
+import { C, useAdminStyles } from '../../theme/designTokens';
 
 interface GradingScheme {
   id: string;
@@ -112,8 +107,11 @@ const DEFAULT_DATE_FORMAT_SETTINGS: DateFormatSettings = {
   currency: 'NPR',
 };
 
+const getApiErrorMessage = (error: unknown, fallback: string) =>
+  isAxiosError<{ message?: string }>(error) ? error.response?.data?.message || fallback : fallback;
+
 export const SystemSettings = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const theme = useTheme();
   const S = useAdminStyles(theme);
   
@@ -128,6 +126,7 @@ export const SystemSettings = () => {
   const [dateFormatSettings, setDateFormatSettings] = useState<DateFormatSettings>(DEFAULT_DATE_FORMAT_SETTINGS);
   const [dateFormatAvailable, setDateFormatAvailable] = useState(false);
   const dialogTriggerRef = useRef<HTMLElement | null>(null);
+  const [dialogRevision, setDialogRevision] = useState(0);
   
   const [gradingDialog, setGradingDialog] = useState<{ open: boolean; mode: 'create' | 'edit'; data?: GradingScheme }>({
     open: false,
@@ -144,6 +143,7 @@ export const SystemSettings = () => {
 
   const rememberDialogTrigger = (trigger: HTMLElement) => {
     dialogTriggerRef.current = trigger;
+    setDialogRevision((revision) => revision + 1);
     trigger.blur();
   };
 
@@ -172,11 +172,7 @@ export const SystemSettings = () => {
     setTemplateDialog({ open: false, mode: 'create' });
   };
 
-  useEffect(() => {
-    fetchAllData();
-  }, []);
-
-  const fetchAllData = async () => {
+  const fetchAllData = useCallback(async () => {
     try {
       setLoading(true);
       const [gradingRes, attendanceRes, templatesRes, dateFormatRes] = await Promise.all([
@@ -191,13 +187,19 @@ export const SystemSettings = () => {
       const dateSettings = dateFormatRes.data.data || {};
       setDateFormatSettings({ ...DEFAULT_DATE_FORMAT_SETTINGS, ...dateSettings });
       setDateFormatAvailable(Object.keys(dateSettings).length > 0);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch data:', err);
-      setError(err.response?.data?.message || 'Failed to load data');
+      setError(getApiErrorMessage(err, 'Failed to load data'));
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Initial settings are loaded from the API when the page mounts.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchAllData();
+  }, [fetchAllData]);
 
   const handleSaveGradingScheme = async (data: Partial<GradingScheme>) => {
     try {
@@ -210,8 +212,8 @@ export const SystemSettings = () => {
       setSuccess(t('systemSettings.successMessage'));
       closeGradingDialog();
       fetchAllData();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to save'));
     }
   };
 
@@ -220,8 +222,8 @@ export const SystemSettings = () => {
     try {
       await apiClient.delete(`/api/v1/system-settings/grading-schemes/${id}`);
       fetchAllData();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to delete'));
     }
   };
 
@@ -236,8 +238,8 @@ export const SystemSettings = () => {
       setSuccess(t('systemSettings.successMessage'));
       closeAttendanceDialog();
       fetchAllData();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to save'));
     }
   };
 
@@ -246,8 +248,8 @@ export const SystemSettings = () => {
     try {
       await apiClient.delete(`/api/v1/system-settings/attendance-rules/${id}`);
       fetchAllData();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to delete'));
     }
   };
 
@@ -262,8 +264,8 @@ export const SystemSettings = () => {
       setSuccess(t('systemSettings.successMessage'));
       closeTemplateDialog();
       fetchAllData();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to save'));
     }
   };
 
@@ -272,8 +274,8 @@ export const SystemSettings = () => {
     try {
       await apiClient.delete(`/api/v1/system-settings/notification-templates/${id}`);
       fetchAllData();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to delete'));
     }
   };
 
@@ -282,8 +284,8 @@ export const SystemSettings = () => {
       setError('');
       await apiClient.put('/api/v1/system-settings/date-format', dateFormatSettings);
       setSuccess(t('systemSettings.successMessage'));
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to save'));
     }
   };
 
@@ -382,10 +384,10 @@ export const SystemSettings = () => {
                             />
                           </TableCell>
                           <TableCell align="right">
-                            <IconButton size="small" onClick={(event) => { rememberDialogTrigger(event.currentTarget); setError(''); setGradingDialog({ open: true, mode: 'edit', data: scheme }); }}>
+                            <IconButton aria-label={t('systemSettings.editGradingScheme')} size="small" onClick={(event) => { rememberDialogTrigger(event.currentTarget); setError(''); setGradingDialog({ open: true, mode: 'edit', data: scheme }); }}>
                               <EditIcon fontSize="small" />
                             </IconButton>
-                            <IconButton size="small" onClick={() => handleDeleteGradingScheme(scheme.id)} color="error">
+                            <IconButton aria-label={t('common.delete')} size="small" onClick={() => handleDeleteGradingScheme(scheme.id)} color="error">
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </TableCell>
@@ -442,10 +444,10 @@ export const SystemSettings = () => {
                             />
                           </TableCell>
                           <TableCell align="right">
-                            <IconButton size="small" onClick={(event) => { rememberDialogTrigger(event.currentTarget); setError(''); setAttendanceDialog({ open: true, mode: 'edit', data: rule }); }}>
+                            <IconButton aria-label={t('systemSettings.editAttendanceRule')} size="small" onClick={(event) => { rememberDialogTrigger(event.currentTarget); setError(''); setAttendanceDialog({ open: true, mode: 'edit', data: rule }); }}>
                               <EditIcon fontSize="small" />
                             </IconButton>
-                            <IconButton size="small" onClick={() => handleDeleteAttendanceRule(rule.id)} color="error">
+                            <IconButton aria-label={t('common.delete')} size="small" onClick={() => handleDeleteAttendanceRule(rule.id)} color="error">
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </TableCell>
@@ -500,10 +502,10 @@ export const SystemSettings = () => {
                             />
                           </TableCell>
                           <TableCell align="right">
-                            <IconButton size="small" onClick={(event) => { rememberDialogTrigger(event.currentTarget); setError(''); setTemplateDialog({ open: true, mode: 'edit', data: template }); }}>
+                            <IconButton aria-label={t('systemSettings.editTemplate')} size="small" onClick={(event) => { rememberDialogTrigger(event.currentTarget); setError(''); setTemplateDialog({ open: true, mode: 'edit', data: template }); }}>
                               <EditIcon fontSize="small" />
                             </IconButton>
-                            <IconButton size="small" onClick={() => handleDeleteTemplate(template.id)} color="error">
+                            <IconButton aria-label={t('common.delete')} size="small" onClick={() => handleDeleteTemplate(template.id)} color="error">
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </TableCell>
@@ -577,6 +579,7 @@ export const SystemSettings = () => {
 
       {/* Grading Scheme Dialog */}
       <GradingSchemeDialog
+        key={`grading-${dialogRevision}`}
         open={gradingDialog.open}
         mode={gradingDialog.mode}
         data={gradingDialog.data}
@@ -588,6 +591,7 @@ export const SystemSettings = () => {
 
       {/* Attendance Rule Dialog */}
       <AttendanceRuleDialog
+        key={`attendance-${dialogRevision}`}
         open={attendanceDialog.open}
         mode={attendanceDialog.mode}
         data={attendanceDialog.data}
@@ -599,6 +603,7 @@ export const SystemSettings = () => {
 
       {/* Template Dialog */}
       <TemplateDialog
+        key={`template-${dialogRevision}`}
         open={templateDialog.open}
         mode={templateDialog.mode}
         data={templateDialog.data}
@@ -637,31 +642,12 @@ const GradingSchemeDialog = ({ open, mode, data, saveError, onClose, restoreTrig
       gradePoint: number | '';
       description: string;
     }>;
-  }>({
-    name: '',
-    isDefault: false,
-    isActive: true,
-    grades: [{ grade: 'A', minPercentage: 90, maxPercentage: 100, gradePoint: 4.0, description: 'Excellent' }],
-  });
-
-  useEffect(() => {
-    if (data) {
-      setFormData({
-        name: data.name,
-        isDefault: data.isDefault,
-        isActive: data.isActive,
-        grades: data.grades || [],
-      });
-    } else {
-      setFormData({
-        name: '',
-        isDefault: false,
-        isActive: true,
-        grades: [{ grade: 'A', minPercentage: 90, maxPercentage: 100, gradePoint: 4.0, description: 'Excellent' }],
-      });
-    }
-    setSubmitted(false);
-  }, [data, open]);
+  }>(() => ({
+    name: data?.name ?? '',
+    isDefault: data?.isDefault ?? false,
+    isActive: data?.isActive ?? true,
+    grades: data?.grades || [{ grade: 'A', minPercentage: 90, maxPercentage: 100, gradePoint: 4.0, description: 'Excellent' }],
+  }));
 
   const addGrade = () => {
     setFormData({
@@ -670,7 +656,7 @@ const GradingSchemeDialog = ({ open, mode, data, saveError, onClose, restoreTrig
     });
   };
 
-  const updateGrade = (index: number, field: string, value: any) => {
+  const updateGrade = (index: number, field: keyof (typeof formData.grades)[number], value: string | number) => {
     const newGrades = [...formData.grades];
     newGrades[index] = { ...newGrades[index], [field]: value };
     setFormData({ ...formData, grades: newGrades });
@@ -841,61 +827,21 @@ const AttendanceRuleDialog = ({ open, mode, data, saveError, onClose, restoreTri
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const [submitted, setSubmitted] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    minimumAttendancePercentage: 75,
-    lowAttendanceThreshold: 75,
-    criticalAttendanceThreshold: 60,
-    correctionWindowHours: 24,
-    allowTeacherCorrection: true,
-    allowAdminCorrection: true,
-    maxLeaveDaysPerMonth: 5,
-    maxLeaveDaysPerYear: 30,
-    requireLeaveApproval: true,
-    enableLowAttendanceAlerts: true,
-    alertParents: true,
-    alertAdmins: true,
-  });
-
-  useEffect(() => {
-    if (data) {
-      setFormData({
-        name: data.name,
-        minimumAttendancePercentage: data.minimumAttendancePercentage,
-        lowAttendanceThreshold: data.lowAttendanceThreshold,
-        criticalAttendanceThreshold: data.criticalAttendanceThreshold,
-        correctionWindowHours: data.correctionWindowHours,
-        allowTeacherCorrection: data.allowTeacherCorrection,
-        allowAdminCorrection: data.allowAdminCorrection,
-        maxLeaveDaysPerMonth: data.maxLeaveDaysPerMonth,
-        maxLeaveDaysPerYear: data.maxLeaveDaysPerYear,
-        requireLeaveApproval: data.requireLeaveApproval,
-        enableLowAttendanceAlerts: data.enableLowAttendanceAlerts,
-        alertParents: data.alertParents,
-        alertAdmins: data.alertAdmins,
-      });
-    } else {
-      setFormData({
-        name: '',
-        minimumAttendancePercentage: 75,
-        lowAttendanceThreshold: 75,
-        criticalAttendanceThreshold: 60,
-        correctionWindowHours: 24,
-        allowTeacherCorrection: true,
-        allowAdminCorrection: true,
-        maxLeaveDaysPerMonth: 5,
-        maxLeaveDaysPerYear: 30,
-        requireLeaveApproval: true,
-        enableLowAttendanceAlerts: true,
-        alertParents: true,
-        alertAdmins: true,
-      });
-    }
-  }, [data, open]);
-
-  useEffect(() => {
-    if (open) setSubmitted(false);
-  }, [open]);
+  const [formData, setFormData] = useState(() => ({
+    name: data?.name ?? '',
+    minimumAttendancePercentage: data?.minimumAttendancePercentage ?? 75,
+    lowAttendanceThreshold: data?.lowAttendanceThreshold ?? 75,
+    criticalAttendanceThreshold: data?.criticalAttendanceThreshold ?? 60,
+    correctionWindowHours: data?.correctionWindowHours ?? 24,
+    allowTeacherCorrection: data?.allowTeacherCorrection ?? true,
+    allowAdminCorrection: data?.allowAdminCorrection ?? true,
+    maxLeaveDaysPerMonth: data?.maxLeaveDaysPerMonth ?? 5,
+    maxLeaveDaysPerYear: data?.maxLeaveDaysPerYear ?? 30,
+    requireLeaveApproval: data?.requireLeaveApproval ?? true,
+    enableLowAttendanceAlerts: data?.enableLowAttendanceAlerts ?? true,
+    alertParents: data?.alertParents ?? true,
+    alertAdmins: data?.alertAdmins ?? true,
+  }));
 
   const handleSave = () => {
     setSubmitted(true);
@@ -1016,43 +962,16 @@ const TemplateDialog = ({ open, mode, data, saveError, onClose, restoreTriggerFo
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const [submitted, setSubmitted] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    code: '',
-    category: 'general' as NotificationTemplate['category'],
-    channel: 'in_app' as NotificationTemplate['channel'],
-    language: 'english' as NotificationTemplate['language'],
-    subject: '',
-    templateEn: '',
-    templateNp: '',
-  });
-
-  useEffect(() => {
-    if (data) {
-      setFormData({
-        name: data.name,
-        code: data.code,
-        category: data.category,
-        channel: data.channel,
-        language: data.language,
-        subject: data.subject || '',
-        templateEn: data.templateEn,
-        templateNp: data.templateNp || '',
-      });
-    } else {
-      setFormData({
-        name: '',
-        code: '',
-        category: 'general',
-        channel: 'in_app',
-        language: 'english',
-        subject: '',
-        templateEn: '',
-        templateNp: '',
-      });
-    }
-    setSubmitted(false);
-  }, [data, open]);
+  const [formData, setFormData] = useState(() => ({
+    name: data?.name ?? '',
+    code: data?.code ?? '',
+    category: data?.category ?? 'general' as NotificationTemplate['category'],
+    channel: data?.channel ?? 'in_app' as NotificationTemplate['channel'],
+    language: data?.language ?? 'english' as NotificationTemplate['language'],
+    subject: data?.subject ?? '',
+    templateEn: data?.templateEn ?? '',
+    templateNp: data?.templateNp ?? '',
+  }));
 
   const handleSave = () => {
     setSubmitted(true);

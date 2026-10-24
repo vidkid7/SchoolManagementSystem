@@ -106,7 +106,8 @@ class StaffService {
         const delay = baseDelay * Math.pow(2, retryCount) + jitter;
         await new Promise(resolve => setTimeout(resolve, delay));
         // Retry with a new code (don't pass the old staffCode)
-        const { staffCode: _, ...dataWithoutCode } = data;
+        const { staffCode, ...dataWithoutCode } = data;
+        void staffCode;
         return this.create(dataWithoutCode, _userId, retryCount + 1);
       }
       
@@ -118,7 +119,7 @@ class StaffService {
   /**
    * Find staff by ID
    */
-  async findById(staffId: number): Promise<Staff | null> {
+  findById(staffId: number): Promise<Staff | null> {
     return Staff.findByPk(staffId);
   }
 
@@ -130,6 +131,7 @@ class StaffService {
       category?: StaffCategory;
       status?: StaffStatus;
       department?: string;
+      position?: string;
       search?: string;
     },
     options?: {
@@ -150,6 +152,9 @@ class StaffService {
       }
       if (filters?.department) {
         where.department = filters.department;
+      }
+      if (filters?.position) {
+        where.position = filters.position;
       }
       if (filters?.search) {
         where[Op.or as unknown as keyof WhereOptions<StaffAttributes>] = [
@@ -345,14 +350,17 @@ class StaffService {
             staffId: data.staffId,
             subjectId: data.subjectId,
             classId: data.classId,
-            section: data.section,
+            section: data.section ?? null,
             assignmentType: AssignmentType.SUBJECT_TEACHER,
             isActive: true,
             academicYearId: data.academicYearId
           }
         });
 
-        if (duplicateAssignment) {
+        if (
+          duplicateAssignment &&
+          new Date(data.startDate).getTime() <= new Date(duplicateAssignment.startDate).getTime()
+        ) {
           const error = new Error('This teacher is already assigned to teach this subject in this class and section.');
           (error as any).validationErrors = ['Duplicate assignment'];
           throw error;
@@ -366,8 +374,10 @@ class StaffService {
               staffId: data.staffId,
               subjectId: data.subjectId,
               classId: data.classId,
+              section: data.section ?? null,
               assignmentType: AssignmentType.SUBJECT_TEACHER,
-              isActive: true
+              isActive: true,
+              academicYearId: data.academicYearId
             }
           }
         );
@@ -419,10 +429,11 @@ class StaffService {
         where.assignmentType = options.assignmentType;
       }
 
-      return StaffAssignment.findAll({
+      const assignments = await StaffAssignment.findAll({
         where,
         order: [['startDate', 'DESC']]
       });
+      return assignments;
     } catch (error) {
       logger.error('Error getting staff assignments', { error, staffId });
       throw error;
@@ -460,10 +471,11 @@ class StaffService {
         where.assignmentType = filters.assignmentType;
       }
 
-      return StaffAssignment.findAll({
+      const assignments = await StaffAssignment.findAll({
         where,
         order: [['startDate', 'DESC']]
       });
+      return assignments;
     } catch (error) {
       logger.error('Error getting assignment history', { error, filters });
       throw error;
@@ -474,7 +486,7 @@ class StaffService {
    * Get active assignments for a staff member
    * Requirements: 4.3
    */
-  async getActiveAssignments(
+  getActiveAssignments(
     staffId: number,
     academicYearId?: number
   ): Promise<StaffAssignment[]> {
@@ -635,7 +647,7 @@ class StaffService {
   /**
    * Get staff by category
    */
-  async getByCategory(category: StaffCategory): Promise<Staff[]> {
+  getByCategory(category: StaffCategory): Promise<Staff[]> {
     return Staff.findAll({
       where: { category, status: StaffStatus.ACTIVE },
       order: [['firstNameEn', 'ASC']]

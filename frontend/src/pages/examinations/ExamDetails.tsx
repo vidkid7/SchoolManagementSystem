@@ -3,7 +3,8 @@
  * View detailed information about a specific exam
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import { useTranslation } from 'react-i18next';
@@ -26,7 +27,8 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import type { RootState } from '../../store';
+import { useAdminStyles } from '../../theme/designTokens';
 
 interface ExamDetails {
   examId: number;
@@ -44,7 +46,23 @@ interface ExamDetails {
   gradesEntered?: number;
 }
 
-const statusColors: Record<string, any> = {
+interface ExamDetailsApi extends Partial<ExamDetails> {
+  id?: number;
+  examName?: string;
+  examType?: string;
+  classId?: number | string;
+  subject?: { name?: string };
+  date?: string;
+  totalMarks?: number;
+}
+
+function getApiErrorMessage(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object') return undefined;
+  const response = (error as { response?: { data?: { message?: unknown } } }).response;
+  return typeof response?.data?.message === 'string' ? response.data.message : undefined;
+}
+
+const statusColors: Record<string, 'info' | 'warning' | 'success' | 'error'> = {
   scheduled: 'info',
   ongoing: 'warning',
   completed: 'success',
@@ -55,46 +73,50 @@ export function ExamDetails() {
   const { t } = useTranslation();
   const theme = useTheme();
   const S = useAdminStyles(theme);
-  const { municipalitySlug, examId } = useParams();
+  const { examId } = useParams();
   const navigate = useSlugNavigate();
+  const user = useSelector((state: RootState) => state.auth.user);
+  const role = user?.role;
+  const canEditExam = ['School_Admin', 'Class_Teacher', 'Subject_Teacher'].includes(role ?? '');
+  const canEnterGrades = canEditExam;
+  const canDeleteExam = role === 'School_Admin';
   const [loading, setLoading] = useState(true);
   const [exam, setExam] = useState<ExamDetails | null>(null);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchExamDetails();
-  }, [examId]);
-
-  const fetchExamDetails = async () => {
+  const fetchExamDetails = useCallback(async () => {
     setLoading(true);
     setError('');
     
     try {
       const response = await apiClient.get(`/examinations/${examId}`);
-      const data = response.data?.data || response.data;
+      const data = (response.data?.data ?? response.data) as ExamDetailsApi;
       
       setExam({
-        examId: data.examId || data.id,
-        name: data.name || data.examName,
-        type: data.type || data.examType,
-        className: data.className || `Class ${data.classId}`,
-        subjectName: data.subjectName || data.subject?.name || 'N/A',
-        examDate: data.examDate || data.date,
-        fullMarks: data.fullMarks || data.totalMarks || 100,
-        passMarks: data.passMarks || 40,
-        status: data.status || 'scheduled',
+        examId: data.examId ?? data.id ?? Number(examId),
+        name: data.name ?? data.examName ?? '',
+        type: data.type ?? data.examType ?? '',
+        className: data.className ?? (data.classId !== undefined ? `Class ${data.classId}` : 'N/A'),
+        subjectName: data.subjectName ?? data.subject?.name ?? 'N/A',
+        examDate: data.examDate ?? data.date ?? '',
+        fullMarks: data.fullMarks ?? data.totalMarks ?? 100,
+        passMarks: data.passMarks ?? 40,
+        status: data.status ?? 'scheduled',
         description: data.description,
         duration: data.duration,
         totalStudents: data.totalStudents,
         gradesEntered: data.gradesEntered,
       });
-    } catch (error: any) {
-      console.error('Failed to fetch exam details:', error);
-      setError(error.response?.data?.message || t('examinations.failedToLoadExamDetails'));
+    } catch (requestError: unknown) {
+      setError(getApiErrorMessage(requestError) ?? t('examinations.failedToLoadExamDetails'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [examId, t]);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchExamDetails);
+  }, [fetchExamDetails]);
 
   const handleDelete = async () => {
     if (!exam) return;
@@ -103,8 +125,8 @@ export function ExamDetails() {
       try {
         await apiClient.delete(`/examinations/${exam.examId}`);
         navigate(`/examinations/list`);
-      } catch (error: any) {
-        setError(error.response?.data?.message || t('examinations.failedToDeleteExam'));
+      } catch (requestError: unknown) {
+        setError(getApiErrorMessage(requestError) ?? t('examinations.failedToDeleteExam'));
       }
     }
   };
@@ -154,31 +176,37 @@ export function ExamDetails() {
             />
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              variant="outlined"
-              startIcon={<EditIcon />}
-              onClick={() => navigate(`/examinations/${exam.examId}/edit`)}
-              sx={S.BTN_OUTLINE}
-            >
-              {t('common.edit')}
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<GradeIcon />}
-              onClick={() => navigate(`/examinations/grades`)}
-              sx={S.BTN_PRIMARY}
-            >
-              {t('examinations.enterGrades')}
-            </Button>
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<DeleteIcon />}
-              onClick={handleDelete}
-              sx={{ ...S.BTN_OUTLINE, ...S.BTN_DANGER }}
-            >
-              {t('common.delete')}
-            </Button>
+            {canEditExam && (
+              <Button
+                variant="outlined"
+                startIcon={<EditIcon />}
+                onClick={() => navigate(`/examinations/${exam.examId}/edit`)}
+                sx={S.BTN_OUTLINE}
+              >
+                {t('common.edit')}
+              </Button>
+            )}
+            {canEnterGrades && (
+              <Button
+                variant="contained"
+                startIcon={<GradeIcon />}
+                onClick={() => navigate(`/examinations/grades`)}
+                sx={S.BTN_PRIMARY}
+              >
+                {t('examinations.enterGrades')}
+              </Button>
+            )}
+            {canDeleteExam && (
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={handleDelete}
+                sx={{ ...S.BTN_OUTLINE, ...S.BTN_DANGER }}
+              >
+                {t('common.delete')}
+              </Button>
+            )}
           </Box>
         </Box>
 

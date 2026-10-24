@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box, Grid, Card, CardContent, Typography, Button, Divider, List, ListItem,
+  Box, Grid, CardContent, Typography, Button, Divider, List, ListItem,
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, useTheme,
 } from '@mui/material';
@@ -70,14 +70,6 @@ interface DashboardData {
   };
 }
 
-interface Notification {
-  id: number;
-  title: string;
-  message: string;
-  date?: string;
-  read?: boolean;
-}
-
 const authHdr = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
 
 function TabPanel({ children, value, index }: { children: React.ReactNode; value: number; index: number }) {
@@ -88,7 +80,6 @@ export const TeacherPortal: React.FC = () => {
   const { t } = useTranslation();
   const [tab, setTab] = useState(0);
   const [data, setData] = useState<DashboardData | null>(null);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user, accessToken } = useSelector((state: RootState) => state.auth);
@@ -100,14 +91,8 @@ export const TeacherPortal: React.FC = () => {
     if (!accessToken) return;
     try {
       setLoading(true);
-      const [dashRes, notifRes] = await Promise.all([
-        apiClient.get('/api/v1/teachers/dashboard', authHdr(accessToken)),
-        apiClient.get('/api/v1/teachers/notifications', authHdr(accessToken))
-          .catch(() => ({ data: { data: { notifications: [] } } })),
-      ]);
+      const dashRes = await apiClient.get('/api/v1/teachers/dashboard', authHdr(accessToken));
       setData(dashRes.data?.data ?? dashRes.data ?? {});
-      const notifList = notifRes.data?.data;
-      setNotifications(Array.isArray(notifList) ? notifList : notifList?.notifications ?? []);
     } catch {
       setError(t('portal.failedToLoadData'));
     } finally {
@@ -115,7 +100,7 @@ export const TeacherPortal: React.FC = () => {
     }
   }, [accessToken, t]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { void Promise.resolve().then(loadData); }, [loadData]);
 
   if (loading) return <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh"><CircularProgress /></Box>;
 

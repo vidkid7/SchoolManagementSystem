@@ -22,8 +22,12 @@ import {
 
 describe('Date Conversion Utility', () => {
   beforeAll(async () => {
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('Date conversion tests require TEST_DB_DIALECT=sqlite');
+    }
     await sequelize.authenticate();
-    
+    await BSCalendar.sync({ force: true });
+
     // Check if calendar is already populated
     const count = await BSCalendar.count();
     if (count === 0) {
@@ -41,6 +45,32 @@ describe('Date Conversion Utility', () => {
 
   afterAll(async () => {
     await sequelize.close();
+  });
+
+  describe('BSCalendarService persisted data access', () => {
+    it('should persist all supported years and make them available by year', async () => {
+      expect(await BSCalendar.count()).toBe(1212);
+      expect(await BSCalendarService.getYearData(2080)).toHaveLength(12);
+      expect((await BSCalendarService.getYearData(2080))[0].yearBs).toBe(2080);
+    });
+
+    it('should retrieve a month by BS year and month', async () => {
+      const month = await BSCalendarService.getMonthData(2080, 1);
+
+      expect(month?.yearBs).toBe(2080);
+      expect(month?.monthBs).toBe(1);
+      expect(month?.daysInMonth).toBe(31);
+    });
+
+    it('should return all calendar data in chronological order', async () => {
+      const allData = await BSCalendarService.getAllData();
+
+      expect(allData).toHaveLength(1212);
+      expect(allData[0].yearBs).toBe(2000);
+      expect(allData[0].monthBs).toBe(1);
+      expect(allData[allData.length - 1].yearBs).toBe(2100);
+      expect(allData[allData.length - 1].monthBs).toBe(12);
+    });
   });
 
   describe('isValidBSDate', () => {

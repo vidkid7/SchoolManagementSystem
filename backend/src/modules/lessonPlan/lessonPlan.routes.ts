@@ -1,7 +1,17 @@
 import { Router } from 'express';
 import { authenticate, authorize } from '@middleware/auth';
 import { UserRole } from '@models/User.model';
+import { validate } from '@middleware/validation';
 import lessonPlanController from './lessonPlan.controller';
+import {
+  createLessonPlanSchema,
+  lessonPlanIdParamSchema,
+  lessonPlanListQuerySchema,
+  syllabusProgressListQuerySchema,
+  updateLessonPlanSchema,
+  updateLessonPlanStatusSchema,
+  updateSyllabusProgressSchema,
+} from './lessonPlan.validation';
 
 const router = Router();
 
@@ -13,15 +23,15 @@ const TEACHER_ROLES = [UserRole.SCHOOL_ADMIN, UserRole.CLASS_TEACHER, UserRole.S
 router.get('/dashboard', authorize(...TEACHER_ROLES), lessonPlanController.getDashboard);
 
 // Syllabus progress (must be before /:id to avoid route conflict)
-router.get('/syllabus-progress', authorize(...TEACHER_ROLES), lessonPlanController.getSyllabusProgress);
-router.post('/syllabus-progress', authorize(...TEACHER_ROLES), lessonPlanController.updateSyllabusProgress);
+router.get('/syllabus-progress', authorize(...TEACHER_ROLES), validate(syllabusProgressListQuerySchema, 'query'), lessonPlanController.getSyllabusProgress);
+router.post('/syllabus-progress', authorize(...TEACHER_ROLES), validate(updateSyllabusProgressSchema), lessonPlanController.updateSyllabusProgress);
 
 // Lesson plan CRUD
-router.get('/', authorize(...TEACHER_ROLES), lessonPlanController.getLessonPlans);
-router.get('/:id', authorize(...TEACHER_ROLES), lessonPlanController.getLessonPlanById);
-router.post('/', authorize(...TEACHER_ROLES), lessonPlanController.createLessonPlan);
-router.put('/:id', authorize(...TEACHER_ROLES), lessonPlanController.updateLessonPlan);
-router.delete('/:id', authorize(...TEACHER_ROLES), lessonPlanController.deleteLessonPlan);
-router.patch('/:id/status', authorize(...TEACHER_ROLES), lessonPlanController.updateStatus);
+router.get('/', authorize(...TEACHER_ROLES), validate(lessonPlanListQuerySchema, 'query'), lessonPlanController.getLessonPlans);
+router.get('/:id', authorize(...TEACHER_ROLES), validate(lessonPlanIdParamSchema, 'params'), lessonPlanController.getLessonPlanById);
+router.post('/', authorize(...TEACHER_ROLES), validate(createLessonPlanSchema), lessonPlanController.createLessonPlan);
+router.put('/:id', authorize(...TEACHER_ROLES), validate(lessonPlanIdParamSchema, 'params'), validate(updateLessonPlanSchema), lessonPlanController.updateLessonPlan);
+router.delete('/:id', authorize(...TEACHER_ROLES), validate(lessonPlanIdParamSchema, 'params'), lessonPlanController.deleteLessonPlan);
+router.patch('/:id/status', authorize(...TEACHER_ROLES), validate(lessonPlanIdParamSchema, 'params'), validate(updateLessonPlanStatusSchema), lessonPlanController.updateStatus);
 
 export default router;

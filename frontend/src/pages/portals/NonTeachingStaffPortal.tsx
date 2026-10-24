@@ -1,7 +1,7 @@
 import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box, Grid, Card, CardContent, Typography, Button, Divider, List, ListItem,
+  Box, Grid, Typography, Button, Divider, List, ListItem,
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Select,
   MenuItem, FormControl, InputLabel, Dialog, DialogTitle, DialogContent, DialogActions,
@@ -28,10 +28,10 @@ import apiClient from '../../services/apiClient';
 import { RootState } from '../../store';
 import { useTranslation } from 'react-i18next';
 
-interface DashboardData { profile: { username: string; email: string; firstName: string; lastName: string; phoneNumber: string; role: string; status: string; }; role: string; quickLinks: Array<{ label: string; path: string }>; }
 interface ProfileData { username: string; email: string; firstName: string; lastName: string; phoneNumber?: string; role: string; status: string; }
 interface Task { id: number; title: string; description: string; priority: string; status: string; dueDate: string | null; assignedBy: number; }
 interface ScheduleEntry { day: string; startTime: string; endTime: string; location: string; duties: string; }
+interface LeaveRequest { id?: number; staffLeaveRequestId?: number; leaveType?: string; type?: string; startDate?: string; endDate?: string; status?: string; createdAt?: string; appliedOn?: string; }
 
 const authHdr = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
@@ -49,14 +49,12 @@ function TabPanel({ children, value, index }: { children: React.ReactNode; value
 const NonTeachingStaffPortal: React.FC = () => {
   const { t } = useTranslation();
   const [tab, setTab] = useState(0);
-  const [data, setData] = useState<DashboardData | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [leaveHistory, setLeaveHistory] = useState<any[]>([]);
-  const [leaveBalance, setLeaveBalance] = useState<any>(null);
+  const [leaveHistory, setLeaveHistory] = useState<LeaveRequest[]>([]);
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [leaveForm, setLeaveForm] = useState({ leaveType: 'casual', startDate: '', endDate: '', reason: '' });
   const [leaveSubmitting, setLeaveSubmitting] = useState(false);
@@ -68,14 +66,12 @@ const NonTeachingStaffPortal: React.FC = () => {
   const loadData = useCallback(async () => {
     if (!accessToken) return;
     try {
-      const [dashRes, profileRes, tasksRes, schedRes, leaveRes] = await Promise.all([
-        apiClient.get('/api/v1/non-teaching-staff/dashboard', authHdr(accessToken)),
+      const [profileRes, tasksRes, schedRes, leaveRes] = await Promise.all([
         apiClient.get('/api/v1/non-teaching-staff/profile', authHdr(accessToken)).catch(() => ({ data: { data: null } })),
         apiClient.get('/api/v1/non-teaching-staff/tasks', authHdr(accessToken)).catch(() => ({ data: { data: { tasks: [] } } })),
         apiClient.get('/api/v1/non-teaching-staff/schedule', authHdr(accessToken)).catch(() => ({ data: { data: { schedule: [] } } })),
-        apiClient.get('/api/v1/attendance/leave/my', authHdr(accessToken)).catch(() => ({ data: { data: { leaves: [], balance: null } } })),
+        apiClient.get('/api/v1/non-teaching-staff/leave', authHdr(accessToken)).catch(() => ({ data: { data: { leaves: [], balance: null } } })),
       ]);
-      setData(dashRes.data.data);
       setProfile(profileRes.data?.data ?? null);
       const taskList = tasksRes.data?.data;
       setTasks(Array.isArray(taskList) ? taskList : taskList?.tasks ?? []);
@@ -83,7 +79,6 @@ const NonTeachingStaffPortal: React.FC = () => {
       setSchedule(Array.isArray(schedList) ? schedList : schedList?.schedule ?? []);
       const leaveData = leaveRes.data?.data;
       setLeaveHistory(Array.isArray(leaveData) ? leaveData : leaveData?.leaves ?? []);
-      if (leaveData?.balance) setLeaveBalance(leaveData.balance);
     } catch {
       setError(t('portal.failedToLoadData'));
     } finally {
@@ -91,6 +86,7 @@ const NonTeachingStaffPortal: React.FC = () => {
     }
   }, [accessToken, t]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadData(); }, [loadData]);
 
   const updateTaskStatus = async (taskId: number, newStatus: string) => {
@@ -102,14 +98,26 @@ const NonTeachingStaffPortal: React.FC = () => {
 
   const handleLeaveSubmit = async () => {
     if (!accessToken || !leaveForm.startDate || !leaveForm.endDate || !leaveForm.reason) return;
+    if (new Date(leaveForm.endDate) < new Date(leaveForm.startDate)) {
+      setError(t('portal.leaveEndBeforeStart'));
+      return;
+    }
+    if (leaveForm.reason.trim().length < 10) {
+      setError(t('portal.leaveReasonTooShort'));
+      return;
+    }
     try {
       setLeaveSubmitting(true);
-      await apiClient.post('/api/v1/attendance/leave/apply', leaveForm, authHdr(accessToken));
+      setError(null);
+      await apiClient.post('/api/v1/non-teaching-staff/leave', { ...leaveForm, reason: leaveForm.reason.trim() }, authHdr(accessToken));
       setLeaveDialogOpen(false);
       setLeaveForm({ leaveType: 'casual', startDate: '', endDate: '', reason: '' });
       loadData();
-    } catch {
-      setError(t('portal.failedToLoadData'));
+    } catch (error: unknown) {
+      const response = typeof error === 'object' && error !== null && 'response' in error
+        ? (error as { response?: { data?: { message?: unknown } } }).response
+        : undefined;
+      setError(typeof response?.data?.message === 'string' ? response.data.message : t('portal.failedToLoadData'));
     } finally {
       setLeaveSubmitting(false);
     }
@@ -189,7 +197,12 @@ const NonTeachingStaffPortal: React.FC = () => {
                   <TableCell>{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '—'}</TableCell>
                   <TableCell>
                     <FormControl size="small" sx={{ minWidth: 130 }}>
-                      <Select value={task.status} onChange={e => updateTaskStatus(task.id, e.target.value)} disabled={task.status === 'completed'}>
+                      <Select
+                        value={task.status}
+                        onChange={e => updateTaskStatus(task.id, e.target.value)}
+                        disabled={task.status === 'completed'}
+                        inputProps={{ 'aria-label': `${t('portal.updateStatus')}: ${task.title}` }}
+                      >
                         <MenuItem value="pending">{t('common.pending')}</MenuItem>
                         <MenuItem value="in_progress">{t('common.inProgress')}</MenuItem>
                         <MenuItem value="completed">{t('common.completed')}</MenuItem>
@@ -241,20 +254,6 @@ const NonTeachingStaffPortal: React.FC = () => {
             {t('portal.requestLeave')}
           </Button>
         </Box>
-        {leaveBalance && (
-          <Grid container spacing={2} mb={3}>
-            {Object.entries(leaveBalance).map(([type, balance]: [string, any]) => (
-              <Grid item xs={6} sm={3} key={type}>
-                <Box sx={S.STAT_CARD(C.warning)}>
-                  <Box sx={{ textAlign: 'center', py: 2 }}>
-                    <Typography variant="h5" fontWeight={700}>{typeof balance === 'object' ? balance.remaining ?? balance.total ?? '—' : balance}</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ textTransform: 'capitalize' }}>{type.replace(/_/g, ' ')}</Typography>
-                  </Box>
-                </Box>
-              </Grid>
-            ))}
-          </Grid>
-        )}
         <Typography variant="subtitle1" fontWeight={600} mb={1}>{t('portal.leaveHistory')}</Typography>
         <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
@@ -265,8 +264,8 @@ const NonTeachingStaffPortal: React.FC = () => {
             <TableBody>
               {leaveHistory.length === 0 ? (
                 <TableRow><TableCell colSpan={5} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('portal.noLeaveRecords')}</Typography></TableCell></TableRow>
-              ) : leaveHistory.map((leave: any, idx: number) => (
-                <TableRow key={leave.id || idx} hover>
+              ) : leaveHistory.map((leave, idx) => (
+                <TableRow key={leave.staffLeaveRequestId || leave.id || idx} hover>
                   <TableCell sx={{ textTransform: 'capitalize' }}>{leave.leaveType || leave.type || '—'}</TableCell>
                   <TableCell>{leave.startDate ? new Date(leave.startDate).toLocaleDateString() : '—'}</TableCell>
                   <TableCell>{leave.endDate ? new Date(leave.endDate).toLocaleDateString() : '—'}</TableCell>
@@ -274,7 +273,7 @@ const NonTeachingStaffPortal: React.FC = () => {
                     <Chip label={leave.status || 'pending'} size="small"
                       color={leave.status === 'approved' ? 'success' : leave.status === 'rejected' ? 'error' : 'warning'} />
                   </TableCell>
-                  <TableCell>{leave.createdAt || leave.appliedOn ? new Date(leave.createdAt || leave.appliedOn).toLocaleDateString() : '—'}</TableCell>
+                  <TableCell>{leave.createdAt ? new Date(leave.createdAt).toLocaleDateString() : leave.appliedOn ? new Date(leave.appliedOn).toLocaleDateString() : '—'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -294,11 +293,11 @@ const NonTeachingStaffPortal: React.FC = () => {
             </FormControl>
             <YearSelectableDateField fullWidth label={t('common.startDate')} InputLabelProps={{ shrink: true }} value={leaveForm.startDate} onChange={(e) => setLeaveForm(prev => ({ ...prev, startDate: e.target.value }))} sx={{ mb: 2 }} />
             <YearSelectableDateField fullWidth label={t('common.endDate')} InputLabelProps={{ shrink: true }} value={leaveForm.endDate} onChange={(e) => setLeaveForm(prev => ({ ...prev, endDate: e.target.value }))} sx={{ mb: 2 }} />
-            <TextField fullWidth label={t('portal.reason')} multiline rows={3} value={leaveForm.reason} onChange={(e) => setLeaveForm(prev => ({ ...prev, reason: e.target.value }))} />
+            <TextField fullWidth label={t('portal.reason')} multiline rows={3} value={leaveForm.reason} onChange={(e) => setLeaveForm(prev => ({ ...prev, reason: e.target.value }))} inputProps={{ maxLength: 1000 }} helperText={t('portal.leaveReasonMinimum')} />
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setLeaveDialogOpen(false)}>{t('common.cancel')}</Button>
-            <Button variant="contained" sx={S.BTN_PRIMARY} color="warning" onClick={handleLeaveSubmit} disabled={leaveSubmitting || !leaveForm.startDate || !leaveForm.endDate || !leaveForm.reason}>
+            <Button variant="contained" sx={S.BTN_PRIMARY} color="warning" onClick={handleLeaveSubmit} disabled={leaveSubmitting || !leaveForm.startDate || !leaveForm.endDate || leaveForm.reason.trim().length < 10}>
               {leaveSubmitting ? t('portal.submitting') : t('portal.submitLeave')}
             </Button>
           </DialogActions>

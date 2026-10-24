@@ -1,10 +1,52 @@
 import Staff from '@models/Staff.model';
 import StaffAssignment from '@models/StaffAssignment.model';
 import StaffAttendance from '@models/StaffAttendance.model';
+import Grade from '@models/Grade.model';
+import Exam, { ExamStatus } from '@models/Exam.model';
+import Class from '@models/Class.model';
 import { logger } from '@utils/logger';
 
+interface DepartmentPerformanceRow {
+  class: string;
+  averageScore: number;
+}
+
+type GradeWithExam = Grade & {
+  exam?: Exam & { class?: Class };
+};
+
+const aggregatePerformanceByClass = (grades: GradeWithExam[]): DepartmentPerformanceRow[] => {
+  const totalsByClass = new Map<number, { className: string; totalMarks: number; fullMarks: number }>();
+
+  grades.forEach((grade) => {
+    const exam = grade.exam;
+    const classRecord = exam?.class;
+    const score = Number(grade.totalMarks);
+    const fullMarks = Number(exam?.fullMarks);
+    const classId = Number(classRecord?.classId);
+    if (!classRecord || !Number.isInteger(classId) || !Number.isFinite(score) ||
+      !Number.isFinite(fullMarks) || fullMarks <= 0 || score < 0 || score > fullMarks) {
+      return;
+    }
+
+    const existing = totalsByClass.get(classId) ?? {
+      className: `Class ${classRecord.gradeLevel}-${classRecord.section}`,
+      totalMarks: 0,
+      fullMarks: 0,
+    };
+    existing.totalMarks += score;
+    existing.fullMarks += fullMarks;
+    totalsByClass.set(classId, existing);
+  });
+
+  return [...totalsByClass.values()].map(({ className, totalMarks, fullMarks }) => ({
+    class: className,
+    averageScore: Math.round((totalMarks / fullMarks) * 1000) / 10,
+  }));
+};
+
 class DepartmentService {
-  async getStaffFromUserId(userId: number): Promise<Staff | null> {
+  getStaffFromUserId(userId: number): Promise<Staff | null> {
     return Staff.findOne({
       where: { userId },
     });
@@ -141,7 +183,7 @@ class DepartmentService {
     }
   }
 
-  async getDepartmentPerformance(userId: number): Promise<any> {
+  async getDepartmentPerformance(userId: number): Promise<DepartmentPerformanceRow[]> {
     try {
       const staff = await this.getStaffFromUserId(userId);
 
@@ -149,9 +191,39 @@ class DepartmentService {
         return [];
       }
 
-      // This would typically aggregate exam results by class/subject
-      // For now, return empty array
-      return [];
+      const teachers = await Staff.findAll({
+        where: { department: staff.department, category: 'teaching' },
+        attributes: ['staffId'],
+      });
+      const teacherIds = teachers.map((teacher) => teacher.staffId);
+      if (teacherIds.length === 0) return [];
+
+      const assignments = await StaffAssignment.findAll({
+        where: { staffId: teacherIds, isActive: true },
+        attributes: ['classId'],
+      });
+      const classIds = [...new Set(assignments
+        .map((assignment) => assignment.classId)
+        .filter((classId): classId is number => typeof classId === 'number' && Number.isInteger(classId) && classId > 0))];
+      if (classIds.length === 0) return [];
+
+      const grades = await Grade.findAll({
+        attributes: ['totalMarks'],
+        include: [{
+          model: Exam,
+          as: 'exam',
+          attributes: ['fullMarks', 'classId'],
+          where: { classId: classIds, status: ExamStatus.COMPLETED },
+          include: [{
+            model: Class,
+            as: 'class',
+            attributes: ['classId', 'gradeLevel', 'section'],
+            required: true,
+          }],
+        }],
+      }) as GradeWithExam[];
+
+      return aggregatePerformanceByClass(grades);
     } catch (error) {
       logger.error('Error getting department performance:', error);
       throw error;

@@ -1,5 +1,7 @@
 import { Op, WhereOptions } from 'sequelize';
+import sequelize from '@config/database';
 import Student, { StudentStatus, Gender, StudentAttributes, StudentCreationAttributes } from '@models/Student.model';
+import StudentTransferHistory from '@models/StudentTransferHistory.model';
 import { logger } from '@utils/logger';
 import auditLogger from '@utils/auditLogger';
 import { Request } from 'express';
@@ -682,23 +684,40 @@ class StudentRepository {
     newClassId: number, 
     newRollNumber?: number,
     userId?: number,
-    req?: Request
+    req?: Request,
+    reason?: string
   ): Promise<Student | null> {
+    const transaction = await sequelize.transaction();
+
     try {
-      const student = await Student.findByPk(studentId);
+      const student = await Student.findByPk(studentId, { transaction });
       
       if (!student) {
+        await transaction.rollback();
         return null;
       }
 
       // Capture old value before update
       const oldValue = student.toJSON();
+      const fromClassId = student.currentClassId ?? null;
+      const fromRollNumber = student.rollNumber ?? null;
 
-      student.currentClassId = newClassId;
-      if (newRollNumber !== undefined) {
-        student.rollNumber = newRollNumber;
-      }
-      await student.save();
+      const updateData: Partial<StudentAttributes> = { currentClassId: newClassId };
+      if (newRollNumber !== undefined) updateData.rollNumber = newRollNumber;
+      await student.update(updateData, { transaction });
+
+      await StudentTransferHistory.create({
+        studentId,
+        fromClassId,
+        toClassId: newClassId,
+        fromRollNumber,
+        toRollNumber: student.rollNumber ?? null,
+        reason: reason?.trim() || null,
+        transferredBy: userId ?? null,
+        transferredAt: new Date(),
+        municipalityId: student.get('municipalityId') as string | null | undefined,
+        schoolConfigId: student.get('schoolConfigId') as string | null | undefined,
+      }, { transaction });
       
       logger.info('Student transferred to new class', { 
         studentId, 
@@ -719,8 +738,10 @@ class StudentRepository {
         req
       );
       
+      await transaction.commit();
       return student;
     } catch (error) {
+      await transaction.rollback();
       logger.error('Error transferring student class', { 
         error, 
         studentId, 

@@ -13,14 +13,26 @@ import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
 
 import * as fc from 'fast-check';
-import { Circulation, CirculationCreationAttributes } from '../../../models/Circulation.model';
+import { Circulation, CirculationCreationAttributes, initCirculation } from '../../../models/Circulation.model';
 import { Book } from '../../../models/Book.model';
 import Student, { Gender, StudentStatus } from '../../../models/Student.model';
 import User, { UserRole } from '../../../models/User.model';
 import { sequelize } from '../../../config/database';
 
 describe('Property Test: Circulation Record Completeness', () => {
+  let fixtureSequence = 0;
+  const uniqueSuffix = () => `${Date.now()}${fixtureSequence++}`;
+  const createdCirculationIds: number[] = [];
+  const createdBookIds: number[] = [];
+  const createdStudentIds: number[] = [];
+  const createdUserIds: number[] = [];
+
   beforeAll(async () => {
+    // These property tests must never reset or write to a shared MySQL database.
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('Circulation property tests require TEST_DB_DIALECT=sqlite');
+    }
+    initCirculation(sequelize);
     await sequelize.sync({ force: true });
   });
 
@@ -28,11 +40,26 @@ describe('Property Test: Circulation Record Completeness', () => {
     await sequelize.close();
   });
 
-  beforeEach(async () => {
-    await Circulation.destroy({ where: {}, force: true });
-    await Book.destroy({ where: {}, force: true });
-    await Student.destroy({ where: {}, force: true });
-    await User.destroy({ where: {}, force: true });
+  beforeEach(() => {
+    createdCirculationIds.length = 0;
+    createdBookIds.length = 0;
+    createdStudentIds.length = 0;
+    createdUserIds.length = 0;
+  });
+
+  afterEach(async () => {
+    if (createdCirculationIds.length) {
+      await Circulation.destroy({ where: { circulationId: createdCirculationIds }, force: true });
+    }
+    if (createdBookIds.length) {
+      await Book.destroy({ where: { bookId: createdBookIds }, force: true });
+    }
+    if (createdStudentIds.length) {
+      await Student.destroy({ where: { studentId: createdStudentIds }, force: true });
+    }
+    if (createdUserIds.length) {
+      await User.destroy({ where: { userId: createdUserIds }, force: true });
+    }
   });
 
   /**
@@ -72,18 +99,19 @@ describe('Property Test: Circulation Record Completeness', () => {
         async (data) => {
           // Create user for issuedBy
           const user = await User.create({
-            username: data.username,
-            email: data.userEmail,
+            username: `librarian${uniqueSuffix()}`,
+            email: `librarian${uniqueSuffix()}@example.com`,
             password: 'hashedpassword',
             role: UserRole.LIBRARIAN,
           });
+          createdUserIds.push(user.userId);
 
           // Create student
           const student = await Student.create({
-            studentCode: `STU-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+            studentCode: `STU-${uniqueSuffix()}`,
             firstNameEn: data.studentName.split(' ')[0] || 'Test',
             lastNameEn: data.studentName.split(' ')[1] || 'Student',
-            email: data.studentEmail,
+            email: `student${uniqueSuffix()}@example.com`,
             dateOfBirthBS: '2062-01-01',
             dateOfBirthAD: new Date('2005-01-01'),
             gender: Gender.MALE,
@@ -97,10 +125,11 @@ describe('Property Test: Circulation Record Completeness', () => {
             admissionClass: 10,
             status: StudentStatus.ACTIVE,
           });
+          createdStudentIds.push(student.studentId);
 
           // Create book
           const book = await Book.create({
-            accessionNumber: data.accessionNumber,
+            accessionNumber: `ACC${uniqueSuffix()}`,
             isbn: data.isbn,
             title: data.title,
             author: data.author,
@@ -111,6 +140,7 @@ describe('Property Test: Circulation Record Completeness', () => {
             availableCopies: data.copies,
             status: 'available',
           });
+          createdBookIds.push(book.bookId);
 
           // Calculate due date
           const issueDate = new Date();
@@ -128,13 +158,15 @@ describe('Property Test: Circulation Record Completeness', () => {
             conditionOnIssue: data.condition as 'good' | 'damaged' | 'poor',
             maxRenewals: 2,
           } as CirculationCreationAttributes);
+          createdCirculationIds.push(circulation.circulationId);
 
           // Verify all required fields are present
           expect(circulation.circulationId).toBeDefined();
           expect(circulation.bookId).toBe(book.bookId);
           expect(circulation.studentId).toBe(student.studentId);
-          expect(circulation.issueDate).toBeInstanceOf(Date);
-          expect(circulation.dueDate).toBeInstanceOf(Date);
+          // DATEONLY columns are returned as YYYY-MM-DD strings by Sequelize.
+          expect(new Date(circulation.issueDate)).toBeInstanceOf(Date);
+          expect(new Date(circulation.dueDate)).toBeInstanceOf(Date);
           expect(circulation.status).toBe('borrowed');
           expect(circulation.issuedBy).toBe(user.userId);
           expect(circulation.conditionOnIssue).toBe(data.condition);
@@ -179,18 +211,19 @@ describe('Property Test: Circulation Record Completeness', () => {
         async (data) => {
           // Create user
           const user = await User.create({
-            username: data.username,
-            email: data.userEmail,
+            username: `librarian${uniqueSuffix()}`,
+            email: `librarian${uniqueSuffix()}@example.com`,
             password: 'hashedpassword',
             role: UserRole.LIBRARIAN,
           });
+          createdUserIds.push(user.userId);
 
           // Create student
           const student = await Student.create({
-            studentCode: `STU-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+            studentCode: `STU-${uniqueSuffix()}`,
             firstNameEn: data.studentName.split(' ')[0] || 'Test',
             lastNameEn: data.studentName.split(' ')[1] || 'Student',
-            email: data.studentEmail,
+            email: `student${uniqueSuffix()}@example.com`,
             dateOfBirthBS: '2062-01-01',
             dateOfBirthAD: new Date('2005-01-01'),
             gender: Gender.MALE,
@@ -204,10 +237,11 @@ describe('Property Test: Circulation Record Completeness', () => {
             admissionClass: 10,
             status: StudentStatus.ACTIVE,
           });
+          createdStudentIds.push(student.studentId);
 
           // Create book
           const book = await Book.create({
-            accessionNumber: data.accessionNumber,
+            accessionNumber: `ACC${uniqueSuffix()}`,
             isbn: 'ISBN123',
             title: data.title,
             author: data.author,
@@ -218,6 +252,7 @@ describe('Property Test: Circulation Record Completeness', () => {
             availableCopies: 1,
             status: 'available',
           });
+          createdBookIds.push(book.bookId);
 
           // Create circulation with specified status
           const circulation = await Circulation.create({
@@ -230,6 +265,7 @@ describe('Property Test: Circulation Record Completeness', () => {
             conditionOnIssue: 'good',
             maxRenewals: 2,
           } as CirculationCreationAttributes);
+          createdCirculationIds.push(circulation.circulationId);
 
           // Verify status is one of the valid values
           const validStatuses = ['borrowed', 'returned', 'overdue', 'lost', 'renewed'];
@@ -261,18 +297,19 @@ describe('Property Test: Circulation Record Completeness', () => {
         async (data) => {
           // Create user
           const user = await User.create({
-            username: data.username,
-            email: data.userEmail,
+            username: `librarian${uniqueSuffix()}`,
+            email: `librarian${uniqueSuffix()}@example.com`,
             password: 'hashedpassword',
             role: UserRole.LIBRARIAN,
           });
+          createdUserIds.push(user.userId);
 
           // Create student
           const student = await Student.create({
-            studentCode: `STU-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+            studentCode: `STU-${uniqueSuffix()}`,
             firstNameEn: data.studentName.split(' ')[0] || 'Test',
             lastNameEn: data.studentName.split(' ')[1] || 'Student',
-            email: data.studentEmail,
+            email: `student${uniqueSuffix()}@example.com`,
             dateOfBirthBS: '2062-01-01',
             dateOfBirthAD: new Date('2005-01-01'),
             gender: Gender.MALE,
@@ -286,10 +323,11 @@ describe('Property Test: Circulation Record Completeness', () => {
             admissionClass: 10,
             status: StudentStatus.ACTIVE,
           });
+          createdStudentIds.push(student.studentId);
 
           // Create book
           const book = await Book.create({
-            accessionNumber: data.accessionNumber,
+            accessionNumber: `ACC${uniqueSuffix()}`,
             isbn: 'ISBN123',
             title: data.title,
             author: data.author,
@@ -300,6 +338,7 @@ describe('Property Test: Circulation Record Completeness', () => {
             availableCopies: 1,
             status: 'available',
           });
+          createdBookIds.push(book.bookId);
 
           const issueDate = new Date();
           const dueDate = new Date();
@@ -316,9 +355,12 @@ describe('Property Test: Circulation Record Completeness', () => {
             conditionOnIssue: 'good',
             maxRenewals: 2,
           } as CirculationCreationAttributes);
+          createdCirculationIds.push(circulation.circulationId);
 
           // Verify due date is after issue date
-          expect(circulation.dueDate.getTime()).toBeGreaterThan(circulation.issueDate.getTime());
+          expect(new Date(circulation.dueDate).getTime()).toBeGreaterThan(
+            new Date(circulation.issueDate).getTime()
+          );
         }
       ),
       { numRuns: 50 }

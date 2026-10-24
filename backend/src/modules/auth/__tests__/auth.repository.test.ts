@@ -48,13 +48,13 @@ describe('UserRepository', () => {
       expect(user.password).toMatch(/^\$2[aby]\$/);
     });
 
-    it('should create user with all 13 roles', async () => {
+    it('should create a user for every configured role', async () => {
       const roles = Object.values(UserRole);
-      expect(roles).toHaveLength(13);
+      expect(new Set(roles).size).toBe(roles.length);
 
       for (const role of roles) {
         const user = await userRepository.create({
-          username: `user_${role}`,
+          username: `user${role.replace(/[^a-z0-9]/gi, '')}`,
           email: `${role}@example.com`,
           password: 'Password123!',
           role
@@ -376,7 +376,7 @@ describe('UserRepository', () => {
 
       const updated = await userRepository.findById(user.userId);
       expect(updated?.failedLoginAttempts).toBe(0);
-      expect(updated?.accountLockedUntil).toBeUndefined();
+      expect(updated?.accountLockedUntil).toBeNull();
     });
 
     it('should lock account until specified time', async () => {
@@ -395,7 +395,7 @@ describe('UserRepository', () => {
       await userRepository.unlockAccount(user.userId);
 
       const updated = await userRepository.findById(user.userId);
-      expect(updated?.accountLockedUntil).toBeUndefined();
+      expect(updated?.accountLockedUntil).toBeNull();
       expect(updated?.failedLoginAttempts).toBe(0);
       expect(updated?.status).toBe(UserStatus.ACTIVE);
       expect(updated?.isAccountLocked()).toBe(false);
@@ -433,8 +433,8 @@ describe('UserRepository', () => {
       await userRepository.updateRefreshToken(user.userId, undefined, undefined);
 
       const updated = await userRepository.findById(user.userId);
-      expect(updated?.refreshToken).toBeUndefined();
-      expect(updated?.refreshTokenExpiresAt).toBeUndefined();
+      expect(updated?.refreshToken).toBeNull();
+      expect(updated?.refreshTokenExpiresAt).toBeNull();
     });
   });
 

@@ -14,8 +14,14 @@ jest.mock('../../services/apiClient', () => ({
 }));
 
 jest.mock('../../components/YearSelectableDatePicker/YearSelectableDatePicker', () => ({
-  YearSelectableDateField: ({ label, value, onChange }: { label: string; value: string; onChange: (event: ChangeEvent<HTMLInputElement>) => void }) => (
-    <input aria-label={label} value={value} onChange={onChange} />
+  YearSelectableDateField: ({ label, id, name, value, onChange }: {
+    label: string;
+    id?: string;
+    name?: string;
+    value: string;
+    onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  }) => (
+    <input aria-label={label} id={id} name={name} value={value} onChange={onChange} />
   ),
 }));
 
@@ -46,6 +52,12 @@ describe('StaffAttendanceMarking', () => {
       { params: { status: 'active' } },
     ));
     expect(await screen.findByText('QA Staff')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'attendance.date' })).toHaveAttribute('id', 'staff-attendance-date');
+    expect(screen.getByRole('textbox', { name: 'attendance.date' })).toHaveAttribute('name', 'date');
+    expect(screen.getByPlaceholderText('attendance.addRemarks')).toHaveAttribute('id', 'staff-attendance-remarks-12');
+    expect(screen.getByPlaceholderText('attendance.addRemarks')).toHaveAttribute('name', 'remarks-12');
+    expect(screen.getByRole('combobox', { name: 'attendance.department' })).toHaveAttribute('id', 'staff-attendance-department');
+    expect(document.querySelector('input[name="department"]')).toBeInTheDocument();
 
     fireEvent.mouseDown(screen.getByRole('combobox', { name: 'attendance.department' }));
     fireEvent.click(await screen.findByRole('option', { name: 'academic' }));
@@ -82,7 +94,10 @@ describe('StaffAttendanceMarking', () => {
       </ThemeProvider>,
     );
 
-    expect(await screen.findByRole('combobox', { name: 'QA Staff common.status' })).toHaveTextContent('attendance.late');
+    const statusSelect = await screen.findByRole('combobox', { name: 'QA Staff common.status' });
+    expect(statusSelect).toHaveTextContent('attendance.late');
+    expect(statusSelect).toHaveAttribute('id', 'staff-attendance-status-12');
+    expect(document.querySelector('input[name="attendanceStatus-12"]')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('attendance.addRemarks')).toHaveValue('Already saved');
   });
 

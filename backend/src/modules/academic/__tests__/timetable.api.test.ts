@@ -1,11 +1,17 @@
+// Keep this route suite independent of Jest's CommonJS loader for htmlparser2 ESM.
+jest.mock('sanitize-html', () => (html: string) => html);
+
 import request from 'supertest';
 import app from '../../../app';
+import { Op } from 'sequelize';
+import sequelize from '@config/database';
 import { AcademicYear } from '@models/AcademicYear.model';
 import Class from '@models/Class.model';
 import { Subject } from '@models/Subject.model';
 import Staff, { StaffStatus, EmploymentType, StaffCategory } from '@models/Staff.model';
 import { Timetable, Period } from '@models/Timetable.model';
 import User, { UserRole } from '@models/User.model';
+import SchoolConfig from '@models/SchoolConfig.model';
 import jwtService from '../../auth/jwt.service';
 
 describe('Timetable API Integration Tests', () => {
@@ -17,14 +23,28 @@ describe('Timetable API Integration Tests', () => {
   let teacher1: Staff;
   let teacher2: Staff;
   let adminUser: User;
+  let schoolConfigId: string;
+  let schoolConfig: SchoolConfig;
 
   beforeAll(async () => {
+    // Build a disposable schema only for the isolated in-memory SQLite adapter.
+    if (sequelize.getDialect() === 'sqlite') {
+      await sequelize.sync({ force: true });
+    }
+
+    schoolConfig = await SchoolConfig.create({
+      schoolNameEn: 'Timetable API QA School',
+      schoolCode: `TIMETABLE${Date.now()}`,
+    });
+    schoolConfigId = schoolConfig.id;
+
     // Create admin user for authentication
     adminUser = await User.create({
-      username: 'timetable_admin',
+      username: 'timetableadmin',
       email: 'timetable_admin@test.com',
       password: 'hashedpassword',
-      role: UserRole.SCHOOL_ADMIN
+      role: UserRole.SCHOOL_ADMIN,
+      schoolConfigId,
     });
 
     // Generate auth token
@@ -42,7 +62,8 @@ describe('Timetable API Integration Tests', () => {
       endDateBS: '2081-12-30',
       startDateAD: new Date('2024-04-13'),
       endDateAD: new Date('2025-04-12'),
-      isCurrent: false
+      isCurrent: false,
+      schoolConfigId,
     });
 
     testClass = await Class.create({
@@ -51,7 +72,8 @@ describe('Timetable API Integration Tests', () => {
       section: 'Z',
       shift: 'morning',
       capacity: 40,
-      currentStrength: 0
+      currentStrength: 0,
+      schoolConfigId,
     });
 
     subject1 = await Subject.create({
@@ -64,7 +86,8 @@ describe('Timetable API Integration Tests', () => {
       practicalMarks: 25,
       passMarks: 35,
       fullMarks: 100,
-      applicableClasses: [10]
+      applicableClasses: [10],
+      schoolConfigId,
     });
 
     subject2 = await Subject.create({
@@ -77,7 +100,8 @@ describe('Timetable API Integration Tests', () => {
       practicalMarks: 25,
       passMarks: 35,
       fullMarks: 100,
-      applicableClasses: [10]
+      applicableClasses: [10],
+      schoolConfigId,
     });
 
     teacher1 = await Staff.create({
@@ -87,7 +111,8 @@ describe('Timetable API Integration Tests', () => {
       category: StaffCategory.TEACHING,
       employmentType: EmploymentType.FULL_TIME,
       joinDate: new Date('2020-01-01'),
-      status: StaffStatus.ACTIVE
+      status: StaffStatus.ACTIVE,
+      schoolConfigId,
     });
 
     teacher2 = await Staff.create({
@@ -97,19 +122,43 @@ describe('Timetable API Integration Tests', () => {
       category: StaffCategory.TEACHING,
       employmentType: EmploymentType.FULL_TIME,
       joinDate: new Date('2020-01-01'),
-      status: StaffStatus.ACTIVE
+      status: StaffStatus.ACTIVE,
+      schoolConfigId,
     });
   });
 
   afterAll(async () => {
-    // Clean up test data
-    await Period.destroy({ where: {}, force: true });
-    await Timetable.destroy({ where: {}, force: true });
-    await Staff.destroy({ where: { staffCode: { $like: 'TIMETABLE-STAFF-%' } }, force: true });
-    await Subject.destroy({ where: { code: { $like: 'TIMETABLE_%' } }, force: true });
-    await Class.destroy({ where: { section: 'Z' }, force: true });
-    await AcademicYear.destroy({ where: { name: '2081-2082 BS Test' }, force: true });
-    await User.destroy({ where: { username: 'timetable_admin' }, force: true });
+    // Derive only this fixture's timetable IDs; never delete from shared tables.
+    if (testClass?.classId) {
+      const timetableRows = await Timetable.findAll({
+        where: { classId: testClass.classId },
+        attributes: ['timetableId'],
+      });
+      const timetableIds = timetableRows.map((row) => row.timetableId);
+      if (timetableIds.length) {
+        await Period.destroy({ where: { timetableId: { [Op.in]: timetableIds } }, force: true });
+        await Timetable.destroy({ where: { timetableId: { [Op.in]: timetableIds } }, force: true });
+      }
+      await Class.destroy({ where: { classId: testClass.classId }, force: true });
+    }
+    const staffIds = [teacher1?.staffId, teacher2?.staffId].filter((id): id is number => Boolean(id));
+    if (staffIds.length) {
+      await Staff.destroy({ where: { staffId: { [Op.in]: staffIds } }, force: true });
+    }
+    const subjectIds = [subject1?.subjectId, subject2?.subjectId].filter((id): id is number => Boolean(id));
+    if (subjectIds.length) {
+      await Subject.destroy({ where: { subjectId: { [Op.in]: subjectIds } }, force: true });
+    }
+    if (academicYear?.academicYearId) {
+      await AcademicYear.destroy({ where: { academicYearId: academicYear.academicYearId }, force: true });
+    }
+    if (adminUser?.userId) {
+      await User.destroy({ where: { userId: adminUser.userId }, force: true });
+    }
+    if (schoolConfig?.id) {
+      await SchoolConfig.destroy({ where: { id: schoolConfig.id }, force: true });
+    }
+    await sequelize.close();
   });
 
   describe('POST /api/v1/academic/timetable', () => {
@@ -151,7 +200,8 @@ describe('Timetable API Integration Tests', () => {
       const timetable = await Timetable.create({
         classId: testClass.classId,
         academicYearId: academicYear.academicYearId,
-        dayOfWeek: 2
+        dayOfWeek: 2,
+        schoolConfigId,
       });
       timetableId = timetable.timetableId;
     });
@@ -222,7 +272,7 @@ describe('Timetable API Integration Tests', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
-      expect(response.body.error.message).toContain('conflicting period');
+      expect(response.body.message).toContain('conflicting period');
     });
   });
 
@@ -233,7 +283,8 @@ describe('Timetable API Integration Tests', () => {
       const timetable = await Timetable.create({
         classId: testClass.classId,
         academicYearId: academicYear.academicYearId,
-        dayOfWeek: 3
+        dayOfWeek: 3,
+        schoolConfigId,
       });
       timetableId = timetable.timetableId;
 
@@ -243,7 +294,8 @@ describe('Timetable API Integration Tests', () => {
         startTime: '09:00',
         endTime: '09:45',
         subjectId: subject1.subjectId,
-        teacherId: teacher1.staffId
+        teacherId: teacher1.staffId,
+        schoolConfigId,
       });
 
       await Period.create({
@@ -252,7 +304,8 @@ describe('Timetable API Integration Tests', () => {
         startTime: '10:00',
         endTime: '10:45',
         subjectId: subject2.subjectId,
-        teacherId: teacher2.staffId
+        teacherId: teacher2.staffId,
+        schoolConfigId,
       });
     });
 
@@ -275,7 +328,8 @@ describe('Timetable API Integration Tests', () => {
       const timetable = await Timetable.create({
         classId: testClass.classId,
         academicYearId: academicYear.academicYearId,
-        dayOfWeek: 4
+        dayOfWeek: 4,
+        schoolConfigId,
       });
 
       const period = await Period.create({
@@ -284,7 +338,8 @@ describe('Timetable API Integration Tests', () => {
         startTime: '09:00',
         endTime: '09:45',
         subjectId: subject1.subjectId,
-        teacherId: teacher1.staffId
+        teacherId: teacher1.staffId,
+        schoolConfigId,
       });
 
       periodId = period.periodId;

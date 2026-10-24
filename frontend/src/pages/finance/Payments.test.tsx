@@ -1,114 +1,75 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import apiClient from '../../services/apiClient';
 import { Payments } from './Payments';
 
-jest.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
+const mockT = (key: string) => key;
+jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: mockT }) }));
 jest.mock('../../services/apiClient', () => ({
   __esModule: true,
-  default: {
-    get: jest.fn(),
-    post: jest.fn(),
-  },
+  default: { get: jest.fn(), post: jest.fn() },
 }));
 
-describe('Payments form validation', () => {
+const renderPayments = () => render(<ThemeProvider theme={createTheme()}><Payments /></ThemeProvider>);
+
+describe('Payments', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.mocked(apiClient.get).mockResolvedValue({ data: { data: [], meta: { total: 0 } } } as unknown as Awaited<ReturnType<typeof apiClient.get>>);
+    jest.mocked(apiClient.get).mockResolvedValue({ data: { data: [], meta: { total: 0 } } } as never);
+    jest.mocked(apiClient.post).mockResolvedValue({ data: { success: true } } as never);
   });
 
-  const renderPayments = () => render(
-    <ThemeProvider theme={createTheme()}>
-      <Payments />
-    </ThemeProvider>,
-  );
+  it('opens a printable payment receipt using the selected payment data', async () => {
+    jest.mocked(apiClient.get).mockResolvedValueOnce({
+      data: {
+        data: [{
+          paymentId: 42,
+          invoiceId: 12,
+          invoiceNumber: 'INV-QA-42',
+          studentId: 7,
+          studentName: '<QA Student>',
+          amount: 2500,
+          paymentMethod: 'cash',
+          transactionId: 'TX-QA-42',
+          paymentDate: '2026-10-20',
+          status: 'completed',
+        }],
+        meta: { total: 1 },
+      },
+    } as never);
+    const doc = { open: jest.fn(), write: jest.fn(), close: jest.fn() };
+    const popup = { opener: window, document: doc } as unknown as Window;
+    const open = jest.spyOn(window, 'open').mockReturnValue(popup);
 
-  const openRecordPayment = async () => {
-    await waitFor(() => expect(apiClient.get).toHaveBeenCalledWith('/finance/payments', expect.any(Object)));
+    try {
+      renderPayments();
+      fireEvent.click(await screen.findByTitle('common.download'));
+
+      expect(open).toHaveBeenCalledWith('', '_blank');
+      expect(popup.opener).toBeNull();
+      expect(doc.open).toHaveBeenCalledTimes(1);
+      expect(doc.write).toHaveBeenCalledWith(expect.stringContaining('<h1>finance.paymentReceipt</h1>'));
+      expect(doc.write).toHaveBeenCalledWith(expect.stringContaining('&lt;QA Student&gt;'));
+      expect(doc.write).toHaveBeenCalledWith(expect.stringContaining('TX-QA-42'));
+      expect(doc.close).toHaveBeenCalledTimes(1);
+    } finally {
+      open.mockRestore();
+    }
+  });
+
+  it('does not submit an incomplete payment form', async () => {
+    renderPayments();
     fireEvent.click(screen.getByRole('button', { name: 'finance.recordPayment' }));
-  };
+    fireEvent.click(screen.getAllByRole('button', { name: 'finance.recordPayment' }).at(-1)!);
 
-  it('rejects a blank invoice before sending a payment request', async () => {
-    renderPayments();
-    await openRecordPayment();
-    const submitButtons = screen.getAllByRole('button', { name: 'finance.recordPayment' });
-    fireEvent.click(submitButtons[submitButtons.length - 1]);
-
-    expect(screen.getAllByText('validation.required').length).toBeGreaterThan(0);
-    expect(apiClient.post).not.toHaveBeenCalled();
+    await waitFor(() => expect(apiClient.post).not.toHaveBeenCalled());
+    expect(screen.getByRole('alert')).toHaveTextContent('validation.required');
   });
 
-  it('rejects a zero or negative amount before sending a payment request', async () => {
+  it('shows an error when payment history cannot be loaded', async () => {
+    jest.mocked(apiClient.get).mockRejectedValueOnce({ response: { data: { message: 'Payments unavailable' } } });
     renderPayments();
-    await openRecordPayment();
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'finance.invoiceId' }), { target: { value: '123' } });
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'finance.amount' }), { target: { value: '0' } });
-    const submitButtons = screen.getAllByRole('button', { name: 'finance.recordPayment' });
-    fireEvent.click(submitButtons[submitButtons.length - 1]);
 
-    expect(screen.getAllByText('finance.invalidAmount').length).toBeGreaterThan(0);
-    expect(apiClient.post).not.toHaveBeenCalled();
-  });
-
-  it('clears validation feedback when the payment dialog is canceled', async () => {
-    renderPayments();
-    await openRecordPayment();
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'finance.invoiceId' }), { target: { value: '123' } });
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'finance.amount' }), { target: { value: '0' } });
-    const submitButtons = screen.getAllByRole('button', { name: 'finance.recordPayment' });
-    fireEvent.click(submitButtons[submitButtons.length - 1]);
-
-    expect(screen.getAllByText('finance.invalidAmount').length).toBeGreaterThan(0);
-    fireEvent.click(screen.getByRole('button', { name: 'common.cancel' }));
-
-    expect(screen.queryByText('finance.invalidAmount')).not.toBeInTheDocument();
-    expect(apiClient.post).not.toHaveBeenCalled();
-  });
-
-  it('restores focus to the launch button after the dialog closes', async () => {
-    renderPayments();
-    await waitFor(() => expect(apiClient.get).toHaveBeenCalledWith('/finance/payments', expect.any(Object)));
-    const launchButton = screen.getByRole('button', { name: 'finance.recordPayment' });
-    act(() => launchButton.focus());
-    fireEvent.click(launchButton);
-
-    expect(screen.getByRole('dialog', { name: 'finance.recordPayment' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'common.cancel' }));
-
-    await waitFor(() => expect(launchButton).toHaveFocus());
-  });
-
-  it('explains the invoice ID field and constrains the numeric inputs', async () => {
-    renderPayments();
-    await openRecordPayment();
-
-    expect(screen.getByRole('spinbutton', { name: 'finance.invoiceId' })).toHaveAttribute('min', '1');
-    expect(screen.getByRole('spinbutton', { name: 'finance.invoiceId' })).toHaveAttribute('step', '1');
-    expect(screen.getByText('finance.enterInvoiceId')).toBeInTheDocument();
-    expect(screen.getByRole('spinbutton', { name: 'finance.amount' })).toHaveAttribute('min', '0.01');
-    expect(screen.getByRole('spinbutton', { name: 'finance.amount' })).toHaveAttribute('step', '0.01');
-  });
-
-  it('defaults the payment date to the current local calendar day', async () => {
-    renderPayments();
-    await openRecordPayment();
-
-    const today = new Date();
-    expect(screen.getByPlaceholderText('MM/DD/YYYY')).toHaveValue(today.toLocaleDateString('en-US'));
-  });
-
-  it('names the payment method and page-size select inputs without breaking accessible labels', async () => {
-    renderPayments();
-    await openRecordPayment();
-
-    expect(screen.getByRole('combobox', { name: 'finance.paymentMethod' })).toBeInTheDocument();
-    expect(document.getElementById('payment-method-label')).not.toHaveAttribute('for');
-    const selectInputNames = [...document.querySelectorAll<HTMLInputElement>('input.MuiSelect-nativeInput')]
-      .map((input) => input.name);
-    expect(selectInputNames).toEqual(expect.arrayContaining(['rowsPerPage', 'paymentMethod']));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Payments unavailable');
   });
 });

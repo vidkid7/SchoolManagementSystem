@@ -6,7 +6,10 @@
  * Requirements: 11.3, 11.4
  */
 
-import { ECAEnrollment } from '../ECAEnrollment.model';
+import sequelize from '../../config/database';
+import { ECAEnrollment, initECAEnrollment } from '../ECAEnrollment.model';
+
+initECAEnrollment(sequelize);
 
 describe('ECAEnrollment Model', () => {
   describe('getAttendancePercentage', () => {
@@ -81,7 +84,7 @@ describe('ECAEnrollment Model', () => {
       expect(json.enrollmentId).toBe(1);
       expect(json.ecaId).toBe(1);
       expect(json.studentId).toBe(1);
-      expect(json.enrollmentDate).toEqual(enrollmentDate);
+      expect(json.enrollmentDate).toBe('2024-01-15');
       expect(json.status).toBe('active');
       expect(json.attendanceCount).toBe(8);
       expect(json.totalSessions).toBe(10);

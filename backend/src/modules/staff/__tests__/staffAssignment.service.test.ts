@@ -21,7 +21,11 @@ describe('Staff Assignment Service', () => {
   let testSubject: Subject;
 
   beforeAll(async () => {
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('Staff assignment service tests require TEST_DB_DIALECT=sqlite');
+    }
     await sequelize.sync({ force: true });
+    await sequelize.query('PRAGMA foreign_keys = OFF');
   });
 
   beforeEach(async () => {

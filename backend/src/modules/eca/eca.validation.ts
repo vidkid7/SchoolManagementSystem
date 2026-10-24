@@ -187,6 +187,36 @@ export const getECAsValidation = [
     .withMessage('Limit must be between 1 and 100')
 ];
 
+/** Validation for ECA enrollment list filters and pagination. */
+export const getEnrollmentsValidation = [
+  query('ecaId').optional().isInt({ min: 1 }).withMessage('ECA ID must be a positive integer'),
+  query('studentId').optional().isInt({ min: 1 }).withMessage('Student ID must be a positive integer'),
+  query('status').optional().isIn(['active', 'withdrawn', 'completed']).withMessage('Invalid enrollment status'),
+  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
+];
+
+/** Validation for ECA event list filters and pagination. */
+export const getEventsValidation = [
+  query('ecaId').optional().isInt({ min: 1 }).withMessage('ECA ID must be a positive integer'),
+  query('type').optional().isIn(['competition', 'performance', 'exhibition', 'workshop', 'other']).withMessage('Invalid event type'),
+  query('status').optional().isIn(['scheduled', 'ongoing', 'completed', 'cancelled']).withMessage('Invalid event status'),
+  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
+];
+
+/** Validation for ECA achievement list filters and bounded result size. */
+export const getAchievementsValidation = [
+  query('ecaId').optional().isInt({ min: 1 }).withMessage('ECA ID must be a positive integer'),
+  query('studentId').optional().isInt({ min: 1 }).withMessage('Student ID must be a positive integer'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
+];
+
+/** Validation for the recent-activity result size. */
+export const getRecentActivitiesValidation = [
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
+];
+
 /**
  * Validation for enrolling a student
  */

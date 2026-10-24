@@ -258,7 +258,7 @@ async function seedStaff(): Promise<void> {
       const user = await User.create({
         username: data.username,
         email: data.email,
-        password: 'Password@123',
+        password: seedPassword,
         role: data.role,
         status: UserStatus.ACTIVE,
         phoneNumber: data.phone,

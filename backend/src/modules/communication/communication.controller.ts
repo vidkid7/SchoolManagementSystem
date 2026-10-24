@@ -14,8 +14,8 @@ import { groupMessageService } from './groupMessage.service';
 import { attachmentService } from './attachment.service';
 import AuditLog, { AuditAction } from '@models/AuditLog.model';
 import NotificationTemplate from '@models/NotificationTemplate.model';
-import User from '@models/User.model';
 import { Op } from 'sequelize';
+import smsService from '@services/sms.service';
 
 type CommunicationSettings = Record<string, any>;
 
@@ -1110,8 +1110,10 @@ export class CommunicationController {
         return;
       }
 
-      // Verify the attachment belongs to the user (URL contains user ID)
-      if (!attachmentUrl.includes(`/messages/${userId}/`)) {
+      // Verify the complete URL structure and exact owner folder. A substring
+      // check would accept traversal segments containing the user's folder.
+      const attachmentPath = /^\/uploads\/attachments\/messages\/([1-9]\d*)\/([A-Za-z0-9][A-Za-z0-9._-]{0,254})$/.exec(attachmentUrl);
+      if (!attachmentPath || attachmentPath[1] !== String(userId)) {
         res.status(403).json({
           success: false,
           error: {
@@ -1624,84 +1626,22 @@ export class CommunicationController {
    * Send bulk notification
    * POST /api/v1/communication/bulk-notification
    */
-  async sendBulkNotification(req: Request, res: Response): Promise<void> {
-    try {
-      const { title, message, targetAudience, channels } = req.body;
-      const userId = req.user?.userId;
-      if (!userId) {
-        res.status(401).json({
-          success: false,
-          error: {
-            code: 'UNAUTHORIZED',
-            message: 'User not authenticated',
-          },
-        });
-        return;
-      }
-
-      const audienceRoleMap: Record<string, string[]> = {
-        students: ['Student'],
-        parents: ['Parent'],
-        teachers: ['Class_Teacher', 'Subject_Teacher', 'Department_Head'],
-        staff: ['School_Admin', 'Librarian', 'Accountant', 'Transport_Manager', 'Hostel_Warden', 'Non_Teaching_Staff'],
-      };
-
-      const userWhere: Record<string, any> = {};
-      if (targetAudience && targetAudience !== 'all' && audienceRoleMap[targetAudience]) {
-        userWhere.role = { [Op.in]: audienceRoleMap[targetAudience] };
-      }
-
-      const recipientCount = await User.count({
-        where: userWhere,
-      });
-
-      const notificationPayload = {
-        type: 'push',
-        recipient: targetAudience || 'all',
-        subject: title || 'Bulk Notification',
-        message,
-        status: 'sent',
-        channels: channels || ['in-app', 'email'],
-        recipientCount,
-        sentAt: new Date().toISOString(),
-      };
-
-      const requestMeta = this.getRequestMeta(req);
-      await AuditLog.create({
-        userId,
-        entityType: 'communication_notification',
-        entityId: 0,
-        action: AuditAction.CREATE,
-        oldValue: null,
-        newValue: notificationPayload,
-        changedFields: null,
-        ipAddress: requestMeta.ipAddress,
-        userAgent: requestMeta.userAgent,
-        metadata: { module: 'communication', source: 'bulk-notification' },
-        timestamp: new Date(),
-      });
-
-      const result = {
-        sent: true,
-        recipientCount,
-        channels: notificationPayload.channels,
-        sentAt: notificationPayload.sentAt,
-      };
-
-      res.status(200).json({
-        success: true,
-        data: result,
-        message: 'Bulk notification sent successfully',
-      });
-    } catch (error) {
-      res.status(400).json({
+  sendBulkNotification(req: Request, res: Response): void {
+    if (!req.user?.userId) {
+      res.status(401).json({
         success: false,
-        error: {
-          code: 'SEND_FAILED',
-          message: error instanceof Error ? error.message : 'Failed to send bulk notification',
-        },
+        error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
       });
+      return;
     }
+
+    res.status(501).json({
+      success: false,
+      error: {
+        code: 'DELIVERY_UNAVAILABLE',
+        message: 'Bulk notification delivery is not configured',
+      },
+    });
   }
 
   // ==================== NOTIFICATION / SMS / EMAIL / PUSH METHODS ====================
@@ -1743,7 +1683,7 @@ export class CommunicationController {
       });
 
       res.status(200).json({ success: true, data: history });
-    } catch (error) {
+    } catch {
       res.status(500).json({ success: false, error: { code: 'FETCH_FAILED', message: 'Failed to fetch notification history' } });
     }
   }
@@ -1805,7 +1745,7 @@ export class CommunicationController {
       });
 
       res.status(200).json({ success: true, data });
-    } catch (error) {
+    } catch {
       res.status(500).json({ success: false, error: { code: 'FETCH_FAILED', message: 'Failed to fetch templates' } });
     }
   }
@@ -1850,7 +1790,7 @@ export class CommunicationController {
       };
 
       res.status(200).json({ success: true, data: redactCommunicationCredentials(settings) });
-    } catch (error) {
+    } catch {
       res.status(500).json({ success: false, error: { code: 'FETCH_FAILED', message: 'Failed to fetch settings' } });
     }
   }
@@ -1899,7 +1839,7 @@ export class CommunicationController {
       });
 
       res.status(200).json({ success: true, data: safeSettings, message: 'Settings saved successfully' });
-    } catch (error) {
+    } catch {
       res.status(500).json({ success: false, error: { code: 'SAVE_FAILED', message: 'Failed to save settings' } });
     }
   }
@@ -1918,12 +1858,75 @@ export class CommunicationController {
 
       const { recipients, message, scheduleTime } = req.body;
 
-      if (!recipients || !message) {
+      if (!recipients || typeof message !== 'string' || !message.trim()) {
         res.status(400).json({ success: false, error: { code: 'MISSING_FIELDS', message: 'Recipients and message are required' } });
         return;
       }
 
+      if (scheduleTime) {
+        res.status(501).json({
+          success: false,
+          error: { code: 'SCHEDULING_UNAVAILABLE', message: 'Scheduled SMS delivery is not configured' },
+        });
+        return;
+      }
+
       const recipientList = Array.isArray(recipients) ? recipients : [recipients];
+      if (recipientList.length === 0 || recipientList.some((recipient) => typeof recipient !== 'string' || !recipient.trim())) {
+        res.status(400).json({ success: false, error: { code: 'INVALID_RECIPIENTS', message: 'Recipients must contain phone numbers' } });
+        return;
+      }
+
+      const deliveryResults = await smsService.sendBulkSMS(
+        recipientList.map((recipient: string) => ({ recipient: recipient.trim(), message: message.trim() })),
+      );
+      const successfulDeliveries = deliveryResults.filter((result) => result.success && result.messageId !== 'DISABLED').length;
+      if (successfulDeliveries !== recipientList.length) {
+        const failedDeliveries = recipientList.length - successfulDeliveries;
+        if (successfulDeliveries > 0) {
+          const requestMeta = this.getRequestMeta(req);
+          await AuditLog.create({
+            userId,
+            entityType: 'communication_notification',
+            entityId: 0,
+            action: AuditAction.CREATE,
+            oldValue: null,
+            newValue: {
+              type: 'sms',
+              status: 'partial',
+              recipientCount: recipientList.length,
+              successfulDeliveries,
+              failedDeliveries,
+              sentAt: new Date().toISOString(),
+            },
+            changedFields: null,
+            ipAddress: requestMeta.ipAddress,
+            userAgent: requestMeta.userAgent,
+            metadata: { module: 'communication', source: 'sms' },
+            timestamp: new Date(),
+          });
+          res.status(207).json({
+            success: false,
+            error: { code: 'PARTIAL_DELIVERY', message: 'Some SMS messages could not be delivered' },
+            data: { successfulDeliveries, failedDeliveries },
+          });
+          return;
+        }
+
+        const providerUnavailable = deliveryResults.some((result) =>
+          result.messageId === 'DISABLED' || result.error === 'SMS gateway is not configured',
+        );
+        res.status(providerUnavailable ? 503 : 502).json({
+          success: false,
+          error: {
+            code: providerUnavailable ? 'DELIVERY_UNAVAILABLE' : 'DELIVERY_FAILED',
+            message: providerUnavailable ? 'SMS delivery is not configured' : 'One or more SMS messages could not be delivered',
+          },
+          data: { successfulDeliveries, failedDeliveries },
+        });
+        return;
+      }
+
       const requestMeta = this.getRequestMeta(req);
       await AuditLog.create({
         userId,
@@ -1933,10 +1936,9 @@ export class CommunicationController {
         oldValue: null,
         newValue: {
           type: 'sms',
-          recipient: recipientList.join(', '),
-          message,
+          recipientCount: recipientList.length,
+          message: message.trim(),
           status: 'sent',
-          scheduleTime: scheduleTime || null,
           sentAt: new Date().toISOString(),
         },
         changedFields: null,
@@ -1946,8 +1948,8 @@ export class CommunicationController {
         timestamp: new Date(),
       });
 
-      res.status(200).json({ success: true, message: `SMS sent to ${recipientList.length} recipient(s)` });
-    } catch (error) {
+      res.status(200).json({ success: true, message: `SMS sent to ${successfulDeliveries} recipient(s)` });
+    } catch {
       res.status(500).json({ success: false, error: { code: 'SEND_FAILED', message: 'Failed to send SMS' } });
     }
   }
@@ -1956,164 +1958,69 @@ export class CommunicationController {
    * Send bulk SMS
    * POST /api/v1/communication/sms/bulk
    */
-  async sendBulkSMS(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = req.user?.userId;
-      if (!userId) {
-        res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'User not authenticated' } });
-        return;
-      }
-
-      const { message, targetRoles, scheduleTime } = req.body;
-
-      if (!message) {
-        res.status(400).json({ success: false, error: { code: 'MISSING_FIELDS', message: 'Message is required' } });
-        return;
-      }
-
-      const roles = Array.isArray(targetRoles) && targetRoles.length > 0
-        ? this.normalizeRoleFilters(targetRoles)
-        : null;
-      const userWhere: Record<string, any> = {};
-      if (roles) {
-        userWhere.role = { [Op.in]: roles };
-      }
-
-      const recipientCount = await User.count({ where: userWhere });
-      const requestMeta = this.getRequestMeta(req);
-      await AuditLog.create({
-        userId,
-        entityType: 'communication_notification',
-        entityId: 0,
-        action: AuditAction.CREATE,
-        oldValue: null,
-        newValue: {
-          type: 'sms',
-          recipient: roles ? roles.join(', ') : 'all',
-          message,
-          status: 'sent',
-          scheduleTime: scheduleTime || null,
-          recipientCount,
-          sentAt: new Date().toISOString(),
-        },
-        changedFields: null,
-        ipAddress: requestMeta.ipAddress,
-        userAgent: requestMeta.userAgent,
-        metadata: { module: 'communication', source: 'sms-bulk' },
-        timestamp: new Date(),
-      });
-
-      res.status(200).json({ success: true, data: { recipientCount }, message: 'Bulk SMS queued successfully' });
-    } catch (error) {
-      res.status(500).json({ success: false, error: { code: 'SEND_FAILED', message: 'Failed to send bulk SMS' } });
+  sendBulkSMS(req: Request, res: Response): void {
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'User not authenticated' } });
+      return;
     }
+
+    const { message } = req.body;
+    if (!message) {
+      res.status(400).json({ success: false, error: { code: 'MISSING_FIELDS', message: 'Message is required' } });
+      return;
+    }
+
+    res.status(501).json({
+      success: false,
+      error: { code: 'DELIVERY_UNAVAILABLE', message: 'Bulk SMS delivery is not configured' },
+    });
   }
 
   /**
    * Send Email
    * POST /api/v1/communication/email/send
    */
-  async sendEmail(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = req.user?.userId;
-      if (!userId) {
-        res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'User not authenticated' } });
-        return;
-      }
-
-      const { recipients, subject, body, scheduleTime } = req.body;
-
-      if (!recipients || !subject || !body) {
-        res.status(400).json({ success: false, error: { code: 'MISSING_FIELDS', message: 'Recipients, subject, and body are required' } });
-        return;
-      }
-
-      const recipientList = Array.isArray(recipients) ? recipients : [recipients];
-      const requestMeta = this.getRequestMeta(req);
-      await AuditLog.create({
-        userId,
-        entityType: 'communication_notification',
-        entityId: 0,
-        action: AuditAction.CREATE,
-        oldValue: null,
-        newValue: {
-          type: 'email',
-          recipient: recipientList.join(', '),
-          subject,
-          message: body,
-          status: 'sent',
-          scheduleTime: scheduleTime || null,
-          sentAt: new Date().toISOString(),
-        },
-        changedFields: null,
-        ipAddress: requestMeta.ipAddress,
-        userAgent: requestMeta.userAgent,
-        metadata: { module: 'communication', source: 'email' },
-        timestamp: new Date(),
-      });
-
-      res.status(200).json({ success: true, message: `Email sent to ${recipientList.length} recipient(s)` });
-    } catch (error) {
-      res.status(500).json({ success: false, error: { code: 'SEND_FAILED', message: 'Failed to send email' } });
+  sendEmail(req: Request, res: Response): void {
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'User not authenticated' } });
+      return;
     }
+
+    const { recipients, subject, body } = req.body;
+    if (!recipients || !subject || !body) {
+      res.status(400).json({ success: false, error: { code: 'MISSING_FIELDS', message: 'Recipients, subject, and body are required' } });
+      return;
+    }
+
+    res.status(501).json({
+      success: false,
+      error: { code: 'DELIVERY_UNAVAILABLE', message: 'Email delivery is not configured' },
+    });
   }
 
   /**
    * Send Push Notification
    * POST /api/v1/communication/push/send
    */
-  async sendPushNotification(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = req.user?.userId;
-      if (!userId) {
-        res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'User not authenticated' } });
-        return;
-      }
-
-      const { title, message, targetRoles, scheduleTime } = req.body;
-
-      if (!title || !message) {
-        res.status(400).json({ success: false, error: { code: 'MISSING_FIELDS', message: 'Title and message are required' } });
-        return;
-      }
-
-      const roles = Array.isArray(targetRoles) && targetRoles.length > 0
-        ? this.normalizeRoleFilters(targetRoles)
-        : null;
-      const userWhere: Record<string, any> = {};
-      if (roles) {
-        userWhere.role = { [Op.in]: roles };
-      }
-
-      const recipientCount = await User.count({ where: userWhere });
-      const requestMeta = this.getRequestMeta(req);
-      await AuditLog.create({
-        userId,
-        entityType: 'communication_notification',
-        entityId: 0,
-        action: AuditAction.CREATE,
-        oldValue: null,
-        newValue: {
-          type: 'push',
-          recipient: roles ? roles.join(', ') : 'all',
-          subject: title,
-          message,
-          status: 'sent',
-          scheduleTime: scheduleTime || null,
-          recipientCount,
-          sentAt: new Date().toISOString(),
-        },
-        changedFields: null,
-        ipAddress: requestMeta.ipAddress,
-        userAgent: requestMeta.userAgent,
-        metadata: { module: 'communication', source: 'push' },
-        timestamp: new Date(),
-      });
-
-      res.status(200).json({ success: true, data: { recipientCount }, message: 'Push notification sent successfully' });
-    } catch (error) {
-      res.status(500).json({ success: false, error: { code: 'SEND_FAILED', message: 'Failed to send push notification' } });
+  sendPushNotification(req: Request, res: Response): void {
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'User not authenticated' } });
+      return;
     }
+
+    const { title, message } = req.body;
+    if (!title || !message) {
+      res.status(400).json({ success: false, error: { code: 'MISSING_FIELDS', message: 'Title and message are required' } });
+      return;
+    }
+
+    res.status(501).json({
+      success: false,
+      error: { code: 'DELIVERY_UNAVAILABLE', message: 'Push notification delivery is not configured' },
+    });
   }
 }
 

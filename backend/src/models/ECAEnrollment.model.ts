@@ -27,16 +27,16 @@ export class ECAEnrollment
   extends Model<ECAEnrollmentAttributes, ECAEnrollmentCreationAttributes>
   implements ECAEnrollmentAttributes
 {
-  public enrollmentId!: number;
-  public ecaId!: number;
-  public studentId!: number;
-  public enrollmentDate!: Date;
-  public status!: 'active' | 'withdrawn' | 'completed';
-  public attendanceCount!: number;
-  public totalSessions!: number;
-  public remarks?: string;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public enrollmentId: number;
+  declare public ecaId: number;
+  declare public studentId: number;
+  declare public enrollmentDate: Date;
+  declare public status: 'active' | 'withdrawn' | 'completed';
+  declare public attendanceCount: number;
+  declare public totalSessions: number;
+  declare public remarks?: string;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   public getAttendancePercentage(): number {
     if (this.totalSessions === 0) return 0;

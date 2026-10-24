@@ -4,6 +4,10 @@ const bcrypt = require('bcrypt');
 // Railway database connection
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) throw new Error('DATABASE_URL is required');
+const adminPassword = process.env.INITIAL_ADMIN_PASSWORD;
+if (process.env.CONFIRM_INITIAL_ADMIN_CREATE !== 'true' || !adminPassword || adminPassword.length < 14) {
+  throw new Error('Set CONFIRM_INITIAL_ADMIN_CREATE=true and a 14+ character INITIAL_ADMIN_PASSWORD.');
+}
 const sequelize = new Sequelize(DATABASE_URL, {
   dialect: 'mysql',
   dialectOptions: {
@@ -98,7 +102,7 @@ async function seedMunicipalityAdmin() {
     console.log(`✅ Found role: ${roleName} (${municipalityRole[0].code}, ID: ${roleId})\n`);
 
     // Hash the password
-    const hashedPassword = await bcrypt.hash('Municipality@123', 10);
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
     console.log('🔧 Creating municipality admin user...');
 
@@ -134,14 +138,7 @@ async function seedMunicipalityAdmin() {
     `);
 
     console.log('✅ Role assigned successfully!\n');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('Municipality Admin Login Credentials:');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('  Username: municipalityadmin');
-    console.log('  Email:    municipality.admin@school.edu.np');
-    console.log('  Password: Municipality@123');
-    console.log('  Role:     Municipality_Admin');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    console.log('Initial municipality administrator created. Store the supplied one-time password securely.');
 
     await sequelize.close();
     console.log('✅ Process completed successfully!');

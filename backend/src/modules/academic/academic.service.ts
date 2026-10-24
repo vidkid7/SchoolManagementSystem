@@ -429,27 +429,29 @@ class AcademicService {
     });
   }
 
-  async updateTopicProgress(topicId: number, completedHours: number): Promise<void> {
+  async updateTopicProgress(topicId: number, completedHours: number): Promise<boolean> {
     const topic = await SyllabusTopic.findByPk(topicId);
-    if (topic) {
-      const status = completedHours >= Number(topic.estimatedHours) 
-        ? 'completed' 
-        : completedHours > 0 
-          ? 'in_progress' 
-          : 'not_started';
-      
-      await topic.update({ completedHours, status });
+    if (!topic) return false;
 
-      // Update overall syllabus percentage
-      const syllabus = await Syllabus.findByPk(topic.syllabusId);
-      if (syllabus) {
-        const topics = await SyllabusTopic.findAll({ where: { syllabusId: syllabus.syllabusId } });
-        const totalHours = topics.reduce((sum, t) => sum + Number(t.estimatedHours), 0);
-        const completedTotal = topics.reduce((sum, t) => sum + Number(t.completedHours), 0);
-        const percentage = totalHours > 0 ? (completedTotal / totalHours) * 100 : 0;
-        await syllabus.update({ completedPercentage: percentage });
-      }
+    const status = completedHours >= Number(topic.estimatedHours)
+      ? 'completed'
+      : completedHours > 0
+        ? 'in_progress'
+        : 'not_started';
+
+    await topic.update({ completedHours, status });
+
+    // Update overall syllabus percentage
+    const syllabus = await Syllabus.findByPk(topic.syllabusId);
+    if (syllabus) {
+      const topics = await SyllabusTopic.findAll({ where: { syllabusId: syllabus.syllabusId } });
+      const totalHours = topics.reduce((sum, t) => sum + Number(t.estimatedHours), 0);
+      const completedTotal = topics.reduce((sum, t) => sum + Number(t.completedHours), 0);
+      const percentage = totalHours > 0 ? (completedTotal / totalHours) * 100 : 0;
+      await syllabus.update({ completedPercentage: percentage });
     }
+
+    return true;
   }
 
   async getSyllabusProgress(subjectId: number, classId: number, academicYearId?: number): Promise<number | null> {

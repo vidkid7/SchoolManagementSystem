@@ -56,7 +56,9 @@ describe('SportsManagement dialog lifecycle', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Create Sport' }));
     const dialog = await screen.findByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Submit' }));
-    expect(await within(dialog).findByText('Name is required.')).toBeInTheDocument();
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('Name is required.');
+    expect(within(dialog).getByRole('textbox', { name: 'Sport Name' })).toBeRequired();
+    expect(within(dialog).getByRole('textbox', { name: 'Sport Name' })).toHaveAttribute('aria-invalid', 'true');
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
     expect(await screen.findByRole('button', { name: 'Create Sport' })).toBeInTheDocument();
@@ -139,5 +141,21 @@ describe('SportsManagement dialog lifecycle', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Could not load sports data. Please try again.');
     expect(screen.queryByText('No sports found')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+  });
+
+  it('renders a fallback instead of Invalid Date for malformed tournament dates', async () => {
+    mockedApiClient.get.mockImplementation(async (url: any) => {
+      if (url === '/sports/tournaments') {
+        return { data: { data: [{ tournamentId: 1, sportId: 1, name: 'QA Tournament', startDate: null, endDate: 'not-a-date' }], meta: { total: 1 } } } as any;
+      }
+      return { data: { data: [], meta: { total: 0 } } } as any;
+    });
+
+    render(<MemoryRouter><SportsManagement /></MemoryRouter>);
+    fireEvent.click(await screen.findByRole('tab', { name: 'Tournaments' }));
+
+    const tournamentRow = await screen.findByRole('row', { name: /QA Tournament/ });
+    expect(within(tournamentRow).getAllByText('—')).toHaveLength(2);
+    expect(tournamentRow).not.toHaveTextContent('Invalid Date');
   });
 });

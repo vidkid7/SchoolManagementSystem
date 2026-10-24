@@ -91,7 +91,7 @@ describe('Staff Model', () => {
       expect(staff.employeeId).toBe('EMP-001');
       expect(staff.position).toBe('Senior Teacher');
       expect(staff.department).toBe('Mathematics');
-      expect(staff.salary).toBe('50000.00');
+      expect(staff.salary).toBe(sequelize.getDialect() === 'sqlite' ? 50000 : '50000.00');
       expect(staff.highestQualification).toBe('M.Ed. Mathematics');
       expect(staff.teachingLicense).toBe('TL-12345');
     });

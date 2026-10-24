@@ -34,6 +34,7 @@ import SportsEnrollment from './SportsEnrollment.model';
 import Staff from './Staff.model';
 import StaffAssignment from './StaffAssignment.model';
 import StaffAttendance from './StaffAttendance.model';
+import StaffLeaveRequest from './StaffLeaveRequest.model';
 import LeaveApplication from './LeaveApplication.model';
 import Assignment from './Assignment.model';
 import AssignmentSubmission from './AssignmentSubmission.model';
@@ -44,6 +45,7 @@ import HostelResident from './HostelResident.model';
 import HostelIncident from './HostelIncident.model';
 import HostelVisitor from './HostelVisitor.model';
 import BehaviorRecord from './BehaviorRecord.model';
+import StudentTransferHistory from './StudentTransferHistory.model';
 import { initializeTenantIsolation } from './tenantIsolation';
 
 /**
@@ -201,13 +203,32 @@ export function initializeAssociations(): void {
   setupSportsAssociations();
   setupClassSubjectAssociations();
   setupStaffAttendanceAssociations();
+  setupStaffLeaveRequestAssociations();
   setupLeaveApplicationAssociations();
   setupAssignmentAssociations();
   setupLessonPlanAssociations();
   setupHostelAssociations();
   setupBehaviorRecordAssociations();
+  setupStudentTransferHistoryAssociations();
   initializeTenantIsolation();
   // Add other association setups here as needed
+}
+
+export function setupStudentTransferHistoryAssociations(): void {
+  if (!StudentTransferHistory.sequelize || !Student.sequelize) return;
+  StudentTransferHistory.belongsTo(Student, { foreignKey: 'studentId', as: 'student' });
+  Student.hasMany(StudentTransferHistory, { foreignKey: 'studentId', as: 'transferHistory' });
+  StudentTransferHistory.belongsTo(Class, { foreignKey: 'fromClassId', as: 'fromClass' });
+  StudentTransferHistory.belongsTo(Class, { foreignKey: 'toClassId', as: 'toClass' });
+  if (User.sequelize) {
+    StudentTransferHistory.belongsTo(User, { foreignKey: 'transferredBy', as: 'transferActor' });
+  }
+}
+
+export function setupStaffLeaveRequestAssociations(): void {
+  if (!StaffLeaveRequest.sequelize || !Staff.sequelize) return;
+  StaffLeaveRequest.belongsTo(Staff, { foreignKey: 'staffId', as: 'staff' });
+  Staff.hasMany(StaffLeaveRequest, { foreignKey: 'staffId', as: 'leaveRequests' });
 }
 
 /**
@@ -767,6 +788,16 @@ export function setupHostelAssociations(): void {
     HostelResident.belongsTo(HostelRoom, {
       foreignKey: 'roomId',
       as: 'room'
+    });
+
+    HostelResident.belongsTo(Student, {
+      foreignKey: 'studentId',
+      as: 'student'
+    });
+
+    Student.hasMany(HostelResident, {
+      foreignKey: 'studentId',
+      as: 'hostelResidences'
     });
   } catch (error) {
     console.warn('Hostel associations not set up:', error);

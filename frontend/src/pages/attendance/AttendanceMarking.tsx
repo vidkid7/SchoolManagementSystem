@@ -4,7 +4,8 @@
  * Period-wise attendance marking with offline support
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { isAxiosError } from 'axios';
 import { useTheme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
@@ -40,7 +41,6 @@ import apiClient from '../../services/apiClient';
 
 interface Student {
   id: number;
-  student_id: string;
   first_name: string;
   last_name: string;
   roll_number: number;
@@ -52,6 +52,19 @@ interface ClassInfo {
   classId: number;
   gradeLevel: number;
   section: string;
+}
+
+interface StudentApiRecord {
+  studentId?: number;
+  id?: number;
+  firstNameEn?: string;
+  first_name?: string;
+  lastNameEn?: string;
+  last_name?: string;
+  rollNumber?: number;
+  roll_number?: number;
+  photoUrl?: string;
+  photo_url?: string;
 }
 
 export const AttendanceMarking = () => {
@@ -87,17 +100,7 @@ export const AttendanceMarking = () => {
     };
   }, []);
 
-  useEffect(() => {
-    fetchClasses();
-  }, []);
-
-  useEffect(() => {
-    if (selectedClass && selectedSection) {
-      fetchStudents();
-    }
-  }, [selectedClass, selectedSection]);
-
-  const fetchClasses = async () => {
+  const fetchClasses = useCallback(async () => {
     try {
       const response = await apiClient.get('/academic/classes');
       const classesData = response.data?.data || [];
@@ -112,9 +115,9 @@ export const AttendanceMarking = () => {
     } finally {
       setClassesLoading(false);
     }
-  };
+  }, [t]);
 
-  const fetchStudents = async () => {
+  const fetchStudents = useCallback(async () => {
     const selectedClassData = classes.find((cls) =>
       cls.gradeLevel.toString() === selectedClass && cls.section === selectedSection
     );
@@ -138,15 +141,18 @@ export const AttendanceMarking = () => {
       
       const studentsData = response.data?.data?.students || response.data?.data || response.data || [];
       const studentsWithStatus = Array.isArray(studentsData) 
-        ? studentsData.map((student: any) => ({
-            id: student.studentId || student.id,
-            student_id: student.studentId || student.id,
+        ? studentsData.flatMap((student: StudentApiRecord) => {
+            const id = Number(student.studentId ?? student.id);
+            if (!Number.isInteger(id) || id <= 0) return [];
+            return [{
+            id,
             first_name: student.firstNameEn || student.first_name || '',
             last_name: student.lastNameEn || student.last_name || '',
             roll_number: student.rollNumber || student.roll_number || 0,
             photo_url: student.photoUrl || student.photo_url,
             attendance_status: 'present' as const,
-          }))
+          }];
+        })
         : [];
       
       setStudents(studentsWithStatus);
@@ -154,14 +160,25 @@ export const AttendanceMarking = () => {
       if (studentsWithStatus.length === 0) {
         setError(t('attendance.noStudentsFound'));
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to fetch students:', error);
-      setError(error.response?.data?.message || t('attendance.failedToMarkAttendance'));
+      const message = isAxiosError<{ message?: string }>(error) ? error.response?.data?.message : undefined;
+      setError(message || t('attendance.failedToMarkAttendance'));
       setStudents([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [classes, selectedClass, selectedSection, t]);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchClasses);
+  }, [fetchClasses]);
+
+  useEffect(() => {
+    if (selectedClass && selectedSection) {
+      void Promise.resolve().then(fetchStudents);
+    }
+  }, [selectedClass, selectedSection, fetchStudents]);
 
   const handleStatusChange = (studentId: number, status: 'present' | 'absent' | 'late' | 'excused') => {
     setStudents(students.map(student =>
@@ -236,9 +253,11 @@ export const AttendanceMarking = () => {
           setShowSuccess(false);
         }, 3000);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to save attendance:', error);
-      const errorMessage = error.response?.data?.message || error.message || t('attendance.failedToMarkAttendance');
+      const errorMessage = (isAxiosError<{ message?: string }>(error) ? error.response?.data?.message : undefined)
+        || (error instanceof Error ? error.message : undefined)
+        || t('attendance.failedToMarkAttendance');
       setError(errorMessage);
       setShowSuccess(false);
     } finally {

@@ -7,6 +7,7 @@ import { Invoice, InvoiceStatus } from '@models/Invoice.model';
 import QRCode from 'qrcode';
 import auditLogger from '@utils/auditLogger';
 import { logger } from '@utils/logger';
+import { Op } from 'sequelize';
 
 /**
  * Payment Service
@@ -50,9 +51,7 @@ class PaymentService {
     // Find the last receipt number for this year
     const lastPayment = await Payment.findOne({
       where: {
-        receiptNumber: {
-          $like: `RCP-${bsYear}-%`
-        }
+        receiptNumber: { [Op.like]: `RCP-${bsYear}-%` }
       },
       order: [['receiptNumber', 'DESC']]
     });
@@ -106,7 +105,9 @@ class PaymentService {
 
     try {
       // Validate invoice exists and has balance
-      const invoice = await invoiceRepository.findById(paymentData.invoiceId);
+      // Serialize payments for this invoice so balance validation and recording
+      // operate on the latest committed invoice state.
+      const invoice = await invoiceRepository.findById(paymentData.invoiceId, transaction, true);
       if (!invoice) {
         throw new Error('Invoice not found');
       }
@@ -196,7 +197,14 @@ class PaymentService {
 
       return { payment, invoice };
     } catch (error) {
-      await transaction.rollback();
+      try {
+        await transaction.rollback();
+      } catch (rollbackError) {
+        logger.error('Failed to roll back payment transaction', {
+          error: rollbackError,
+          paymentError: error,
+        });
+      }
       throw error;
     }
   }

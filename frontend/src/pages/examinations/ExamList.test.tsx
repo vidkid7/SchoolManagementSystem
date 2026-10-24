@@ -15,8 +15,8 @@ jest.mock('../../services/apiClient', () => ({
 }));
 
 describe('ExamList accessibility', () => {
-  it('associates labels with status, exam type, and class filters', async () => {
-    render(
+  it('associates labels and form names with status, exam type, and class filters', async () => {
+    const { container } = render(
       <ThemeProvider theme={createTheme()}>
         <ExamList />
       </ThemeProvider>,
@@ -27,5 +27,8 @@ describe('ExamList accessibility', () => {
     expect(screen.getByRole('combobox', { name: 'common.status' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'examinations.examType' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'common.class' })).toBeInTheDocument();
+    expect(container.querySelector('input[name="statusFilter"]')).toBeInTheDocument();
+    expect(container.querySelector('input[name="typeFilter"]')).toBeInTheDocument();
+    expect(container.querySelector('input[name="classFilter"]')).toBeInTheDocument();
   });
 });

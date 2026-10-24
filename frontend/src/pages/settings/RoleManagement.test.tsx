@@ -82,4 +82,14 @@ describe('RoleManagement', () => {
     expect(screen.getByRole('button', { name: 'Select All' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Deselect All' })).toBeDisabled();
   });
+
+  it('marks the required role name and create code fields as required', async () => {
+    const user = userEvent.setup();
+    render(<RoleManagement />);
+
+    await user.click(await screen.findByRole('button', { name: 'Add Role' }));
+
+    expect(screen.getByRole('textbox', { name: 'Role Name' })).toBeRequired();
+    expect(screen.getByRole('textbox', { name: 'Role Code' })).toBeRequired();
+  });
 });

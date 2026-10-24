@@ -1,326 +1,137 @@
-/**
- * CV Controller Unit Tests
- * 
- * Tests for CV HTTP request handlers
- * 
- * Requirements: 26.1, 26.3, 26.4, 26.5
- */
+import express from 'express';
+import request from 'supertest';
+import CVController from '../cv.controller';
+import CVService from '../cv.service';
+import { errorHandler } from '@middleware/errorHandler';
 
-import { Request, Response } from 'express';
-import cvController from '../cv.controller';
-import cvService from '../cv.service';
+jest.mock('../cv.service', () => ({
+  __esModule: true,
+  default: {
+    getCVData: jest.fn(),
+    getOrCreateCustomization: jest.fn(),
+    updateCustomization: jest.fn(),
+    needsRegeneration: jest.fn(),
+    generatePDF: jest.fn(),
+    markGenerated: jest.fn(),
+  },
+}));
 
-// Mock cvService
-jest.mock('../cv.service');
+const service = CVService as jest.Mocked<typeof CVService>;
+const app = express();
+app.use(express.json());
+app.get('/cv/:id/data', CVController.getCVData);
+app.get('/cv/:id/needs-regeneration', CVController.checkNeedsRegeneration);
+app.get('/cv/:id/download', CVController.downloadPDF);
+app.post('/cv/:id/regenerate', CVController.regeneratePDF);
+app.get('/cv/:id', CVController.getCustomization);
+app.put('/cv/:id', CVController.updateCustomization);
+app.use(errorHandler);
 
 describe('CVController', () => {
-  let mockRequest: Partial<Request>;
-  let mockResponse: Partial<Response>;
-  let responseJson: jest.Mock;
-  let responseStatus: jest.Mock;
-  let responseSend: jest.Mock;
+  beforeEach(() => jest.clearAllMocks());
 
-  beforeEach(() => {
-    jest.clearAllMocks();
+  it('returns the current customization for a student', async () => {
+    const customization = { studentId: 17, templateId: 'standard', skills: ['Reading'] };
+    service.getOrCreateCustomization.mockResolvedValue(customization as any);
 
-    responseJson = jest.fn();
-    responseStatus = jest.fn().mockReturnThis();
-    responseSend = jest.fn();
+    const response = await request(app).get('/cv/17');
 
-    mockResponse = {
-      json: responseJson,
-      status: responseStatus,
-      send: responseSend,
-      setHeader: jest.fn()
-    };
-
-    mockRequest = {
-      params: {},
-      body: {},
-      query: {}
-    };
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ success: true, data: customization });
+    expect(service.getOrCreateCustomization).toHaveBeenCalledWith(17);
   });
 
-  describe('getCV', () => {
-    it('should return CV customization for valid student ID', async () => {
-      mockRequest.params = { studentId: '100' };
-      
-      const mockCV = {
-        studentId: 100,
-        showPersonalInfo: true,
-        showAcademicPerformance: true,
-        showAttendance: true,
-        showECA: true,
-        showSports: true,
-        showCertificates: true,
-        showAwards: true,
-        showTeacherRemarks: true,
-        skills: '["JavaScript"]',
-        hobbies: '["Reading"]',
-        careerGoals: 'Software Engineer',
-        personalStatement: 'Passionate developer',
-        templateId: 'standard',
-        schoolBrandingEnabled: true,
-        lastGeneratedAt: new Date(),
-        getSkills: function() { return JSON.parse(this.skills); },
-        getHobbies: function() { return JSON.parse(this.hobbies); }
-      };
+  it('updates customization with the path student ID and request body', async () => {
+    const updates = { templateId: 'modern', showAttendance: false };
+    service.updateCustomization.mockResolvedValue({ studentId: 17, ...updates } as any);
 
-      (cvService.getOrCreateCustomization as jest.Mock).mockResolvedValue(mockCV);
+    const response = await request(app).put('/cv/17').send(updates);
 
-      await cvController.getCV(mockRequest as Request, mockResponse as Response);
-
-      expect(cvService.getOrCreateCustomization).toHaveBeenCalledWith(100);
-      expect(responseJson).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: true,
-          data: expect.objectContaining({
-            studentId: 100,
-            templateId: 'standard'
-          })
-        })
-      );
-    });
-
-    it('should return 400 for invalid student ID', async () => {
-      mockRequest.params = { studentId: 'invalid' };
-
-      await cvController.getCV(mockRequest as Request, mockResponse as Response);
-
-      expect(responseStatus).toHaveBeenCalledWith(400);
-      expect(responseJson).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: expect.objectContaining({
-            code: 'INVALID_STUDENT_ID'
-          })
-        })
-      );
-    });
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({ studentId: 17, ...updates });
+    expect(service.updateCustomization).toHaveBeenCalledWith(17, updates);
   });
 
-  describe('updateCV', () => {
-    it('should update CV customization successfully', async () => {
-      mockRequest.params = { studentId: '100' };
-      mockRequest.body = {
-        showPersonalInfo: false,
-        skills: ['JavaScript', 'Python'],
-        templateId: 'professional'
-      };
+  it('returns compiled CV data and maps missing students to 404', async () => {
+    service.getCVData.mockResolvedValueOnce({ student: { studentId: 17 }, grades: [] } as any);
+    const found = await request(app).get('/cv/17/data');
+    expect(found.status).toBe(200);
+    expect(found.body.data).toMatchObject({ student: { studentId: 17 }, grades: [] });
 
-      const mockCV = {
-        studentId: 100,
-        showPersonalInfo: false,
-        showAcademicPerformance: true,
-        showAttendance: true,
-        showECA: true,
-        showSports: true,
-        showCertificates: true,
-        showAwards: true,
-        showTeacherRemarks: true,
-        skills: '["JavaScript", "Python"]',
-        hobbies: '[]',
-        careerGoals: '',
-        personalStatement: '',
-        templateId: 'professional',
-        schoolBrandingEnabled: true,
-        getSkills: function() { return JSON.parse(this.skills); },
-        getHobbies: function() { return JSON.parse(this.hobbies); },
-        save: jest.fn().mockResolvedValue(undefined)
-      };
-
-      (cvService.updateCustomization as jest.Mock).mockResolvedValue(mockCV);
-
-      await cvController.updateCV(mockRequest as Request, mockResponse as Response);
-
-      expect(cvService.updateCustomization).toHaveBeenCalledWith(
-        expect.objectContaining({
-          studentId: 100,
-          showPersonalInfo: false,
-          skills: ['JavaScript', 'Python'],
-          templateId: 'professional'
-        })
-      );
-      expect(responseJson).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: true,
-          message: 'CV customization updated successfully'
-        })
-      );
-    });
-
-    it('should return 400 for invalid student ID', async () => {
-      mockRequest.params = { studentId: 'abc' };
-      mockRequest.body = { showPersonalInfo: true };
-
-      await cvController.updateCV(mockRequest as Request, mockResponse as Response);
-
-      expect(responseStatus).toHaveBeenCalledWith(400);
-    });
+    service.getCVData.mockResolvedValueOnce(null);
+    const missing = await request(app).get('/cv/999/data');
+    expect(missing.status).toBe(404);
+    expect(missing.body.success).toBe(false);
   });
 
-  describe('getCVData', () => {
-    it('should return compiled CV data', async () => {
-      mockRequest.params = { studentId: '100' };
+  it('returns the regeneration decision', async () => {
+    service.needsRegeneration.mockResolvedValue(true);
 
-      const mockCVData = {
-        studentId: 100,
-        generatedAt: new Date(),
-        verificationUrl: 'http://localhost:3000/api/v1/cv/verify/100',
-        personalInfo: {
-          studentId: 100,
-          studentCode: 'STU001',
-          fullNameEn: 'John Doe',
-          dateOfBirthBS: '2060-05-15',
-          gender: 'male',
-          addressEn: 'Kathmandu'
-        },
-        academicPerformance: {
-          academicYears: [],
-          overallGPA: 3.5,
-          totalSubjects: 5,
-          averageGrade: 'A-'
-        },
-        attendance: {
-          overallPercentage: 90,
-          totalDays: 200,
-          presentDays: 180,
-          absentDays: 10,
-          lateDays: 10,
-          excusedDays: 0,
-          yearWise: []
-        },
-        customFields: {
-          skills: ['JavaScript'],
-          hobbies: ['Reading'],
-          careerGoals: 'Software Engineer',
-          personalStatement: 'Passionate'
-        }
-      };
+    const response = await request(app).get('/cv/17/needs-regeneration');
 
-      (cvService.compileCVData as jest.Mock).mockResolvedValue(mockCVData);
-
-      await cvController.getCVData(mockRequest as Request, mockResponse as Response);
-
-      expect(cvService.compileCVData).toHaveBeenCalledWith(100);
-      expect(responseJson).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: true,
-          data: expect.objectContaining({
-            studentId: 100,
-            personalInfo: expect.any(Object),
-            academicPerformance: expect.any(Object)
-          })
-        })
-      );
-    });
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual({ needsRegeneration: true });
+    expect(service.needsRegeneration).toHaveBeenCalledWith(17);
   });
 
-  describe('generateCVPDF', () => {
-    it('should generate PDF successfully', async () => {
-      mockRequest.params = { studentId: '100' };
-      mockRequest.query = { template: 'professional', branding: 'true' };
+  it('streams a generated PDF with attachment headers and selected options', async () => {
+    const pdf = Buffer.from('%PDF-1.4 QA');
+    service.generatePDF.mockResolvedValue(pdf);
 
-      const mockPDF = Buffer.from('PDF content');
-      (cvService.generateCVPDF as jest.Mock).mockResolvedValue(mockPDF);
+    const response = await request(app)
+      .get('/cv/17/download')
+      .query({ template: 'modern', branding: 'true', photo: 'false', attendance: 'false', grades: 'true', eca: 'false' });
 
-      await cvController.generateCVPDF(mockRequest as Request, mockResponse as Response);
-
-      expect(cvService.generateCVPDF).toHaveBeenCalledWith(100, {
-        templateId: 'professional',
-        schoolBrandingEnabled: true
-      });
-      expect(mockResponse.setHeader).toHaveBeenCalledWith('Content-Type', 'application/pdf');
-      expect(mockResponse.setHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename=cv_100.pdf');
-      expect(responseSend).toHaveBeenCalledWith(mockPDF);
-    });
-
-    it('should use default template when not specified', async () => {
-      mockRequest.params = { studentId: '100' };
-      mockRequest.query = {};
-
-      const mockPDF = Buffer.from('PDF content');
-      (cvService.generateCVPDF as jest.Mock).mockResolvedValue(mockPDF);
-
-      await cvController.generateCVPDF(mockRequest as Request, mockResponse as Response);
-
-      expect(cvService.generateCVPDF).toHaveBeenCalledWith(100, {
-        templateId: undefined,
-        schoolBrandingEnabled: undefined
-      });
-    });
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toContain('application/pdf');
+    expect(response.headers['content-disposition']).toMatch(/^attachment; filename=CV_17_/);
+    expect(service.generatePDF).toHaveBeenCalledWith(17, expect.objectContaining({
+      templateId: 'modern',
+      schoolBrandingEnabled: true,
+      includePhoto: false,
+      includeAttendance: false,
+      includeGrades: true,
+      includeECA: false,
+    }));
+    expect(response.body).toEqual(pdf);
   });
 
-  describe('verifyCV', () => {
-    it('should return valid verification for existing CV', async () => {
-      mockRequest.params = { studentId: '100' };
+  it('regenerates a PDF and records the generated state', async () => {
+    const pdf = Buffer.from('%PDF-1.4 QA');
+    service.generatePDF.mockResolvedValue(pdf);
 
-      (cvService.verifyCV as jest.Mock).mockResolvedValue({
-        valid: true,
-        studentId: 100,
-        studentName: 'John Doe',
-        lastGeneratedAt: new Date(),
-        message: 'CV is valid and authentic'
-      });
+    const response = await request(app).post('/cv/17/regenerate').query({ template: 'modern', branding: 'true' });
 
-      await cvController.verifyCV(mockRequest as Request, mockResponse as Response);
-
-      expect(cvService.verifyCV).toHaveBeenCalledWith(100);
-      expect(responseJson).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: true,
-          data: expect.objectContaining({
-            valid: true,
-            studentName: 'John Doe'
-          })
-        })
-      );
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toContain('application/pdf');
+    expect(service.generatePDF).toHaveBeenCalledWith(17, {
+      templateId: 'modern',
+      schoolBrandingEnabled: true,
+      includePersonalInfo: true,
+      includeAttendance: true,
+      includeGrades: true,
+      includeECA: true,
+      includeSports: true,
+      includeCertificates: true,
     });
-
-    it('should return invalid for non-existent CV', async () => {
-      mockRequest.params = { studentId: '999' };
-
-      (cvService.verifyCV as jest.Mock).mockResolvedValue({
-        valid: false,
-        studentId: 999,
-        message: 'CV not found for this student'
-      });
-
-      await cvController.verifyCV(mockRequest as Request, mockResponse as Response);
-
-      expect(responseJson).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: true,
-          data: expect.objectContaining({
-            valid: false
-          })
-        })
-      );
-    });
+    expect(service.markGenerated).toHaveBeenCalledWith(17);
+    expect(response.body).toEqual(pdf);
   });
 
-  describe('saveCVPDF', () => {
-    it('should save PDF and return file path', async () => {
-      mockRequest.params = { studentId: '100' };
-      mockRequest.body = { templateId: 'modern', schoolBrandingEnabled: true };
+  it('applies hidden section options during PDF regeneration', async () => {
+    service.generatePDF.mockResolvedValue(Buffer.from('%PDF-1.4 QA'));
 
-      (cvService.saveCVPDF as jest.Mock).mockResolvedValue('/uploads/cv/cv_100_123456.pdf');
-
-      await cvController.saveCVPDF(mockRequest as Request, mockResponse as Response);
-
-      expect(cvService.saveCVPDF).toHaveBeenCalledWith(100, {
-        templateId: 'modern',
-        schoolBrandingEnabled: true
-      });
-      expect(responseJson).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: true,
-          data: expect.objectContaining({
-            filePath: '/uploads/cv/cv_100_123456.pdf'
-          }),
-          message: 'CV saved successfully'
-        })
-      );
+    await request(app).post('/cv/17/regenerate').query({
+      personalInfo: 'false', attendance: 'false', grades: 'false', eca: 'false', sports: 'false', certificates: 'false',
     });
+
+    expect(service.generatePDF).toHaveBeenCalledWith(17, expect.objectContaining({
+      includePersonalInfo: false,
+      includeAttendance: false,
+      includeGrades: false,
+      includeECA: false,
+      includeSports: false,
+      includeCertificates: false,
+    }));
   });
 });

@@ -5,21 +5,16 @@
  */
 
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import { refreshAuthTokens } from '../services/tokenRefresh';
+import { isRefreshTokenRejected, refreshAuthTokens } from '../services/tokenRefresh';
+import { resolveApiBaseUrl } from './apiUrl';
 
 // Get API URL from runtime config or fallback to build-time env var
 const getApiBaseUrl = () => {
   const buildTimeApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  const buildTimeApiUrl = import.meta.env.VITE_API_URL;
+  const runtimeApiBaseUrl = typeof window !== 'undefined' ? window.ENV?.API_BASE_URL : undefined;
 
-  if (typeof window !== 'undefined' && window.ENV && window.ENV.API_BASE_URL) {
-    // The checked-in development config uses /api/v1 as a placeholder. Allow
-    // explicit Vite env overrides to win for isolated local QA/backends.
-    if (window.ENV.API_BASE_URL === '/api/v1' && buildTimeApiBaseUrl) {
-      return buildTimeApiBaseUrl;
-    }
-    return window.ENV.API_BASE_URL;
-  }
-  return buildTimeApiBaseUrl || 'http://localhost:3000/api/v1';
+  return resolveApiBaseUrl(runtimeApiBaseUrl, buildTimeApiBaseUrl, buildTimeApiUrl);
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -90,11 +85,13 @@ api.interceptors.response.use(
         }
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, logout user
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
+        // A transient refresh failure must not invalidate a recoverable session.
+        if (isRefreshTokenRejected(refreshError)) {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       }
     }

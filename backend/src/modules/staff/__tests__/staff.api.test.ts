@@ -1,7 +1,14 @@
+// Keep this route suite independent of Jest's CommonJS loader for htmlparser2 ESM.
+jest.mock('sanitize-html', () => (html: string) => html);
+
 import request from 'supertest';
 import app from '../../../app';
 import sequelize from '@config/database';
 import User, { UserRole } from '@models/User.model';
+import SchoolConfig from '@models/SchoolConfig.model';
+import { AcademicYear } from '@models/AcademicYear.model';
+import Class from '@models/Class.model';
+import { Subject } from '@models/Subject.model';
 import Staff, { StaffCategory, StaffStatus, EmploymentType } from '@models/Staff.model';
 import StaffAssignment, { AssignmentType } from '@models/StaffAssignment.model';
 import jwtService from '@modules/auth/jwt.service';
@@ -15,17 +22,52 @@ describe('Staff API Integration Tests', () => {
   let authToken: string;
   let adminUser: User;
   let testStaff: Staff;
+  let schoolConfigId: string;
 
   beforeAll(async () => {
     // Sync database
     await sequelize.sync({ force: true });
 
+    const schoolConfig = await SchoolConfig.create({
+      schoolNameEn: 'Local Staff API QA',
+      schoolCode: 'LOCALSTAFFQA',
+    });
+    schoolConfigId = schoolConfig.id;
+
+    const academicYear = await AcademicYear.create({
+      name: 'Local Staff QA Academic Year',
+      startDateBS: '2082-01-01',
+      endDateBS: '2082-12-30',
+      startDateAD: new Date('2025-04-14'),
+      endDateAD: new Date('2026-04-13'),
+      isCurrent: false,
+      schoolConfigId,
+    });
+    await Class.bulkCreate([
+      { academicYearId: academicYear.academicYearId, gradeLevel: 1, section: 'A', capacity: 30, currentStrength: 0, schoolConfigId },
+      { academicYearId: academicYear.academicYearId, gradeLevel: 2, section: 'A', capacity: 30, currentStrength: 0, schoolConfigId },
+    ]);
+    await Subject.create({
+      code: 'STAFF_API_QA_SUBJECT',
+      nameEn: 'Local Staff QA Subject',
+      nameNp: 'स्थानीय विषय',
+      type: 'compulsory',
+      creditHours: 100,
+      theoryMarks: 75,
+      practicalMarks: 25,
+      passMarks: 35,
+      fullMarks: 100,
+      applicableClasses: [1, 2],
+      schoolConfigId,
+    });
+
     // Create admin user for authentication
     adminUser = await User.create({
-      username: 'admin_test',
+      username: 'admintest',
       email: 'admin@test.com',
       password: 'Admin@1234',
-      role: UserRole.SCHOOL_ADMIN
+      role: UserRole.SCHOOL_ADMIN,
+      schoolConfigId,
     });
 
     // Generate auth token
@@ -33,7 +75,8 @@ describe('Staff API Integration Tests', () => {
       userId: adminUser.userId,
       username: adminUser.username,
       email: adminUser.email,
-      role: adminUser.role
+      role: adminUser.role,
+      schoolConfigId,
     });
   });
 
@@ -91,7 +134,7 @@ describe('Staff API Integration Tests', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBeDefined();
+      expect(response.body.message).toBeDefined();
     });
 
     it('should reject staff creation with invalid email', async () => {
@@ -196,7 +239,7 @@ describe('Staff API Integration Tests', () => {
           status: StaffStatus.ON_LEAVE,
           joinDate: new Date('2024-01-10')
         }
-      ]);
+      ].map((staff) => ({ ...staff, schoolConfigId })));
     });
 
     it('should list all staff with pagination', async () => {
@@ -283,6 +326,7 @@ describe('Staff API Integration Tests', () => {
   describe('GET /api/v1/staff/:id', () => {
     beforeEach(async () => {
       testStaff = await Staff.create({
+        schoolConfigId,
         staffCode: 'STAFF-2024-005',
         firstNameEn: 'Emma',
         lastNameEn: 'Davis',
@@ -331,6 +375,7 @@ describe('Staff API Integration Tests', () => {
   describe('PUT /api/v1/staff/:id', () => {
     beforeEach(async () => {
       testStaff = await Staff.create({
+        schoolConfigId,
         staffCode: 'STAFF-2024-006',
         firstNameEn: 'Frank',
         lastNameEn: 'Miller',
@@ -404,6 +449,7 @@ describe('Staff API Integration Tests', () => {
   describe('DELETE /api/v1/staff/:id', () => {
     beforeEach(async () => {
       testStaff = await Staff.create({
+        schoolConfigId,
         staffCode: 'STAFF-2024-007',
         firstNameEn: 'Grace',
         lastNameEn: 'Taylor',
@@ -458,6 +504,7 @@ describe('Staff API Integration Tests', () => {
   describe('POST /api/v1/staff/:id/assign', () => {
     beforeEach(async () => {
       testStaff = await Staff.create({
+        schoolConfigId,
         staffCode: 'STAFF-2024-008',
         firstNameEn: 'Henry',
         lastNameEn: 'Anderson',
@@ -478,7 +525,8 @@ describe('Staff API Integration Tests', () => {
         classId: 1,
         subjectId: 1,
         academicYearId: 1,
-        assignmentType: AssignmentType.SUBJECT_TEACHER
+        assignmentType: AssignmentType.SUBJECT_TEACHER,
+        startDate: '2026-10-23',
       };
 
       const response = await request(app)
@@ -530,6 +578,7 @@ describe('Staff API Integration Tests', () => {
   describe('GET /api/v1/staff/:id/assignments', () => {
     beforeEach(async () => {
       testStaff = await Staff.create({
+        schoolConfigId,
         staffCode: 'STAFF-2024-009',
         firstNameEn: 'Ivy',
         lastNameEn: 'Thomas',
@@ -562,7 +611,7 @@ describe('Staff API Integration Tests', () => {
           startDate: new Date('2024-01-01'),
           isActive: true
         }
-      ]);
+      ].map((assignment) => ({ ...assignment, schoolConfigId })));
     });
 
     it('should get staff assignments', async () => {
@@ -601,6 +650,7 @@ describe('Staff API Integration Tests', () => {
 
     it('should return empty array for staff with no assignments', async () => {
       const newStaff = await Staff.create({
+        schoolConfigId,
         staffCode: 'STAFF-2024-010',
         firstNameEn: 'Jack',
         lastNameEn: 'Wilson',
@@ -671,7 +721,7 @@ describe('Staff API Integration Tests', () => {
           status: StaffStatus.ON_LEAVE,
           joinDate: new Date('2024-01-01')
         }
-      ]);
+      ].map((staff) => ({ ...staff, schoolConfigId })));
     });
 
     it('should get staff statistics', async () => {
@@ -694,6 +744,7 @@ describe('Staff API Integration Tests', () => {
   describe('POST /api/v1/staff/:id/documents', () => {
     beforeEach(async () => {
       testStaff = await Staff.create({
+        schoolConfigId,
         staffCode: 'STAFF-2024-015',
         firstNameEn: 'Olivia',
         lastNameEn: 'Martinez',
@@ -751,6 +802,7 @@ describe('Staff API Integration Tests', () => {
   describe('GET /api/v1/staff/:id/documents', () => {
     beforeEach(async () => {
       testStaff = await Staff.create({
+        schoolConfigId,
         staffCode: 'STAFF-2024-016',
         firstNameEn: 'Peter',
         lastNameEn: 'Lopez',

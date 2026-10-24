@@ -275,6 +275,8 @@ interface TeacherPerformanceData {
     return allowed;
   }, [normalizedRole]);
 
+  const canExportReport = (report: ReportKey) => canExportReports && allowedReports.has(report);
+
   // Print functionality
   const handlePrint = () => {
     window.print();
@@ -1035,7 +1037,7 @@ interface TeacherPerformanceData {
                 <People sx={{ color: C.primary }} />
                 {t('reports.enrollment')} {t('reports.overview')}
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1 }}>
+              <Box sx={{ display: canExportReport('enrollment') ? 'flex' : 'none', gap: 1 }}>
                 <Button 
                   variant="outlined" 
                   size="small"
@@ -1279,7 +1281,7 @@ interface TeacherPerformanceData {
                 <CheckCircle sx={{ color: C.neutral }} />
                 {t('reports.attendance')} {t('reports.overview')}
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1 }}>
+              <Box sx={{ display: canExportReport('attendance') ? 'flex' : 'none', gap: 1 }}>
                 <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('attendance', 'pdf')} sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.pdf')}
                 </Button>
@@ -1381,7 +1383,7 @@ interface TeacherPerformanceData {
                 <AttachMoney sx={{ color: C.neutral }} />
                 {t('reports.feeCollection')} {t('reports.overview')}
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1 }}>
+              <Box sx={{ display: canExportReport('fee') ? 'flex' : 'none', gap: 1 }}>
                 <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('fee-collection', 'pdf')} sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.pdf')}
                 </Button>
@@ -1571,7 +1573,7 @@ interface TeacherPerformanceData {
                 <Assessment sx={{ color: C.neutral }} />
                 {t('reports.examination')} {t('reports.overview')}
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1 }}>
+              <Box sx={{ display: canExportReport('exam') ? 'flex' : 'none', gap: 1 }}>
                 <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('examination', 'pdf')} sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.pdf')}
                 </Button>
@@ -1766,7 +1768,7 @@ interface TeacherPerformanceData {
                 <LibraryBooks sx={{ color: C.neutral }} />
                 {t('reports.library')} {t('reports.overview')}
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1 }}>
+              <Box sx={{ display: canExportReport('library') ? 'flex' : 'none', gap: 1 }}>
                 <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('library', 'pdf')} sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, borderColor: alpha(C.neutral, 0.3), color: C.neutral, '&:hover': { borderColor: C.neutral, bgcolor: alpha(C.neutral, 0.05) } }}>
                   {t('reports.pdf')}
                 </Button>
@@ -1957,7 +1959,7 @@ interface TeacherPerformanceData {
                 <SportsScore sx={{ color: C.danger }} />
                 {t('reports.ecaSports')} {t('reports.overview')}
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1 }}>
+              <Box sx={{ display: canExportReport('eca') ? 'flex' : 'none', gap: 1 }}>
                 <Button variant="outlined" size="small" startIcon={<FileCopy />} onClick={() => handleExport('eca', 'pdf')} sx={{ ...S.BTN_OUTLINE,  borderRadius: R.lg, borderColor: alpha(C.danger, 0.3), color: C.danger, '&:hover': { borderColor: C.danger, bgcolor: alpha(C.danger, 0.05) } }}>
                   {t('reports.pdf')}
                 </Button>

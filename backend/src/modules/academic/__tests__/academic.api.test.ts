@@ -1,3 +1,7 @@
+// Keep this route suite independent of Jest's CommonJS loader for htmlparser2 ESM.
+// HTML sanitization behavior is covered by the dedicated sanitizer/security suites.
+jest.mock('sanitize-html', () => (html: string) => html);
+
 import request from 'supertest';
 import app from '../../../app';
 import { AcademicYear, Term } from '@models/AcademicYear.model';
@@ -6,6 +10,8 @@ import { Subject } from '@models/Subject.model';
 import Staff, { StaffStatus, EmploymentType, StaffCategory } from '@models/Staff.model';
 import { Timetable, Period, Syllabus, SyllabusTopic } from '@models/Timetable.model';
 import User, { UserRole } from '@models/User.model';
+import SchoolConfig from '@models/SchoolConfig.model';
+import sequelize from '@config/database';
 import jwtService from '../../auth/jwt.service';
 
 /**
@@ -22,15 +28,33 @@ describe('Academic API Integration Tests', () => {
   let testTerm: Term;
   let testClass: Class;
   let testSubject: Subject;
+  let testOptionalSubject: Subject;
   let testTeacher: Staff;
+  let testTimetable: Timetable;
+  let testPeriod: Period;
+  let testSyllabus: Syllabus;
+  let testSyllabusTopic: SyllabusTopic;
+  let schoolConfigId: string;
 
   beforeAll(async () => {
+    // Build an isolated in-memory schema only for the SQLite test adapter.
+    if (sequelize.getDialect() === 'sqlite') {
+      await sequelize.sync({ force: true });
+    }
+
+    const school = await SchoolConfig.create({
+      schoolNameEn: 'Academic API QA School',
+      schoolCode: `ACADEMIC${Date.now()}`,
+    });
+    schoolConfigId = school.id;
+
     // Create admin user
     adminUser = await User.create({
       username: 'academicadmin',
       email: 'academic_admin@test.com',
       password: 'Admin@1234',
-      role: UserRole.SCHOOL_ADMIN
+      role: UserRole.SCHOOL_ADMIN,
+      schoolConfigId,
     });
 
     adminToken = jwtService.generateAccessToken({
@@ -45,7 +69,8 @@ describe('Academic API Integration Tests', () => {
       username: 'academicteacher',
       email: 'academic_teacher@test.com',
       password: 'Teacher@1234',
-      role: UserRole.SUBJECT_TEACHER
+      role: UserRole.SUBJECT_TEACHER,
+      schoolConfigId,
     });
 
     teacherToken = jwtService.generateAccessToken({
@@ -63,22 +88,51 @@ describe('Academic API Integration Tests', () => {
       category: StaffCategory.TEACHING,
       employmentType: EmploymentType.FULL_TIME,
       joinDate: new Date('2020-01-01'),
-      status: StaffStatus.ACTIVE
+      status: StaffStatus.ACTIVE,
+      schoolConfigId,
     });
   });
 
   afterAll(async () => {
-    // Clean up test data
-    await SyllabusTopic.destroy({ where: {}, force: true });
-    await Syllabus.destroy({ where: {}, force: true });
-    await Period.destroy({ where: {}, force: true });
-    await Timetable.destroy({ where: {}, force: true });
-    await Subject.destroy({ where: {}, force: true });
-    await Class.destroy({ where: {}, force: true });
-    await Term.destroy({ where: {}, force: true });
-    await AcademicYear.destroy({ where: {}, force: true });
-    await Staff.destroy({ where: {}, force: true });
-    await User.destroy({ where: {}, force: true });
+    // Restrict teardown to rows created by this suite; never clear shared tables.
+    if (testSyllabusTopic?.topicId) {
+      await SyllabusTopic.destroy({ where: { topicId: testSyllabusTopic.topicId }, force: true });
+    }
+    if (testSyllabus?.syllabusId) {
+      await Syllabus.destroy({ where: { syllabusId: testSyllabus.syllabusId }, force: true });
+    }
+    if (testPeriod?.periodId) {
+      await Period.destroy({ where: { periodId: testPeriod.periodId }, force: true });
+    }
+    if (testTimetable?.timetableId) {
+      await Timetable.destroy({ where: { timetableId: testTimetable.timetableId }, force: true });
+    }
+    for (const subject of [testSubject, testOptionalSubject]) {
+      if (subject?.subjectId) {
+        await Subject.destroy({ where: { subjectId: subject.subjectId }, force: true });
+      }
+    }
+    if (testClass?.classId) {
+      await Class.destroy({ where: { classId: testClass.classId }, force: true });
+    }
+    if (testTerm?.termId) {
+      await Term.destroy({ where: { termId: testTerm.termId }, force: true });
+    }
+    if (testAcademicYear?.academicYearId) {
+      await AcademicYear.destroy({ where: { academicYearId: testAcademicYear.academicYearId }, force: true });
+    }
+    if (testTeacher?.staffId) {
+      await Staff.destroy({ where: { staffId: testTeacher.staffId }, force: true });
+    }
+    for (const user of [adminUser, teacherUser]) {
+      if (user?.userId) {
+        await User.destroy({ where: { userId: user.userId }, force: true });
+      }
+    }
+    if (schoolConfigId) {
+      await SchoolConfig.destroy({ where: { id: schoolConfigId }, force: true });
+    }
+    await sequelize.close();
   });
 
   // ============ Academic Year Tests ============
@@ -98,10 +152,10 @@ describe('Academic API Integration Tests', () => {
             isCurrent: false
           });
 
+        if (response.body?.data?.academicYearId) testAcademicYear = response.body.data;
         expect(response.status).toBe(201);
         expect(response.body.success).toBe(true);
         expect(response.body.data.name).toBe('2081-2082 BS Test');
-        testAcademicYear = response.body.data;
       });
 
       it('should reject creation without authentication', async () => {
@@ -215,10 +269,10 @@ describe('Academic API Integration Tests', () => {
             examEndDate: '2024-08-15'
           });
 
+        if (response.body?.data?.termId) testTerm = response.body.data;
         expect(response.status).toBe(201);
         expect(response.body.success).toBe(true);
         expect(response.body.data.name).toBe('First Terminal Test');
-        testTerm = response.body.data;
       });
 
       it('should validate required fields', async () => {
@@ -290,11 +344,11 @@ describe('Academic API Integration Tests', () => {
             classTeacherId: testTeacher.staffId
           });
 
+        if (response.body?.data?.classId) testClass = response.body.data;
         expect(response.status).toBe(201);
         expect(response.body.success).toBe(true);
         expect(response.body.data.gradeLevel).toBe(10);
         expect(response.body.data.section).toBe('TEST_A');
-        testClass = response.body.data;
       });
 
       it('should validate grade level range', async () => {
@@ -396,11 +450,11 @@ describe('Academic API Integration Tests', () => {
             passMarks: 35
           });
 
+        if (response.body?.data?.subjectId) testSubject = response.body.data;
         expect(response.status).toBe(201);
         expect(response.body.success).toBe(true);
         expect(response.body.data.code).toBe('ACADEMIC_TEST_MATH');
         expect(response.body.data.fullMarks).toBe(90);
-        testSubject = response.body.data;
       });
 
       it('should validate subject type', async () => {
@@ -422,7 +476,7 @@ describe('Academic API Integration Tests', () => {
           .post('/api/v1/academic/subjects')
           .set('Authorization', `Bearer ${adminToken}`)
           .send({
-            code: 'ACADEMIC_TEST_PHYSICS',
+            code: 'ACAD_TEST_PHYSICS',
             nameEn: 'Physics Test',
             nameNp: 'भौतिक विज्ञान परीक्षण',
             type: 'optional',
@@ -433,6 +487,7 @@ describe('Academic API Integration Tests', () => {
             passMarks: 35
           });
 
+        if (response.body?.data?.subjectId) testOptionalSubject = response.body.data;
         expect(response.status).toBe(201);
         expect(response.body.data.stream).toBe('science');
       });
@@ -492,8 +547,6 @@ describe('Academic API Integration Tests', () => {
   // ============ Timetable Tests ============
 
   describe('Timetable Endpoints', () => {
-    let testTimetable: Timetable;
-
     describe('POST /api/v1/academic/timetable', () => {
       it('should create a new timetable', async () => {
         const response = await request(app)
@@ -505,10 +558,10 @@ describe('Academic API Integration Tests', () => {
             dayOfWeek: 1
           });
 
+        if (response.body?.data?.timetableId) testTimetable = response.body.data;
         expect(response.status).toBe(201);
         expect(response.body.success).toBe(true);
         expect(response.body.data.dayOfWeek).toBe(1);
-        testTimetable = response.body.data;
       });
 
       it('should validate day of week range', async () => {
@@ -593,8 +646,6 @@ describe('Academic API Integration Tests', () => {
     });
 
     describe('PUT /api/v1/academic/timetable', () => {
-      let testPeriod: Period;
-
       beforeAll(async () => {
         testPeriod = await Period.create({
           timetableId: testTimetable.timetableId,
@@ -625,8 +676,6 @@ describe('Academic API Integration Tests', () => {
   // ============ Syllabus Tests ============
 
   describe('Syllabus Endpoints', () => {
-    let testSyllabus: Syllabus;
-
     describe('POST /api/v1/academic/syllabus', () => {
       it('should create a new syllabus', async () => {
         const response = await request(app)
@@ -638,10 +687,10 @@ describe('Academic API Integration Tests', () => {
             academicYearId: testAcademicYear.academicYearId
           });
 
+        if (response.body?.data?.syllabusId) testSyllabus = response.body.data;
         expect(response.status).toBe(201);
         expect(response.body.success).toBe(true);
         expect(response.body.data.subjectId).toBe(testSubject.subjectId);
-        testSyllabus = response.body.data;
       });
 
       it('should add a topic to syllabus', async () => {
@@ -722,10 +771,8 @@ describe('Academic API Integration Tests', () => {
     });
 
     describe('PUT /api/v1/academic/syllabus', () => {
-      let testTopic: SyllabusTopic;
-
       beforeAll(async () => {
-        testTopic = await SyllabusTopic.create({
+        testSyllabusTopic = await SyllabusTopic.create({
           syllabusId: testSyllabus.syllabusId,
           title: 'Trigonometry',
           estimatedHours: 15,
@@ -739,7 +786,7 @@ describe('Academic API Integration Tests', () => {
           .put('/api/v1/academic/syllabus')
           .set('Authorization', `Bearer ${adminToken}`)
           .send({
-            topicId: testTopic.topicId,
+            topicId: testSyllabusTopic.topicId,
             completedHours: 5
           });
 
@@ -747,12 +794,22 @@ describe('Academic API Integration Tests', () => {
         expect(response.body.success).toBe(true);
       });
 
+      it('should return not found when updating progress for a missing topic', async () => {
+        const response = await request(app)
+          .put('/api/v1/academic/syllabus')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ topicId: 99999999, completedHours: 5 });
+
+        expect(response.status).toBe(404);
+        expect(response.body.success).toBe(false);
+      });
+
       it('should validate completed hours range', async () => {
         const response = await request(app)
           .put('/api/v1/academic/syllabus')
           .set('Authorization', `Bearer ${adminToken}`)
           .send({
-            topicId: testTopic.topicId,
+            topicId: testSyllabusTopic.topicId,
             completedHours: 1000 // Invalid
           });
 

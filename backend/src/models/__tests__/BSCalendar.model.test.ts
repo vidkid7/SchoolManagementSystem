@@ -4,14 +4,12 @@ import { BSCalendar } from '../BSCalendar.model';
 
 describe('BSCalendar Model', () => {
   beforeAll(async () => {
-    // Disable foreign key checks temporarily
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
-    
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('BS calendar model tests require TEST_DB_DIALECT=sqlite');
+    }
     // Sync database schema
     await sequelize.sync({ force: true });
-    
-    // Re-enable foreign key checks
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
+    await sequelize.query('PRAGMA foreign_keys = OFF');
   });
 
   afterAll(async () => {
@@ -49,11 +47,11 @@ describe('BSCalendar Model', () => {
     it('should enforce year validation (2000-2100)', async () => {
       await expect(
         BSCalendar.create({
-          yearBS: 1999, // Invalid: below minimum
-          monthBS: 1,
+          yearBs: 1999, // Invalid: below minimum
+          monthBs: 1,
           daysInMonth: 31,
-          startDateAD: new Date('1942-04-14'),
-          endDateAD: new Date('1942-05-14'),
+          startDateAd: new Date('1942-04-14'),
+          endDateAd: new Date('1942-05-14'),
           monthNameEn: 'Baisakh',
           monthNameNp: 'बैशाख'
         })
@@ -61,11 +59,11 @@ describe('BSCalendar Model', () => {
 
       await expect(
         BSCalendar.create({
-          yearBS: 2101, // Invalid: above maximum
-          monthBS: 1,
+          yearBs: 2101, // Invalid: above maximum
+          monthBs: 1,
           daysInMonth: 31,
-          startDateAD: new Date('2044-04-14'),
-          endDateAD: new Date('2044-05-14'),
+          startDateAd: new Date('2044-04-14'),
+          endDateAd: new Date('2044-05-14'),
           monthNameEn: 'Baisakh',
           monthNameNp: 'बैशाख'
         })
@@ -75,11 +73,11 @@ describe('BSCalendar Model', () => {
     it('should enforce month validation (1-12)', async () => {
       await expect(
         BSCalendar.create({
-          yearBS: 2080,
-          monthBS: 0, // Invalid: below minimum
+          yearBs: 2080,
+          monthBs: 0, // Invalid: below minimum
           daysInMonth: 31,
-          startDateAD: new Date('2023-04-14'),
-          endDateAD: new Date('2023-05-14'),
+          startDateAd: new Date('2023-04-14'),
+          endDateAd: new Date('2023-05-14'),
           monthNameEn: 'Invalid',
           monthNameNp: 'Invalid'
         })
@@ -87,11 +85,11 @@ describe('BSCalendar Model', () => {
 
       await expect(
         BSCalendar.create({
-          yearBS: 2080,
-          monthBS: 13, // Invalid: above maximum
+          yearBs: 2080,
+          monthBs: 13, // Invalid: above maximum
           daysInMonth: 31,
-          startDateAD: new Date('2023-04-14'),
-          endDateAD: new Date('2023-05-14'),
+          startDateAd: new Date('2023-04-14'),
+          endDateAd: new Date('2023-05-14'),
           monthNameEn: 'Invalid',
           monthNameNp: 'Invalid'
         })
@@ -101,11 +99,11 @@ describe('BSCalendar Model', () => {
     it('should enforce days validation (29-32)', async () => {
       await expect(
         BSCalendar.create({
-          yearBS: 2080,
-          monthBS: 1,
+          yearBs: 2080,
+          monthBs: 1,
           daysInMonth: 28, // Invalid: below minimum
-          startDateAD: new Date('2023-04-14'),
-          endDateAD: new Date('2023-05-11'),
+          startDateAd: new Date('2023-04-14'),
+          endDateAd: new Date('2023-05-11'),
           monthNameEn: 'Baisakh',
           monthNameNp: 'बैशाख'
         })
@@ -113,11 +111,11 @@ describe('BSCalendar Model', () => {
 
       await expect(
         BSCalendar.create({
-          yearBS: 2080,
-          monthBS: 1,
+          yearBs: 2080,
+          monthBs: 1,
           daysInMonth: 33, // Invalid: above maximum
-          startDateAD: new Date('2023-04-14'),
-          endDateAD: new Date('2023-05-16'),
+          startDateAd: new Date('2023-04-14'),
+          endDateAd: new Date('2023-05-16'),
           monthNameEn: 'Baisakh',
           monthNameNp: 'बैशाख'
         })
@@ -126,11 +124,11 @@ describe('BSCalendar Model', () => {
 
     it('should enforce unique constraint on year_bs and month_bs combination', async () => {
       await BSCalendar.create({
-        yearBS: 2080,
-        monthBS: 1,
+        yearBs: 2080,
+        monthBs: 1,
         daysInMonth: 31,
-        startDateAD: new Date('2023-04-14'),
-        endDateAD: new Date('2023-05-14'),
+        startDateAd: new Date('2023-04-14'),
+        endDateAd: new Date('2023-05-14'),
         monthNameEn: 'Baisakh',
         monthNameNp: 'बैशाख'
       });
@@ -138,11 +136,11 @@ describe('BSCalendar Model', () => {
       // Attempt to create duplicate
       await expect(
         BSCalendar.create({
-          yearBS: 2080,
-          monthBS: 1,
+          yearBs: 2080,
+          monthBs: 1,
           daysInMonth: 31,
-          startDateAD: new Date('2023-04-14'),
-          endDateAD: new Date('2023-05-14'),
+          startDateAd: new Date('2023-04-14'),
+          endDateAd: new Date('2023-05-14'),
           monthNameEn: 'Baisakh',
           monthNameNp: 'बैशाख'
         })
@@ -195,11 +193,11 @@ describe('BSCalendar Model', () => {
       const endDate = new Date('2023-05-14');
 
       const record = await BSCalendar.create({
-        yearBS: 2080,
-        monthBS: 1,
+        yearBs: 2080,
+        monthBs: 1,
         daysInMonth: 31,
-        startDateAD: startDate,
-        endDateAD: endDate,
+        startDateAd: startDate,
+        endDateAd: endDate,
         monthNameEn: 'Baisakh',
         monthNameNp: 'बैशाख'
       });
@@ -213,11 +211,11 @@ describe('BSCalendar Model', () => {
       
       for (const days of validDays) {
         const record = await BSCalendar.create({
-          yearBS: 2080,
-          monthBS: validDays.indexOf(days) + 1,
+          yearBs: 2080,
+          monthBs: validDays.indexOf(days) + 1,
           daysInMonth: days,
-          startDateAD: new Date('2023-04-14'),
-          endDateAD: new Date('2023-05-14'),
+          startDateAd: new Date('2023-04-14'),
+          endDateAd: new Date('2023-05-14'),
           monthNameEn: 'Test',
           monthNameNp: 'परीक्षण'
         });
@@ -232,11 +230,11 @@ describe('BSCalendar Model', () => {
       // Create test data for year 2080
       for (let month = 1; month <= 12; month++) {
         await BSCalendar.create({
-          yearBS: 2080,
-          monthBS: month,
+          yearBs: 2080,
+          monthBs: month,
           daysInMonth: 30 + (month % 2),
-          startDateAD: new Date(`2023-${month.toString().padStart(2, '0')}-01`),
-          endDateAD: new Date(`2023-${month.toString().padStart(2, '0')}-${30 + (month % 2)}`),
+          startDateAd: new Date(`2023-${month.toString().padStart(2, '0')}-01`),
+          endDateAd: new Date(`2023-${month.toString().padStart(2, '0')}-${30 + (month % 2)}`),
           monthNameEn: BSCalendar.getMonthNameEn(month),
           monthNameNp: BSCalendar.getMonthNameNp(month)
         });
@@ -245,7 +243,7 @@ describe('BSCalendar Model', () => {
 
     it('should find records by year', async () => {
       const records = await BSCalendar.findAll({
-        where: { yearBS: 2080 }
+        where: { yearBs: 2080 }
       });
 
       expect(records).toHaveLength(12);
@@ -254,7 +252,7 @@ describe('BSCalendar Model', () => {
 
     it('should find specific month record', async () => {
       const record = await BSCalendar.findOne({
-        where: { yearBS: 2080, monthBS: 1 }
+        where: { yearBs: 2080, monthBs: 1 }
       });
 
       expect(record).not.toBeNull();
@@ -265,8 +263,8 @@ describe('BSCalendar Model', () => {
 
     it('should order records correctly', async () => {
       const records = await BSCalendar.findAll({
-        where: { yearBS: 2080 },
-        order: [['monthBS', 'ASC']]
+        where: { yearBs: 2080 },
+        order: [['monthBs', 'ASC']]
       });
 
       for (let i = 0; i < records.length; i++) {

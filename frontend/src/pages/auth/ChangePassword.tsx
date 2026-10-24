@@ -5,6 +5,7 @@ import { Box, Button, TextField, Typography, Alert, CircularProgress, InputAdorn
 import { Lock, Visibility, VisibilityOff } from '@mui/icons-material';
 import { AppDispatch, RootState } from '../../store';
 import { changePassword, clearError } from '../../store/slices/authSlice';
+import { isPasswordPolicySatisfied } from './passwordPolicy';
 
 export function ChangePassword() {
   const { t } = useTranslation();
@@ -15,6 +16,8 @@ export function ChangePassword() {
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [showPasswords, setShowPasswords] = useState(false);
   const [done, setDone] = useState(false);
+  const newPasswordMeetsPolicy = isPasswordPolicySatisfied(newPassword);
+  const passwordPolicyMessage = 'Use 8–128 characters with an uppercase letter, a lowercase letter, and a number.';
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -78,6 +81,9 @@ export function ChangePassword() {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             required
+            error={newPassword.length > 0 && !newPasswordMeetsPolicy}
+            helperText={newPassword.length > 0 && !newPasswordMeetsPolicy ? passwordPolicyMessage : ''}
+            inputProps={{ minLength: 8, maxLength: 128 }}
             sx={{ mb: 2 }}
           />
           <TextField
@@ -92,7 +98,7 @@ export function ChangePassword() {
             helperText={newPassword !== confirmNewPassword && confirmNewPassword.length > 0 ? 'Passwords do not match' : ''}
             sx={{ mb: 2 }}
           />
-          <Button type="submit" variant="contained" disabled={isLoading || newPassword !== confirmNewPassword} startIcon={isLoading ? <CircularProgress size={20} /> : null}>
+          <Button type="submit" variant="contained" disabled={isLoading || !newPasswordMeetsPolicy || newPassword !== confirmNewPassword} startIcon={isLoading ? <CircularProgress size={20} /> : null}>
             {isLoading ? 'Updating…' : 'Change password'}
           </Button>
         </form>

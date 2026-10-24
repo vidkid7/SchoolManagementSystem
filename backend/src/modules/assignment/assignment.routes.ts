@@ -14,12 +14,6 @@ const TEACHER_ROLES = [
   UserRole.DEPARTMENT_HEAD,
 ];
 
-const ALL_ROLES = [
-  ...TEACHER_ROLES,
-  UserRole.STUDENT,
-  UserRole.PARENT,
-];
-
 // Dashboard
 router.get(
   '/dashboard',
@@ -30,7 +24,7 @@ router.get(
 // List all assignments
 router.get(
   '/',
-  authorize(...ALL_ROLES),
+  authorize(...TEACHER_ROLES),
   assignmentController.getAssignments
 );
 
@@ -44,7 +38,7 @@ router.get(
 // Single assignment
 router.get(
   '/:id',
-  authorize(...ALL_ROLES),
+  authorize(...TEACHER_ROLES),
   assignmentController.getAssignmentById
 );
 

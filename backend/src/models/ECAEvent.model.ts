@@ -30,38 +30,37 @@ export interface ECAEventAttributes {
   updatedAt?: Date;
 }
 
-export interface ECAEventCreationAttributes extends Optional<ECAEventAttributes, 'eventId' | 'status'> {}
+export type ECAEventCreationAttributes = Optional<ECAEventAttributes, 'eventId' | 'status'>;
 
 export class ECAEvent
   extends Model<ECAEventAttributes, ECAEventCreationAttributes>
   implements ECAEventAttributes
 {
-  public eventId!: number;
-  public ecaId!: number;
-  public name!: string;
-  public nameNp?: string;
-  public type!: 'competition' | 'performance' | 'exhibition' | 'workshop' | 'other';
-  public description?: string;
-  public descriptionNp?: string;
-  public eventDate!: Date;
-  public eventDateBS?: string;
-  public venue?: string;
-  public venueNp?: string;
-  public participants?: number[];
-  public organizer?: string;
-  public status!: 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
-  public photos?: string[];
-  public videos?: string[];
-  public remarks?: string;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public eventId: number;
+  declare public ecaId: number;
+  declare public name: string;
+  declare public nameNp?: string;
+  declare public type: 'competition' | 'performance' | 'exhibition' | 'workshop' | 'other';
+  declare public description?: string;
+  declare public descriptionNp?: string;
+  declare public eventDate: Date;
+  declare public eventDateBS?: string;
+  declare public venue?: string;
+  declare public venueNp?: string;
+  declare public participants?: number[];
+  declare public organizer?: string;
+  declare public status: 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
+  declare public photos?: string[];
+  declare public videos?: string[];
+  declare public remarks?: string;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   public addParticipant(studentId: number): void {
-    if (!this.participants) {
-      this.participants = [];
-    }
-    if (!this.participants.includes(studentId)) {
-      this.participants.push(studentId);
+    const participants = [...(this.participants ?? [])];
+    if (!participants.includes(studentId)) {
+      participants.push(studentId);
+      this.setDataValue('participants', participants);
     }
   }
 
@@ -76,17 +75,11 @@ export class ECAEvent
   }
 
   public addPhoto(photoUrl: string): void {
-    if (!this.photos) {
-      this.photos = [];
-    }
-    this.photos.push(photoUrl);
+    this.setDataValue('photos', [...(this.photos ?? []), photoUrl]);
   }
 
   public addVideo(videoUrl: string): void {
-    if (!this.videos) {
-      this.videos = [];
-    }
-    this.videos.push(videoUrl);
+    this.setDataValue('videos', [...(this.videos ?? []), videoUrl]);
   }
 
   public toJSON(): object {

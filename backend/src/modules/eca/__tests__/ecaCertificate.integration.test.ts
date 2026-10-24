@@ -11,32 +11,11 @@ import ECAEnrollment from '@models/ECAEnrollment.model';
 import ECAAchievement from '@models/ECAAchievement.model';
 import ECA from '@models/ECA.model';
 import { sequelize } from '@config/database';
+import { setupEcaTestDatabase } from '../testSupport/ecaTestDatabase';
 
 describe('ECACertificateService Integration Tests', () => {
   beforeAll(async () => {
-    // Sync database models
-    await sequelize.sync({ force: true });
-    
-    // Set up associations after models are synced
-    ECA.hasMany(ECAEnrollment, {
-      foreignKey: 'ecaId',
-      as: 'enrollments'
-    });
-
-    ECA.hasMany(ECAAchievement, {
-      foreignKey: 'ecaId',
-      as: 'achievements'
-    });
-
-    ECAEnrollment.belongsTo(ECA, {
-      foreignKey: 'ecaId',
-      as: 'eca'
-    });
-
-    ECAAchievement.belongsTo(ECA, {
-      foreignKey: 'ecaId',
-      as: 'eca'
-    });
+    await setupEcaTestDatabase();
   });
 
   afterAll(async () => {

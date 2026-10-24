@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useTheme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { C, useAdminStyles } from '../../theme/designTokens';
 import {
   Box,
   Paper,
@@ -18,6 +18,7 @@ import {
   Button,
   Tabs,
   Tab,
+  CardActionArea,
 } from '@mui/material';
 import {
   Assignment as AttendanceIcon,
@@ -32,13 +33,14 @@ import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
+  id?: string;
   value: number;
 }
 
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
+function TabPanel(props: TabPanelProps & { labelledBy: string }) {
+  const { children, value, index, labelledBy, ...other } = props;
   return (
-    <div role="tabpanel" hidden={value !== index} {...other}>
+    <div role="tabpanel" aria-labelledby={labelledBy} hidden={value !== index} {...other}>
       {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
   );
@@ -138,47 +140,36 @@ export function AttendanceDashboard() {
         </Box>
       </Paper>
 
-      <Tabs value={activeTab} onChange={handleTabChange} sx={{ mb: 3 }}>
-        <Tab label={t('common.overview')} sx={S.TAB_ACTIVE} />
-        <Tab label={t('common.actions')} sx={S.TAB_ACTIVE} />
+      <Tabs value={activeTab} onChange={handleTabChange} aria-label={t('attendance.attendanceManagement')} sx={{ mb: 3 }}>
+        <Tab id="attendance-overview-tab" aria-controls="attendance-overview-panel" label={t('common.overview')} sx={S.TAB_ACTIVE} />
+        <Tab id="attendance-actions-tab" aria-controls="attendance-actions-panel" label={t('common.actions')} sx={S.TAB_ACTIVE} />
       </Tabs>
 
-      <TabPanel value={activeTab} index={0}>
+      <TabPanel id="attendance-overview-panel" labelledBy="attendance-overview-tab" value={activeTab} index={0}>
         <Grid container spacing={3}>
           {features.map((feature, index) => (
             <Grid item xs={12} md={6} lg={4} key={index}>
-              <Card
-                sx={{
-                  ...S.GLASS,
-                  height: '100%',
-                  cursor: 'pointer',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: 4,
-                  },
-                }}
-                onClick={() => navigate(feature.path)}
-              >
-                <CardContent>
-                  <Box
-                    sx={S.ICON_BOX(feature.color, 80)}
-                  >
-                    {feature.icon}
-                  </Box>
-                  <Typography component="h5" variant="h6" fontWeight={600} gutterBottom sx={{ mt: 2 }}>
-                    {feature.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {feature.description}
-                  </Typography>
-                </CardContent>
+              <Card sx={{ ...S.GLASS, height: '100%', '&:hover': { transform: 'translateY(-4px)', boxShadow: 4 } }}>
+                <CardActionArea onClick={() => navigate(feature.path)} sx={{ height: '100%', p: 2, textAlign: 'left' }}>
+                  <CardContent>
+                    <Box sx={S.ICON_BOX(feature.color, 80)}>
+                      {feature.icon}
+                    </Box>
+                    <Typography component="h5" variant="h6" fontWeight={600} gutterBottom sx={{ mt: 2 }}>
+                      {feature.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {feature.description}
+                    </Typography>
+                  </CardContent>
+                </CardActionArea>
               </Card>
             </Grid>
           ))}
         </Grid>
       </TabPanel>
 
-      <TabPanel value={activeTab} index={1}>
+      <TabPanel id="attendance-actions-panel" labelledBy="attendance-actions-tab" value={activeTab} index={1}>
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <Button

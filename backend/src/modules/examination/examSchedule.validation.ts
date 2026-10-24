@@ -8,7 +8,7 @@ import { body, param, query } from 'express-validator';
  * Validation for creating exam schedule
  */
 export const createExamScheduleValidation = [
-  body('examId')
+  param('examId')
     .isInt({ min: 1 })
     .withMessage('Exam ID must be a positive integer'),
   

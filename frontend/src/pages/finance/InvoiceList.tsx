@@ -4,8 +4,8 @@
  * Displays invoices with payment tracking
  */
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import { useTranslation } from 'react-i18next';
 import {
@@ -44,12 +44,14 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useAdminStyles } from '../../theme/designTokens';
 
 interface Invoice {
   id?: number;
   invoiceId?: number;
   invoice_id?: number;
+  studentId?: number;
+  student_id?: number;
   invoice_number: string;
   student_name: string;
   class_name: string;
@@ -60,12 +62,72 @@ interface Invoice {
   status: 'pending' | 'partial' | 'paid' | 'overdue';
 }
 
+interface InvoiceApiRecord extends Record<string, unknown> {
+  invoiceId?: number;
+  invoice_id?: number;
+  id?: number;
+  invoiceNumber?: string;
+  invoice_number?: string;
+  studentId?: number;
+  student_id?: number;
+  studentName?: string;
+  student_name?: string;
+  className?: string;
+  class_name?: string;
+  totalAmount?: number | string;
+  total_amount?: number | string;
+  paidAmount?: number | string;
+  paid_amount?: number | string;
+  balance?: number | string;
+  dueDate?: string;
+  due_date?: string;
+  status?: Invoice['status'];
+  student?: {
+    studentId?: number;
+    firstNameEn?: string;
+    middleNameEn?: string | null;
+    lastNameEn?: string | null;
+    currentClass?: { gradeLevel?: number; section?: string } | null;
+  };
+}
+
+const normalizeInvoice = (record: InvoiceApiRecord): Invoice => {
+  const studentId = Number(record.studentId ?? record.student_id ?? record.student?.studentId);
+  const studentName = record.student_name ?? record.studentName ?? [
+    record.student?.firstNameEn,
+    record.student?.middleNameEn,
+    record.student?.lastNameEn,
+  ].filter(Boolean).join(' ');
+  const currentClass = record.student?.currentClass;
+  const className = record.class_name ?? record.className ?? (
+    currentClass?.gradeLevel != null
+      ? `Class ${currentClass.gradeLevel}${currentClass.section ? ` - Section ${currentClass.section}` : ''}`
+      : ''
+  );
+
+  return {
+    id: Number(record.invoiceId ?? record.invoice_id ?? record.id),
+    invoiceId: record.invoiceId ?? record.invoice_id ?? record.id,
+    invoice_id: record.invoice_id ?? record.invoiceId ?? record.id,
+    studentId: Number.isFinite(studentId) ? studentId : undefined,
+    student_id: Number.isFinite(studentId) ? studentId : undefined,
+    invoice_number: record.invoice_number ?? record.invoiceNumber ?? '',
+    student_name: studentName || (Number.isFinite(studentId) ? `Student #${studentId}` : ''),
+    class_name: className,
+    total_amount: Number(record.total_amount ?? record.totalAmount ?? 0),
+    paid_amount: Number(record.paid_amount ?? record.paidAmount ?? 0),
+    balance: Number(record.balance ?? 0),
+    due_date: record.due_date ?? record.dueDate ?? '',
+    status: record.status ?? 'pending',
+  };
+};
+
 export const InvoiceList = () => {
   const { t } = useTranslation();
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const navigate = useSlugNavigate();
-  const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
+  const location = useLocation();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState('');
@@ -74,7 +136,7 @@ export const InvoiceList = () => {
   const [total, setTotal] = useState(0);
   
   // Filters
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => new URLSearchParams(location.search).get('search') || '');
   const debouncedSearch = useDebouncedValue(search);
   const [statusFilter, setStatusFilter] = useState('');
   
@@ -83,12 +145,10 @@ export const InvoiceList = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentError, setPaymentError] = useState('');
+  const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
 
-  useEffect(() => {
-    fetchInvoices(debouncedSearch);
-  }, [page, rowsPerPage, debouncedSearch, statusFilter]);
-
-  const fetchInvoices = async (searchTerm = search) => {
+  const fetchInvoices = useCallback(async (searchTerm = debouncedSearch) => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -99,8 +159,8 @@ export const InvoiceList = () => {
       });
 
       const response = await apiClient.get(`/api/v1/finance/invoices?${params}`);
-      setInvoices(response.data.data || []);
-      setTotal(response.data.total || 0);
+      setInvoices((response.data?.data || []).map((invoice: InvoiceApiRecord) => normalizeInvoice(invoice)));
+      setTotal(response.data?.meta?.total ?? response.data?.total ?? 0);
     } catch (error) {
       console.error('Failed to fetch invoices:', error);
       setInvoices([]);
@@ -108,7 +168,13 @@ export const InvoiceList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearch, page, rowsPerPage, statusFilter]);
+
+  useEffect(() => {
+    // Invoice list data is synchronized with the current filters and page.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchInvoices();
+  }, [fetchInvoices]);
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
@@ -132,24 +198,44 @@ export const InvoiceList = () => {
   const handlePayment = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
     setPaymentAmount(invoice.balance.toString());
+    setPaymentError('');
     setPaymentDialog(true);
   };
 
   const handlePaymentSubmit = async () => {
     if (!selectedInvoice) return;
 
+    const amount = Number(paymentAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setPaymentError(t('finance.invalidAmount'));
+      return;
+    }
+    if (amount > selectedInvoice.balance) {
+      setPaymentError(t('finance.paymentAmountExceedsBalance'));
+      return;
+    }
+
+    const invoiceId = selectedInvoice.invoiceId || selectedInvoice.invoice_id || selectedInvoice.id;
+    const studentId = selectedInvoice.studentId || selectedInvoice.student_id;
+    if (!invoiceId || !studentId) {
+      setPaymentError(t('finance.failedToProcessPayment'));
+      return;
+    }
+
     try {
-      await apiClient.post('/api/v1/finance/payments', {
-        invoice_id: selectedInvoice.invoiceId || selectedInvoice.invoice_id || selectedInvoice.id,
-        amount: parseFloat(paymentAmount),
-        payment_method: paymentMethod,
-        payment_date: new Date().toISOString(),
+      setPaymentError('');
+      await apiClient.post('/finance/payments', {
+        invoiceId,
+        studentId,
+        amount,
+        paymentMethod,
+        paymentDate: new Date().toISOString(),
       });
 
       setPaymentDialog(false);
       fetchInvoices();
-    } catch (error) {
-      console.error('Failed to process payment:', error);
+    } catch {
+      setPaymentError(t('finance.failedToProcessPayment'));
     }
   };
 
@@ -297,6 +383,7 @@ export const InvoiceList = () => {
                           size="small"
                           onClick={() => handlePayment(invoice)}
                           title={t('finance.addPayment')}
+                          aria-label={`${t('finance.addPayment')} ${invoice.invoice_number}`}
                           color="primary"
                         >
                           <PaymentIcon />
@@ -305,6 +392,7 @@ export const InvoiceList = () => {
                           size="small"
                           onClick={() => handleSendReminder(invoice.invoiceId || invoice.invoice_id || invoice.id!)}
                           title={t('finance.sendReminders')}
+                          aria-label={`${t('finance.sendReminders')} ${invoice.invoice_number}`}
                         >
                           <SendIcon />
                         </IconButton>
@@ -312,8 +400,9 @@ export const InvoiceList = () => {
                     )}
                     <IconButton
                       size="small"
-                      onClick={() => navigate(`/finance/invoices/${invoice.invoiceId || invoice.invoice_id || invoice.id}`)}
+                      onClick={() => setViewingInvoice(invoice)}
                       title={t('common.view')}
+                      aria-label={`${t('common.view')} ${invoice.invoice_number}`}
                     >
                       <ReceiptIcon />
                     </IconButton>
@@ -337,7 +426,7 @@ export const InvoiceList = () => {
       {/* Payment Dialog */}
       <Dialog open={paymentDialog} onClose={() => setPaymentDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {t('finance.processRefund')}
+          {t('finance.addPayment')}
         </DialogTitle>
         <DialogContent>
           {selectedInvoice && (
@@ -360,15 +449,21 @@ export const InvoiceList = () => {
                   type="number"
                   fullWidth
                   value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                  inputProps={{ max: selectedInvoice.balance }}
+                  onChange={(e) => {
+                    setPaymentAmount(e.target.value);
+                    setPaymentError('');
+                  }}
+                  inputProps={{ min: 0.01, max: selectedInvoice.balance, step: 0.01 }}
                 />
               </Grid>
+          {paymentError && <Alert severity="error" sx={{ mt: 2 }}>{paymentError}</Alert>}
 
               <Grid item xs={12}>
                 <FormControl fullWidth>
-                  <InputLabel>{t('finance.paymentMethod')}</InputLabel>
+                  <InputLabel id="invoice-payment-method-label">{t('finance.paymentMethod')}</InputLabel>
                   <Select
+                    id="invoice-payment-method"
+                    labelId="invoice-payment-method-label"
                     value={paymentMethod}
                     label={t('finance.paymentMethod')}
                     onChange={(e) => setPaymentMethod(e.target.value)}
@@ -396,6 +491,24 @@ export const InvoiceList = () => {
             {t('finance.addPayment')}
           </Button>
         </DialogActions>
+      </Dialog>
+
+      <Dialog open={Boolean(viewingInvoice)} onClose={() => setViewingInvoice(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>{t('finance.invoices')} {viewingInvoice?.invoice_number}</DialogTitle>
+        <DialogContent dividers>
+          {viewingInvoice && (
+            <Grid container spacing={1.5}>
+              <Grid item xs={12}><Typography><strong>{t('finance.studentName')}:</strong> {viewingInvoice.student_name}</Typography></Grid>
+              <Grid item xs={12}><Typography><strong>{t('finance.className')}:</strong> {viewingInvoice.class_name}</Typography></Grid>
+              <Grid item xs={12}><Typography><strong>{t('finance.totalAmount')}:</strong> रू {(viewingInvoice.total_amount || 0).toLocaleString()}</Typography></Grid>
+              <Grid item xs={12}><Typography><strong>{t('finance.paidAmount')}:</strong> रू {(viewingInvoice.paid_amount || 0).toLocaleString()}</Typography></Grid>
+              <Grid item xs={12}><Typography><strong>{t('finance.balance')}:</strong> रू {(viewingInvoice.balance || 0).toLocaleString()}</Typography></Grid>
+              <Grid item xs={12}><Typography><strong>{t('finance.dueDate')}:</strong> {viewingInvoice.due_date}</Typography></Grid>
+              <Grid item xs={12}><Typography><strong>{t('finance.paymentStatus')}:</strong> {t(`finance.${viewingInvoice.status}`)}</Typography></Grid>
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions><Button onClick={() => setViewingInvoice(null)}>{t('common.close')}</Button></DialogActions>
       </Dialog>
     </Box>
   );

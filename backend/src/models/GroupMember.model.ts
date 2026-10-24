@@ -30,15 +30,15 @@ export class GroupMember
   extends Model<GroupMemberAttributes, GroupMemberCreationAttributes>
   implements GroupMemberAttributes
 {
-  public groupMemberId!: number;
-  public groupConversationId!: number;
-  public userId!: number;
-  public role!: 'admin' | 'member';
-  public unreadCount!: number;
-  public lastReadAt?: Date;
-  public joinedAt!: Date;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public groupMemberId: number;
+  declare public groupConversationId: number;
+  declare public userId: number;
+  declare public role: 'admin' | 'member';
+  declare public unreadCount: number;
+  declare public lastReadAt?: Date;
+  declare public joinedAt: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   // Instance methods
   public async incrementUnreadCount(): Promise<void> {

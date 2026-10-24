@@ -90,6 +90,20 @@ interface NotificationItem {
   time: string;
 }
 
+interface TeacherDashboardResponse {
+  schedule?: ScheduleItem[];
+  tasks?: TaskItem[];
+  performances?: PerformanceItem[];
+  trend?: TrendItem[];
+  notifications?: Array<{ type?: string; icon?: string; title?: string; text?: string; time?: string; date?: string }>;
+  stats?: Partial<DashboardStats> & { pendingTasks?: number };
+  classesToday?: number;
+  pendingTasksCount?: number;
+  totalStudents?: number;
+  avgAttendance?: number;
+  currentPeriod?: number;
+}
+
 interface DashboardStats {
   classesToday: number;
   pendingTasksCount: number;
@@ -139,7 +153,7 @@ export const TeacherDashboard = () => {
       try {
         const res = await apiClient.get('/api/v1/teachers/dashboard');
         if (cancelled) return;
-        const d = res.data?.data || {};
+        const d = (res.data?.data || {}) as TeacherDashboardResponse;
 
         if (d.schedule?.length) setTodaySchedule(d.schedule);
         if (d.tasks?.length) setPendingTasks(d.tasks);
@@ -147,19 +161,19 @@ export const TeacherDashboard = () => {
         if (d.trend?.length) setAttendanceTrend(d.trend);
         if (d.notifications?.length) {
           setNotifications(
-            d.notifications.map((n: any) => ({
-              icon: NOTIFICATION_ICONS[n.type] ?? NOTIFICATION_ICONS.event,
-              text: n.title || n.text,
+            d.notifications.map((n) => ({
+              icon: NOTIFICATION_ICONS[n.type || n.icon || 'event'] ?? NOTIFICATION_ICONS.event,
+              text: n.title || n.text || '',
               time: n.time || n.date || '',
             })),
           );
         }
 
         setStats({
-          classesToday: d.classesToday ?? d.schedule?.length ?? 0,
-          pendingTasksCount: d.pendingTasksCount ?? d.tasks?.length ?? 0,
-          totalStudents: d.totalStudents ?? 0,
-          avgAttendance: d.avgAttendance ?? 0,
+          classesToday: d.stats?.classesToday ?? d.classesToday ?? d.schedule?.length ?? 0,
+          pendingTasksCount: d.stats?.pendingTasks ?? d.pendingTasksCount ?? d.tasks?.length ?? 0,
+          totalStudents: d.stats?.totalStudents ?? d.totalStudents ?? 0,
+          avgAttendance: d.stats?.avgAttendance ?? d.avgAttendance ?? 0,
           currentPeriod: d.currentPeriod ?? 0,
         });
       } catch {
@@ -220,7 +234,11 @@ export const TeacherDashboard = () => {
             </Typography>
           )}
         </Box>
-        <Button sx={{ ...S.BTN_PRIMARY, borderRadius: R.sm }} startIcon={<ScheduleIcon />}>
+        <Button
+          sx={{ ...S.BTN_PRIMARY, borderRadius: R.sm }}
+          startIcon={<ScheduleIcon />}
+          onClick={() => document.getElementById('teacher-todays-schedule')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+        >
           {t('portal.todaysSchedule')}
         </Button>
       </Box>
@@ -305,7 +323,7 @@ export const TeacherDashboard = () => {
       <Grid container spacing={3}>
         {/* Today's Schedule */}
         <Grid item xs={12} md={8}>
-          <Paper sx={{ ...S.GLASS, borderRadius: R.md, p: 3, mb: 3 }}>
+          <Paper id="teacher-todays-schedule" sx={{ ...S.GLASS, borderRadius: R.md, p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
               {t('portal.todaysSchedule')}
             </Typography>
@@ -391,7 +409,7 @@ export const TeacherDashboard = () => {
                           <Button
                             size="small"
                             sx={{ ...S.BTN_OUTLINE, borderRadius: R.sm }}
-                            onClick={() => navigate(`/teacher/class/${cls.class}`)}
+                            onClick={() => navigate('/teacher/classes')}
                           >
                             {t('dashboard.viewDetails')}
                           </Button>
@@ -432,6 +450,7 @@ export const TeacherDashboard = () => {
                     </ListItemIcon>
                     <ListItemText
                       primary={task.title}
+                      secondaryTypographyProps={{ component: 'div' }}
                       secondary={
                         <Box component="span" sx={{ display: 'inline-block', mt: 0.5 }}>
                           <Chip
@@ -446,7 +465,7 @@ export const TeacherDashboard = () => {
                 ))}
               </List>
             )}
-            <Button fullWidth sx={{ ...S.BTN_PRIMARY, borderRadius: R.sm, mt: 2 }}>
+            <Button fullWidth sx={{ ...S.BTN_PRIMARY, borderRadius: R.sm, mt: 2 }} onClick={() => navigate('/teacher/assignments')}>
               {t('portal.myTasks')}
             </Button>
           </Paper>
@@ -506,7 +525,7 @@ export const TeacherDashboard = () => {
                 ))}
               </List>
             )}
-            <Button fullWidth sx={{ ...S.BTN_OUTLINE, borderRadius: R.sm, mt: 2 }}>
+            <Button fullWidth sx={{ ...S.BTN_OUTLINE, borderRadius: R.sm, mt: 2 }} onClick={() => navigate('/notifications')}>
               {t('notifications.viewAll')}
             </Button>
           </Paper>

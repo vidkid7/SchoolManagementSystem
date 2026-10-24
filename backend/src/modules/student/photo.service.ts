@@ -43,6 +43,31 @@ function assertPathIsWithin(parentPath: string, childPath: string): void {
   }
 }
 
+interface StudentDocumentMetadata {
+  name: string;
+  originalName: string;
+  size: number;
+  mimeType: string;
+  expiryDate?: string;
+  createdAt: string;
+}
+
+function isValidDateOnly(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
+}
+
+async function readDocumentMetadata(documentPath: string): Promise<Partial<StudentDocumentMetadata>> {
+  try {
+    const text = await fs.promises.readFile(`${documentPath}.meta.json`, 'utf8');
+    const parsed = JSON.parse(text) as Partial<StudentDocumentMetadata>;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
 /**
  * Ensure directory exists, create if not
  */
@@ -121,7 +146,7 @@ export const documentUpload = multer({
   fileFilter: documentFileFilter,
   limits: {
     fileSize: FILE_UPLOAD.MAX_SIZE_BYTES,
-    files: 5 // Allow up to 5 documents at once
+    files: 10 // Bulk document upload supports up to 10 files; route-level limits constrain single uploads.
   }
 });
 
@@ -281,13 +306,17 @@ class PhotoService {
   async saveStudentDocument(
     file: Express.Multer.File,
     studentId: number | string,
-    category: string = 'general'
-  ): Promise<{ documentUrl: string; originalName: string; size: number; mimeType: string }> {
+    category: string = 'general',
+    options: { name?: string; expiryDate?: string } = {}
+  ): Promise<{ documentUrl: string; originalName: string; name: string; size: number; mimeType: string; category: string; expiryDate?: string; createdAt: string }> {
     try {
       assertSafeDocumentCategory(category);
       const normalizedStudentId = String(studentId);
       if (!/^[1-9]\d*$/.test(normalizedStudentId)) {
         throw new Error('Invalid student id');
+      }
+      if (options.expiryDate !== undefined && !isValidDateOnly(options.expiryDate)) {
+        throw new Error('Invalid expiry date');
       }
 
       const studentDir = path.resolve(STUDENT_DOCUMENTS_DIR, normalizedStudentId);
@@ -300,6 +329,22 @@ class PhotoService {
       const docPath = path.join(docDir, filename);
 
       await fs.promises.writeFile(docPath, file.buffer);
+
+      const createdAt = new Date().toISOString();
+      const metadata: StudentDocumentMetadata = {
+        name: options.name?.trim() || file.originalname,
+        originalName: file.originalname,
+        size: file.size,
+        mimeType: file.mimetype,
+        expiryDate: options.expiryDate,
+        createdAt,
+      };
+      try {
+        await fs.promises.writeFile(`${docPath}.meta.json`, JSON.stringify(metadata), 'utf8');
+      } catch (metadataError) {
+        await fs.promises.unlink(docPath).catch(() => undefined);
+        throw metadataError;
+      }
 
       const documentUrl = `/uploads/documents/students/${studentId}/${category}/${filename}`;
 
@@ -314,8 +359,12 @@ class PhotoService {
       return {
         documentUrl,
         originalName: file.originalname,
+        name: metadata.name,
         size: file.size,
-        mimeType: file.mimetype
+        mimeType: file.mimetype,
+        category,
+        expiryDate: options.expiryDate,
+        createdAt,
       };
     } catch (error) {
       logger.error('Error saving student document', { error, studentId, category });
@@ -329,10 +378,16 @@ class PhotoService {
    */
   async deleteStudentDocument(documentUrl: string): Promise<void> {
     try {
-      const docPath = path.join(process.cwd(), documentUrl);
+      const normalizedUrl = documentUrl.replace(/\\/g, '/');
+      if (!normalizedUrl.startsWith('/uploads/documents/students/')) {
+        throw new Error('Invalid student document path');
+      }
+      const docPath = path.resolve(process.cwd(), `.${normalizedUrl}`);
+      assertPathIsWithin(STUDENT_DOCUMENTS_DIR, docPath);
 
       if (fs.existsSync(docPath)) {
         await fs.promises.unlink(docPath);
+        await fs.promises.unlink(`${docPath}.meta.json`).catch(() => undefined);
         logger.info('Student document deleted', { documentUrl });
       }
     } catch (error) {
@@ -359,7 +414,7 @@ class PhotoService {
   async listStudentDocuments(
     studentId: number | string,
     category?: string
-  ): Promise<Array<{ filename: string; url: string; category: string }>> {
+  ): Promise<Array<{ filename: string; url: string; category: string; name: string; originalName: string; size: number; mimeType: string; expiryDate?: string; createdAt: string }>> {
     try {
       const normalizedStudentId = String(studentId);
       if (!/^[1-9]\d*$/.test(normalizedStudentId)) {
@@ -374,7 +429,7 @@ class PhotoService {
         return [];
       }
 
-      const documents: Array<{ filename: string; url: string; category: string }> = [];
+      const documents: Array<{ filename: string; url: string; category: string; name: string; originalName: string; size: number; mimeType: string; expiryDate?: string; createdAt: string }> = [];
       
       const categories = category 
         ? [category] 
@@ -389,13 +444,23 @@ class PhotoService {
           continue;
         }
 
-        const files = await fs.promises.readdir(catDir);
+        const files = (await fs.promises.readdir(catDir)).filter((file) => !file.endsWith('.meta.json'));
         
         for (const file of files) {
+          const filePath = path.join(catDir, file);
+          const fileStat = await fs.promises.stat(filePath);
+          if (!fileStat.isFile()) continue;
+          const metadata = await readDocumentMetadata(filePath);
           documents.push({
             filename: file,
             url: `/uploads/documents/students/${studentId}/${cat}/${file}`,
-            category: cat
+            category: cat,
+            name: metadata.name || metadata.originalName || file,
+            originalName: metadata.originalName || file,
+            size: typeof metadata.size === 'number' ? metadata.size : fileStat.size,
+            mimeType: metadata.mimeType || 'application/octet-stream',
+            expiryDate: metadata.expiryDate,
+            createdAt: metadata.createdAt || fileStat.birthtime.toISOString(),
           });
         }
       }
@@ -404,6 +469,37 @@ class PhotoService {
     } catch (error) {
       logger.error('Error listing student documents', { error, studentId });
       throw new Error('Failed to list student documents');
+    }
+  }
+
+  async readStudentDocumentFile(
+    studentId: number | string,
+    category: string,
+    filename: string
+  ): Promise<{ buffer: Buffer; mimeType: string }> {
+    try {
+      const normalizedStudentId = String(studentId);
+      if (!/^[1-9]\d*$/.test(normalizedStudentId)) throw new Error('Invalid student id');
+      assertSafeDocumentCategory(category);
+      if (!filename || filename !== path.basename(filename) || filename.endsWith('.meta.json')) {
+        throw new Error('Invalid document filename');
+      }
+      const studentDir = path.resolve(STUDENT_DOCUMENTS_DIR, normalizedStudentId);
+      const categoryDir = path.resolve(studentDir, category);
+      const filePath = path.resolve(categoryDir, filename);
+      assertPathIsWithin(STUDENT_DOCUMENTS_DIR, studentDir);
+      assertPathIsWithin(studentDir, categoryDir);
+      assertPathIsWithin(categoryDir, filePath);
+      const stat = await fs.promises.stat(filePath);
+      if (!stat.isFile()) throw new Error('Document not found');
+      const metadata = await readDocumentMetadata(filePath);
+      return {
+        buffer: await fs.promises.readFile(filePath),
+        mimeType: metadata.mimeType || 'application/octet-stream',
+      };
+    } catch (error) {
+      logger.error('Error reading student document', { error, studentId });
+      throw new Error('Failed to read student document');
     }
   }
 }

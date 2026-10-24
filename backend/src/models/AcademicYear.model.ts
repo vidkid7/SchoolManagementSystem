@@ -76,15 +76,15 @@ AcademicYear.init(
  * Requirements: 5.2
  */
 class Term extends Model {
-  public termId!: number;
-  public academicYearId!: number;
-  public name!: string;
-  public startDate!: Date;
-  public endDate!: Date;
-  public examStartDate?: Date;
-  public examEndDate?: Date;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public termId: number;
+  declare public academicYearId: number;
+  declare public name: string;
+  declare public startDate: Date;
+  declare public endDate: Date;
+  declare public examStartDate?: Date;
+  declare public examEndDate?: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 }
 
 Term.init(

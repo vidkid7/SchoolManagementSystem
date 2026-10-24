@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 
 // Railway DATABASE_URL should be set as environment variable
 const DATABASE_URL = process.env.DATABASE_URL;
+const adminPassword = process.env.INITIAL_ADMIN_PASSWORD;
 
 if (!DATABASE_URL) {
   console.error('❌ DATABASE_URL environment variable is required!');
@@ -11,6 +12,9 @@ if (!DATABASE_URL) {
   console.log('  $env:DATABASE_URL = "your_railway_mysql_url"');
   console.log('  node backend/check-and-seed-municipality-admin.js');
   process.exit(1);
+}
+if (process.env.CONFIRM_INITIAL_ADMIN_CREATE !== 'true' || !adminPassword || adminPassword.length < 14) {
+  throw new Error('Set CONFIRM_INITIAL_ADMIN_CREATE=true and a 14+ character INITIAL_ADMIN_PASSWORD.');
 }
 
 const sequelize = new Sequelize(DATABASE_URL, {
@@ -92,7 +96,7 @@ async function checkAndSeedMunicipalityAdmin() {
     console.log(`✅ Found role: ${roleName} (ID: ${roleId})\n`);
 
     // Hash the password
-    const hashedPassword = await bcrypt.hash('Municipality@123', 10);
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
     const userId = require('crypto').randomUUID();
 
     // Create municipality admin user
@@ -124,13 +128,7 @@ async function checkAndSeedMunicipalityAdmin() {
     `);
 
     console.log('✅ Role assigned successfully!\n');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('Municipality Admin Login Credentials:');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('  Email:    municipality.admin@school.edu.np');
-    console.log('  Password: Municipality@123');
-    console.log('  Role:     Municipality Administrator');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    console.log('Initial municipality administrator created. Store the supplied one-time password securely.');
 
     await sequelize.close();
     console.log('✅ Process completed successfully!');

@@ -11,19 +11,15 @@ import { AcademicYear } from '@models/AcademicYear.model';
  */
 describe('Subject Model', () => {
   beforeAll(async () => {
-    // Disable foreign key checks temporarily
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
+    const dialect = sequelize.getDialect();
+    if (dialect === 'sqlite') await sequelize.query('PRAGMA foreign_keys = OFF');
+    else await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
     
     // Sync database schema
     await sequelize.sync({ force: true });
     
-    // Re-enable foreign key checks
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-  });
-
-  afterAll(async () => {
-    // Close database connection
-    await sequelize.close();
+    if (dialect === 'sqlite') await sequelize.query('PRAGMA foreign_keys = OFF');
+    else await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
   });
 
   beforeEach(async () => {
@@ -466,14 +462,15 @@ describe('ClassSubject Junction Model', () => {
   let testSubject: Subject;
 
   beforeAll(async () => {
-    // Disable foreign key checks temporarily
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
+    const dialect = sequelize.getDialect();
+    if (dialect === 'sqlite') await sequelize.query('PRAGMA foreign_keys = OFF');
+    else await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
     
     // Sync database schema
     await sequelize.sync({ force: true });
     
-    // Re-enable foreign key checks
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
+    if (dialect === 'sqlite') await sequelize.query('PRAGMA foreign_keys = OFF');
+    else await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
 
     // Create test data
     academicYear = await AcademicYear.create({
@@ -505,11 +502,6 @@ describe('ClassSubject Junction Model', () => {
       fullMarks: 100,
       applicableClasses: [10]
     });
-  });
-
-  afterAll(async () => {
-    // Close database connection
-    await sequelize.close();
   });
 
   beforeEach(async () => {
@@ -664,4 +656,8 @@ describe('ClassSubject Junction Model', () => {
       expect(classSubject.updatedAt).toBeInstanceOf(Date);
     });
   });
+});
+
+afterAll(async () => {
+  await sequelize.close();
 });

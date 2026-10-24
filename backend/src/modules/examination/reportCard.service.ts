@@ -1051,6 +1051,51 @@ class ReportCardService {
 
     return pdfBuffer;
   }
+
+  /**
+   * Generate report cards independently so one missing student or failed PDF
+   * does not prevent the remaining students from being processed.
+   */
+  async generateBulkReportCards(
+    studentIds: number[],
+    termId: number,
+    academicYearId: number,
+    schoolInfo: SchoolInfo,
+    outputDirectory: string,
+    options: ReportCardOptions = { language: 'bilingual', format: 'ledger' }
+  ): Promise<Array<{ studentId: number; success: boolean; filePath?: string; error?: string }>> {
+    if (!fs.existsSync(outputDirectory)) {
+      fs.mkdirSync(outputDirectory, { recursive: true });
+    }
+
+    const results: Array<{ studentId: number; success: boolean; filePath?: string; error?: string }> = [];
+    for (const studentId of studentIds) {
+      const filePath = path.join(
+        outputDirectory,
+        `report-card-${studentId}-term-${termId}-year-${academicYearId}.pdf`
+      );
+
+      try {
+        const pdfBuffer = await this.generateStudentReportCard(
+          studentId,
+          termId,
+          academicYearId,
+          schoolInfo,
+          options
+        );
+        fs.writeFileSync(filePath, pdfBuffer);
+        results.push({ studentId, success: true, filePath });
+      } catch (error) {
+        results.push({
+          studentId,
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown report card generation error'
+        });
+      }
+    }
+
+    return results;
+  }
 }
 
 // Export instance

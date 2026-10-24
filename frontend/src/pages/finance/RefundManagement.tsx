@@ -3,7 +3,7 @@
  * Process refund requests, view refund history
  */
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -26,17 +26,20 @@ import {
   Alert,
   IconButton,
   MenuItem,
-  Grid,
   useTheme,
 } from '@mui/material';
 import {
   Undo as RefundIcon,
-  CheckCircle as ApproveIcon,
-  Cancel as RejectIcon,
   Receipt as ReceiptIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useAdminStyles } from '../../theme/designTokens';
+import { openFinanceReceipt } from './financeReceipt';
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  const response = (error as { response?: { data?: { message?: unknown } } } | null)?.response;
+  return typeof response?.data?.message === 'string' ? response.data.message : fallback;
+};
 
 interface Refund {
   refundId: number;
@@ -70,11 +73,7 @@ export function RefundManagement() {
     remarks: '',
   });
 
-  useEffect(() => {
-    fetchRefunds();
-  }, [page, rowsPerPage]);
-
-  const fetchRefunds = async () => {
+  const fetchRefunds = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiClient.get('/finance/refunds', {
@@ -85,13 +84,19 @@ export function RefundManagement() {
       });
       setRefunds(response.data?.data || []);
       setTotal(response.data?.meta?.total || 0);
-    } catch (err) {
-      console.error('Failed to fetch refunds:', err);
+    } catch (err: unknown) {
       setRefunds([]);
+      setError(getErrorMessage(err, t('finance.failedToLoad')));
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, rowsPerPage, t]);
+
+  useEffect(() => {
+    // Fetching a new page is an external synchronization effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchRefunds();
+  }, [fetchRefunds]);
 
   const handleProcessRefund = async () => {
     const paymentId = Number(formData.paymentId);
@@ -104,6 +109,7 @@ export function RefundManagement() {
     if (!formData.reason) nextErrors.reason = t('finance.refundReasonRequired');
     setValidationErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
+    if (!window.confirm(t('finance.confirmRefund'))) return;
 
     try {
       await apiClient.post('/finance/refunds', { ...formData, paymentId });
@@ -116,8 +122,8 @@ export function RefundManagement() {
         reason: '',
         remarks: '',
       });
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('finance.failedToProcessRefund'));
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, t('finance.failedToProcessRefund')));
     }
   };
 
@@ -129,6 +135,23 @@ export function RefundManagement() {
       case 'pending': return 'warning';
       default: return 'default';
     }
+  };
+
+  const handleViewReceipt = (refund: Refund) => {
+    openFinanceReceipt({
+      title: t('finance.refundReceipt'),
+      reference: refund.receiptNumber || `#${refund.refundId}`,
+      fields: [
+        { label: t('finance.refundId'), value: refund.refundId },
+        { label: t('finance.paymentId'), value: refund.paymentId },
+        { label: t('finance.student'), value: refund.studentName },
+        { label: t('finance.amount'), value: `NPR ${refund.amount.toLocaleString()}` },
+        { label: t('finance.reason'), value: refund.reason },
+        { label: t('finance.requestedDate'), value: new Date(refund.requestedDate).toLocaleDateString() },
+        { label: t('finance.status'), value: refund.status },
+        ...(refund.processedDate ? [{ label: t('finance.processedDate'), value: new Date(refund.processedDate).toLocaleDateString() }] : []),
+      ],
+    });
   };
 
   return (
@@ -197,6 +220,8 @@ export function RefundManagement() {
                       <IconButton
                         size="small"
                         title={t('finance.viewReceipt')}
+                        aria-label={t('finance.viewReceipt')}
+                        onClick={() => handleViewReceipt(refund)}
                       >
                         <ReceiptIcon fontSize="small" />
                       </IconButton>

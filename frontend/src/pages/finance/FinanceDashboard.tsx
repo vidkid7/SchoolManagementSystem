@@ -3,8 +3,7 @@
  * Overview of financial statistics and quick actions
  */
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import { useTranslation } from 'react-i18next';
 import {
@@ -15,12 +14,13 @@ import {
   Card,
   CardContent,
   Button,
-  IconButton,
+  Alert,
   Divider,
   List,
   ListItem,
   ListItemText,
   Chip,
+  CircularProgress,
   useTheme,
 } from '@mui/material';
 import {
@@ -45,7 +45,7 @@ interface FinanceStats {
 }
 
 interface RecentTransaction {
-  id: number;
+  id: number | string;
   type: 'payment' | 'invoice' | 'refund';
   studentName: string;
   amount: number;
@@ -58,8 +58,8 @@ export function FinanceDashboard() {
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const navigate = useSlugNavigate();
-  const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [stats, setStats] = useState<FinanceStats>({
     totalRevenue: 0,
     pendingAmount: 0,
@@ -71,36 +71,44 @@ export function FinanceDashboard() {
   });
   const [recentTransactions, setRecentTransactions] = useState<RecentTransaction[]>([]);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
-      const [statsRes, transactionsRes] = await Promise.all([
-        apiClient.get('/finance/statistics').catch(() => ({ data: { data: null } })),
-        apiClient.get('/finance/recent-transactions?limit=5').catch(() => ({ data: { data: [] } })),
+      setError('');
+      const today = new Date();
+      const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      let requestFailed = false;
+      const fallback = <T,>(value: T) => () => { requestFailed = true; return { data: { data: value } }; };
+      const [summaryRes, statsRes, todayRes, transactionsRes] = await Promise.all([
+        apiClient.get('/finance/summary').catch(fallback(null)),
+        apiClient.get('/finance/statistics').catch(fallback(null)),
+        apiClient.get(`/finance/reports/collection?startDate=${todayString}&endDate=${todayString}`).catch(fallback(null)),
+        apiClient.get('/finance/recent-transactions?limit=5').catch(fallback([])),
       ]);
 
-if (statsRes.data?.data) {
-        setStats({
-          totalRevenue: statsRes.data.data.totalRevenue || 0,
-          pendingAmount: statsRes.data.data.pendingAmount || 0,
-          collectedToday: statsRes.data.data.collectedToday || 0,
-          overdueInvoices: statsRes.data.data.overdueInvoices || 0,
-          totalInvoices: statsRes.data.data.totalInvoices || 0,
-          paidInvoices: statsRes.data.data.paidInvoices || 0,
-          partialInvoices: statsRes.data.data.partialInvoices || 0,
-        });
-      }
-      setRecentTransactions(transactionsRes.data?.data || []);
-    } catch (error) {
-      console.error('Failed to fetch dashboard data:', error);
+      const summary = summaryRes.data?.data;
+      const apiStats = statsRes.data?.data;
+      setStats({
+        totalRevenue: Number(summary?.totalRevenue ?? apiStats?.totalCollection ?? 0),
+        pendingAmount: Number(apiStats?.pendingFees ?? summary?.totalOutstanding ?? 0),
+        collectedToday: Number(todayRes.data?.data?.totalAmount ?? 0),
+        overdueInvoices: Number(apiStats?.overdueInvoices ?? 0),
+        totalInvoices: Number(apiStats?.totalInvoices ?? summary?.totalInvoices ?? 0),
+        paidInvoices: Number(apiStats?.paidInvoices ?? summary?.paidInvoices ?? 0),
+        partialInvoices: Number(apiStats?.partialInvoices ?? 0),
+      });
+      setRecentTransactions(Array.isArray(transactionsRes.data?.data) ? transactionsRes.data.data : []);
+      if (requestFailed) setError('Some finance dashboard data could not be loaded');
+    } catch {
+      setError('Failed to load finance dashboard data');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchDashboardData);
+  }, [fetchDashboardData]);
 
   const statCards = [
     {
@@ -136,6 +144,10 @@ if (statsRes.data?.data) {
       action: () => navigate(`/finance/invoices?status=overdue`),
     },
   ];
+
+  if (loading) {
+    return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}><CircularProgress /></Box>;
+  }
 
   return (
     <Box sx={{ width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
@@ -176,10 +188,15 @@ if (statsRes.data?.data) {
         </Box>
       </Paper>
 
+      {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>{error}</Alert>}
+
       <Grid container spacing={3}>
         {statCards.map((card, index) => (
           <Grid item xs={12} sm={6} md={3} key={index}>
             <Card
+              component="button"
+              type="button"
+              aria-label={`${card.title}: ${card.value}`}
               sx={{
                 ...S.GLASS,
                 cursor: 'pointer',
@@ -241,14 +258,14 @@ if (statsRes.data?.data) {
                         <Chip
                           label={transaction.status}
                           size="small"
-                          color={transaction.status === 'paid' ? 'success' : 'warning'}
+                          color={['paid', 'completed'].includes(transaction.status.toLowerCase()) ? 'success' : 'warning'}
                         />
                       </Box>
                     }
                   >
                     <ListItemText
                       primary={transaction.studentName}
-                      secondary={`${transaction.type} • ${new Date(transaction.date).toLocaleDateString()}`}
+                      secondary={`${transaction.type} • ${transaction.date && !Number.isNaN(new Date(transaction.date).getTime()) ? new Date(transaction.date).toLocaleDateString() : '—'}`}
                     />
                   </ListItem>
                 ))}

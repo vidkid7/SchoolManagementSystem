@@ -100,10 +100,7 @@ async function checkDatabase() {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🎉 Database is properly set up!');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('\n📝 Default Login Credentials:');
-    console.log('   Username: admin');
-    console.log('   Password: Admin@123');
-    console.log('\n⚠️  Change the password after first login!');
+    console.log('\nNo default login credentials are assumed or displayed.');
     
     process.exit(0);
 

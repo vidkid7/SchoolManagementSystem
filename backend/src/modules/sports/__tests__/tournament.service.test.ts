@@ -7,9 +7,9 @@
  */
 
 import tournamentService from '../tournament.service';
-import Sport from '@models/Sport.model';
-import Team from '@models/Team.model';
-import Tournament from '@models/Tournament.model';
+import Sport, { initSport } from '@models/Sport.model';
+import Team, { initTeam } from '@models/Team.model';
+import Tournament, { initTournament } from '@models/Tournament.model';
 import { sequelize } from '@config/database';
 
 describe('Tournament Service', () => {
@@ -18,7 +18,14 @@ describe('Tournament Service', () => {
   let testTeam2: Team;
 
   beforeAll(async () => {
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('Tournament service tests require TEST_DB_DIALECT=sqlite');
+    }
+    initSport(sequelize);
+    initTeam(sequelize);
+    initTournament(sequelize);
     await sequelize.sync({ force: true });
+    await sequelize.query('PRAGMA foreign_keys = OFF');
 
     // Create test sport
     testSport = await Sport.create({

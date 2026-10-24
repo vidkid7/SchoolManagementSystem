@@ -95,7 +95,7 @@ export async function convertBSToAD(
     if (!isValid) {
       throw new Error(
         `Invalid BS date: ${yearBS}-${monthBS}-${dayBS}. ` +
-        `Year must be 2000-2100, month must be 1-12, and day must be valid for the month.`
+        'Year must be 2000-2100, month must be 1-12, and day must be valid for the month.'
       );
     }
 
@@ -147,7 +147,7 @@ export async function convertBSToAD(
 
     // Calculate AD date by adding days to epoch
     const adDate = new Date(AD_EPOCH_DATE);
-    adDate.setDate(adDate.getDate() + totalDays);
+    adDate.setUTCDate(adDate.getUTCDate() + totalDays);
 
     return adDate;
   } catch (error) {
@@ -447,9 +447,9 @@ export function formatBSDateCustom(
  * 
  * @returns Current date in BS calendar
  */
-export async function getCurrentBSDate(): Promise<BSDate> {
+export function getCurrentBSDate(): Promise<BSDate> {
   const today = new Date();
-  return await convertADToBS(today);
+  return convertADToBS(today);
 }
 
 /**

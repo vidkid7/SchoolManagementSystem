@@ -15,83 +15,43 @@
  */
 
 import * as fc from 'fast-check';
-import { Sequelize, QueryInterface, Options } from 'sequelize';
-import dotenv from 'dotenv';
-import path from 'path';
-
-// Load environment variables
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+import { QueryInterface } from 'sequelize';
+import sequelize from '@config/database';
+import { env } from '@config/env';
+import Student from '@models/Student.model';
+import studentIdService from '@modules/student/studentId.service';
 
 describe('Property 11: Student ID Uniqueness', () => {
-  let sequelize: Sequelize;
   let queryInterface: QueryInterface;
-  const schoolPrefix = process.env.DEFAULT_SCHOOL_CODE || 'SCH001';
+  const schoolPrefix = env.DEFAULT_SCHOOL_CODE;
 
   beforeAll(async () => {
-    // Create test database connection
-    const dbConfig: Options = {
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '3306'),
-      database: process.env.DB_NAME || 'school_management_system',
-      username: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || '',
-      dialect: 'mysql',
-      logging: false,
-      pool: {
-        min: 1,
-        max: 5,
-        acquire: 30000,
-        idle: 10000
-      }
-    };
-
-    sequelize = new Sequelize(dbConfig);
-    
-    // Ensure database connection is established
-    await sequelize.authenticate();
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('Student ID property tests require TEST_DB_DIALECT=sqlite');
+    }
+    await sequelize.sync({ force: true });
     queryInterface = sequelize.getQueryInterface();
   });
 
   afterAll(async () => {
-    // Clean up and close connection
     await sequelize.close();
   });
 
   beforeEach(async () => {
-    // Clean up test data before each test
-    await queryInterface.bulkDelete('students', {}, {});
+    await Student.destroy({ where: {}, force: true });
+    await studentIdService.resetSequencesForTesting();
   });
+
+  async function resetGenerationState(): Promise<void> {
+    await Student.destroy({ where: {}, force: true });
+    await studentIdService.resetSequencesForTesting();
+  }
 
   /**
    * Helper function to generate student ID
    */
   async function generateStudentId(admissionDate: Date): Promise<string> {
-    const admissionYear = admissionDate.getFullYear();
-
-    // Find the highest sequential number for this year
-    const lastStudents = await sequelize.query(
-      'SELECT student_code FROM students WHERE YEAR(admission_date) = ? ORDER BY student_code DESC LIMIT 1',
-      { replacements: [admissionYear], type: 'SELECT' }
-    );
-
-    let sequentialNumber = 1;
-
-    if (lastStudents.length > 0) {
-      const lastStudentCode = (lastStudents[0] as any).student_code;
-      const parts = lastStudentCode.split('-');
-      if (parts.length === 3) {
-        const lastSeqNum = parseInt(parts[2], 10);
-        if (!isNaN(lastSeqNum)) {
-          sequentialNumber = lastSeqNum + 1;
-        }
-      }
-    }
-
-    // Format sequential number with leading zeros (4 digits)
-    const formattedSeqNum = sequentialNumber.toString().padStart(4, '0');
-    
-    // Generate student ID
-    return `${schoolPrefix}-${admissionYear}-${formattedSeqNum}`;
+    return studentIdService.generateStudentId(admissionDate);
   }
 
   /**
@@ -113,6 +73,7 @@ describe('Property 11: Student ID Uniqueness', () => {
           { minLength: 2, maxLength: 20 }
         ),
         async (students) => {
+          await resetGenerationState();
           const generatedIds: string[] = [];
 
           // Generate student IDs sequentially
@@ -170,14 +131,15 @@ describe('Property 11: Student ID Uniqueness', () => {
           concurrentCount: fc.integer({ min: 5, max: 15 })
         }),
         async ({ admissionYear, concurrentCount }) => {
+          await resetGenerationState();
           const admissionDate = new Date(`${admissionYear}-01-15`);
 
-          // Generate IDs sequentially (simulating what would happen with proper transaction locking)
-          const generatedIds: string[] = [];
-          for (let i = 0; i < concurrentCount; i++) {
-            const studentId = await generateStudentId(admissionDate);
-            generatedIds.push(studentId);
+          // Exercise actual concurrent calls through the production service.
+          const generatedIds = await Promise.all(
+            Array.from({ length: concurrentCount }, () => generateStudentId(admissionDate))
+          );
 
+          for (const [i, studentId] of generatedIds.entries()) {
             // Persist each ID immediately to simulate transaction commit
             await queryInterface.bulkInsert('students', [{
               student_code: studentId,
@@ -227,6 +189,7 @@ describe('Property 11: Student ID Uniqueness', () => {
           studentCount: fc.integer({ min: 3, max: 10 })
         }),
         async ({ admissionYear, studentCount }) => {
+          await resetGenerationState();
           const admissionDate = new Date(`${admissionYear}-01-15`);
           const generatedIds: string[] = [];
 
@@ -285,7 +248,7 @@ describe('Property 11: Student ID Uniqueness', () => {
    */
   async function getNextSequentialNumber(admissionYear: number): Promise<number> {
     const results = await sequelize.query(
-      'SELECT student_code FROM students WHERE YEAR(admission_date) = ? ORDER BY student_code DESC LIMIT 1',
+      "SELECT student_code FROM students WHERE strftime('%Y', admission_date) = ? ORDER BY student_code DESC LIMIT 1",
       { replacements: [admissionYear], type: 'SELECT' }
     );
 
@@ -321,6 +284,7 @@ describe('Property 11: Student ID Uniqueness', () => {
           count2: fc.integer({ min: 2, max: 5 })
         }),
         async ({ year1, year2, count1, count2 }) => {
+          await resetGenerationState();
           const admissionDate1 = new Date(`${year1}-01-15`);
           const admissionDate2 = new Date(`${year2}-01-15`);
 
@@ -424,6 +388,7 @@ describe('Property 11: Student ID Uniqueness', () => {
       fc.asyncProperty(
         fc.date({ min: new Date('2020-01-01'), max: new Date('2030-12-31') }),
         async (admissionDate) => {
+          await resetGenerationState();
           const studentId = await generateStudentId(admissionDate);
 
           // Verify format
@@ -462,6 +427,7 @@ describe('Property 11: Student ID Uniqueness', () => {
           { minLength: 3, maxLength: 8 }
         ),
         async (students) => {
+          await resetGenerationState();
           // Generate and create students
           for (const student of students) {
             const studentId = await generateStudentId(student.admissionDate);

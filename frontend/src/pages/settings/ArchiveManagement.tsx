@@ -12,7 +12,7 @@
  * - Clean up old archives
  */
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Box,
   Paper,
@@ -43,13 +43,11 @@ import {
   List,
   ListItem,
   ListItemText,
-  TextField,
   useTheme,
 } from '@mui/material';
 import {
   Archive as ArchiveIcon,
   Restore as RestoreIcon,
-  Delete as DeleteIcon,
   Visibility as ViewIcon,
   Refresh as RefreshIcon,
   CleaningServices as CleanIcon,
@@ -60,7 +58,7 @@ import {
   Undo as UndoIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { C, useAdminStyles } from '../../theme/designTokens';
 import { useTranslation } from 'react-i18next';
 
 interface Archive {
@@ -85,6 +83,12 @@ interface AcademicYear {
   isCurrent: boolean;
 }
 
+const getArchiveErrorMessage = (error: unknown, fallback: string): string => {
+  if (typeof error !== 'object' || error === null || !('response' in error)) return fallback;
+  const response = (error as { response?: { data?: { error?: { message?: unknown } } } }).response;
+  return typeof response?.data?.error?.message === 'string' ? response.data.error.message : fallback;
+};
+
 export const ArchiveManagement = () => {
   const theme = useTheme();
   const S = useAdminStyles(theme);
@@ -104,34 +108,36 @@ export const ArchiveManagement = () => {
   const [selectedYearId, setSelectedYearId] = useState<number | ''>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
 
-  useEffect(() => {
-    fetchArchives();
-    fetchAcademicYears();
-  }, [statusFilter]);
-
-  const fetchArchives = async () => {
+  const fetchArchives = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
       const params = statusFilter ? { status: statusFilter } : {};
       const response = await apiClient.get('/api/v1/archive', { params });
       setArchives(response.data.data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch archives:', err);
-      setError(err.response?.data?.error?.message || 'Failed to load archives');
+      setError(getArchiveErrorMessage(err, 'Failed to load archives'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter]);
 
-  const fetchAcademicYears = async () => {
+  const fetchAcademicYears = useCallback(async () => {
     try {
       const response = await apiClient.get('/api/v1/academic/years');
       setAcademicYears(response.data.data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch academic years:', err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Each filter change starts a request and updates the loading state until it completes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchArchives();
+    fetchAcademicYears();
+  }, [fetchArchives, fetchAcademicYears]);
 
   const handleArchiveYear = async () => {
     if (!selectedYearId) return;
@@ -149,16 +155,16 @@ export const ArchiveManagement = () => {
       setArchiving(true);
       setError('');
       setSuccess('');
-      const response = await apiClient.post('/api/v1/archive/academic-year', {
+      await apiClient.post('/api/v1/archive/academic-year', {
         academicYearId: selectedYearId,
       });
       setSuccess(`Academic year "${year.yearName}" archived successfully`);
       setArchiveDialogOpen(false);
       setSelectedYearId('');
       fetchArchives();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to archive year:', err);
-      setError(err.response?.data?.error?.message || 'Failed to archive academic year');
+      setError(getArchiveErrorMessage(err, 'Failed to archive academic year'));
     } finally {
       setArchiving(false);
     }
@@ -177,14 +183,14 @@ export const ArchiveManagement = () => {
       setRestoring(true);
       setError('');
       setSuccess('');
-      const response = await apiClient.post(`/api/v1/archive/${selectedArchive.archiveId}/restore`);
+      await apiClient.post(`/api/v1/archive/${selectedArchive.archiveId}/restore`);
       setSuccess(`Archive for "${selectedArchive.academicYearName}" restored successfully`);
       setRestoreDialogOpen(false);
       setSelectedArchive(null);
       fetchArchives();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to restore archive:', err);
-      setError(err.response?.data?.error?.message || 'Failed to restore archive');
+      setError(getArchiveErrorMessage(err, 'Failed to restore archive'));
     } finally {
       setRestoring(false);
     }
@@ -204,9 +210,9 @@ export const ArchiveManagement = () => {
       const response = await apiClient.post('/api/v1/archive/cleanup');
       setSuccess(`Cleaned up ${response.data.data.deletedCount} expired archives`);
       fetchArchives();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to cleanup archives:', err);
-      setError(err.response?.data?.error?.message || 'Failed to cleanup archives');
+      setError(getArchiveErrorMessage(err, 'Failed to cleanup archives'));
     } finally {
       setCleaning(false);
     }
@@ -217,9 +223,9 @@ export const ArchiveManagement = () => {
       const response = await apiClient.get(`/api/v1/archive/${archive.archiveId}`);
       setSelectedArchive(response.data.data);
       setDetailsDialogOpen(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch archive details:', err);
-      setError(err.response?.data?.error?.message || 'Failed to load archive details');
+      setError(getArchiveErrorMessage(err, 'Failed to load archive details'));
     }
   };
 
@@ -238,7 +244,7 @@ export const ArchiveManagement = () => {
     }
   };
 
-  const getStatusColor = (status: string): any => {
+  const getStatusColor = (status: string): 'success' | 'error' | 'warning' | 'info' | 'default' => {
     switch (status) {
       case 'completed':
         return 'success';
@@ -374,8 +380,9 @@ export const ArchiveManagement = () => {
           </Typography>
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
             <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>{t('common.status')}</InputLabel>
+              <InputLabel id="archive-status-label">{t('common.status')}</InputLabel>
               <Select
+                labelId="archive-status-label"
                 value={statusFilter}
                 label={t('common.status')}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -492,8 +499,9 @@ export const ArchiveManagement = () => {
               Archiving will move all data for the selected academic year to long-term storage. This includes students, attendance, grades, and all related records.
             </Alert>
             <FormControl fullWidth>
-              <InputLabel>{t('archive.selectAcademicYear')}</InputLabel>
+              <InputLabel id="archive-year-label">{t('archive.selectAcademicYear')}</InputLabel>
               <Select
+                labelId="archive-year-label"
                 value={selectedYearId}
                 label={t('archive.selectAcademicYear')}
                 onChange={(e) => setSelectedYearId(e.target.value as number)}

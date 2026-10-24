@@ -2,6 +2,10 @@ import fs from 'fs';
 import pdfService from '../pdf.service';
 import Student from '@models/Student.model';
 import { Term } from '@models/AcademicYear.model';
+import Exam from '@models/Exam.model';
+import Grade from '@models/Grade.model';
+import AttendanceRecord from '@models/AttendanceRecord.model';
+import Certificate from '@models/Certificate.model';
 
 jest.mock('@models/Student.model', () => ({
   __esModule: true,
@@ -17,6 +21,11 @@ jest.mock('@models/AcademicYear.model', () => ({
   }
 }));
 
+jest.mock('@models/Exam.model', () => ({ __esModule: true, default: { findAll: jest.fn() } }));
+jest.mock('@models/Grade.model', () => ({ __esModule: true, default: { findAll: jest.fn() } }));
+jest.mock('@models/AttendanceRecord.model', () => ({ __esModule: true, default: { findAll: jest.fn() } }));
+jest.mock('@models/Certificate.model', () => ({ __esModule: true, default: { findOne: jest.fn() } }));
+
 describe('PDFService', () => {
   const service = pdfService as unknown as {
     generateSimpleDocument: jest.Mock;
@@ -25,6 +34,10 @@ describe('PDFService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     service.generateSimpleDocument = jest.fn().mockResolvedValue(undefined);
+    (Exam.findAll as jest.Mock).mockResolvedValue([]);
+    (Grade.findAll as jest.Mock).mockResolvedValue([]);
+    (AttendanceRecord.findAll as jest.Mock).mockResolvedValue([]);
+    (Certificate.findOne as jest.Mock).mockResolvedValue(null);
   });
 
   describe('generateReportCard', () => {

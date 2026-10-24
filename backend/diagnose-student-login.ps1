@@ -5,6 +5,7 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 $allGood = $true
+if (-not $env:QA_USERNAME -or -not $env:QA_PASSWORD) { throw "Set QA_USERNAME and QA_PASSWORD for the local QA account." }
 
 # 1. Check if backend is running
 Write-Host "[1/6] Checking if backend is running..." -ForegroundColor Yellow
@@ -100,8 +101,8 @@ Write-Host ""
 # 5. Test login API
 Write-Host "[5/6] Testing login API..." -ForegroundColor Yellow
 $body = @{
-    username = "student1"
-    password = "Student@123"
+    username = $env:QA_USERNAME
+    password = $env:QA_PASSWORD
     rememberMe = $false
 } | ConvertTo-Json
 
@@ -145,7 +146,7 @@ if ($allGood) {
     Write-Host ""
     Write-Host "You can now login with:" -ForegroundColor Cyan
     Write-Host "  Username: student1" -ForegroundColor White
-    Write-Host "  Password: Student@123" -ForegroundColor White
+    Write-Host "  Use the configured QA account password." -ForegroundColor White
 } else {
     Write-Host "  ✗ SOME CHECKS FAILED" -ForegroundColor Red
     Write-Host ""

@@ -1,24 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box, Grid, Card, CardContent, Typography, Button, Divider, List, ListItem,
+  Box, Grid, Typography, Button, Divider, List, ListItem,
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
-  TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog,
-  DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select,
-  FormControl, InputLabel, IconButton, Tooltip, useTheme,
+  TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, useTheme,
 } from '@mui/material';
 import {
   Business as DeptIcon,
   People as PeopleIcon,
   Message as MessageIcon,
   CalendarMonth as CalendarIcon,
-  Description as DocIcon,
   Notifications as AnnouncementIcon,
   Person as PersonIcon,
   TrendingUp as PerformanceIcon,
   MenuBook as LessonIcon,
   Assessment as ReportIcon,
   School as ClassIcon,
-  PendingActions as PendingIcon,
   SupervisorAccount as TeacherIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
@@ -29,27 +25,33 @@ import { C, useAdminStyles } from '../../theme/designTokens';
 import { useTranslation } from 'react-i18next';
 
 interface DashboardData {
-  departmentTeachers?: number;
   totalClasses?: number;
-  avgPerformance?: number;
-  pendingReviews?: number;
-  teachers?: Array<{ id: number; name: string; firstName?: string; lastName?: string; subject?: string; classes?: number; status?: string }>;
-  department?: { name: string; head?: string };
 }
 
 interface TeacherStats {
   totalTeachers?: number;
   activeTeachers?: number;
   onLeave?: number;
+  totalClasses?: number;
+  avgAttendance?: number;
+}
+
+interface DepartmentTeacher {
+  staffId: number;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  department: string;
+  position: string;
+  classCount?: number;
+  attendanceRate?: number;
+  status: string;
 }
 
 interface ClassPerformance {
-  className?: string;
-  section?: string;
-  subject?: string;
+  class?: string;
   averageScore?: number;
-  teacher?: string;
-  studentCount?: number;
 }
 
 interface ProfileData {
@@ -73,6 +75,7 @@ const DepartmentHeadPortal: React.FC = () => {
   const [tab, setTab] = useState(0);
   const [dashboard, setDashboard] = useState<DashboardData>({});
   const [teacherStats, setTeacherStats] = useState<TeacherStats>({});
+  const [teachers, setTeachers] = useState<DepartmentTeacher[]>([]);
   const [performance, setPerformance] = useState<ClassPerformance[]>([]);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,17 +89,18 @@ const DepartmentHeadPortal: React.FC = () => {
   const loadData = useCallback(async () => {
     if (!accessToken) return;
     try {
-      const [dashRes, statsRes, perfRes] = await Promise.all([
-        apiClient.get('/api/v1/teachers/dashboard', authHdr(accessToken)).catch(() => ({ data: { data: {} } })),
-        apiClient.get('/api/v1/teachers/stats', authHdr(accessToken)).catch(() => ({ data: { data: {} } })),
-        apiClient.get('/api/v1/teachers/classes/performance', authHdr(accessToken)).catch(() => ({ data: { data: [] } })),
+      const [teachersRes, statsRes, performanceRes] = await Promise.all([
+        apiClient.get('/api/v1/department/teachers', authHdr(accessToken)),
+        apiClient.get('/api/v1/department/stats', authHdr(accessToken)),
+        apiClient.get('/api/v1/department/performance', authHdr(accessToken)),
       ]);
-      const d = dashRes.data?.data;
-      setDashboard(d || {});
-      const s = statsRes.data?.data;
-      setTeacherStats(s || {});
-      const perf = perfRes.data?.data;
-      setPerformance(Array.isArray(perf) ? perf : perf?.classes ?? []);
+      const teacherData = teachersRes.data?.data;
+      const stats = teacherData?.stats || {};
+      const departmentStats = statsRes.data?.data || {};
+      setTeachers(Array.isArray(teacherData?.teachers) ? teacherData.teachers : []);
+      setTeacherStats({ ...stats, totalClasses: departmentStats.totalClasses });
+      setDashboard({ totalClasses: departmentStats.totalClasses });
+      setPerformance(Array.isArray(performanceRes.data?.data) ? performanceRes.data.data : []);
       // Try to get profile
       try {
         const profileRes = await apiClient.get('/api/v1/auth/me', authHdr(accessToken));
@@ -109,15 +113,17 @@ const DepartmentHeadPortal: React.FC = () => {
     }
   }, [accessToken, t]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  // The callback updates view state only after its API requests settle.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void loadData(); }, [loadData]);
 
   if (loading) return <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh"><CircularProgress /></Box>;
 
-  const deptTeachers = dashboard.departmentTeachers ?? teacherStats.totalTeachers ?? dashboard.teachers?.length ?? 0;
-  const totalClasses = dashboard.totalClasses ?? 0;
-  const avgPerf = dashboard.avgPerformance ?? 0;
-  const pendingReviews = dashboard.pendingReviews ?? 0;
-  const teachers = dashboard.teachers ?? [];
+  const totalTeachers = teacherStats.totalTeachers ?? 0;
+  const totalClasses = teacherStats.totalClasses ?? dashboard.totalClasses ?? 0;
+  const activeTeachers = teacherStats.activeTeachers ?? 0;
+  const onLeave = teacherStats.onLeave ?? 0;
+  const avgAttendance = teacherStats.avgAttendance ?? 0;
 
   return (
     <Box sx={{ p: 3, mt: { xs: 7, sm: 8 } }}>
@@ -127,7 +133,7 @@ const DepartmentHeadPortal: React.FC = () => {
           <Box sx={{ flex: 1 }}>
             <Typography variant="h5" fontWeight={700}>{t('portal.departmentHeadPortal')}</Typography>
             <Typography variant="body2" color="text.secondary">
-              {t('portal.welcome')}, {user?.firstName || user?.username} — {dashboard.department?.name || t('portal.departmentHead')}
+              {t('portal.welcome')}, {user?.firstName || user?.username} — {t('portal.departmentHead')}
             </Typography>
           </Box>
         </Box>
@@ -138,10 +144,10 @@ const DepartmentHeadPortal: React.FC = () => {
       {/* Stats */}
       <Grid container spacing={2} mb={3}>
         {[
-          { label: t('portal.totalTeachers'), value: deptTeachers, icon: <TeacherIcon />, color: C.purple },
+          { label: t('portal.totalTeachers'), value: totalTeachers, icon: <TeacherIcon />, color: C.purple },
           { label: t('portal.totalClasses'), value: totalClasses, icon: <ClassIcon />, color: C.primary },
-          { label: t('portal.avgPerformance'), value: `${avgPerf}%`, icon: <PerformanceIcon />, color: C.success },
-          { label: t('portal.pendingReviews'), value: pendingReviews, icon: <PendingIcon />, color: C.warning },
+          { label: t('portal.active'), value: activeTeachers, icon: <PeopleIcon />, color: C.info },
+          { label: t('portal.averageAttendance'), value: `${avgAttendance}%`, icon: <PerformanceIcon />, color: C.success },
         ].map(stat => (
           <Grid item xs={6} sm={3} key={stat.label}>
             <Box sx={S.STAT_CARD(stat.color)}>
@@ -173,9 +179,10 @@ const DepartmentHeadPortal: React.FC = () => {
             <Box sx={{ ...S.GLASS, p: 3 }}>
                 <Typography variant="subtitle1" fontWeight={600} gutterBottom>{t('portal.staffOverview')}</Typography>
                 <Divider sx={{ mb: 2 }} />
-                <Typography variant="body2"><strong>{t('portal.totalTeachers')}:</strong> {teacherStats.totalTeachers ?? deptTeachers}</Typography>
-                <Typography variant="body2" mt={1}><strong>{t('portal.active')}:</strong> {teacherStats.activeTeachers ?? deptTeachers}</Typography>
-                <Typography variant="body2" mt={1}><strong>{t('portal.onLeave')}:</strong> {teacherStats.onLeave ?? 0}</Typography>
+                <Typography variant="body2"><strong>{t('portal.totalTeachers')}:</strong> {totalTeachers}</Typography>
+                <Typography variant="body2" mt={1}><strong>{t('portal.active')}:</strong> {activeTeachers}</Typography>
+                <Typography variant="body2" mt={1}><strong>{t('portal.onLeave')}:</strong> {onLeave}</Typography>
+                <Typography variant="body2" mt={1}><strong>{t('portal.averageAttendance')}:</strong> {avgAttendance.toFixed(1)}%</Typography>
             </Box>
           </Grid>
           <Grid item xs={12} md={6}>
@@ -191,35 +198,6 @@ const DepartmentHeadPortal: React.FC = () => {
           </Grid>
         </Grid>
 
-        {teachers.length > 0 && (
-          <>
-            <Typography variant="h6" fontWeight={600} mb={2}>{t('portal.departmentTeachers')}</Typography>            <TableContainer component={Paper} sx={S.GLASS}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow sx={{ bgcolor: S.TH_BG }}>
-                    <TableCell>{t('common.name')}</TableCell>
-                    <TableCell>{t('common.subject')}</TableCell>
-                    <TableCell>{t('portal.classes')}</TableCell>
-                    <TableCell>{t('common.status')}</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {teachers.map(t => (
-                    <TableRow key={t.id} hover>
-                      <TableCell><strong>{t.name || `${t.firstName || ''} ${t.lastName || ''}`}</strong></TableCell>
-                      <TableCell>{t.subject || '—'}</TableCell>
-                      <TableCell>{t.classes ?? '—'}</TableCell>
-                      <TableCell>
-                        <Chip label={t.status || 'active'} size="small"
-                          color={t.status === 'active' || !t.status ? 'success' : 'default'} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </>
-        )}
       </TabPanel>
 
       {/* Teachers */}
@@ -232,21 +210,20 @@ const DepartmentHeadPortal: React.FC = () => {
                 <TableCell>{t('common.name')}</TableCell>
                 <TableCell>{t('common.subject')}</TableCell>
                 <TableCell>{t('portal.classes')}</TableCell>
+                <TableCell>{t('portal.averageAttendance')}</TableCell>
                 <TableCell>{t('common.status')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {teachers.length === 0 ? (
-                <TableRow><TableCell colSpan={4} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('portal.noTeacherData')}</Typography></TableCell></TableRow>
-              ) : teachers.map(t => (
-                <TableRow key={t.id} hover>
-                  <TableCell><strong>{t.name || `${t.firstName || ''} ${t.lastName || ''}`}</strong></TableCell>
-                  <TableCell>{t.subject || '—'}</TableCell>
-                  <TableCell>{t.classes ?? '—'}</TableCell>
-                  <TableCell>
-                    <Chip label={t.status || 'active'} size="small"
-                      color={t.status === 'active' || !t.status ? 'success' : 'default'} />
-                  </TableCell>
+                <TableRow><TableCell colSpan={5} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('portal.noTeacherData')}</Typography></TableCell></TableRow>
+              ) : teachers.map((teacher) => (
+                <TableRow key={teacher.staffId} hover>
+                  <TableCell><strong>{teacher.firstName} {teacher.lastName}</strong></TableCell>
+                  <TableCell>{teacher.position || '—'}</TableCell>
+                  <TableCell>{teacher.classCount ?? '—'}</TableCell>
+                  <TableCell>{teacher.attendanceRate == null ? '—' : `${Number(teacher.attendanceRate).toFixed(1)}%`}</TableCell>
+                  <TableCell><Chip label={teacher.status || 'active'} size="small" color={teacher.status === 'active' ? 'success' : 'default'} /></TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -262,27 +239,19 @@ const DepartmentHeadPortal: React.FC = () => {
             <TableHead>
               <TableRow sx={{ bgcolor: S.TH_BG }}>
                 <TableCell>{t('common.class')}</TableCell>
-                <TableCell>{t('common.section')}</TableCell>
-                <TableCell>{t('common.subject')}</TableCell>
                 <TableCell>{t('portal.averageScore')}</TableCell>
-                <TableCell>{t('portal.teacher')}</TableCell>
-                <TableCell>{t('portal.students')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {performance.length === 0 ? (
-                <TableRow><TableCell colSpan={6} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('portal.noPerformanceData')}</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={2} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>{t('portal.noPerformanceData')}</Typography></TableCell></TableRow>
               ) : performance.map((p, i) => (
                 <TableRow key={i} hover>
-                  <TableCell>{p.className || '—'}</TableCell>
-                  <TableCell>{p.section || '—'}</TableCell>
-                  <TableCell>{p.subject || '—'}</TableCell>
+                  <TableCell>{p.class || '—'}</TableCell>
                   <TableCell>
-                    <Chip label={`${p.averageScore ?? 0}%`} size="small"
-                      color={Number(p.averageScore) >= 70 ? 'success' : Number(p.averageScore) >= 50 ? 'warning' : 'error'} />
+                    <Chip label={p.averageScore == null ? '—' : `${Number(p.averageScore).toFixed(1)}%`} size="small"
+                      color={Number(p.averageScore) >= 70 ? 'success' : 'warning'} />
                   </TableCell>
-                  <TableCell>{p.teacher || '—'}</TableCell>
-                  <TableCell>{p.studentCount ?? '—'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -4,7 +4,7 @@
  * Displays comprehensive staff information
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
@@ -21,7 +21,6 @@ import {
   alpha,
   useTheme,
   IconButton,
-  List,
   ListItem,
   ListItemIcon,
   ListItemText,
@@ -85,9 +84,9 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; labelKey: strin
   on_leave: { color: C.warning, bg: C.warning, labelKey: 'staff.onLeave' },
 };
 
-const InfoCard = ({ icon, title, children, color = 'primary' }: { icon: React.ReactNode; title: string; children: React.ReactNode; color?: string }) => {
+const InfoCard = ({ icon, title, children, color = 'primary' }: { icon: React.ReactNode; title: string; children: React.ReactNode; color?: 'primary' | 'secondary' | 'warning' | 'success' | 'error' | 'info' }) => {
   const theme = useTheme();
-  const paletteColor = (theme.palette as any)[color]?.main || theme.palette.primary.main;
+  const paletteColor = theme.palette[color].main;
   return (
     <Paper 
       elevation={0}
@@ -123,7 +122,6 @@ const InfoCard = ({ icon, title, children, color = 'primary' }: { icon: React.Re
 };
 
 const InfoRow = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | undefined }) => {
-  const theme = useTheme();
   return (
     <ListItem sx={{ px: 0, py: 1 }}>
       <ListItemIcon sx={{ minWidth: 40 }}>
@@ -166,8 +164,8 @@ const toTranslationKey = (value: string | undefined): string => {
 };
 
 export const StaffDetail = () => {
-  const { t, i18n } = useTranslation();
-  const { id, municipalitySlug } = useParams<{ id: string; municipalitySlug: string }>();
+  const { t } = useTranslation();
+  const { id } = useParams<{ id: string; municipalitySlug: string }>();
   const navigate = useSlugNavigate();
   const theme = useTheme();
   const S = useAdminStyles(theme);
@@ -176,12 +174,9 @@ export const StaffDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [bottomTabValue, setBottomTabValue] = useState(0);
+  const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    fetchStaff();
-  }, [id]);
-
-  const fetchStaff = async () => {
+  const fetchStaff = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiClient.get(`/api/v1/staff/${id}`);
@@ -207,18 +202,26 @@ export const StaffDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, t]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetches external staff data and updates loading/result state.
+    fetchStaff();
+  }, [fetchStaff]);
 
   const handleDelete = async () => {
     if (!window.confirm(t('staff.confirmDeleteStaff'))) {
       return;
     }
     try {
+      setDeleting(true);
       await apiClient.delete(`/api/v1/staff/${id}`);
       navigate(`/staff`);
     } catch (err) {
       console.error('Failed to delete staff:', err);
       setError(t('staff.failedToDelete'));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -255,6 +258,7 @@ export const StaffDetail = () => {
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <IconButton 
+            aria-label={t('common.back')}
             onClick={() => navigate(`/staff`)} 
             sx={{ 
               bgcolor: alpha(theme.palette.primary.main, 0.1),
@@ -274,9 +278,10 @@ export const StaffDetail = () => {
             color="error"
             startIcon={<DeleteIcon />}
             onClick={handleDelete}
+            disabled={deleting}
             sx={{ ...S.BTN_OUTLINE,  borderRadius: 2 }}
           >
-            {t('common.delete')}
+            {deleting ? t('common.deleting') : t('common.delete')}
           </Button>
           <Button
             variant="contained"
@@ -568,10 +573,10 @@ export const StaffDetail = () => {
                   <AssignmentIcon sx={{ fontSize: 40, color: theme.palette.primary.main }} />
                 </Box>
                 <Typography variant="h5" sx={{ mb: 1.5, fontWeight: 700, color: 'text.primary' }}>
-                  Teacher Assignments
+                  {t('staff.form.teacherAssignments')}
                 </Typography>
                 <Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: 420, mx: 'auto', lineHeight: 1.7 }}>
-                  Manage class and subject assignments for this teacher. Track teaching responsibilities and schedules.
+                  {t('staff.form.manageTeacherAssignmentsDesc')}
                 </Typography>
                 <Button
                   variant="contained"
@@ -591,7 +596,7 @@ export const StaffDetail = () => {
                     transition: 'all 0.3s ease'
                   }}
                 >
-                  Manage Assignments
+                  {t('staff.manageAssignments')}
                 </Button>
               </Box>
             )}

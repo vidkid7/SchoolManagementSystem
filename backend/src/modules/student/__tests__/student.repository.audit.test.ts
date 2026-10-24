@@ -1,6 +1,8 @@
 import studentRepository from '../student.repository';
 import auditLogger from '@utils/auditLogger';
 import Student, { StudentStatus, Gender } from '@models/Student.model';
+import StudentTransferHistory from '@models/StudentTransferHistory.model';
+import sequelize from '@config/database';
 import { Request } from 'express';
 
 // Mock the audit logger
@@ -8,9 +10,11 @@ jest.mock('@utils/auditLogger');
 
 // Mock the Student model
 jest.mock('@models/Student.model');
+jest.mock('@models/StudentTransferHistory.model');
 
 describe('Student Repository - Audit Logging Integration', () => {
   const mockUserId = 123;
+  let mockTransaction: { commit: jest.Mock; rollback: jest.Mock };
   const mockReq = {
     ip: '192.168.1.1',
     get: jest.fn().mockReturnValue('Mozilla/5.0')
@@ -18,6 +22,12 @@ describe('Student Repository - Audit Logging Integration', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockTransaction = {
+      commit: jest.fn().mockResolvedValue(undefined),
+      rollback: jest.fn().mockResolvedValue(undefined),
+    };
+    jest.spyOn(sequelize, 'transaction').mockResolvedValue(mockTransaction as never);
+    (StudentTransferHistory.create as jest.Mock).mockResolvedValue({} as never);
   });
 
   describe('create', () => {
@@ -250,12 +260,26 @@ describe('Student Repository - Audit Logging Integration', () => {
         toJSON: jest.fn()
           .mockReturnValueOnce(oldData)
           .mockReturnValueOnce(newData),
-        save: jest.fn().mockResolvedValue(undefined)
+        update: jest.fn().mockImplementation((values) => {
+          Object.assign(mockStudent, values);
+          return Promise.resolve();
+        }),
+        get: jest.fn().mockReturnValue(undefined),
       };
 
       (Student.findByPk as jest.Mock) = jest.fn().mockResolvedValue(mockStudent);
 
-      await studentRepository.transferClass(1, 20, 8, mockUserId, mockReq);
+      await studentRepository.transferClass(1, 20, 8, mockUserId, mockReq, 'Moved to the science section');
+
+      expect(StudentTransferHistory.create).toHaveBeenCalledWith(expect.objectContaining({
+        studentId: 1,
+        fromClassId: 10,
+        toClassId: 20,
+        fromRollNumber: 5,
+        toRollNumber: 8,
+        reason: 'Moved to the science section',
+        transferredBy: mockUserId,
+      }), expect.objectContaining({ transaction: expect.any(Object) }));
 
       expect(auditLogger.logUpdate).toHaveBeenCalledWith(
         'student',
@@ -265,6 +289,29 @@ describe('Student Repository - Audit Logging Integration', () => {
         mockUserId,
         mockReq
       );
+    });
+
+    it('rolls back the class change if transfer history cannot be saved', async () => {
+      const mockStudent = {
+        studentId: 1,
+        currentClassId: 10,
+        rollNumber: 5,
+        toJSON: jest.fn().mockReturnValue({ studentId: 1, currentClassId: 10, rollNumber: 5 }),
+        update: jest.fn().mockResolvedValue(undefined),
+        get: jest.fn().mockReturnValue(undefined),
+      };
+      (Student.findByPk as jest.Mock).mockResolvedValue(mockStudent);
+      (StudentTransferHistory.create as jest.Mock).mockRejectedValue(new Error('history write failed'));
+
+      await expect(studentRepository.transferClass(1, 20, 8, mockUserId, mockReq, 'section change'))
+        .rejects.toThrow('history write failed');
+
+      expect(mockStudent.update).toHaveBeenCalledWith(
+        { currentClassId: 20, rollNumber: 8 },
+        { transaction: mockTransaction },
+      );
+      expect(mockTransaction.rollback).toHaveBeenCalledTimes(1);
+      expect(mockTransaction.commit).not.toHaveBeenCalled();
     });
   });
 

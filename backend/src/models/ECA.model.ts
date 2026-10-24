@@ -33,22 +33,22 @@ export class ECA
   extends Model<ECAAttributes, ECACreationAttributes>
   implements ECAAttributes
 {
-  public ecaId!: number;
-  public name!: string;
-  public nameNp?: string;
-  public category!: 'club' | 'cultural' | 'community_service' | 'leadership';
-  public subcategory?: string;
-  public description?: string;
-  public descriptionNp?: string;
-  public coordinatorId!: number;
-  public schedule?: string;
-  public capacity?: number;
-  public currentEnrollment!: number;
-  public academicYearId!: number;
-  public status!: 'active' | 'inactive' | 'completed';
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
-  public readonly deletedAt?: Date;
+  declare public ecaId: number;
+  declare public name: string;
+  declare public nameNp?: string;
+  declare public category: 'club' | 'cultural' | 'community_service' | 'leadership';
+  declare public subcategory?: string;
+  declare public description?: string;
+  declare public descriptionNp?: string;
+  declare public coordinatorId: number;
+  declare public schedule?: string;
+  declare public capacity?: number;
+  declare public currentEnrollment: number;
+  declare public academicYearId: number;
+  declare public status: 'active' | 'inactive' | 'completed';
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
+  declare public readonly deletedAt?: Date;
 
   public hasCapacity(): boolean {
     const capacity = Number(this.getDataValue('capacity') ?? 0);

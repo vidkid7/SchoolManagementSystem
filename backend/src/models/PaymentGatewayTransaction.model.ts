@@ -59,25 +59,25 @@ export interface PaymentGatewayTransactionCreationAttributes extends Optional<Pa
  */
 class PaymentGatewayTransaction extends Model<PaymentGatewayTransactionAttributes, PaymentGatewayTransactionCreationAttributes> 
   implements PaymentGatewayTransactionAttributes {
-  public transactionId!: number;
-  public transactionUuid!: string;
-  public gateway!: PaymentGateway;
-  public invoiceId!: number;
-  public studentId!: number;
-  public amount!: number;
-  public productCode!: string;
-  public status!: GatewayTransactionStatus;
-  public initiatedAt!: Date;
-  public completedAt?: Date;
-  public gatewayResponse?: any;
-  public signature?: string;
-  public verificationData?: any;
-  public failureReason?: string;
-  public paymentId?: number;
-  public expiresAt!: Date;
+  declare public transactionId: number;
+  declare public transactionUuid: string;
+  declare public gateway: PaymentGateway;
+  declare public invoiceId: number;
+  declare public studentId: number;
+  declare public amount: number;
+  declare public productCode: string;
+  declare public status: GatewayTransactionStatus;
+  declare public initiatedAt: Date;
+  declare public completedAt?: Date;
+  declare public gatewayResponse?: any;
+  declare public signature?: string;
+  declare public verificationData?: any;
+  declare public failureReason?: string;
+  declare public paymentId?: number;
+  declare public expiresAt: Date;
   
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   /**
    * Check if transaction is pending

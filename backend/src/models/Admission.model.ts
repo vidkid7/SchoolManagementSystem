@@ -24,6 +24,8 @@ export enum AdmissionStatus {
 export interface AdmissionAttributes {
   admissionId: number;
   temporaryId: string;
+  /** Tenant ownership is added by the tenant isolation model setup. */
+  schoolConfigId?: string;
   
   // Applicant Information
   firstNameEn: string;
@@ -108,7 +110,7 @@ export interface AdmissionAttributes {
 /**
  * Admission Creation Attributes
  */
-export interface AdmissionCreationAttributes extends Optional<AdmissionAttributes,
+export type AdmissionCreationAttributes = Optional<AdmissionAttributes,
   'admissionId' | 'middleNameEn' | 'firstNameNp' | 'middleNameNp' | 'lastNameNp' |
   'dateOfBirthBS' | 'dateOfBirthAD' | 'gender' | 'addressEn' | 'addressNp' |
   'phone' | 'email' | 'fatherName' | 'fatherPhone' | 'motherName' | 'motherPhone' |
@@ -118,7 +120,7 @@ export interface AdmissionCreationAttributes extends Optional<AdmissionAttribute
   'admissionTestMaxScore' | 'admissionTestRemarks' | 'interviewDate' | 'interviewerName' |
   'interviewFeedback' | 'interviewScore' | 'admissionDate' | 'admissionOfferLetterUrl' |
   'documentsNotes' | 'enrolledStudentId' | 'enrollmentDate' | 'rejectionReason' |
-  'rejectionDate' | 'processedBy' | 'academicYearId' | 'createdAt' | 'updatedAt'> {}
+  'rejectionDate' | 'processedBy' | 'academicYearId' | 'createdAt' | 'updatedAt' | 'schoolConfigId'>;
 
 /**
  * Admission Model Class
@@ -127,6 +129,7 @@ class Admission extends Model<AdmissionAttributes, AdmissionCreationAttributes>
   implements AdmissionAttributes {
   declare public admissionId: number;
   declare public temporaryId: string;
+  declare public schoolConfigId?: string;
   
   declare public firstNameEn: string;
   declare public middleNameEn?: string;

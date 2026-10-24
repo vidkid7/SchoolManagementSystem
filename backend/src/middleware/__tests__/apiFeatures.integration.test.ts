@@ -5,6 +5,7 @@ import Student, { StudentStatus, Gender } from '@models/Student.model';
 import User, { UserRole } from '@models/User.model';
 import Class from '@models/Class.model';
 import { AcademicYear } from '@models/AcademicYear.model';
+import SchoolConfig from '@models/SchoolConfig.model';
 import jwtService from '@modules/auth/jwt.service';
 
 /**
@@ -16,11 +17,18 @@ import jwtService from '@modules/auth/jwt.service';
 describe('API Features Integration Tests', () => {
   let authToken: string;
   let adminUser: User;
+  let schoolConfigId: string;
   let academicYear: AcademicYear;
   let testClass: Class;
 
   beforeAll(async () => {
     await sequelize.sync({ force: true });
+
+    const schoolConfig = await SchoolConfig.create({
+      schoolNameEn: 'API Features QA School',
+      schoolCode: 'APIFEATURESQA',
+    });
+    schoolConfigId = schoolConfig.id;
 
     // Create admin user
     adminUser = await User.create({
@@ -29,6 +37,7 @@ describe('API Features Integration Tests', () => {
       password: 'hashedpassword',
       role: UserRole.SCHOOL_ADMIN,
       status: 'active' as any,
+      schoolConfigId,
       failedLoginAttempts: 0
     });
 
@@ -120,6 +129,7 @@ describe('API Features Integration Tests', () => {
         admissionDate: new Date('2024-04-01'),
         admissionClass: 10,
         currentClassId: testClass.classId!,
+        schoolConfigId,
         status: StudentStatus.ACTIVE
       }));
 
@@ -163,16 +173,19 @@ describe('API Features Integration Tests', () => {
 
       expect(page1.body.data).toHaveLength(20);
       expect(page2.body.data).toHaveLength(20);
-      expect(page1.body.data[0].id).not.toBe(page2.body.data[0].id);
+      expect(page1.body.data[0].studentId).not.toBe(page2.body.data[0].studentId);
     });
 
-    it('should enforce max page size of 100', async () => {
+    it('should reject page sizes above 100', async () => {
       const response = await request(app)
         .get('/api/v1/students?limit=200')
         .set('Authorization', `Bearer ${authToken}`);
 
-      expect(response.status).toBe(200);
-      expect(response.body.meta.limit).toBe(100);
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.errors).toEqual(expect.arrayContaining([
+        expect.objectContaining({ field: 'limit' }),
+      ]));
     });
 
     it('should return remaining items on last page', async () => {
@@ -373,7 +386,7 @@ describe('API Features Integration Tests', () => {
       expect(response.status).toBe(400);
       expect(response.body).toHaveProperty('success');
       expect(response.body.success).toBe(false);
-      expect(response.body).toHaveProperty('error');
+      expect(response.body).toHaveProperty('errors');
     });
   });
 });

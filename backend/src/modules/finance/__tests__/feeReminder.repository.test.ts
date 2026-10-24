@@ -9,7 +9,17 @@ import sequelize from '@config/database';
 
 describe('FeeReminderRepository', () => {
   beforeAll(async () => {
+    // These repository unit tests use fixture IDs without creating invoices or
+    // students. Keep FK enforcement disabled in SQLite's isolated memory DB.
+    if (sequelize.getDialect() === 'sqlite') {
+      await sequelize.query('PRAGMA foreign_keys = OFF');
+    }
     await sequelize.sync({ force: true });
+    if (sequelize.getDialect() === 'sqlite') {
+      // SQLite schema sync can toggle FK enforcement while dropping/recreating
+      // tables, so disable it again for the intentionally incomplete fixtures.
+      await sequelize.query('PRAGMA foreign_keys = OFF');
+    }
   });
 
   afterAll(async () => {

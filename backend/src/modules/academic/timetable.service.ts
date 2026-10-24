@@ -75,7 +75,7 @@ class TimetableService {
   /**
    * Get timetable for a class with all periods
    */
-  async getClassTimetable(classId: number, academicYearId?: number): Promise<Timetable[]> {
+  getClassTimetable(classId: number, academicYearId?: number): Promise<Timetable[]> {
     const where: WhereOptions<Timetable> = { classId };
     if (academicYearId) where.academicYearId = academicYearId;
 
@@ -98,7 +98,7 @@ class TimetableService {
   /**
    * Get teacher's timetable
    */
-  async getTeacherTimetable(teacherId: number, academicYearId?: number): Promise<Period[]> {
+  getTeacherTimetable(teacherId: number, academicYearId?: number): Promise<Period[]> {
     const where: WhereOptions<Period> = { teacherId };
     const include: object[] = [
       { model: Timetable, as: 'timetable', attributes: ['timetableId', 'classId', 'dayOfWeek', 'academicYearId'] },
@@ -227,7 +227,7 @@ class TimetableService {
     const timetable = await Timetable.findByPk(timetableId);
     if (!timetable) throw new ValidationError('Timetable not found');
 
-    this.validateAllPeriods(periods, timetable);
+    await this.validateAllPeriods(periods, timetable);
 
     const createdPeriods = await Period.bulkCreate(periods.map(p => ({ ...p, timetableId })));
     logger.info('Bulk periods created', { timetableId, count: createdPeriods.length });
@@ -319,8 +319,8 @@ class TimetableService {
     }
   }
 
-  private validateAllPeriods(periods: Array<{ periodNumber: number; startTime: string; endTime: string; teacherId?: number }>, timetable: Timetable): void {
-    for (const periodData of periods) {
+  private async validateAllPeriods(periods: Array<{ periodNumber: number; startTime: string; endTime: string; teacherId?: number }>, timetable: Timetable): Promise<void> {
+    for (const [index, periodData] of periods.entries()) {
       const timeRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/;
       if (!timeRegex.test(periodData.startTime) || !timeRegex.test(periodData.endTime)) {
         throw new ValidationError(`Invalid time format for period ${periodData.periodNumber}`);
@@ -329,7 +329,15 @@ class TimetableService {
         throw new ValidationError(`Start time must be before end time for period ${periodData.periodNumber}`);
       }
       if (periodData.teacherId) {
-        this.validateTeacherPeriodConflict(periodData, timetable);
+        await this.validateTeacherPeriodConflict(periodData, timetable);
+        const overlapsEarlierPeriod = periods.slice(0, index).some((earlierPeriod) =>
+          earlierPeriod.teacherId === periodData.teacherId &&
+          earlierPeriod.startTime < periodData.endTime &&
+          earlierPeriod.endTime > periodData.startTime
+        );
+        if (overlapsEarlierPeriod) {
+          throw new ValidationError(`Teacher conflict for period ${periodData.periodNumber} at ${periodData.startTime}-${periodData.endTime}`);
+        }
       }
     }
   }

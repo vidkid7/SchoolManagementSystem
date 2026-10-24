@@ -16,7 +16,7 @@ import {
 } from './exam.validation';
 import {
   createExamScheduleValidation,
-  getScheduleByIdValidation
+  getSchedulesByExamIdValidation
 } from './examSchedule.validation';
 import {
   createGradeEntryValidation,
@@ -165,7 +165,7 @@ router.post(
 router.get(
   '/:examId/schedule',
   authorize(...viewRoles),
-  getScheduleByIdValidation,
+  getSchedulesByExamIdValidation,
   examController.getExamSchedule
 );
 

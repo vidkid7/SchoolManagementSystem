@@ -23,12 +23,22 @@ import bcrypt from 'bcrypt';
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
-describe('Property 10: Password Hashing Security', () => {
+// This legacy integration suite writes users directly with bulkInsert. Keep it
+// opt-in and require an explicitly named disposable test database so an
+// ordinary local or production .env can never be used accidentally.
+const allowDatabaseProperties = process.env.RUN_DB_SECURITY_TESTS === 'true';
+
+(allowDatabaseProperties ? describe : describe.skip)('Property 10: Password Hashing Security', () => {
   let sequelize: Sequelize;
   let queryInterface: QueryInterface;
   let testCounter = 0;
 
   beforeAll(async () => {
+    const databaseName = process.env.DB_NAME;
+    if (!databaseName || !/_test$/i.test(databaseName)) {
+      throw new Error('RUN_DB_SECURITY_TESTS requires DB_NAME to name a dedicated database ending in _test');
+    }
+
     // Create test database connection
     const dbConfig: Options = {
       host: process.env.DB_HOST || 'localhost',
@@ -56,14 +66,6 @@ describe('Property 10: Password Hashing Security', () => {
   afterAll(async () => {
     // Clean up and close connection
     await sequelize.close();
-  });
-
-  beforeEach(async () => {
-    // Clean up test data before each test
-    // Disable foreign key checks temporarily for cleanup
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
-    await queryInterface.bulkDelete('users', {}, {});
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
   });
 
   /**

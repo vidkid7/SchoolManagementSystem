@@ -3,6 +3,7 @@ import PaymentGatewayTransaction, {
   PaymentGateway,
   GatewayTransactionStatus
 } from '@models/PaymentGatewayTransaction.model';
+import { Op } from 'sequelize';
 
 /**
  * Payment Gateway Repository Tests
@@ -206,8 +207,8 @@ describe('PaymentGatewayRepository', () => {
       expect(PaymentGatewayTransaction.findAll).toHaveBeenCalledWith({
         where: {
           initiatedAt: {
-            $gte: startDate,
-            $lte: endDate
+            [Op.gte]: startDate,
+            [Op.lte]: endDate
           }
         },
         order: [['initiatedAt', 'DESC']]
@@ -390,8 +391,8 @@ describe('PaymentGatewayRepository', () => {
         where: {
           status: GatewayTransactionStatus.SUCCESS,
           completedAt: {
-            $gte: startDate,
-            $lte: endDate
+            [Op.gte]: startDate,
+            [Op.lte]: endDate
           }
         }
       });

@@ -110,6 +110,12 @@ function sanitizeObject(obj: Record<string, unknown>): Record<string, unknown> {
   const sanitized: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(obj)) {
+    // Prevent attacker-controlled object keys from changing the prototype of
+    // the sanitized object or introducing inherited values downstream.
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      continue;
+    }
+
     if (typeof value === 'string') {
       // Remove null bytes
       let sanitizedValue = value.replace(/\0/g, '');

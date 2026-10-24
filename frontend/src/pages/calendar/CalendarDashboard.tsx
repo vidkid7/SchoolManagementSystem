@@ -6,7 +6,8 @@
  * Requirements: 31.1, 31.2, 31.5
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { isAxiosError } from 'axios';
 import { useTheme } from '@mui/material/styles';
 import { C, useAdminStyles } from '../../theme/designTokens';
 import {
@@ -87,19 +88,18 @@ export const CalendarDashboard = () => {
     other: { color: C.neutral, icon: <EventIcon />, label: t('calendar.categories.other') },
   };
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
       const response = await apiClient.get('/api/v1/calendar/events/stats');
       setStats(response.data.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch calendar stats:', err);
-      const errorMessage = err.response?.data?.error?.message || err.message || 'Failed to load statistics';
+      const apiError = isAxiosError<{ error?: { message?: string }; message?: string }>(err)
+        ? err.response?.data?.error?.message || err.response?.data?.message
+        : undefined;
+      const errorMessage = apiError || (err instanceof Error ? err.message : undefined) || 'Failed to load statistics';
       setError(errorMessage);
       // Set default empty stats on error
       setStats({
@@ -114,7 +114,11 @@ export const CalendarDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchStats);
+  }, [fetchStats]);
 
   if (loading) {
     return (

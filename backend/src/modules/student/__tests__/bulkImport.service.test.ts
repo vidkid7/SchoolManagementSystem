@@ -17,6 +17,10 @@ describe('BulkImportService', () => {
 
   beforeAll(async () => {
     bulkImportService = BulkImportService;
+
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('Bulk import service tests require TEST_DB_DIALECT=sqlite');
+    }
     
     // Ensure test directory exists
     if (!fs.existsSync(TEST_DATA_DIR)) {
@@ -24,7 +28,6 @@ describe('BulkImportService', () => {
     }
 
     // Sync database schema
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
     await sequelize.sync({ force: true, logging: false });
   });
 
@@ -34,8 +37,6 @@ describe('BulkImportService', () => {
       fs.rmSync(TEST_DATA_DIR, { recursive: true, force: true });
     }
 
-    // Re-enable foreign key checks and close connection
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
     await sequelize.close();
   });
 
@@ -89,6 +90,7 @@ describe('BulkImportService', () => {
       const result = await bulkImportService.importFromExcel(excelBuffer, 1);
 
       expect(result.totalRows).toBe(1);
+      expect(result.errors).toEqual([]);
       expect(result.successCount).toBe(1);
       expect(result.errorCount).toBe(0);
       expect(result.skippedCount).toBe(0);

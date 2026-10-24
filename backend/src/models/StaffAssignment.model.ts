@@ -16,6 +16,7 @@ export enum AssignmentType {
  */
 export interface StaffAssignmentAttributes {
   assignmentId: number;
+  schoolConfigId?: string;
   staffId: number;
   academicYearId: number;
   assignmentType: AssignmentType;
@@ -25,7 +26,7 @@ export interface StaffAssignmentAttributes {
   
   // For subject teacher assignment
   subjectId?: number;
-  section?: string;
+  section?: string | null;
   
   // Department head assignment
   department?: string;
@@ -43,8 +44,8 @@ export interface StaffAssignmentAttributes {
 /**
  * Staff Assignment Creation Attributes
  */
-export interface StaffAssignmentCreationAttributes extends Optional<StaffAssignmentAttributes,
-  'assignmentId' | 'section' | 'department' | 'endDate' | 'isActive' | 'createdAt' | 'updatedAt'> {}
+export type StaffAssignmentCreationAttributes = Optional<StaffAssignmentAttributes,
+  'assignmentId' | 'section' | 'department' | 'endDate' | 'isActive' | 'createdAt' | 'updatedAt'>;
 
 /**
  * Staff Assignment Model Class
@@ -52,6 +53,7 @@ export interface StaffAssignmentCreationAttributes extends Optional<StaffAssignm
 class StaffAssignment extends Model<StaffAssignmentAttributes, StaffAssignmentCreationAttributes>
   implements StaffAssignmentAttributes {
   declare assignmentId: number;
+  declare schoolConfigId?: string;
   declare staffId: number;
   declare academicYearId: number;
   declare assignmentType: AssignmentType;
@@ -59,7 +61,7 @@ class StaffAssignment extends Model<StaffAssignmentAttributes, StaffAssignmentCr
   declare classId?: number;
   
   declare subjectId?: number;
-  declare section?: string;
+  declare section?: string | null;
   
   declare department?: string;
   

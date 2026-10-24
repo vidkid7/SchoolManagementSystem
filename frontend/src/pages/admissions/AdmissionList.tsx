@@ -3,7 +3,8 @@
  * Complete admission workflow management
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { isAxiosError } from 'axios';
 import {
   Box,
   Paper,
@@ -26,10 +27,7 @@ import {
   Grid,
   CircularProgress,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  ChipProps,
   useTheme,
 } from '@mui/material';
 import {
@@ -37,9 +35,8 @@ import {
   Visibility as ViewIcon,
   Edit as EditIcon,
   PersonAdd as InquiryIcon,
-  FilterList as FilterIcon,
 } from '@mui/icons-material';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useAdminStyles } from '../../theme/designTokens';
 import { useSearchParams } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import api from '../../config/api';
@@ -58,7 +55,7 @@ interface Admission {
   email?: string;
 }
 
-const statusColors: Record<string, any> = {
+const statusColors: Record<string, ChipProps['color']> = {
   inquiry: 'info',
   applied: 'primary',
   test_scheduled: 'warning',
@@ -83,7 +80,6 @@ export function AdmissionList() {
   const [admissions, setAdmissions] = useState<Admission[]>([]);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedAdmission, setSelectedAdmission] = useState<Admission | null>(null);
-  const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   
   const statusKeyMap: Record<string, string> = {
@@ -103,29 +99,32 @@ export function AdmissionList() {
 
   // Filters
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
-  const [classFilter, setClassFilter] = useState('');
+  const [classFilter, setClassFilter] = useState<string | number>('');
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    fetchAdmissions();
-  }, [statusFilter, classFilter]);
-
-  const fetchAdmissions = async () => {
+  const fetchAdmissions = useCallback(async () => {
     try {
       setLoading(true);
-      const params: any = {};
+      setError('');
+      const params: Record<string, string | number> = {};
       if (statusFilter) params.status = statusFilter;
       if (classFilter) params.applyingForClass = classFilter;
       
       const response = await api.get('/admissions', { params });
-      setAdmissions(response.data?.data || []);
-    } catch (error: any) {
-      console.error('Failed to fetch admissions:', error);
-      setError(t('admissions.failedToLoadList'));
+      const data: unknown = response.data?.data;
+      setAdmissions(Array.isArray(data) ? data as Admission[] : []);
+    } catch (error: unknown) {
+      console.error('Failed to fetch admissions');
+      const message = isAxiosError<{ message?: string }>(error) ? error.response?.data?.message : undefined;
+      setError(message || t('admissions.failedToLoadList'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [classFilter, statusFilter, t]);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchAdmissions);
+  }, [fetchAdmissions]);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, admission: Admission) => {
     setAnchorEl(event.currentTarget);
@@ -220,7 +219,6 @@ export function AdmissionList() {
           </Button>
         </Box>
 
-        {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         <Grid container spacing={2}>

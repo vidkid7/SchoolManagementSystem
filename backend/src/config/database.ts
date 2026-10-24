@@ -24,6 +24,10 @@ const parseDatabaseUrl = (url: string) => {
 
 const databaseUrl = process.env.DATABASE_URL || process.env.MYSQL_URL;
 const parsedUrl = databaseUrl ? parseDatabaseUrl(databaseUrl) : null;
+// Allow isolated service tests to opt into an ephemeral database. Production and
+// development remain MySQL unless both NODE_ENV=test and TEST_DB_DIALECT=sqlite.
+const useInMemorySqliteForTests =
+  process.env.NODE_ENV === 'test' && process.env.TEST_DB_DIALECT === 'sqlite';
 
 const dbConfig: Options = {
   host: parsedUrl?.host || process.env.DB_HOST || 'localhost',
@@ -31,13 +35,16 @@ const dbConfig: Options = {
   database: parsedUrl?.database || process.env.DB_NAME || 'school_management_system',
   username: parsedUrl?.username || process.env.DB_USER || 'root',
   password: parsedUrl?.password || process.env.DB_PASSWORD || '',
-  dialect: 'mysql',
+  dialect: useInMemorySqliteForTests ? 'sqlite' : 'mysql',
+  ...(useInMemorySqliteForTests ? { storage: ':memory:' } : {}),
   ...(process.env.DB_SSL === 'true' ? { dialectOptions: { ssl: {} } } : {}),
   
   // Connection Pool Configuration
   pool: {
-    min: parseInt(process.env.DB_POOL_MIN || '2'),
-    max: parseInt(process.env.DB_POOL_MAX || '10'),
+    // SQLite :memory: databases and connection-local PRAGMAs must use one
+    // connection; production MySQL keeps the configured pool size.
+    min: useInMemorySqliteForTests ? 0 : parseInt(process.env.DB_POOL_MIN || '2'),
+    max: useInMemorySqliteForTests ? 1 : parseInt(process.env.DB_POOL_MAX || '10'),
     acquire: 30000,
     idle: 10000
   },
@@ -48,7 +55,7 @@ const dbConfig: Options = {
     : false,
   
   // Timezone
-  timezone: '+05:45', // Nepal timezone
+  ...(!useInMemorySqliteForTests ? { timezone: '+05:45' } : {}), // SQLite returns UTC and rejects custom timezone settings
   
   // Performance
   define: {

@@ -3,6 +3,7 @@ import { Op } from 'sequelize';
 import { logger } from '@utils/logger';
 import Assignment from '@models/Assignment.model';
 import AssignmentSubmission from '@models/AssignmentSubmission.model';
+import Student from '@models/Student.model';
 
 class AssignmentController {
   async getDashboard(req: Request, res: Response): Promise<void> {
@@ -217,7 +218,14 @@ class AssignmentController {
   async submitAssignment(req: Request, res: Response): Promise<void> {
     try {
       const assignmentId = Number(req.params.id);
-      const studentId = req.user?.userId;
+      const student = await Student.findOne({
+        where: { userId: req.user?.userId },
+        attributes: ['studentId'],
+      });
+      if (!student) {
+        res.status(404).json({ success: false, error: { code: 'STUDENT_NOT_FOUND', message: 'Linked student record not found' } });
+        return;
+      }
 
       const assignment = await Assignment.findByPk(assignmentId);
       if (!assignment) {
@@ -233,7 +241,7 @@ class AssignmentController {
 
       const submission = await AssignmentSubmission.create({
         assignmentId,
-        studentId: studentId!,
+        studentId: student.studentId,
         content,
         attachments: attachments ?? [],
         status: 'submitted',
@@ -293,10 +301,27 @@ class AssignmentController {
 
   async getMyAssignments(req: Request, res: Response): Promise<void> {
     try {
-      const studentId = req.user?.userId;
-      const allAssignments = await Assignment.findAll({ order: [['createdAt', 'DESC']] });
+      const student = await Student.findOne({
+        where: { userId: req.user?.userId },
+        attributes: ['studentId', 'currentClassId'],
+        include: [{ association: 'currentClass', attributes: ['gradeLevel', 'section'] }],
+      });
+      if (!student) {
+        res.status(404).json({ success: false, error: { code: 'STUDENT_NOT_FOUND', message: 'Linked student record not found' } });
+        return;
+      }
+      const classRecord = (student as any).currentClass;
+      const className = classRecord?.gradeLevel && classRecord?.section
+        ? `Class ${classRecord.gradeLevel} ${classRecord.section}`
+        : undefined;
+      const allAssignments = className
+        ? await Assignment.findAll({
+          where: { className, status: 'active' },
+          order: [['createdAt', 'DESC']],
+        })
+        : [];
 
-      const mySubmissions = await AssignmentSubmission.findAll({ where: { studentId } });
+      const mySubmissions = await AssignmentSubmission.findAll({ where: { studentId: student.studentId } });
       const submissionMap = new Map(mySubmissions.map(s => [s.assignmentId, s]));
 
       const result = allAssignments.map(a => {
@@ -324,9 +349,8 @@ class AssignmentController {
 
   // Helper for cross-module access (used by student controller)
   async getAllAssignmentsForStudent(className?: string): Promise<any[]> {
-    const where: any = { status: 'active' };
-    if (className) where.className = className;
-    return Assignment.findAll({ where });
+    if (!className) return [];
+    return Assignment.findAll({ where: { status: 'active', className } });
   }
 }
 

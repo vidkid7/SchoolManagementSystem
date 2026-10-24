@@ -6,7 +6,6 @@ import { YearSelectableDateField } from '../../components/YearSelectableDatePick
 
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
@@ -99,10 +98,18 @@ interface ImportedStudent {
   status?: string;
 }
 
+interface BulkApiError {
+  response?: {
+    data?: {
+      data?: unknown;
+      message?: string;
+    };
+  };
+}
+
 export const BulkAdd = () => {
   const { t } = useTranslation();
   const navigate = useSlugNavigate();
-  const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const [tabValue, setTabValue] = useState(0); // 0 = Manual Form, 1 = Import Excel
@@ -152,6 +159,32 @@ export const BulkAdd = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const formatBulkFailures = (result: unknown): string | undefined => {
+    if (!result || typeof result !== 'object') return undefined;
+
+    const bulkResult = result as {
+      successCount?: number;
+      errorCount?: number;
+      errors?: Array<{ row?: number; field?: string; message?: string }>;
+    };
+    const errorCount = Number(bulkResult.errorCount);
+    if (!Number.isFinite(errorCount) || errorCount < 1) return undefined;
+
+    const summary = t('students.bulkAddPartial', {
+      successCount: Number(bulkResult.successCount) || 0,
+      errorCount,
+    });
+    const rowErrors = Array.isArray(bulkResult.errors)
+      ? bulkResult.errors.slice(0, 5).map((item) => t('students.bulkAddRowError', {
+          row: item.row ?? '?',
+          field: item.field ?? 'student',
+          message: item.message ?? t('students.bulkAddFailed'),
+        }))
+      : [];
+
+    return [summary, ...rowErrors].join('\n');
+  };
 
   const addStudentForm = () => {
     const newId = (Math.max(...students.map(s => parseInt(s.id))) + 1).toString();
@@ -239,9 +272,10 @@ export const BulkAdd = () => {
 
       setImportedStudents(response.data.data || []);
       setSuccess(t('students.fileParseSuccess', { count: response.data.data?.length || 0 }));
-    } catch (error: any) {
-      console.error('Failed to parse file:', error);
-      setError(error.response?.data?.message || t('students.fileParseFailed'));
+    } catch (error: unknown) {
+      const responseData = (error as BulkApiError)?.response?.data;
+      console.error('Failed to parse file');
+      setError(responseData?.message || t('students.fileParseFailed'));
       setImportedStudents([]);
     } finally {
       setUploading(false);
@@ -272,7 +306,7 @@ export const BulkAdd = () => {
       setError('');
       setSuccess('');
 
-      let studentsToSubmit: any[] = [];
+      let studentsToSubmit: Array<Record<string, unknown>> = [];
 
       if (tabValue === 0) {
         // Manual form submission
@@ -345,18 +379,39 @@ export const BulkAdd = () => {
         }));
       }
 
-      // Submit all students
-      const response = await apiClient.post('/students/bulk-create', {
-        students: studentsToSubmit,
-      });
+      // Excel imports must send the original workbook so the backend can validate
+      // every required column and produce row-level errors before creating records.
+      const response = tabValue === 1
+        ? await apiClient.post('/students/bulk-import', (() => {
+            const formData = new FormData();
+            if (file) formData.append('file', file);
+            return formData;
+          })(), { headers: { 'Content-Type': 'multipart/form-data' } })
+        : await apiClient.post('/students/bulk-create', { students: studentsToSubmit });
 
-      setSuccess(t('students.bulkAddSuccess', { count: studentsToSubmit.length }));
+      const result = response.data?.data;
+      const bulkFailure = formatBulkFailures(result);
+      if (bulkFailure) {
+        setError(bulkFailure);
+        return;
+      }
+
+      const createdCount = Number(result?.successCount);
+      setSuccess(t('students.bulkAddSuccess', {
+        count: Number.isFinite(createdCount) ? createdCount : studentsToSubmit.length,
+      }));
       setTimeout(() => {
         navigate(`/students`);
       }, 2000);
-    } catch (error: any) {
-      console.error('Failed to bulk add students:', error);
-      setError(error.response?.data?.message || t('students.bulkAddFailed'));
+    } catch (error: unknown) {
+      const responseData = (error as BulkApiError)?.response?.data;
+      const bulkFailure = formatBulkFailures(responseData?.data);
+      if (bulkFailure) {
+        setError(bulkFailure);
+      } else {
+        console.error('Failed to bulk add students');
+        setError(responseData?.message || t('students.bulkAddFailed'));
+      }
     } finally {
       setLoading(false);
     }

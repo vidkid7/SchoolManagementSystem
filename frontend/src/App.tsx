@@ -13,12 +13,7 @@ import './i18n/config';
 import { ThemeProvider } from './theme/ThemeContext';
 import { AccessibilityProvider, useAccessibility } from './contexts/AccessibilityContext';
 import { Login } from './pages/Login';
-import { ForgotPassword } from './pages/auth/ForgotPassword';
-import { ResetPassword } from './pages/auth/ResetPassword';
-import { ChangePassword } from './pages/auth/ChangePassword';
-import { DashboardLayout } from './components/Layout/DashboardLayout';
 import { RoleBasedRedirect } from './components/RoleBasedRedirect';
-import { RoleBasedDashboardRenderer } from './dashboards/DashboardRenderer';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import MunicipalityRouteGuard from './components/MunicipalityRouteGuard';
 import { useNetworkMonitor } from './hooks/useNetworkMonitor';
@@ -27,6 +22,31 @@ import type { RootState, AppDispatch } from './store';
 import { logout } from './store/slices/authSlice';
 
 const Dashboard = React.lazy(() => import('./pages/dashboard/Dashboard'));
+const ForgotPassword = React.lazy(() =>
+  import('./pages/auth/ForgotPassword').then((module) => ({
+    default: module.ForgotPassword,
+  })),
+);
+const ResetPassword = React.lazy(() =>
+  import('./pages/auth/ResetPassword').then((module) => ({
+    default: module.ResetPassword,
+  })),
+);
+const ChangePassword = React.lazy(() =>
+  import('./pages/auth/ChangePassword').then((module) => ({
+    default: module.ChangePassword,
+  })),
+);
+const DashboardLayout = React.lazy(() =>
+  import('./components/Layout/DashboardLayout').then((module) => ({
+    default: module.DashboardLayout,
+  })),
+);
+const RoleBasedDashboardRenderer = React.lazy(() =>
+  import('./dashboards/DashboardRenderer').then((module) => ({
+    default: module.RoleBasedDashboardRenderer,
+  })),
+);
 
 const StudentList = React.lazy(() => import('./pages/students/StudentList').then(m => ({ default: m.StudentList })));
 const StudentForm = React.lazy(() => import('./pages/students/StudentForm').then(m => ({ default: m.StudentForm })));
@@ -181,12 +201,21 @@ function UnauthorizedPage() {
     navigate('/login');
   };
 
+  const handleGoBack = () => {
+    const historyIndex = window.history.state?.idx;
+    if (typeof historyIndex === 'number' && historyIndex > 0) {
+      navigate(-1);
+      return;
+    }
+    navigate('/login', { replace: true });
+  };
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 2 }}>
-      <Typography variant="h4" color="error">Access Denied</Typography>
-      <Typography variant="body1" color="text.secondary">You do not have permission to view this page.</Typography>
+    <Box component="main" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 2 }}>
+      <Typography component="h1" variant="h4" color="error.dark">Access Denied</Typography>
+      <Typography variant="body1" color="text.primary">You do not have permission to view this page.</Typography>
       <Box sx={{ display: 'flex', gap: 2 }}>
-        <Button variant="outlined" onClick={() => window.history.back()}>Go Back</Button>
+        <Button variant="outlined" onClick={handleGoBack}>Go Back</Button>
         <Button variant="contained" color="error" onClick={handleLogout}>Logout</Button>
       </Box>
     </Box>
@@ -288,7 +317,7 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
             </Route>
 
             {/* Student can view their own detail & CV */}
-            <Route element={<ProtectedRoute allowedRoles={[STUDENT, PARENT]} />}>
+            <Route element={<ProtectedRoute allowedRoles={[STUDENT]} />}>
               <Route element={<DashboardLayout />}>
                 <Route path="portal/student" element={<PortalDashboardStack configId="student"><StudentPortal /></PortalDashboardStack>} />
                 <Route path="my-certificates" element={<StudentCertificates />} />

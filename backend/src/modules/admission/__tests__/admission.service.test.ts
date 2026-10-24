@@ -1,6 +1,7 @@
 import admissionService from '../admission.service';
 import Admission, { AdmissionStatus } from '@models/Admission.model';
 import Student from '@models/Student.model';
+import User from '@models/User.model';
 import sequelize from '@config/database';
 import smsService from '@services/sms.service';
 import pdfService from '@services/pdf.service';
@@ -350,7 +351,6 @@ describe('Admission Service', () => {
       (studentIdService.generateStudentId as jest.Mock).mockResolvedValue(mockStudentCode);
 
       const result = await admissionService.enroll(admission.admissionId, {
-        currentClassId: 1,
         rollNumber: 1
       });
 
@@ -363,11 +363,28 @@ describe('Admission Service', () => {
       expect(result.student.firstNameEn).toBe('Ram');
       expect(result.student.lastNameEn).toBe('Sharma');
       expect(result.student.admissionClass).toBe(1);
+      expect(result.credentials.studentUsername).toMatch(/^[a-z0-9]+$/);
+      expect(result.credentials.parentUsername).toMatch(/^parent[a-z0-9]+$/);
 
-      expect(smsService.sendAdmissionNotification).toHaveBeenCalledWith(
-        expect.any(String),
-        'enrolled',
-        expect.any(Object)
+      await result.admission.reload();
+      expect(result.admission.status).toBe(AdmissionStatus.ENROLLED);
+      expect(result.admission.enrolledStudentId).toBe(result.student.studentId);
+      const savedStudent = await Student.findByPk(result.student.studentId);
+      expect(savedStudent?.studentCode).toBe(mockStudentCode);
+      expect(savedStudent?.addressEn).toBe('Kathmandu');
+
+      const studentAccount = await User.findOne({ where: { username: result.credentials.studentUsername } });
+      const parentAccount = await User.findOne({ where: { username: result.credentials.parentUsername! } });
+      expect(studentAccount?.phoneNumber).toBe('9841234568');
+      expect(parentAccount?.phoneNumber).toBe('9841234568');
+
+      expect(smsService.sendSMS).toHaveBeenCalledWith(
+        '9841234568',
+        expect.stringContaining(result.credentials.studentUsername)
+      );
+      expect(smsService.sendSMS).toHaveBeenCalledWith(
+        '9841234568',
+        expect.stringContaining(result.credentials.parentUsername!)
       );
     });
 
@@ -386,6 +403,29 @@ describe('Admission Service', () => {
       await expect(
         admissionService.enroll(admission.admissionId, {})
       ).rejects.toThrow('Cannot enroll from status');
+    });
+
+    it('should reject enrollment when student-required applicant details are missing', async () => {
+      const admission = await Admission.create({
+        temporaryId: 'INQ-018',
+        firstNameEn: 'Ram',
+        lastNameEn: 'Sharma',
+        applyingForClass: 1,
+        inquiryDate: new Date(),
+        status: AdmissionStatus.ADMITTED,
+        admissionDate: new Date(),
+        applicationFeePaid: true,
+        documentsVerified: true
+      });
+
+      await expect(admissionService.enroll(admission.admissionId, {}))
+        .rejects.toMatchObject({
+          message: expect.stringContaining('Complete the applicant\'s student details before enrollment'),
+          statusCode: 400
+        });
+      await expect(Student.count()).resolves.toBe(0);
+      await admission.reload();
+      expect(admission.status).toBe(AdmissionStatus.ADMITTED);
     });
   });
 
@@ -549,6 +589,12 @@ describe('Admission Service', () => {
         firstNameEn: 'Ram',
         lastNameEn: 'Sharma',
         applyingForClass: 1,
+        dateOfBirthAD: new Date('2003-08-30'),
+        addressEn: 'Kathmandu',
+        fatherName: 'Hari Sharma',
+        fatherPhone: '9841234568',
+        motherName: 'Sita Sharma',
+        motherPhone: '9841234569',
         guardianPhone: '9841234567'
       });
 
@@ -556,6 +602,7 @@ describe('Admission Service', () => {
 
       // Step 2: Convert to application
       const application = await admissionService.convertToApplication(inquiry.admissionId, {
+        dateOfBirthBS: '2060-05-15',
         fatherName: 'Hari Sharma',
         fatherPhone: '9841234568',
         applicationFee: 1000,
@@ -603,7 +650,6 @@ describe('Admission Service', () => {
       (studentIdService.generateStudentId as jest.Mock).mockResolvedValue(mockStudentCode);
 
       const enrolled = await admissionService.enroll(admitted.admissionId, {
-        currentClassId: 1,
         rollNumber: 1
       });
 
@@ -612,7 +658,11 @@ describe('Admission Service', () => {
       expect(enrolled.student.studentCode).toBe(mockStudentCode);
 
       // Verify SMS notifications were sent at each stage
-      expect(smsService.sendAdmissionNotification).toHaveBeenCalledTimes(6);
+      expect(smsService.sendAdmissionNotification).toHaveBeenCalledTimes(5);
+      expect(smsService.sendSMS).toHaveBeenCalledWith(
+        '9841234567',
+        expect.stringContaining(mockStudentCode.toLowerCase().replace(/[^a-z0-9]/g, ''))
+      );
     });
   });
 });

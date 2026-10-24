@@ -2,20 +2,74 @@ import invoiceService from '../invoice.service';
 import invoiceRepository from '../invoice.repository';
 import { Invoice, InvoiceStatus } from '@models/Invoice.model';
 import { FeeStructure, FeeComponent, FeeComponentType, FeeFrequency } from '@models/FeeStructure.model';
+import { AcademicYear } from '@models/AcademicYear.model';
+import Student, { Gender, StudentStatus } from '@models/Student.model';
+import User, { UserRole, UserStatus } from '@models/User.model';
 import sequelize from '@config/database';
+import { Transaction } from 'sequelize';
 
 describe('Invoice Service', () => {
   let feeStructureId: number;
+  let academicYearId: number;
+  let secondAcademicYearId: number;
 
   beforeAll(async () => {
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('Invoice service tests require TEST_DB_DIALECT=sqlite');
+    }
     await sequelize.sync({ force: true });
+
+    const academicYear = await AcademicYear.create({
+      name: 'QA Invoice 2025-2026',
+      startDateBS: '2082-01-01',
+      endDateBS: '2082-12-30',
+      startDateAD: new Date('2025-04-14'),
+      endDateAD: new Date('2026-04-13'),
+      isCurrent: true
+    });
+    academicYearId = academicYear.academicYearId;
+    const secondAcademicYear = await AcademicYear.create({
+      name: 'QA Invoice 2026-2027',
+      startDateBS: '2083-01-01',
+      endDateBS: '2083-12-30',
+      startDateAD: new Date('2026-04-14'),
+      endDateAD: new Date('2027-04-13'),
+      isCurrent: false
+    });
+    secondAcademicYearId = secondAcademicYear.academicYearId;
+
+    await User.create({
+      username: 'qainvoiceapprover',
+      email: 'qa-invoice-approver@example.test',
+      password: 'qa-test-password',
+      role: UserRole.ACCOUNTANT,
+      status: UserStatus.ACTIVE
+    });
+
+    await Student.bulkCreate(Array.from({ length: 100 }, (_, index) => ({
+      studentCode: `QA-INVOICE-${index + 1}`,
+      firstNameEn: `Invoice${index + 1}`,
+      lastNameEn: 'Test',
+      dateOfBirthBS: '2065-01-01',
+      dateOfBirthAD: new Date('2008-04-13'),
+      gender: Gender.OTHER,
+      addressEn: 'Test address',
+      fatherName: 'Test Father',
+      fatherPhone: '9800000000',
+      motherName: 'Test Mother',
+      motherPhone: '9800000001',
+      admissionDate: new Date('2025-04-14'),
+      admissionClass: 1,
+      emergencyContact: '9800000002',
+      status: StudentStatus.ACTIVE
+    })));
 
     // Create test fee structure
     const feeStructure = await FeeStructure.create({
       name: 'Test Fee Structure',
       applicableClasses: [1, 2, 3],
       applicableShifts: ['morning'],
-      academicYearId: 1,
+      academicYearId,
       totalAmount: 10000,
       isActive: true
     });
@@ -45,7 +99,7 @@ describe('Invoice Service', () => {
       const invoice = await invoiceService.generateInvoice({
         studentId: 1,
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: '2025-03-01'
       });
 
@@ -62,7 +116,7 @@ describe('Invoice Service', () => {
       const invoice = await invoiceService.generateInvoice({
         studentId: 2,
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: '2025-03-01',
         discount: 1000,
         discountReason: 'Merit scholarship'
@@ -77,7 +131,7 @@ describe('Invoice Service', () => {
       await invoiceService.generateInvoice({
         studentId: 3,
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: '2025-03-01'
       });
 
@@ -85,7 +139,7 @@ describe('Invoice Service', () => {
         invoiceService.generateInvoice({
           studentId: 3,
           feeStructureId,
-          academicYearId: 1,
+          academicYearId,
           dueDate: '2025-03-01'
         })
       ).rejects.toThrow('Invoice already exists for this student and fee structure');
@@ -96,7 +150,7 @@ describe('Invoice Service', () => {
         invoiceService.generateInvoice({
           studentId: 4,
           feeStructureId: 99999,
-          academicYearId: 1,
+          academicYearId,
           dueDate: '2025-03-01'
         })
       ).rejects.toThrow('Fee structure not found');
@@ -107,7 +161,7 @@ describe('Invoice Service', () => {
         name: 'Inactive Fee Structure',
         applicableClasses: [1],
         applicableShifts: ['morning'],
-        academicYearId: 1,
+        academicYearId,
         totalAmount: 5000,
         isActive: false
       });
@@ -116,10 +170,31 @@ describe('Invoice Service', () => {
         invoiceService.generateInvoice({
           studentId: 5,
           feeStructureId: inactiveFeeStructure.feeStructureId,
-          academicYearId: 1,
+          academicYearId,
           dueDate: '2025-03-01'
         })
       ).rejects.toThrow('Fee structure is not active');
+    });
+
+    it('preserves the invoice error if transaction rollback also fails', async () => {
+      const invoiceError = new Error('invoice lookup failed');
+      const rollback = jest.fn().mockRejectedValue(new Error('rollback failed'));
+      const transaction = { rollback } as unknown as Transaction;
+      const transactionSpy = jest.spyOn(sequelize, 'transaction').mockResolvedValueOnce(transaction);
+      const existsSpy = jest.spyOn(invoiceRepository, 'exists').mockRejectedValueOnce(invoiceError);
+
+      try {
+        await expect(invoiceService.generateInvoice({
+          studentId: 6,
+          feeStructureId,
+          academicYearId,
+          dueDate: '2025-03-01',
+        })).rejects.toBe(invoiceError);
+        expect(rollback).toHaveBeenCalledTimes(1);
+      } finally {
+        existsSpy.mockRestore();
+        transactionSpy.mockRestore();
+      }
     });
   });
 
@@ -128,7 +203,7 @@ describe('Invoice Service', () => {
       const result = await invoiceService.bulkGenerateInvoices({
         studentIds: [10, 11, 12],
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: '2025-03-01'
       });
 
@@ -143,14 +218,14 @@ describe('Invoice Service', () => {
       await invoiceService.generateInvoice({
         studentId: 20,
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: '2025-03-01'
       });
 
       const result = await invoiceService.bulkGenerateInvoices({
         studentIds: [20, 21, 22],
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: '2025-03-01'
       });
 
@@ -167,7 +242,7 @@ describe('Invoice Service', () => {
       const invoice = await invoiceService.generateInvoice({
         studentId: 30,
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: '2025-03-01'
       });
 
@@ -186,7 +261,7 @@ describe('Invoice Service', () => {
       const invoice = await invoiceService.generateInvoice({
         studentId: 31,
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: '2025-03-01'
       });
 
@@ -203,7 +278,7 @@ describe('Invoice Service', () => {
       const invoice = await invoiceService.generateInvoice({
         studentId: 40,
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: '2025-03-01',
         discount: 1000,
         discountReason: 'Merit scholarship'
@@ -219,7 +294,7 @@ describe('Invoice Service', () => {
       const invoice = await invoiceService.generateInvoice({
         studentId: 41,
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: '2025-03-01'
       });
 
@@ -234,7 +309,7 @@ describe('Invoice Service', () => {
       const invoice = await invoiceService.generateInvoice({
         studentId: 50,
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: '2025-03-01',
         discount: 1000,
         discountReason: 'Merit scholarship'
@@ -252,8 +327,8 @@ describe('Invoice Service', () => {
       const invoice = await invoiceService.generateInvoice({
         studentId: 60,
         feeStructureId,
-        academicYearId: 1,
-        dueDate: '2025-03-01'
+        academicYearId,
+        dueDate: '2027-03-01'
       });
 
       const updated = await invoiceService.recordPayment(invoice.invoiceId, 5000);
@@ -267,7 +342,7 @@ describe('Invoice Service', () => {
       const invoice = await invoiceService.generateInvoice({
         studentId: 61,
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: '2025-03-01'
       });
 
@@ -280,7 +355,7 @@ describe('Invoice Service', () => {
       const invoice = await invoiceService.generateInvoice({
         studentId: 62,
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: '2025-03-01'
       });
 
@@ -295,14 +370,14 @@ describe('Invoice Service', () => {
       await invoiceService.generateInvoice({
         studentId: 70,
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: '2025-03-01'
       });
 
       await invoiceService.generateInvoice({
         studentId: 70,
         feeStructureId,
-        academicYearId: 2,
+        academicYearId: secondAcademicYearId,
         dueDate: '2025-04-01'
       });
 
@@ -317,7 +392,7 @@ describe('Invoice Service', () => {
       const invoice = await invoiceService.generateInvoice({
         studentId: 80,
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: '2025-03-01'
       });
 
@@ -330,7 +405,7 @@ describe('Invoice Service', () => {
       const invoice = await invoiceService.generateInvoice({
         studentId: 81,
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: '2025-03-01'
       });
 
@@ -347,7 +422,7 @@ describe('Invoice Service', () => {
       const invoice = await invoiceService.generateInvoice({
         studentId: 90,
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: '2025-03-01'
       });
 
@@ -367,7 +442,7 @@ describe('Invoice Service', () => {
       const invoice = await invoiceService.generateInvoice({
         studentId: 91,
         feeStructureId,
-        academicYearId: 1,
+        academicYearId,
         dueDate: '2025-03-01'
       });
 

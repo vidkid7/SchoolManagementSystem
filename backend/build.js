@@ -4,18 +4,16 @@ const path = require('path');
 
 console.log('🔨 Building backend for production...');
 
-// Always use permissive compilation for production
-console.log('Transpiling TypeScript files (ignoring type errors)...');
+console.log('Transpiling TypeScript files...');
 
 try {
-  // Force compilation even with errors
   execSync('tsc -p tsconfig.prod.json --noEmitOnError false', { 
     stdio: 'inherit',
     shell: true 
   });
 } catch (error) {
-  // tsc might exit with error code even with noEmitOnError false
-  console.log('⚠️  TypeScript compilation had errors, checking output...');
+  console.error('❌ TypeScript compilation failed; refusing to report a successful build.');
+  process.exit(1);
 }
 
 // Check if dist folder was created
@@ -30,6 +28,6 @@ try {
   execSync('tsc-alias -p tsconfig.prod.json', { stdio: 'inherit', shell: true });
   console.log('✅ Build completed successfully!');
 } catch (e) {
-  console.log('⚠️  Could not resolve all path aliases, but continuing...');
-  console.log('✅ Build completed with warnings');
+  console.error('❌ Failed to resolve TypeScript path aliases.');
+  process.exit(1);
 }

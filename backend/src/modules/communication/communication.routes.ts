@@ -324,6 +324,7 @@ router.delete(
  */
 router.get(
   '/announcements',
+  validate(communicationValidation.announcementListQuery, 'query'),
   communicationController.getAnnouncements.bind(communicationController)
 );
 
@@ -335,6 +336,7 @@ router.get(
  */
 router.get(
   '/announcements/:announcementId',
+  validate(communicationValidation.announcementIdParam, 'params'),
   communicationController.getAnnouncementById.bind(communicationController)
 );
 
@@ -346,6 +348,12 @@ router.get(
  */
 router.post(
   '/announcements',
+  authorize(
+    UserRole.SCHOOL_ADMIN,
+    UserRole.CLASS_TEACHER,
+    UserRole.SUBJECT_TEACHER,
+    UserRole.DEPARTMENT_HEAD
+  ),
   validate(communicationValidation.createAnnouncement),
   communicationController.createAnnouncement.bind(communicationController)
 );
@@ -358,6 +366,7 @@ router.post(
  */
 router.put(
   '/announcements/:announcementId',
+  validate(communicationValidation.announcementIdParam, 'params'),
   validate(communicationValidation.updateAnnouncement),
   communicationController.updateAnnouncement.bind(communicationController)
 );
@@ -370,6 +379,7 @@ router.put(
  */
 router.delete(
   '/announcements/:announcementId',
+  validate(communicationValidation.announcementIdParam, 'params'),
   communicationController.deleteAnnouncement.bind(communicationController)
 );
 
@@ -381,6 +391,7 @@ router.delete(
  */
 router.post(
   '/bulk-notification',
+  authorize(UserRole.SCHOOL_ADMIN),
   communicationController.sendBulkNotification.bind(communicationController)
 );
 
@@ -388,11 +399,13 @@ router.post(
 
 router.get(
   '/notifications/history',
+  authorize(UserRole.SCHOOL_ADMIN),
   communicationController.getNotificationHistory.bind(communicationController)
 );
 
 router.get(
   '/templates',
+  authorize(UserRole.SCHOOL_ADMIN),
   communicationController.getNotificationTemplates.bind(communicationController)
 );
 
@@ -410,21 +423,25 @@ router.put(
 
 router.post(
   '/sms/send',
+  authorize(UserRole.SCHOOL_ADMIN),
   communicationController.sendSMS.bind(communicationController)
 );
 
 router.post(
   '/sms/bulk',
+  authorize(UserRole.SCHOOL_ADMIN),
   communicationController.sendBulkSMS.bind(communicationController)
 );
 
 router.post(
   '/email/send',
+  authorize(UserRole.SCHOOL_ADMIN),
   communicationController.sendEmail.bind(communicationController)
 );
 
 router.post(
   '/push/send',
+  authorize(UserRole.SCHOOL_ADMIN),
   communicationController.sendPushNotification.bind(communicationController)
 );
 

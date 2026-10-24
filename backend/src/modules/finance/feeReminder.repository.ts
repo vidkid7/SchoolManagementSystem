@@ -113,7 +113,7 @@ class FeeReminderRepository {
       smsGatewayId?: string;
       sentAt?: Date;
       deliveredAt?: Date;
-      failureReason?: string;
+      failureReason?: string | null;
     },
     transaction?: Transaction
   ): Promise<FeeReminder | null> {
@@ -127,7 +127,7 @@ class FeeReminderRepository {
       if (additionalData.smsGatewayId) reminder.smsGatewayId = additionalData.smsGatewayId;
       if (additionalData.sentAt) reminder.sentAt = additionalData.sentAt;
       if (additionalData.deliveredAt) reminder.deliveredAt = additionalData.deliveredAt;
-      if (additionalData.failureReason) reminder.failureReason = additionalData.failureReason;
+      if (additionalData.failureReason !== undefined) reminder.failureReason = additionalData.failureReason;
     }
 
     await reminder.save({ transaction });

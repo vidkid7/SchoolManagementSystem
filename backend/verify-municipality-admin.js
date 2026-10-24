@@ -36,12 +36,7 @@ async function verifyMunicipalityAdmin() {
       console.log(`Status:    ${user[0].status}`);
       console.log(`Created:   ${user[0].created_at}`);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('\nLogin Credentials:');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('Username: municipalityadmin');
-      console.log('Password: Municipality@123');
-      console.log('Email:    municipality.admin@school.edu.np');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+      console.log('\nAccount verified; credentials are not displayed.');
     } else {
       console.log('❌ Municipality admin user not found!');
     }

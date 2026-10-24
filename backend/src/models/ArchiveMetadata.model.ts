@@ -25,18 +25,18 @@ class ArchiveMetadata
   extends Model<ArchiveMetadataAttributes, ArchiveMetadataCreationAttributes>
   implements ArchiveMetadataAttributes
 {
-  public id!: number;
-  public academic_year_id!: number;
-  public academic_year_name!: string;
-  public archived_at!: Date;
-  public archived_by!: number;
-  public status!: 'in_progress' | 'completed' | 'failed' | 'restored';
-  public tables_archived?: string[];
-  public record_counts?: Record<string, number>;
-  public retention_until!: Date;
-  public error_message?: string;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date;
+  declare public id: number;
+  declare public academic_year_id: number;
+  declare public academic_year_name: string;
+  declare public archived_at: Date;
+  declare public archived_by: number;
+  declare public status: 'in_progress' | 'completed' | 'failed' | 'restored';
+  declare public tables_archived?: string[];
+  declare public record_counts?: Record<string, number>;
+  declare public retention_until: Date;
+  declare public error_message?: string;
+  declare public readonly created_at: Date;
+  declare public readonly updated_at: Date;
 }
 
 export const initArchiveMetadata = (sequelize: Sequelize): typeof ArchiveMetadata => {

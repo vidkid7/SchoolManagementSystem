@@ -38,6 +38,20 @@ const initialState: AuthState = {
   error: null,
 };
 
+type ApiErrorDetails = { status?: number; data?: { message?: unknown } };
+
+const getApiErrorDetails = (error: unknown): ApiErrorDetails => {
+  if (typeof error !== 'object' || error === null || !('response' in error)) {
+    return {};
+  }
+  return (error as { response?: ApiErrorDetails }).response ?? {};
+};
+
+const getApiErrorMessage = (error: unknown, fallback: string): string => {
+  const message = getApiErrorDetails(error).data?.message;
+  return typeof message === 'string' && message.length > 0 ? message : fallback;
+};
+
 // Async thunks
 export const login = createAsyncThunk(
   'auth/login',
@@ -52,8 +66,14 @@ export const login = createAsyncThunk(
       localStorage.setItem('refreshToken', refreshToken);
 
       return { user, accessToken, refreshToken };
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+    } catch (error: unknown) {
+      const { status } = getApiErrorDetails(error);
+
+      if (status === undefined || status >= 500) {
+        return rejectWithValue('auth.serverUnavailable');
+      }
+
+      return rejectWithValue(getApiErrorMessage(error, 'auth.loginFailed'));
     }
   }
 );
@@ -68,12 +88,12 @@ export const logout = createAsyncThunk('auth/logout', async (_, { rejectWithValu
     localStorage.removeItem('refreshToken');
 
     return null;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Even if API call fails, clear local storage
     localStorage.removeItem('user');
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
-    return rejectWithValue(error.response?.data?.message || 'Logout failed');
+    return rejectWithValue(getApiErrorMessage(error, 'Logout failed'));
   }
 });
 
@@ -86,8 +106,8 @@ export const getCurrentUser = createAsyncThunk('auth/getCurrentUser', async (_, 
     localStorage.setItem('user', JSON.stringify(user));
 
     return user;
-  } catch (error: any) {
-    return rejectWithValue(error.response?.data?.message || 'Failed to fetch user');
+  } catch (error: unknown) {
+    return rejectWithValue(getApiErrorMessage(error, 'Failed to fetch user'));
   }
 });
 
@@ -97,8 +117,8 @@ export const register = createAsyncThunk(
     try {
       await api.post('/auth/register', data);
       return null;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Registration failed');
+    } catch (error: unknown) {
+      return rejectWithValue(getApiErrorMessage(error, 'Registration failed'));
     }
   }
 );
@@ -109,8 +129,8 @@ export const forgotPassword = createAsyncThunk(
     try {
       await api.post('/auth/forgot-password', { email });
       return null;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Request failed');
+    } catch (error: unknown) {
+      return rejectWithValue(getApiErrorMessage(error, 'Request failed'));
     }
   }
 );
@@ -121,8 +141,12 @@ export const resetPassword = createAsyncThunk(
     try {
       await api.post('/auth/reset-password', data);
       return null;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Reset failed');
+    } catch (error: unknown) {
+      const { status } = getApiErrorDetails(error);
+      if (status === undefined || status >= 500) {
+        return rejectWithValue('Password reset is temporarily unavailable. Please try again.');
+      }
+      return rejectWithValue(getApiErrorMessage(error, 'Reset failed'));
     }
   }
 );
@@ -133,8 +157,8 @@ export const changePassword = createAsyncThunk(
     try {
       await api.post('/auth/change-password', data);
       return null;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Change password failed');
+    } catch (error: unknown) {
+      return rejectWithValue(getApiErrorMessage(error, 'Change password failed'));
     }
   }
 );

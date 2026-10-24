@@ -1,6 +1,7 @@
 import AttendanceRecord, { AttendanceStatus, SyncStatus } from '@models/AttendanceRecord.model';
 import attendanceRepository from '../attendance.repository';
 import sequelize from '@config/database';
+import AuditLog from '@models/AuditLog.model';
 
 /**
  * Unit tests for Attendance Repository
@@ -11,11 +12,22 @@ import sequelize from '@config/database';
 
 describe('AttendanceRepository', () => {
   beforeAll(async () => {
-    // Disable foreign key checks for testing
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
+    // This repository suite intentionally creates only the attendance table,
+    // so disable its references to the absent student/class/user tables.
+    const dialect = sequelize.getDialect();
+    if (dialect === 'sqlite') {
+      await sequelize.query('PRAGMA foreign_keys = OFF');
+    } else {
+      await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
+    }
     // Create only the attendance table
     await AttendanceRecord.sync({ force: true });
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
+    // Repository writes also emit audit entries; keep that dependency local
+    // to this isolated in-memory suite rather than reaching a shared database.
+    await AuditLog.sync({ force: true });
+    if (dialect !== 'sqlite') {
+      await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
+    }
   });
 
   afterAll(async () => {

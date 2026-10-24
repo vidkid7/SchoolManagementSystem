@@ -119,6 +119,9 @@ describe('Sports Controller', () => {
         ...newSport,
         status: 'active'
       };
+      Object.defineProperty(createdSport, 'getDataValue', {
+        value: jest.fn((key: string) => (createdSport as any)[key]),
+      });
 
       (Sport.create as jest.Mock).mockResolvedValue(createdSport);
 

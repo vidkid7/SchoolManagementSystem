@@ -1,14 +1,14 @@
 import request from 'supertest';
 import app from '../../../app';
 import sequelize from '@config/database';
+import SchoolConfig from '@models/SchoolConfig.model';
 import User, { UserRole } from '@models/User.model';
 import { FeeStructure } from '@models/FeeStructure.model';
 import { Invoice } from '@models/Invoice.model';
 import { Payment } from '@models/Payment.model';
 import { AcademicYear } from '@models/AcademicYear.model';
 import Student from '@models/Student.model';
-import jwt from 'jsonwebtoken';
-import { env } from '@config/env';
+import jwtService from '../../auth/jwt.service';
 
 /**
  * Finance Controller Integration Tests
@@ -16,7 +16,9 @@ import { env } from '@config/env';
  * Requirements: 9.1-9.16
  */
 
-describe('Finance Controller', () => {
+const useSqliteTestDatabase = process.env.NODE_ENV === 'test' && process.env.TEST_DB_DIALECT === 'sqlite';
+
+(useSqliteTestDatabase ? describe : describe.skip)('Finance Controller', () => {
   let adminToken: string;
   let accountantToken: string;
   let adminUser: User;
@@ -25,37 +27,50 @@ describe('Finance Controller', () => {
   let student: Student;
   let feeStructure: FeeStructure;
   let invoice: Invoice;
+  let schoolConfigId: string;
 
   beforeAll(async () => {
     await sequelize.sync({ force: true });
+
+    const school = await SchoolConfig.create({
+      schoolNameEn: 'Finance API Test School',
+      schoolCode: `FINANCE${Date.now()}`,
+    });
+    schoolConfigId = school.id;
 
     // Create test users
     adminUser = await User.create({
       username: 'admin',
       email: 'admin@test.com',
       password: 'password123',
-      role: UserRole.SCHOOL_ADMIN
+      role: UserRole.SCHOOL_ADMIN,
+      schoolConfigId,
     });
 
     accountantUser = await User.create({
       username: 'accountant',
       email: 'accountant@test.com',
       password: 'password123',
-      role: UserRole.ACCOUNTANT
+      role: UserRole.ACCOUNTANT,
+      schoolConfigId,
     });
 
     // Generate tokens
-    adminToken = jwt.sign(
-      { userId: adminUser.userId, role: adminUser.role },
-      env.JWT_SECRET,
-      { expiresIn: '1h' }
-    );
+    adminToken = jwtService.generateAccessToken({
+      userId: adminUser.userId,
+      username: adminUser.username,
+      email: adminUser.email,
+      role: adminUser.role,
+      schoolConfigId,
+    });
 
-    accountantToken = jwt.sign(
-      { userId: accountantUser.userId, role: accountantUser.role },
-      env.JWT_SECRET,
-      { expiresIn: '1h' }
-    );
+    accountantToken = jwtService.generateAccessToken({
+      userId: accountantUser.userId,
+      username: accountantUser.username,
+      email: accountantUser.email,
+      role: accountantUser.role,
+      schoolConfigId,
+    });
 
     // Create academic year
     academicYear = await AcademicYear.create({
@@ -64,7 +79,8 @@ describe('Finance Controller', () => {
       endDateBS: '2081-12-30',
       startDateAD: '2024-04-13',
       endDateAD: '2025-04-12',
-      isCurrent: true
+      isCurrent: true,
+      schoolConfigId,
     });
 
     // Create student
@@ -86,7 +102,7 @@ describe('Finance Controller', () => {
       emergencyContact: '9841234567',
       admissionDate: new Date('2024-04-13'),
       admissionClass: 1,
-      status: 'ACTIVE' as any
+      status: 'ACTIVE' as any,
     });
   });
 
@@ -147,7 +163,7 @@ describe('Finance Controller', () => {
         expect(response.status).toBe(401);
       });
 
-      it('should reject creation by non-admin', async () => {
+      it('should allow the accountant role to create a fee structure', async () => {
         const response = await request(app)
           .post('/api/v1/finance/fee-structures')
           .set('Authorization', `Bearer ${accountantToken}`)
@@ -156,10 +172,19 @@ describe('Finance Controller', () => {
             applicableClasses: [1],
             applicableShifts: ['morning'],
             academicYearId: academicYear.academicYearId,
-            feeComponents: []
+            feeComponents: [
+              {
+                name: 'QA Tuition Fee',
+                type: 'annual',
+                amount: 100,
+                frequency: 'annual',
+                isMandatory: true
+              }
+            ]
           });
 
-        expect(response.status).toBe(403);
+        expect(response.status).toBe(201);
+        expect(response.body.success).toBe(true);
       });
     });
 

@@ -8,6 +8,9 @@ import Grade, { NEBGrade } from '@models/Grade.model';
 import Exam from '@models/Exam.model';
 import Student from '@models/Student.model';
 import AttendanceRecord, { AttendanceStatus } from '@models/AttendanceRecord.model';
+import { AcademicYear, Term } from '@models/AcademicYear.model';
+import Class from '@models/Class.model';
+import { Subject } from '@models/Subject.model';
 import rankCalculationService from '../rankCalculation.service';
 import * as fs from 'fs';
 
@@ -46,11 +49,15 @@ jest.mock('pdfkit', () => {
       page: { width: 1224, height: 792 },
       fontSize: jest.fn().mockReturnThis(),
       font: jest.fn().mockReturnThis(),
+      lineWidth: jest.fn().mockReturnThis(),
+      fillColor: jest.fn().mockReturnThis(),
+      strokeColor: jest.fn().mockReturnThis(),
       text: jest.fn().mockReturnThis(),
       image: jest.fn().mockReturnThis(),
       moveTo: jest.fn().mockReturnThis(),
       lineTo: jest.fn().mockReturnThis(),
       stroke: jest.fn().mockReturnThis(),
+      fill: jest.fn().mockReturnThis(),
       rect: jest.fn().mockReturnThis()
     };
     return mockDoc;
@@ -88,6 +95,15 @@ describe('ReportCardService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(Term, 'findOne').mockResolvedValue({
+      name: 'First Term',
+      startDate: new Date('2024-04-13'),
+      endDate: new Date('2024-08-13')
+    } as any);
+    jest.spyOn(AcademicYear, 'findByPk').mockResolvedValue({ name: '2081-2082 BS' } as any);
+    jest.spyOn(Class, 'findByPk').mockResolvedValue({ gradeLevel: 10, section: 'A' } as any);
+    jest.spyOn(Subject, 'findAll').mockResolvedValue([] as any);
+    jest.spyOn(Grade, 'count').mockResolvedValue(30);
   });
 
   describe('calculateAttendanceSummary', () => {

@@ -51,30 +51,30 @@ class StudentCV
   extends Model<CVCustomizationAttributes, CVCustomizationCreationAttributes>
   implements CVCustomizationAttributes
 {
-  public cvId!: number;
-  public studentId!: number;
+  declare public cvId: number;
+  declare public studentId: number;
   
-  public showPersonalInfo!: boolean;
-  public showAcademicPerformance!: boolean;
-  public showAttendance!: boolean;
-  public showECA!: boolean;
-  public showSports!: boolean;
-  public showCertificates!: boolean;
-  public showAwards!: boolean;
-  public showTeacherRemarks!: boolean;
+  declare public showPersonalInfo: boolean;
+  declare public showAcademicPerformance: boolean;
+  declare public showAttendance: boolean;
+  declare public showECA: boolean;
+  declare public showSports: boolean;
+  declare public showCertificates: boolean;
+  declare public showAwards: boolean;
+  declare public showTeacherRemarks: boolean;
   
-  public skills!: string;
-  public hobbies!: string;
-  public careerGoals!: string;
-  public personalStatement!: string;
+  declare public skills: string;
+  declare public hobbies: string;
+  declare public careerGoals: string;
+  declare public personalStatement: string;
   
-  public templateId!: string;
-  public schoolBrandingEnabled!: boolean;
+  declare public templateId: string;
+  declare public schoolBrandingEnabled: boolean;
   
-  public lastGeneratedAt?: Date | null;
+  declare public lastGeneratedAt?: Date | null;
   
-  public readonly createdAt!: CreationOptional<Date>;
-  public readonly updatedAt!: CreationOptional<Date>;
+  declare public readonly createdAt: CreationOptional<Date>;
+  declare public readonly updatedAt: CreationOptional<Date>;
 
   // Associations
   public static associate(models: { Student: typeof Student }): void {

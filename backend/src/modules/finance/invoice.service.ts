@@ -5,6 +5,7 @@ import sequelize from '@config/database';
 import { Transaction } from 'sequelize';
 import { AcademicYear } from '@models/AcademicYear.model';
 import Student, { StudentStatus } from '@models/Student.model';
+import { logger } from '@utils/logger';
 
 /**
  * Invoice Service
@@ -150,7 +151,14 @@ class InvoiceService {
       return invoice;
     } catch (error) {
       if (!transaction) {
-        await t.rollback();
+        try {
+          await t.rollback();
+        } catch (rollbackError) {
+          logger.error('Failed to roll back invoice transaction', {
+            error: rollbackError,
+            invoiceError: error,
+          });
+        }
       }
       throw error;
     }

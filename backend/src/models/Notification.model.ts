@@ -31,18 +31,18 @@ export class Notification
   extends Model<NotificationAttributes, NotificationCreationAttributes>
   implements NotificationAttributes
 {
-  public notificationId!: number;
-  public userId!: number;
-  public type!: 'info' | 'warning' | 'success' | 'error';
-  public category!: 'attendance' | 'exam' | 'fee' | 'grade' | 'announcement' | 'leave' | 'library' | 'general';
-  public title!: string;
-  public message!: string;
-  public data?: object;
-  public isRead!: boolean;
-  public readAt?: Date;
-  public expiresAt?: Date;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public notificationId: number;
+  declare public userId: number;
+  declare public type: 'info' | 'warning' | 'success' | 'error';
+  declare public category: 'attendance' | 'exam' | 'fee' | 'grade' | 'announcement' | 'leave' | 'library' | 'general';
+  declare public title: string;
+  declare public message: string;
+  declare public data?: object;
+  declare public isRead: boolean;
+  declare public readAt?: Date;
+  declare public expiresAt?: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   // Instance methods
   public async markAsRead(): Promise<void> {

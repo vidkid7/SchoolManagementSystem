@@ -6,7 +6,10 @@
  * Requirements: 11.5, 11.6, 11.10
  */
 
-import { ECAEvent } from '../ECAEvent.model';
+import sequelize from '../../config/database';
+import { ECAEvent, initECAEvent } from '../ECAEvent.model';
+
+initECAEvent(sequelize);
 
 describe('ECAEvent Model', () => {
   describe('getParticipantCount', () => {

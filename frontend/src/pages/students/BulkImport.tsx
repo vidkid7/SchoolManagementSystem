@@ -5,6 +5,7 @@
  */
 
 import { useState } from 'react';
+import { isAxiosError } from 'axios';
 import { useTranslation } from 'react-i18next';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
@@ -50,6 +51,21 @@ interface ImportResult {
   }>;
 }
 
+interface ImportApiError {
+  row: number;
+  field?: string;
+  message?: string;
+  errors?: string[];
+}
+
+interface ImportApiResult {
+  successCount?: number;
+  errorCount?: number;
+  success?: number;
+  failed?: number;
+  errors?: ImportApiError[];
+}
+
 export const BulkImport = () => {
   const { t, i18n } = useTranslation();
   const navigate = useSlugNavigate();
@@ -65,7 +81,10 @@ export const BulkImport = () => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
       if (!isSupportedStudentImportFile(selectedFile.name, selectedFile.type)) {
+        setFile(null);
+        setResult(null);
         setError(t('bulkImport.invalidFile'));
+        event.target.value = '';
         return;
       }
       setFile(selectedFile);
@@ -93,10 +112,24 @@ export const BulkImport = () => {
         },
       });
 
-      setResult(response.data);
-    } catch (error: any) {
-      console.error('Failed to upload file:', error);
-      setError(error.response?.data?.message || t('bulkImport.uploadFailed'));
+      const resultData: ImportApiResult = response.data?.data || response.data;
+      const errorsByRow = new Map<number, string[]>();
+      (Array.isArray(resultData.errors) ? resultData.errors : []).forEach((item) => {
+        const messages = item.errors?.length
+          ? item.errors
+          : [item.message ? `${item.field ? `${item.field}: ` : ''}${item.message}` : t('bulkImport.uploadFailed')];
+        errorsByRow.set(item.row, [...(errorsByRow.get(item.row) || []), ...messages]);
+      });
+
+      setResult({
+        success: Number(resultData.successCount ?? resultData.success ?? 0),
+        failed: Number(resultData.errorCount ?? resultData.failed ?? 0),
+        errors: Array.from(errorsByRow, ([row, rowErrors]) => ({ row, errors: rowErrors })),
+      });
+    } catch (error: unknown) {
+      console.error('Failed to upload student spreadsheet');
+      const message = isAxiosError<{ message?: string }>(error) ? error.response?.data?.message : undefined;
+      setError(message || t('bulkImport.uploadFailed'));
     } finally {
       setUploading(false);
     }

@@ -45,6 +45,17 @@ describe('StudentDetail', () => {
         } as Awaited<ReturnType<typeof apiClient.get>>;
       }
 
+      if (url === '/api/v1/students/720001/grades') {
+        return {
+          data: {
+            data: {
+              summary: { totalExams: 1, averageMarks: 78, totalMarks: 78 },
+              grades: [],
+            },
+          },
+        } as Awaited<ReturnType<typeof apiClient.get>>;
+      }
+
       return { data: { data: {} } } as Awaited<ReturnType<typeof apiClient.get>>;
     });
   });
@@ -63,5 +74,19 @@ describe('StudentDetail', () => {
       expect(screen.getByText('2026-10-20')).toBeInTheDocument();
     });
     expect(screen.queryByText('2026-10-20T00:00:00.000Z')).not.toBeInTheDocument();
+  });
+
+  it('labels the total marks summary with the total marks translation', async () => {
+    render(
+      <ThemeProvider theme={createTheme()}>
+        <StudentDetail />
+      </ThemeProvider>,
+    );
+
+    await screen.findByRole('heading', { name: 'Codex QA Student' });
+    fireEvent.click(screen.getByRole('tab', { name: 'examinations.title' }));
+
+    expect(await screen.findByText('reports.totalMarks')).toBeInTheDocument();
+    expect(screen.queryByText('reports.totalCollected')).not.toBeInTheDocument();
   });
 });

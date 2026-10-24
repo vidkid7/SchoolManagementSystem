@@ -87,7 +87,7 @@ export function NewInquiry() {
         navigate(`/admissions/${response.data.data.admissionId}`);
       }, 1500);
     } catch (error: any) {
-      console.error('Failed to create inquiry:', error);
+      console.error('Failed to create admission inquiry.');
       const validationErrors = error.response?.data?.errors;
       const validationMessage = Array.isArray(validationErrors)
         ? validationErrors.map((item: { field?: string; message?: string }) =>

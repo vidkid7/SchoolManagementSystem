@@ -9,15 +9,18 @@
 import ecaCertificateService from '../ecaCertificate.service';
 import ECAEnrollment from '@models/ECAEnrollment.model';
 import ECAAchievement from '@models/ECAAchievement.model';
+import { AcademicYear } from '@models/AcademicYear.model';
 
 // Mock the models
 jest.mock('@models/ECAEnrollment.model');
 jest.mock('@models/ECAAchievement.model');
 jest.mock('@models/ECA.model');
+jest.mock('@models/AcademicYear.model');
 
 describe('ECACertificateService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (AcademicYear.findByPk as jest.Mock).mockResolvedValue(null);
   });
 
   describe('generateParticipationCertificateData', () => {

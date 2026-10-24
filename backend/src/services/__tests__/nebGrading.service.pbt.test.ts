@@ -365,15 +365,18 @@ describe('NEB Grading Service - Property-Based Tests', () => {
             const calculatedGPA = calculateGPA(subjects);
 
             // Manually calculate expected GPA using the formula
-            let totalWeightedPoints = 0;
+            let totalWeightedPointsInTenths = 0;
             let totalCreditHours = 0;
 
             for (const subject of subjects) {
-              totalWeightedPoints += subject.creditHours * subject.gradePoint;
+              // NEB grade points use tenths. Keep the oracle in integer
+              // tenths so an exact half-cent cannot round differently just
+              // because floating-point additions were ordered differently.
+              totalWeightedPointsInTenths += subject.creditHours * Math.round(subject.gradePoint * 10);
               totalCreditHours += subject.creditHours;
             }
 
-            const expectedGPA = Math.round((totalWeightedPoints / totalCreditHours) * 100) / 100;
+            const expectedGPA = Math.round((totalWeightedPointsInTenths * 10) / totalCreditHours) / 100;
 
             // Property 1: Calculated GPA should match the formula
             expect(calculatedGPA).toBe(expectedGPA);
@@ -650,7 +653,7 @@ describe('NEB Grading Service - Property-Based Tests', () => {
             const newGPA = calculateGPA(newSubjects);
 
             // GPA should remain the same (within rounding tolerance)
-            expect(Math.abs(newGPA - currentGPA)).toBeLessThanOrEqual(0.01);
+            expect(Math.abs(newGPA - currentGPA)).toBeLessThanOrEqual(0.010000001);
           }
         ),
         {

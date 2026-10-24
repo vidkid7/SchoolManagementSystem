@@ -14,62 +14,46 @@ import invoiceService from '../invoice.service';
 import { Invoice } from '@models/Invoice.model';
 import { FeeStructure, FeeComponent, FeeComponentType, FeeFrequency } from '@models/FeeStructure.model';
 import { AcademicYear } from '@models/AcademicYear.model';
+import Student, { Gender, StudentStatus } from '@models/Student.model';
 import sequelize from '@config/database';
 
 describe('Invoice Generation - Property-Based Tests', () => {
   let academicYears: Map<number, AcademicYear>;
 
   beforeAll(async () => {
-    // Ensure tables exist by syncing models (without force to preserve existing data)
-    try {
-      await AcademicYear.sync();
-      await FeeStructure.sync();
-      await FeeComponent.sync();
-      await Invoice.sync();
-      await sequelize.query('SELECT 1 FROM invoice_items LIMIT 1').catch(async () => {
-        // invoice_items table doesn't exist, create it
-        await sequelize.query(`
-          CREATE TABLE IF NOT EXISTS invoice_items (
-            invoice_item_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            invoice_id INT UNSIGNED NOT NULL,
-            fee_component_id INT UNSIGNED NOT NULL,
-            description VARCHAR(255) NOT NULL,
-            amount DECIMAL(10, 2) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            FOREIGN KEY (invoice_id) REFERENCES invoices(invoice_id) ON DELETE CASCADE,
-            FOREIGN KEY (fee_component_id) REFERENCES fee_components(fee_component_id),
-            INDEX idx_invoice_items_invoice (invoice_id),
-            INDEX idx_invoice_items_fee_component (fee_component_id)
-          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        `);
-      });
-    } catch (error) {
-      console.log('Table sync warning:', error);
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('Invoice generation property tests require TEST_DB_DIALECT=sqlite');
     }
+    await sequelize.sync({ force: true });
 
-    // Clean up existing test data in correct order (children first, then parents)
-    try {
-      await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
-      await Invoice.destroy({ where: {}, force: true });
-      await FeeComponent.destroy({ where: {}, force: true });
-      await FeeStructure.destroy({ where: {}, force: true });
-      await AcademicYear.destroy({ where: {}, force: true });
-      await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-    } catch (error) {
-      // Ignore errors if tables are empty
-      console.log('Cleanup warning:', error);
-    }
+    await Student.create({
+      studentCode: 'QA-INVOICE-GENERATION-1',
+      firstNameEn: 'InvoiceGeneration',
+      lastNameEn: 'Test',
+      dateOfBirthBS: '2065-01-01',
+      dateOfBirthAD: new Date('2008-04-13'),
+      gender: Gender.OTHER,
+      addressEn: 'Test address',
+      fatherName: 'Test Father',
+      fatherPhone: '9800000000',
+      motherName: 'Test Mother',
+      motherPhone: '9800000001',
+      admissionDate: new Date('2026-04-14'),
+      admissionClass: 1,
+      emergencyContact: '9800000002',
+      status: StudentStatus.ACTIVE
+    });
 
     // Create test academic years (1-10)
     academicYears = new Map();
     for (let i = 1; i <= 10; i++) {
+      const yearBS = 2080 + i;
       const academicYear = await AcademicYear.create({
-        name: `208${i}-208${i + 1} BS`,
-        startDateBS: `208${i}-01-01`,
-        endDateBS: `208${i}-12-30`,
-        startDateAD: new Date(`202${i}-04-14`),
-        endDateAD: new Date(`202${i + 1}-04-13`),
+        name: `${yearBS}-${yearBS + 1} BS`,
+        startDateBS: `${yearBS}-01-01`,
+        endDateBS: `${yearBS}-12-30`,
+        startDateAD: new Date(2024 + i, 3, 14),
+        endDateAD: new Date(2025 + i, 3, 13),
         isCurrent: i === 1
       });
       academicYears.set(i, academicYear);
@@ -77,18 +61,20 @@ describe('Invoice Generation - Property-Based Tests', () => {
   });
 
   afterAll(async () => {
+    await Invoice.destroy({ where: { studentId: 1 }, force: true });
+    await FeeComponent.destroy({ where: {}, force: true });
+    await FeeStructure.destroy({ where: {}, force: true });
     await AcademicYear.destroy({ where: {}, force: true });
+    await Student.destroy({ where: { studentId: 1 }, force: true });
     await sequelize.close();
   });
 
   afterEach(async () => {
     // Clean up after each test in correct order (children first, then parents)
     try {
-      await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
-      await Invoice.destroy({ where: {}, force: true });
+      await Invoice.destroy({ where: { studentId: 1 }, force: true });
       await FeeComponent.destroy({ where: {}, force: true });
       await FeeStructure.destroy({ where: {}, force: true });
-      await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
     } catch (error) {
       // Ignore cleanup errors
       console.log('Cleanup warning:', error);
@@ -120,7 +106,7 @@ describe('Invoice Generation - Property-Based Tests', () => {
             // Number of fee components (1-10)
             numComponents: fc.integer({ min: 1, max: 10 }),
             // Student ID
-            studentId: fc.integer({ min: 1, max: 10000 }),
+            studentId: fc.constant(1),
             // Academic year ID
             academicYearId: fc.integer({ min: 1, max: 10 }),
             // Discount amount (0-50% of total)
@@ -167,7 +153,7 @@ describe('Invoice Generation - Property-Based Tests', () => {
               studentId,
               feeStructureId: feeStructure.feeStructureId,
               academicYearId,
-              dueDate: '2025-03-01',
+              dueDate: '2027-03-01',
               discount: discountAmount,
               discountReason: discountAmount > 0 ? 'Test discount' : undefined,
             });
@@ -239,7 +225,7 @@ describe('Invoice Generation - Property-Based Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.record({
-            studentId: fc.integer({ min: 1, max: 1000 }),
+            studentId: fc.constant(1),
             academicYearId: fc.integer({ min: 1, max: 10 }),
           }),
           async ({ studentId, academicYearId }) => {
@@ -268,7 +254,7 @@ describe('Invoice Generation - Property-Based Tests', () => {
               studentId,
               feeStructureId: feeStructure.feeStructureId,
               academicYearId,
-              dueDate: '2025-03-01',
+              dueDate: '2027-03-01',
             });
 
             expect(invoice1).toBeDefined();
@@ -279,7 +265,7 @@ describe('Invoice Generation - Property-Based Tests', () => {
                 studentId,
                 feeStructureId: feeStructure.feeStructureId,
                 academicYearId,
-                dueDate: '2025-03-01',
+                dueDate: '2027-03-01',
               })
             ).rejects.toThrow('Invoice already exists for this student and fee structure');
           }
@@ -301,7 +287,7 @@ describe('Invoice Generation - Property-Based Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.record({
-            studentId: fc.integer({ min: 1, max: 1000 }),
+            studentId: fc.constant(1),
             academicYearId: fc.integer({ min: 1, max: 10 }),
             componentAmount: fc.integer({ min: 100, max: 50000 }),
             discount: fc.integer({ min: 0, max: 10000 }),
@@ -335,7 +321,7 @@ describe('Invoice Generation - Property-Based Tests', () => {
               studentId,
               feeStructureId: feeStructure.feeStructureId,
               academicYearId,
-              dueDate: '2025-03-01',
+              dueDate: '2027-03-01',
               discount: validDiscount,
             });
 
@@ -366,7 +352,7 @@ describe('Invoice Generation - Property-Based Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.record({
-            studentId: fc.integer({ min: 1, max: 1000 }),
+            studentId: fc.constant(1),
             academicYearId: fc.integer({ min: 1, max: 10 }),
             numComponents: fc.integer({ min: 1, max: 5 }),
           }),
@@ -402,7 +388,7 @@ describe('Invoice Generation - Property-Based Tests', () => {
               studentId,
               feeStructureId: feeStructure.feeStructureId,
               academicYearId,
-              dueDate: '2025-03-01',
+              dueDate: '2027-03-01',
             });
 
             // Property: Subtotal should equal total amount when no discount
@@ -432,7 +418,7 @@ describe('Invoice Generation - Property-Based Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.record({
-            studentId: fc.integer({ min: 1, max: 1000 }),
+            studentId: fc.constant(1),
             academicYearId: fc.integer({ min: 1, max: 10 }),
             numComponents: fc.integer({ min: 1, max: 8 }),
           }),
@@ -475,7 +461,7 @@ describe('Invoice Generation - Property-Based Tests', () => {
               studentId,
               feeStructureId: feeStructure.feeStructureId,
               academicYearId,
-              dueDate: '2025-03-01',
+              dueDate: '2027-03-01',
             });
 
             // Reload with items
@@ -514,7 +500,7 @@ describe('Invoice Generation - Property-Based Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.record({
-            studentId: fc.integer({ min: 1, max: 1000 }),
+            studentId: fc.constant(1),
             academicYearId: fc.integer({ min: 1, max: 10 }),
             componentAmount: fc.integer({ min: 100, max: 10000 }),
             excessDiscount: fc.integer({ min: 1, max: 10000 }),
@@ -549,7 +535,7 @@ describe('Invoice Generation - Property-Based Tests', () => {
                 studentId,
                 feeStructureId: feeStructure.feeStructureId,
                 academicYearId,
-                dueDate: '2025-03-01',
+                dueDate: '2027-03-01',
                 discount: invalidDiscount,
               })
             ).rejects.toThrow();
@@ -572,7 +558,7 @@ describe('Invoice Generation - Property-Based Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.record({
-            studentId: fc.integer({ min: 1, max: 1000 }),
+            studentId: fc.constant(1),
             numInvoices: fc.integer({ min: 2, max: 5 }),
           }),
           async ({ studentId, numInvoices }) => {
@@ -603,7 +589,7 @@ describe('Invoice Generation - Property-Based Tests', () => {
                 studentId,
                 feeStructureId: feeStructure.feeStructureId,
                 academicYearId: i + 1,
-                dueDate: '2025-03-01',
+                dueDate: '2027-03-01',
               });
 
               invoiceNumbers.add(invoice.invoiceNumber);

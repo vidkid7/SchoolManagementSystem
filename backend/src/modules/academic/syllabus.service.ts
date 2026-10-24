@@ -170,6 +170,43 @@ class SyllabusService {
     return topic;
   }
 
+  async getTopicById(topicId: number): Promise<SyllabusTopic | null> {
+    return SyllabusTopic.findByPk(topicId);
+  }
+
+  /** Add completed hours to a topic and keep its status and syllabus total in sync. */
+  async markTopicProgress(topicId: number, completedHours: number): Promise<SyllabusTopic | null> {
+    const topic = await SyllabusTopic.findByPk(topicId);
+    if (!topic) return null;
+
+    const totalCompletedHours = Number(topic.completedHours) + completedHours;
+    const status = totalCompletedHours >= Number(topic.estimatedHours)
+      ? 'completed'
+      : totalCompletedHours > 0
+        ? 'in_progress'
+        : 'not_started';
+
+    const updated = await this.updateTopic(topicId, { completedHours: totalCompletedHours, status });
+    await this.recalculateSyllabusCompletion(topic.syllabusId);
+    return updated;
+  }
+
+  async markTopicInProgress(topicId: number): Promise<SyllabusTopic | null> {
+    return this.updateTopic(topicId, { status: 'in_progress' });
+  }
+
+  async markTopicCompleted(topicId: number): Promise<SyllabusTopic | null> {
+    const topic = await SyllabusTopic.findByPk(topicId);
+    if (!topic) return null;
+
+    const updated = await this.updateTopic(topicId, {
+      completedHours: Number(topic.estimatedHours),
+      status: 'completed'
+    });
+    await this.recalculateSyllabusCompletion(topic.syllabusId);
+    return updated;
+  }
+
   /**
    * Delete a topic
    */

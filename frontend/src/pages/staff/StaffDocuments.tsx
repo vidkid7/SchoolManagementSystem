@@ -5,7 +5,7 @@ import { YearSelectableDateField } from '../../components/YearSelectableDatePick
  * Manages staff documents including upload, view, and deletion
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -46,28 +46,26 @@ import {
   History as HistoryIcon,
   Edit as EditIcon,
   Info as InfoIcon,
-  FilterList as FilterListIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
-import { normalizeDocumentStats, type DocumentStats } from './staffDocumentsUtils';
+import {
+  createStaffDocumentUpdatePayload,
+  createStaffDocumentUploadFormData,
+  createStaffDocumentVersionsParams,
+  normalizeDocumentStats,
+  normalizeStaffDocument,
+  normalizeStaffDocumentVersion,
+  resolveStaffDocumentUrl,
+  STAFF_DOCUMENT_CATEGORY_VALUES,
+  type DocumentStats,
+  type StaffDocumentViewModel,
+} from './staffDocumentsUtils';
 import { motion } from 'framer-motion';
 import { C, useAdminStyles } from '../../theme/designTokens';
 
 const MotionCard = motion.create(Card);
 
-interface StaffDocument {
-  id: number;
-  name: string;
-  type: string;
-  category: string;
-  fileUrl: string;
-  fileSize: number;
-  expiryDate?: string;
-  isExpired: boolean;
-  isExpiringSoon: boolean;
-  createdAt: string;
-  version: number;
-}
+type StaffDocument = StaffDocumentViewModel;
 
 interface DocumentVersion {
   id: number;
@@ -75,10 +73,19 @@ interface DocumentVersion {
   fileUrl: string;
   fileSize: number;
   uploadedAt: string;
-  uploadedBy: string;
+  uploadedBy: string | number;
 }
 
 type FilterType = 'all' | 'active' | 'expired' | 'expiring-soon';
+
+const getRequestErrorMessage = (error: unknown, fallback: string): string => {
+  if (typeof error !== 'object' || error === null) return fallback;
+  const requestError = error as {
+    response?: { data?: { message?: unknown; error?: { message?: unknown } } };
+  };
+  const responseMessage = requestError.response?.data?.error?.message ?? requestError.response?.data?.message;
+  return typeof responseMessage === 'string' ? responseMessage : fallback;
+};
 
 interface StaffDocumentsProps {
   staffId: number;
@@ -111,12 +118,8 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
   });
   
   const [bulkFiles, setBulkFiles] = useState<File[]>([]);
+  const [bulkCategory, setBulkCategory] = useState('certificate');
   const [versions, setVersions] = useState<DocumentVersion[]>([]);
-
-  useEffect(() => {
-    fetchDocuments();
-    fetchStats();
-  }, [staffId, filter]);
 
   const fetchDocuments = async () => {
     try {
@@ -130,7 +133,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       }
       
       const response = await apiClient.get(endpoint);
-      let docs = response.data.data || [];
+      let docs = (response.data.data || []).map(normalizeStaffDocument);
       
       // Apply active filter on client side
       if (filter === 'active') {
@@ -138,15 +141,10 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       }
       
       setDocuments(docs);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch documents:', err);
-      // Handle 500 errors gracefully - feature not implemented yet
-      if (err.response?.status === 500) {
-        setDocuments([]);
-        // Don't show error for 500 - feature not implemented
-      } else {
-      setError(err.response?.data?.message || t('staff.doc.failedToLoad'));
-      }
+      setDocuments([]);
+      setError(getRequestErrorMessage(err, t('staff.doc.failedToLoad')));
     } finally {
       setLoading(false);
     }
@@ -156,17 +154,21 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
     try {
       const response = await apiClient.get(`/api/v1/staff/${staffId}/documents/statistics`);
       setStats(normalizeDocumentStats(response.data.data));
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch stats:', err);
-      // Handle 500 errors gracefully - feature not implemented yet
-      if (err.response?.status === 500) {
-        setStats(normalizeDocumentStats(null));
-      }
+      setError(getRequestErrorMessage(err, t('staff.doc.failedToLoad')));
     }
   };
 
+  useEffect(() => {
+    // Fetchers update state after their asynchronous API requests settle.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchDocuments();
+    fetchStats();
+  }, [staffId, filter]);
+
   const handleUpload = async () => {
-    if (!uploadForm.name || !uploadForm.file) {
+    if (!uploadForm.name.trim() || !uploadForm.file) {
       setError(t('staff.doc.fillAllFields'));
       return;
     }
@@ -175,13 +177,10 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       setUploading(true);
       setError('');
       
-      const formData = new FormData();
-      formData.append('name', uploadForm.name);
-      formData.append('category', uploadForm.category);
-      formData.append('document', uploadForm.file);
-      if (uploadForm.expiryDate) {
-        formData.append('expiryDate', uploadForm.expiryDate);
-      }
+      const formData = createStaffDocumentUploadFormData({
+        ...uploadForm,
+        file: uploadForm.file,
+      });
       
       await apiClient.post(`/api/v1/staff/${staffId}/documents`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -192,12 +191,8 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       setUploadForm({ name: '', category: 'certificate', file: null, expiryDate: '' });
       fetchDocuments();
       fetchStats();
-    } catch (err: any) {
-      if (err.response?.status === 500) {
-        setError(t('staff.doc.uploadFeatureNotImplemented'));
-      } else {
-        setError(err.response?.data?.message || t('staff.doc.failedToUpload'));
-      }
+    } catch (err: unknown) {
+      setError(getRequestErrorMessage(err, t('staff.doc.failedToUpload')));
     } finally {
       setUploading(false);
     }
@@ -219,6 +214,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       setError('');
       
       const formData = new FormData();
+      formData.append('category', bulkCategory);
       bulkFiles.forEach((file) => {
         formData.append('documents', file);
       });
@@ -232,31 +228,23 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       setBulkFiles([]);
       fetchDocuments();
       fetchStats();
-    } catch (err: any) {
-      if (err.response?.status === 500) {
-        setError(t('staff.doc.bulkUploadFeatureNotImplemented'));
-      } else {
-        setError(err.response?.data?.message || t('staff.doc.failedToBulkUpload'));
-      }
+    } catch (err: unknown) {
+      setError(getRequestErrorMessage(err, t('staff.doc.failedToBulkUpload')));
     } finally {
       setUploading(false);
     }
   };
 
-  const handleViewVersions = async (documentId: number, documentName: string) => {
+  const handleViewVersions = async (document: StaffDocument) => {
     try {
       setError('');
       const response = await apiClient.get(`/api/v1/staff/${staffId}/documents/versions`, {
-        params: { documentId },
+        params: createStaffDocumentVersionsParams(document),
       });
-      setVersions(response.data.data || []);
-      setVersionsDialog({ open: true, documentId, documentName });
-    } catch (err: any) {
-      if (err.response?.status === 500) {
-        setError(t('staff.doc.failedToLoadVersions'));
-      } else {
-        setError(err.response?.data?.message || t('staff.doc.failedToLoadVersions'));
-      }
+      setVersions((response.data.data || []).map(normalizeStaffDocumentVersion));
+      setVersionsDialog({ open: true, documentId: document.id, documentName: document.name });
+    } catch (err: unknown) {
+      setError(getRequestErrorMessage(err, t('staff.doc.failedToLoadVersions')));
     }
   };
 
@@ -265,24 +253,18 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
     
     try {
       setError('');
-      const { id, name, category, expiryDate } = editDialog.document;
+      const { id } = editDialog.document;
       
       await apiClient.put(`/api/v1/staff/documents/${id}`, {
-        name,
-        category,
-        expiryDate: expiryDate || null,
+        ...createStaffDocumentUpdatePayload(editDialog.document),
       });
       
       setSuccess(t('staff.doc.updatedSuccessfully'));
       setEditDialog({ open: false, document: null });
       fetchDocuments();
       fetchStats();
-    } catch (err: any) {
-      if (err.response?.status === 500) {
-        setError(t('staff.doc.failedToUpdate'));
-      } else {
-        setError(err.response?.data?.message || t('staff.doc.failedToUpdate'));
-      }
+    } catch (err: unknown) {
+      setError(getRequestErrorMessage(err, t('staff.doc.failedToUpdate')));
     }
   };
 
@@ -290,13 +272,9 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
     try {
       setError('');
       const response = await apiClient.get(`/api/v1/staff/documents/${documentId}`);
-      setDetailDialog({ open: true, document: response.data.data });
-    } catch (err: any) {
-      if (err.response?.status === 500) {
-        setError(t('staff.doc.detailsFeatureNotImplemented'));
-      } else {
-        setError(err.response?.data?.message || t('staff.doc.failedToLoadDetails'));
-      }
+      setDetailDialog({ open: true, document: normalizeStaffDocument(response.data.data) });
+    } catch (err: unknown) {
+      setError(getRequestErrorMessage(err, t('staff.doc.failedToLoadDetails')));
     }
   };
 
@@ -309,19 +287,15 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       setSuccess(t('staff.doc.deletedSuccessfully'));
       fetchDocuments();
       fetchStats();
-    } catch (err: any) {
-      if (err.response?.status === 500) {
-        setError(t('staff.doc.deleteFeatureNotImplemented'));
-      } else {
-        setError(err.response?.data?.message || t('staff.doc.failedToDelete'));
-      }
+    } catch (err: unknown) {
+      setError(getRequestErrorMessage(err, t('staff.doc.failedToDelete')));
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setUploadForm({ ...uploadForm, file, name: file.name.split('.')[0] });
+      setUploadForm({ ...uploadForm, file, name: file.name.replace(/\.[^.]*$/, '') });
     }
   };
 
@@ -332,6 +306,13 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       return;
     }
     setBulkFiles(files);
+  };
+
+  const handleFilterCardKeyDown = (event: KeyboardEvent<HTMLElement>, nextFilter: FilterType) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      setFilter(nextFilter);
+    }
   };
 
   const removeBulkFile = (index: number) => {
@@ -351,7 +332,9 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
       certificate: t('staff.doc.certificate'),
       contract: t('staff.doc.contract'),
       qualification: t('staff.doc.qualification'),
-      identity: t('staff.doc.identity'),
+      id_proof: t('staff.doc.idProof'),
+      experience: t('staff.doc.experience'),
+      medical: t('staff.doc.medical'),
       other: t('staff.doc.other'),
     };
     return labelMap[category] || category;
@@ -391,6 +374,10 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
               border: filter === 'all' ? `2px solid ${theme.palette.primary.main}` : 'none',
             }}
             onClick={() => setFilter('all')}
+            onKeyDown={(event) => handleFilterCardKeyDown(event, 'all')}
+            role="button"
+            tabIndex={0}
+            aria-pressed={filter === 'all'}
           >
             <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
               <Typography variant="body2" color="text.secondary">{t('staff.doc.totalDocuments')}</Typography>
@@ -411,6 +398,10 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
               border: filter === 'active' ? `2px solid ${C.success}` : 'none',
             }}
             onClick={() => setFilter('active')}
+            onKeyDown={(event) => handleFilterCardKeyDown(event, 'active')}
+            role="button"
+            tabIndex={0}
+            aria-pressed={filter === 'active'}
           >
             <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
               <Typography variant="body2" color="text.secondary">{t('staff.doc.active')}</Typography>
@@ -431,6 +422,10 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
               border: filter === 'expired' ? `2px solid ${theme.palette.error.main}` : 'none',
             }}
             onClick={() => setFilter('expired')}
+            onKeyDown={(event) => handleFilterCardKeyDown(event, 'expired')}
+            role="button"
+            tabIndex={0}
+            aria-pressed={filter === 'expired'}
           >
             <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
               <Typography variant="body2" color="text.secondary">{t('staff.doc.expired')}</Typography>
@@ -451,6 +446,10 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
               border: filter === 'expiring-soon' ? `2px solid ${C.warning}` : 'none',
             }}
             onClick={() => setFilter('expiring-soon')}
+            onKeyDown={(event) => handleFilterCardKeyDown(event, 'expiring-soon')}
+            role="button"
+            tabIndex={0}
+            aria-pressed={filter === 'expiring-soon'}
           >
             <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
               <Typography variant="body2" color="text.secondary">{t('staff.doc.expiringSoon')}</Typography>
@@ -500,10 +499,14 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
                 <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                     <DocIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
-                    <Typography color="text.secondary">{t('staff.doc.noDocumentsFound')}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {t('staff.doc.uploadToGetStarted')}
+                    <Typography color="text.secondary">
+                      {error ? t('staff.doc.failedToLoad') : t('staff.doc.noDocumentsFound')}
                     </Typography>
+                    {!error && (
+                      <Typography variant="caption" color="text.secondary">
+                        {t('staff.doc.uploadToGetStarted')}
+                      </Typography>
+                    )}
                   </Box>
                 </TableCell>
               </TableRow>
@@ -543,7 +546,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
                     </IconButton>
                     <IconButton
                       size="small"
-                      onClick={() => handleViewVersions(doc.id, doc.name)}
+                      onClick={() => handleViewVersions(doc)}
                       title={t('staff.doc.viewVersions')}
                     >
                       <HistoryIcon fontSize="small" />
@@ -557,7 +560,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
                     </IconButton>
                     <IconButton
                       size="small"
-                      onClick={() => window.open(doc.fileUrl, '_blank')}
+                      onClick={() => window.open(resolveStaffDocumentUrl(doc.fileUrl, apiClient.defaults.baseURL), '_blank')}
                       title={t('common.view')}
                     >
                       <DocIcon fontSize="small" />
@@ -593,16 +596,19 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
             </Grid>
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>{t('staff.doc.category')}</InputLabel>
+                <InputLabel id="upload-document-category-label">{t('staff.doc.category')}</InputLabel>
                 <Select
                   value={uploadForm.category}
+                  labelId="upload-document-category-label"
                   label={t('staff.doc.category')}
                   onChange={(e) => setUploadForm({ ...uploadForm, category: e.target.value })}
                 >
                   <MenuItem value="certificate">{t('staff.doc.certificate')}</MenuItem>
                   <MenuItem value="contract">{t('staff.doc.contract')}</MenuItem>
                   <MenuItem value="qualification">{t('staff.doc.qualification')}</MenuItem>
-                  <MenuItem value="identity">{t('staff.doc.identity')}</MenuItem>
+                  <MenuItem value="id_proof">{t('staff.doc.idProof')}</MenuItem>
+                  <MenuItem value="experience">{t('staff.doc.experience')}</MenuItem>
+                  <MenuItem value="medical">{t('staff.doc.medical')}</MenuItem>
                   <MenuItem value="other">{t('staff.doc.other')}</MenuItem>
                 </Select>
               </FormControl>
@@ -645,7 +651,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
           <Button
             sx={S.BTN_PRIMARY}
             onClick={handleUpload}
-            disabled={uploading || !uploadForm.name || !uploadForm.file}
+            disabled={uploading || !uploadForm.name.trim() || !uploadForm.file}
           >
             {uploading ? t('staff.doc.uploading') : t('staff.doc.upload')}
           </Button>
@@ -657,6 +663,20 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
         <DialogTitle>{t('staff.doc.bulkUploadTitle')}</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2 }}>
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel id="bulk-document-category-label">{t('staff.doc.category')}</InputLabel>
+              <Select
+                id="bulk-document-category"
+                labelId="bulk-document-category-label"
+                value={bulkCategory}
+                label={t('staff.doc.category')}
+                onChange={(event) => setBulkCategory(event.target.value)}
+              >
+                {STAFF_DOCUMENT_CATEGORY_VALUES.map((category) => (
+                  <MenuItem key={category} value={category}>{getCategoryLabel(category)}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             <Button
               component="label"
               variant="outlined"
@@ -737,7 +757,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
                       <TableCell align="right">
                         <IconButton
                           size="small"
-                          onClick={() => window.open(version.fileUrl, '_blank')}
+                          onClick={() => window.open(resolveStaffDocumentUrl(version.fileUrl, apiClient.defaults.baseURL), '_blank')}
                           title={t('common.view')}
                         >
                           <DocIcon fontSize="small" />
@@ -774,9 +794,10 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
               </Grid>
               <Grid item xs={12}>
                 <FormControl fullWidth>
-                  <InputLabel>{t('staff.doc.category')}</InputLabel>
+                  <InputLabel id="edit-document-category-label">{t('staff.doc.category')}</InputLabel>
                   <Select
                     value={editDialog.document.category}
+                    labelId="edit-document-category-label"
                     label={t('staff.doc.category')}
                     onChange={(e) => setEditDialog({ 
                       ...editDialog, 
@@ -786,7 +807,9 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
                     <MenuItem value="certificate">{t('staff.doc.certificate')}</MenuItem>
                     <MenuItem value="contract">{t('staff.doc.contract')}</MenuItem>
                     <MenuItem value="qualification">{t('staff.doc.qualification')}</MenuItem>
-                    <MenuItem value="identity">{t('staff.doc.identity')}</MenuItem>
+                    <MenuItem value="id_proof">{t('staff.doc.idProof')}</MenuItem>
+                    <MenuItem value="experience">{t('staff.doc.experience')}</MenuItem>
+                    <MenuItem value="medical">{t('staff.doc.medical')}</MenuItem>
                     <MenuItem value="other">{t('staff.doc.other')}</MenuItem>
                   </Select>
                 </FormControl>
@@ -873,7 +896,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
                       cursor: 'pointer',
                       '&:hover': { textDecoration: 'underline' }
                     }}
-                    onClick={() => window.open(detailDialog.document!.fileUrl, '_blank')}
+                    onClick={() => window.open(resolveStaffDocumentUrl(detailDialog.document!.fileUrl, apiClient.defaults.baseURL), '_blank')}
                   >
                     {detailDialog.document.fileUrl}
                   </Typography>
@@ -886,7 +909,7 @@ export const StaffDocuments = ({ staffId }: StaffDocumentsProps) => {
           <Button onClick={() => setDetailDialog({ open: false, document: null })}>{t('common.close')}</Button>
           <Button 
             variant="contained" sx={S.BTN_PRIMARY} 
-            onClick={() => detailDialog.document && window.open(detailDialog.document.fileUrl, '_blank')}
+            onClick={() => detailDialog.document && window.open(resolveStaffDocumentUrl(detailDialog.document.fileUrl, apiClient.defaults.baseURL), '_blank')}
           >
             {t('staff.doc.openFile')}
           </Button>

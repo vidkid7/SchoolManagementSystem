@@ -6,7 +6,10 @@
  * Requirements: 11.1, 11.2
  */
 
-import { ECA } from '../ECA.model';
+import sequelize from '@config/database';
+import { ECA, initECA } from '../ECA.model';
+
+initECA(sequelize);
 
 describe('ECA Model', () => {
   describe('hasCapacity', () => {

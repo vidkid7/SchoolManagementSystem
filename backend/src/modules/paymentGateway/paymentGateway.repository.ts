@@ -1,4 +1,4 @@
-import { Transaction } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
 import PaymentGatewayTransaction, {
   PaymentGateway,
   GatewayTransactionStatus,
@@ -93,16 +93,16 @@ class PaymentGatewayRepository {
 
     if (filters.startDate && filters.endDate) {
       where.initiatedAt = {
-        $gte: filters.startDate,
-        $lte: filters.endDate
+        [Op.gte]: filters.startDate,
+        [Op.lte]: filters.endDate
       };
     } else if (filters.startDate) {
       where.initiatedAt = {
-        $gte: filters.startDate
+        [Op.gte]: filters.startDate
       };
     } else if (filters.endDate) {
       where.initiatedAt = {
-        $lte: filters.endDate
+        [Op.lte]: filters.endDate
       };
     }
 
@@ -208,8 +208,8 @@ class PaymentGatewayRepository {
 
     if (startDate && endDate) {
       where.completedAt = {
-        $gte: startDate,
-        $lte: endDate
+        [Op.gte]: startDate,
+        [Op.lte]: endDate
       };
     }
 

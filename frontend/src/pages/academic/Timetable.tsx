@@ -143,8 +143,8 @@ export const Timetable = () => {
       const response = await api.get('/academic/classes');
       const classesData = response.data?.data || response.data;
       setClasses(Array.isArray(classesData) ? classesData : []);
-    } catch (error) {
-      console.error('Failed to fetch classes:', error);
+    } catch {
+      console.error('Failed to fetch classes');
     }
   };
 
@@ -153,8 +153,8 @@ export const Timetable = () => {
       const response = await api.get('/academic/subjects');
       const subjectsData = response.data?.data || response.data;
       setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
-    } catch (error) {
-      console.error('Failed to fetch subjects:', error);
+    } catch {
+      console.error('Failed to fetch subjects');
     }
   };
 
@@ -163,8 +163,8 @@ export const Timetable = () => {
       const response = await api.get('/staff?role=subject_teacher');
       const teachersData = response.data?.data || response.data;
       setTeachers(Array.isArray(teachersData) ? teachersData : []);
-    } catch (error) {
-      console.error('Failed to fetch teachers:', error);
+    } catch {
+      console.error('Failed to fetch teachers');
     }
   };
 
@@ -176,8 +176,8 @@ export const Timetable = () => {
       const response = await api.get(`/academic/timetable/${selectedClass}`);
       const timetableData = response.data?.data || response.data;
       setTimetables(Array.isArray(timetableData) ? timetableData : []);
-    } catch (error) {
-      console.error('Failed to fetch timetable:', error);
+    } catch {
+      console.error('Failed to fetch timetable');
       setError(t('academic.failedToLoadSyllabus'));
       setLoading(false);
     }
@@ -243,36 +243,23 @@ export const Timetable = () => {
       
       let timetableId = timetable?.timetableId;
       
-      console.log('Current timetables:', timetables);
-      console.log('Looking for dayOfWeek:', periodForm.dayOfWeek);
-      console.log('Found timetable:', timetable);
-      
       if (!timetableId) {
         const timetablePayload = {
           classId: selectedClass,
           academicYearId: currentYear.academicYearId,
           dayOfWeek: periodForm.dayOfWeek,
         };
-        console.log('Creating timetable with payload:', timetablePayload);
         const response = await api.post('/academic/timetable', timetablePayload);
-        console.log('Timetable creation response:', response.data);
-        console.log('Response structure:', JSON.stringify(response.data, null, 2));
         
         // Extract timetableId from response
         const createdTimetable = response.data?.data;
-        console.log('Created timetable object:', createdTimetable);
-        
         if (!createdTimetable || !createdTimetable.timetableId) {
-          console.error('Invalid response structure. Full response:', response);
-          throw new Error(`Failed to create timetable: Invalid response structure. Response: ${JSON.stringify(response.data)}`);
+          throw new Error('Failed to create timetable: Invalid response structure.');
         }
         timetableId = createdTimetable.timetableId;
-        console.log('Extracted timetableId:', timetableId);
         
         // Refresh timetables list to include the newly created timetable
-        console.log('Refreshing timetables list...');
         await fetchTimetable();
-        console.log('Timetables after refresh:', timetables);
       }
 
       // Verify we have a valid timetableId before adding period
@@ -290,15 +277,12 @@ export const Timetable = () => {
         teacherId: periodForm.teacherId ? parseInt(periodForm.teacherId) : undefined,
         roomNumber: periodForm.roomNumber || undefined,
       };
-      console.log('Adding period with payload:', periodPayload);
       await api.post('/academic/timetable', periodPayload);
 
       handleCloseDialog();
       fetchTimetable();
     } catch (error: any) {
-      console.error('Failed to save period:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Validation errors:', error.response?.data?.errors);
+      console.error('Failed to save period');
       
       // Check for specific error messages
       const errorMessage = error.response?.data?.message || error.response?.data?.error;

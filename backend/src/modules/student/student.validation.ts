@@ -77,6 +77,16 @@ export const createStudentSchema = Joi.object({
   nebRegistrationNumber: Joi.string().trim().max(50).allow('', null).optional()
 });
 
+/** Validate every record before the bulk-create controller starts writing. */
+export const bulkCreateStudentsSchema = Joi.object({
+  students: Joi.array().items(createStudentSchema).min(1).required()
+    .messages({
+      'array.base': 'Students must be an array',
+      'array.min': 'At least one student is required',
+      'any.required': 'Students array is required'
+    })
+});
+
 /**
  * Update student validation schema (all fields optional)
  */
@@ -157,7 +167,8 @@ export const promoteStudentSchema = Joi.object({
   gpa: Joi.number().min(0).max(4.0).optional(),
   totalMarks: Joi.number().min(0).optional(),
   rank: Joi.number().integer().positive().optional(),
-  hasFailingGrades: Joi.boolean().optional()
+  hasFailingGrades: Joi.boolean().optional(),
+  remarks: Joi.string().trim().max(500).allow('', null).optional()
 });
 
 /**

@@ -3,7 +3,11 @@ import sequelize from '@config/database';
 
 describe('Exam Model', () => {
   beforeAll(async () => {
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('Exam model tests require TEST_DB_DIALECT=sqlite');
+    }
     await sequelize.sync({ force: true });
+    await sequelize.query('PRAGMA foreign_keys = OFF');
   });
 
   afterAll(async () => {

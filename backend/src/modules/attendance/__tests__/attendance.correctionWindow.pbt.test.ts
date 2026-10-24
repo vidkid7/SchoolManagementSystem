@@ -191,8 +191,13 @@ describe('Attendance Service - Correction Window Property-Based Tests', () => {
      * - 24.01 hours: Correction rejected
      */
     it('should enforce exact 24-hour boundary for corrections', async () => {
-      await fc.assert(
-        fc.asyncProperty(
+      // Keep the reference clock fixed while the service evaluates the boundary.
+      // Otherwise, the exactly-24-hour case expires by the milliseconds spent
+      // between constructing markedAt and calling markAttendance.
+      jest.useFakeTimers({ now: new Date() });
+      try {
+        await fc.assert(
+          fc.asyncProperty(
           fc.integer({ min: 1, max: 1000 }), // studentId
           fc.integer({ min: 1, max: 100 }), // classId
           fc.date({ min: new Date('2024-01-01'), max: new Date('2025-12-31') }),
@@ -257,11 +262,14 @@ describe('Attendance Service - Correction Window Property-Based Tests', () => {
             }
           }
         ),
-        {
-          numRuns: 60,
-          verbose: true,
-        }
-      );
+          {
+            numRuns: 60,
+            verbose: true,
+          }
+        );
+      } finally {
+        jest.useRealTimers();
+      }
     });
 
     /**

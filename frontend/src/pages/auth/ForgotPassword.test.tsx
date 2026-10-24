@@ -30,6 +30,8 @@ describe('ForgotPassword', () => {
     );
 
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('main')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Forgot password', level: 1 })).toBeInTheDocument();
   });
 
   it('requires an email before submitting the reset request', () => {
@@ -44,5 +46,9 @@ describe('ForgotPassword', () => {
     );
 
     expect(screen.getByRole('textbox', { name: /email/i })).toBeRequired();
+    expect(screen.getByRole('textbox', { name: /email/i })).toHaveAttribute('id', 'forgot-password-email');
+    expect(screen.getByRole('textbox', { name: /email/i })).toHaveAttribute('name', 'email');
+    expect(screen.getByRole('textbox', { name: /email/i })).toHaveAttribute('autocomplete', 'email');
+    expect(screen.getByRole('button', { name: /send reset link/i }).closest('form')).toHaveAttribute('method', 'post');
   });
 });

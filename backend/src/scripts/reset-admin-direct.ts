@@ -1,58 +1,37 @@
 import 'dotenv/config';
 import sequelize from '../config/database';
-import bcrypt from 'bcrypt';
+import User, { UserRole, UserStatus } from '../models/User.model';
 import { logger } from '../utils/logger';
 
 /**
- * Direct Admin Password Reset Script
- * Directly updates the admin password using raw SQL
+ * Explicitly confirmed administrator password reset. Does not use a fixed default password.
  */
 
 async function resetAdminPassword(): Promise<void> {
   try {
-    logger.info('Starting direct admin password reset...');
+    logger.info('Starting confirmed administrator password reset...');
+
+    const username = process.env.ADMIN_USERNAME?.trim();
+    const newPassword = process.env.ADMIN_RESET_PASSWORD;
+    if (process.env.CONFIRM_ADMIN_PASSWORD_RESET !== 'true' || !username || !newPassword || newPassword.length < 14) {
+      throw new Error('Set CONFIRM_ADMIN_PASSWORD_RESET=true, ADMIN_USERNAME, and a 14+ character ADMIN_RESET_PASSWORD.');
+    }
 
     // Test database connection
     await sequelize.authenticate();
     logger.info('Database connection established');
 
-    // Hash the new password
-    const newPassword = 'Admin@123';
-    const salt = await bcrypt.genSalt(12);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
-
-    logger.info('Password hashed successfully');
-
-    // Update admin user directly with raw SQL
-    const [results] = await sequelize.query(
-      `UPDATE users 
-       SET password = :password, 
-           status = 'active',
-           failed_login_attempts = 0,
-           account_locked_until = NULL,
-           updated_at = NOW()
-       WHERE username = 'admin'`,
-      {
-        replacements: { password: hashedPassword }
-      }
-    );
-
-    logger.info('SQL update executed', { affectedRows: results });
-
-    // Verify the update
-    const [users] = await sequelize.query(
-      `SELECT username, email, status FROM users WHERE username = 'admin'`
-    );
-
-    if (users && users.length > 0) {
-      logger.info('✓ Admin account updated successfully');
-      logger.info('Admin details:', users[0]);
-      logger.info('Username: admin');
-      logger.info('Password: Admin@123');
-      logger.info('⚠️  IMPORTANT: Change this password immediately in production!');
-    } else {
-      logger.error('Admin user not found after update!');
+    const admin = await User.findOne({ where: { username } });
+    if (!admin || ![UserRole.SCHOOL_ADMIN, UserRole.MUNICIPALITY_ADMIN].includes(admin.role)) {
+      throw new Error('Selected administrator account was not found.');
     }
+
+    admin.password = newPassword;
+    admin.status = UserStatus.ACTIVE;
+    admin.failedLoginAttempts = 0;
+    admin.accountLockedUntil = undefined;
+    await admin.save();
+    logger.info('Administrator password updated successfully', { username });
 
     process.exit(0);
   } catch (error) {

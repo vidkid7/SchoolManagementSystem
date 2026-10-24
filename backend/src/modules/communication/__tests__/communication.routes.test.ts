@@ -66,3 +66,65 @@ describe('communication settings route authorization', () => {
     expect(response.status).toBe(200);
   });
 });
+
+describe('notification center route authorization', () => {
+  const app = express();
+  app.use(express.json());
+  app.use('/api/v1/communication', communicationRoutes);
+
+  const routes = [
+    ['GET', '/api/v1/communication/notifications/history'],
+    ['GET', '/api/v1/communication/templates?type=sms'],
+    ['POST', '/api/v1/communication/bulk-notification'],
+    ['POST', '/api/v1/communication/sms/send'],
+    ['POST', '/api/v1/communication/sms/bulk'],
+    ['POST', '/api/v1/communication/email/send'],
+    ['POST', '/api/v1/communication/push/send'],
+  ] as const;
+
+  it.each(routes)('%s %s denies authenticated non-admins', async (method, path) => {
+    const response = method === 'GET'
+      ? await request(app).get(path).set('x-test-role', 'teacher')
+      : await request(app).post(path).set('x-test-role', 'teacher').send({});
+
+    expect(response.status).toBe(403);
+  });
+
+  it.each(routes)('%s %s remains available to school admins', async (method, path) => {
+    const response = method === 'GET'
+      ? await request(app).get(path).set('x-test-role', UserRole.SCHOOL_ADMIN)
+      : await request(app).post(path).set('x-test-role', UserRole.SCHOOL_ADMIN).send({});
+
+    expect(response.status).toBe(200);
+  });
+});
+
+describe('announcement creation authorization', () => {
+  const app = express();
+  app.use(express.json());
+  app.use('/api/v1/communication', communicationRoutes);
+
+  it.each([UserRole.STUDENT, UserRole.PARENT, UserRole.LIBRARIAN])(
+    'denies announcement creation to %s',
+    async (role) => {
+      const response = await request(app)
+        .post('/api/v1/communication/announcements')
+        .set('x-test-role', role)
+        .send({ title: 'Test announcement', content: 'This content is only used to test role access.' });
+
+      expect(response.status).toBe(403);
+    }
+  );
+
+  it.each([UserRole.SCHOOL_ADMIN, UserRole.CLASS_TEACHER, UserRole.SUBJECT_TEACHER, UserRole.DEPARTMENT_HEAD])(
+    'allows announcement creation to %s',
+    async (role) => {
+      const response = await request(app)
+        .post('/api/v1/communication/announcements')
+        .set('x-test-role', role)
+        .send({ title: 'Test announcement', content: 'This content is only used to test role access.' });
+
+      expect(response.status).toBe(200);
+    }
+  );
+});

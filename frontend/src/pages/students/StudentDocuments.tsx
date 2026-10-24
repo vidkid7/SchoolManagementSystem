@@ -6,7 +6,7 @@ import { YearSelectableDateField } from '../../components/YearSelectableDatePick
  * Similar to Staff Documents component
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -30,7 +30,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  alpha,
   useTheme,
   CircularProgress,
   Alert,
@@ -48,6 +47,7 @@ import {
   Info as InfoIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
+import axios from 'axios';
 import { motion } from 'framer-motion';
 import { C, useAdminStyles } from '../../theme/designTokens';
 
@@ -56,15 +56,40 @@ const MotionCard = motion.create(Card);
 interface StudentDocument {
   id: number;
   name: string;
-  type: string;
+  type?: string;
   category: string;
   fileUrl: string;
-  fileSize: number;
+  fileSize?: number;
   expiryDate?: string;
   isExpired: boolean;
   isExpiringSoon: boolean;
-  createdAt: string;
-  version: number;
+  createdAt?: string;
+  version?: number;
+}
+
+function normalizeStudentDocument(document: Record<string, unknown>): StudentDocument {
+  const fileSize = document.fileSize ?? document.size;
+  return {
+    id: Number(document.id),
+    name: String(document.name ?? document.originalName ?? document.filename ?? 'Document'),
+    type: typeof (document.type ?? document.mimeType) === 'string' ? String(document.type ?? document.mimeType) : undefined,
+    category: String(document.category ?? 'other'),
+    fileUrl: String(document.fileUrl ?? document.url ?? document.documentUrl ?? ''),
+    fileSize: typeof fileSize === 'number' && Number.isFinite(fileSize) ? fileSize : undefined,
+    expiryDate: typeof document.expiryDate === 'string' ? document.expiryDate : undefined,
+    isExpired: Boolean(document.isExpired),
+    isExpiringSoon: Boolean(document.isExpiringSoon),
+    createdAt: typeof document.createdAt === 'string' ? document.createdAt : undefined,
+    version: typeof document.version === 'number' ? document.version : undefined,
+  };
+}
+
+function getRequestErrorMessage(error: unknown, fallback: string) {
+  if (axios.isAxiosError<{ message?: unknown }>(error)) {
+    const message = error.response?.data?.message;
+    if (typeof message === 'string' && message.trim()) return message;
+  }
+  return fallback;
 }
 
 interface DocumentStats {
@@ -87,7 +112,7 @@ export const StudentDocuments = ({ studentId }: StudentDocumentsProps) => {
   
   const [documents, setDocuments] = useState<StudentDocument[]>([]);
   const [stats, setStats] = useState<DocumentStats>({ total: 0, active: 0, expired: 0, expiringSoon: 0 });
-  const [loading, setLoading] = useState(true);
+  const [loadedDocumentKey, setLoadedDocumentKey] = useState('');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -105,15 +130,11 @@ export const StudentDocuments = ({ studentId }: StudentDocumentsProps) => {
   });
   
   const [bulkFiles, setBulkFiles] = useState<File[]>([]);
+  const currentDocumentKey = `${studentId}:${filter}`;
+  const loading = loadedDocumentKey !== currentDocumentKey;
 
-  useEffect(() => {
-    fetchDocuments();
-    fetchStats();
-  }, [studentId, filter]);
-
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     try {
-      setLoading(true);
       let endpoint = `/api/v1/students/${studentId}/documents`;
       
       if (filter === 'expired') {
@@ -123,7 +144,8 @@ export const StudentDocuments = ({ studentId }: StudentDocumentsProps) => {
       }
       
       const response = await apiClient.get(endpoint);
-      let docs = response.data.data || [];
+      const responseDocuments: unknown[] = Array.isArray(response.data.data) ? response.data.data : [];
+      let docs = responseDocuments.map((document) => normalizeStudentDocument(document as Record<string, unknown>));
       
       // Apply active filter on client side
       if (filter === 'active') {
@@ -131,22 +153,29 @@ export const StudentDocuments = ({ studentId }: StudentDocumentsProps) => {
       }
       
       setDocuments(docs);
-    } catch (err: any) {
-      console.error('Failed to fetch documents:', err);
-      setError(err.response?.data?.message || t('messages.error'));
-    } finally {
-      setLoading(false);
+      setLoadedDocumentKey(currentDocumentKey);
+    } catch (error: unknown) {
+      setError(getRequestErrorMessage(error, t('messages.error')));
+      setLoadedDocumentKey(currentDocumentKey);
     }
-  };
+  }, [currentDocumentKey, filter, studentId, t]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const response = await apiClient.get(`/api/v1/students/${studentId}/documents/statistics`);
       setStats(response.data.data || { total: 0, active: 0, expired: 0, expiringSoon: 0 });
-    } catch (err: any) {
-      console.error('Failed to fetch stats:', err);
+    } catch (error: unknown) {
+      setError(getRequestErrorMessage(error, t('messages.error')));
     }
-  };
+  }, [studentId, t]);
+
+  useEffect(() => {
+    const request = window.setTimeout(() => {
+      void fetchDocuments();
+      void fetchStats();
+    }, 0);
+    return () => window.clearTimeout(request);
+  }, [fetchDocuments, fetchStats]);
 
   const handleUpload = async () => {
     if (!uploadForm.name || !uploadForm.file) {
@@ -173,10 +202,11 @@ export const StudentDocuments = ({ studentId }: StudentDocumentsProps) => {
       setSuccess(t('documents.documentUploadedSuccessfully'));
       setUploadDialog({ open: false });
       setUploadForm({ name: '', category: 'birth_certificate', file: null, expiryDate: '' });
-      fetchDocuments();
-      fetchStats();
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('documents.failedToUploadDocument'));
+      setLoadedDocumentKey('');
+      void fetchDocuments();
+      void fetchStats();
+    } catch (error: unknown) {
+      setError(getRequestErrorMessage(error, t('documents.failedToUploadDocument')));
     } finally {
       setUploading(false);
     }
@@ -209,10 +239,11 @@ if (bulkFiles.length > 10) {
       setSuccess(`${bulkFiles.length} documents uploaded successfully`);
       setBulkUploadDialog({ open: false });
       setBulkFiles([]);
-      fetchDocuments();
-      fetchStats();
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('documents.failedToUploadDocument'));
+      setLoadedDocumentKey('');
+      void fetchDocuments();
+      void fetchStats();
+    } catch (error: unknown) {
+      setError(getRequestErrorMessage(error, t('documents.failedToUploadDocument')));
     } finally {
       setUploading(false);
     }
@@ -222,9 +253,28 @@ if (bulkFiles.length > 10) {
     try {
       setError('');
       const response = await apiClient.get(`/api/v1/students/documents/${documentId}`);
-      setDetailDialog({ open: true, document: response.data.data });
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('documents.failedToPreviewDocument'));
+      setDetailDialog({ open: true, document: normalizeStudentDocument(response.data.data || {}) });
+    } catch (error: unknown) {
+      setError(getRequestErrorMessage(error, t('documents.failedToPreviewDocument')));
+    }
+  };
+
+  const handleOpenDocument = async (fileUrl: string) => {
+    const documentWindow = window.open('about:blank', '_blank');
+    if (!documentWindow) {
+      setError(t('documents.failedToPreviewDocument'));
+      return;
+    }
+
+    try {
+      const response = await apiClient.get(fileUrl, { responseType: 'blob' });
+      const objectUrl = URL.createObjectURL(response.data);
+      documentWindow.opener = null;
+      documentWindow.location.href = objectUrl;
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 300_000);
+    } catch (error: unknown) {
+      documentWindow.close();
+      setError(getRequestErrorMessage(error, t('documents.failedToPreviewDocument')));
     }
   };
 
@@ -235,10 +285,11 @@ if (bulkFiles.length > 10) {
       setError('');
       await apiClient.delete(`/api/v1/students/documents/${documentId}`);
       setSuccess(t('documents.documentDeletedSuccessfully'));
-      fetchDocuments();
-      fetchStats();
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('documents.failedToDeleteDocument'));
+      setLoadedDocumentKey('');
+      void fetchDocuments();
+      void fetchStats();
+    } catch (error: unknown) {
+      setError(getRequestErrorMessage(error, t('documents.failedToDeleteDocument')));
     }
   };
 
@@ -262,7 +313,16 @@ if (bulkFiles.length > 10) {
     setBulkFiles(bulkFiles.filter((_, i) => i !== index));
   };
 
-const formatFileSize = (bytes: number) => {
+  const handleFilterKeyDown = (event: React.KeyboardEvent, nextFilter: FilterType) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      setFilter(nextFilter);
+    }
+  };
+
+const formatFileSize = (bytes?: number) => {
+    if (bytes === undefined) return '-';
+    if (!Number.isFinite(bytes)) return '-';
     if (bytes === 0) return '0 ' + t('documents.bytes');
     const k = 1024;
     const sizes = [t('documents.bytes'), 'KB', 'MB', 'GB'];
@@ -307,6 +367,10 @@ const getCategoryLabel = (category: string) => {
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={6} sm={3}>
           <MotionCard 
+            role="button"
+            tabIndex={0}
+            aria-pressed={filter === 'all'}
+            onKeyDown={(event) => handleFilterKeyDown(event, 'all')}
             initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }} 
             sx={{ 
@@ -326,6 +390,10 @@ const getCategoryLabel = (category: string) => {
         </Grid>
         <Grid item xs={6} sm={3}>
           <MotionCard 
+            role="button"
+            tabIndex={0}
+            aria-pressed={filter === 'active'}
+            onKeyDown={(event) => handleFilterKeyDown(event, 'active')}
             initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ delay: 0.1 }} 
@@ -346,6 +414,10 @@ const getCategoryLabel = (category: string) => {
         </Grid>
         <Grid item xs={6} sm={3}>
           <MotionCard 
+            role="button"
+            tabIndex={0}
+            aria-pressed={filter === 'expired'}
+            onKeyDown={(event) => handleFilterKeyDown(event, 'expired')}
             initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ delay: 0.2 }} 
@@ -366,6 +438,10 @@ const getCategoryLabel = (category: string) => {
         </Grid>
         <Grid item xs={6} sm={3}>
           <MotionCard 
+            role="button"
+            tabIndex={0}
+            aria-pressed={filter === 'expiring-soon'}
+            onKeyDown={(event) => handleFilterKeyDown(event, 'expiring-soon')}
             initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ delay: 0.3 }} 
@@ -459,7 +535,7 @@ const getCategoryLabel = (category: string) => {
                     </IconButton>
                     <IconButton
                       size="small"
-                      onClick={() => window.open(doc.fileUrl, '_blank')}
+                      onClick={() => void handleOpenDocument(doc.fileUrl)}
                       title={t('documents.view')}
                     >
                       <DocIcon fontSize="small" />
@@ -651,7 +727,7 @@ const getCategoryLabel = (category: string) => {
                 <Grid item xs={12}>
                   <Typography variant="body2" color="text.secondary">{t('students.createdAt')}:</Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {new Date(detailDialog.document.createdAt).toLocaleDateString()}
+                    {detailDialog.document.createdAt ? new Date(detailDialog.document.createdAt).toLocaleDateString() : '-'}
                   </Typography>
                 </Grid>
               </Grid>
@@ -661,7 +737,7 @@ const getCategoryLabel = (category: string) => {
         <DialogActions>
           <Button onClick={() => setDetailDialog({ open: false, document: null })}>{t('common.close')}</Button>
           <Button
-            onClick={() => detailDialog.document && window.open(detailDialog.document.fileUrl, '_blank')}
+            onClick={() => detailDialog.document && void handleOpenDocument(detailDialog.document.fileUrl)}
             sx={S.BTN_PRIMARY}
           >
             Open File

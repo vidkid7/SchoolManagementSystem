@@ -112,7 +112,7 @@ router.post(
 
 router.post(
   '/renew',
-  authorize(...readRoles),
+  authorize(...manageRoles),
   validateRequest(libraryValidation.renewBook),
   libraryController.renewBook.bind(libraryController)
 );
@@ -133,20 +133,20 @@ router.get(
 
 router.post(
   '/reserve',
-  authorize(...readRoles),
+  authorize(...manageRoles),
   validateRequest(libraryValidation.reserveBook),
   libraryController.reserveBook.bind(libraryController)
 );
 
 router.get(
   '/reservations',
-  authorize(...readRoles),
+  authorize(...manageRoles),
   libraryController.getReservations.bind(libraryController)
 );
 
 router.put(
   '/reservations/:id/cancel',
-  authorize(...readRoles),
+  authorize(...manageRoles),
   libraryController.cancelReservation.bind(libraryController)
 );
 
@@ -180,13 +180,13 @@ router.delete(
 
 router.get(
   '/fines',
-  authorize(...readRoles),
+  authorize(...manageRoles),
   libraryController.getAllFines.bind(libraryController)
 );
 
 router.get(
   '/fines/:studentId',
-  authorize(...readRoles),
+  authorize(...manageRoles),
   libraryController.getFinesByStudent.bind(libraryController)
 );
 

@@ -35,20 +35,20 @@ export class NotificationTemplate
   extends Model<NotificationTemplateAttributes, NotificationTemplateCreationAttributes>
   implements NotificationTemplateAttributes
 {
-  public id!: string;
-  public name!: string;
-  public code!: string;
-  public description?: string;
-  public category!: 'attendance' | 'exam' | 'fee' | 'grade' | 'announcement' | 'leave' | 'library' | 'general';
-  public channel!: 'sms' | 'email' | 'push' | 'in_app';
-  public language!: 'nepali' | 'english';
-  public subject?: string;
-  public templateEn!: string;
-  public templateNp?: string;
-  public variables!: string[];
-  public isActive!: boolean;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public id: string;
+  declare public name: string;
+  declare public code: string;
+  declare public description?: string;
+  declare public category: 'attendance' | 'exam' | 'fee' | 'grade' | 'announcement' | 'leave' | 'library' | 'general';
+  declare public channel: 'sms' | 'email' | 'push' | 'in_app';
+  declare public language: 'nepali' | 'english';
+  declare public subject?: string;
+  declare public templateEn: string;
+  declare public templateNp?: string;
+  declare public variables: string[];
+  declare public isActive: boolean;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 }
 
 NotificationTemplate.init(

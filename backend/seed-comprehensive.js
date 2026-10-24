@@ -11,6 +11,9 @@ require('dotenv').config({ path: './backend/.env' });
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
+if (process.env.NODE_ENV === 'production' || process.env.ALLOW_DEMO_SEED !== 'true' || !process.env.DEMO_SEED_PASSWORD || process.env.DEMO_SEED_PASSWORD.length < 16) {
+  throw new Error('Demo seeding is disabled in production. For local use, set ALLOW_DEMO_SEED=true and a 16+ character DEMO_SEED_PASSWORD.');
+}
 
 // ─── DB CONNECTION ────────────────────────────────────────────────────────────
 async function getConnection() {
@@ -111,16 +114,16 @@ const ACADEMIC_YEARS = [
 
 // Role definitions with credentials
 const STAFF_ROLES = [
-  { role: 'Class_Teacher',      suffix: 'ct',      password: 'Teacher@123',      firstName: 'Ram',    lastName: 'Prasad',  dept: 'Academics',    pos: 'Class Teacher',      cat: 'teaching' },
-  { role: 'Subject_Teacher',    suffix: 'st',      password: 'Teacher@123',      firstName: 'Sita',   lastName: 'Sharma',  dept: 'Academics',    pos: 'Subject Teacher',    cat: 'teaching' },
-  { role: 'Department_Head',    suffix: 'dh',      password: 'DeptHead@123',     firstName: 'Hari',   lastName: 'Prasad',  dept: 'Science',      pos: 'Department Head',    cat: 'teaching' },
-  { role: 'ECA_Coordinator',    suffix: 'eca',     password: 'ECACoord@123',     firstName: 'Kiran',  lastName: 'Thapa',   dept: 'Extra-Curricular', pos: 'ECA Coordinator', cat: 'non_teaching' },
-  { role: 'Sports_Coordinator', suffix: 'sc',      password: 'SportsCoord@123',  firstName: 'Bikash', lastName: 'Rai',     dept: 'Sports',       pos: 'Sports Coordinator', cat: 'non_teaching' },
-  { role: 'Librarian',          suffix: 'lib',     password: 'Librarian@123',    firstName: 'Anita',  lastName: 'Gurung',  dept: 'Library',      pos: 'Librarian',          cat: 'non_teaching' },
-  { role: 'Accountant',         suffix: 'acc',     password: 'Accountant@123',   firstName: 'Sunita', lastName: 'Koirala', dept: 'Finance',      pos: 'Accountant',         cat: 'non_teaching' },
-  { role: 'Transport_Manager',  suffix: 'tm',      password: 'Transport@123',    firstName: 'Dinesh', lastName: 'Basnet',  dept: 'Transport',    pos: 'Transport Manager',  cat: 'non_teaching' },
-  { role: 'Hostel_Warden',      suffix: 'hw',      password: 'Hostel@123',       firstName: 'Mohan',  lastName: 'Khadka',  dept: 'Hostel',       pos: 'Hostel Warden',      cat: 'non_teaching' },
-  { role: 'Non_Teaching_Staff', suffix: 'nts',     password: 'Staff@123',        firstName: 'Gita',   lastName: 'Tamang',  dept: 'Administration', pos: 'Office Staff',     cat: 'non_teaching' },
+  { role: 'Class_Teacher',      suffix: 'ct',      password: process.env.DEMO_SEED_PASSWORD,      firstName: 'Ram',    lastName: 'Prasad',  dept: 'Academics',    pos: 'Class Teacher',      cat: 'teaching' },
+  { role: 'Subject_Teacher',    suffix: 'st',      password: process.env.DEMO_SEED_PASSWORD,      firstName: 'Sita',   lastName: 'Sharma',  dept: 'Academics',    pos: 'Subject Teacher',    cat: 'teaching' },
+  { role: 'Department_Head',    suffix: 'dh',      password: process.env.DEMO_SEED_PASSWORD,     firstName: 'Hari',   lastName: 'Prasad',  dept: 'Science',      pos: 'Department Head',    cat: 'teaching' },
+  { role: 'ECA_Coordinator',    suffix: 'eca',     password: process.env.DEMO_SEED_PASSWORD,     firstName: 'Kiran',  lastName: 'Thapa',   dept: 'Extra-Curricular', pos: 'ECA Coordinator', cat: 'non_teaching' },
+  { role: 'Sports_Coordinator', suffix: 'sc',      password: process.env.DEMO_SEED_PASSWORD,  firstName: 'Bikash', lastName: 'Rai',     dept: 'Sports',       pos: 'Sports Coordinator', cat: 'non_teaching' },
+  { role: 'Librarian',          suffix: 'lib',     password: process.env.DEMO_SEED_PASSWORD,    firstName: 'Anita',  lastName: 'Gurung',  dept: 'Library',      pos: 'Librarian',          cat: 'non_teaching' },
+  { role: 'Accountant',         suffix: 'acc',     password: process.env.DEMO_SEED_PASSWORD,   firstName: 'Sunita', lastName: 'Koirala', dept: 'Finance',      pos: 'Accountant',         cat: 'non_teaching' },
+  { role: 'Transport_Manager',  suffix: 'tm',      password: process.env.DEMO_SEED_PASSWORD,    firstName: 'Dinesh', lastName: 'Basnet',  dept: 'Transport',    pos: 'Transport Manager',  cat: 'non_teaching' },
+  { role: 'Hostel_Warden',      suffix: 'hw',      password: process.env.DEMO_SEED_PASSWORD,       firstName: 'Mohan',  lastName: 'Khadka',  dept: 'Hostel',       pos: 'Hostel Warden',      cat: 'non_teaching' },
+  { role: 'Non_Teaching_Staff', suffix: 'nts',     password: process.env.DEMO_SEED_PASSWORD,        firstName: 'Gita',   lastName: 'Tamang',  dept: 'Administration', pos: 'Office Staff',     cat: 'non_teaching' },
 ];
 
 const NEPALI_EVENTS = [
@@ -286,13 +289,13 @@ async function main() {
     for (const mun of MUNICIPALITIES) {
       const slug = mun.code.toLowerCase();
       const username = `munadmin_${slug}`;
-      const hashedPw = await hashPw('Municipality@123');
+      const hashedPw = await hashPw(process.env.DEMO_SEED_PASSWORD);
       const [result] = await conn.query(
         'INSERT INTO users (username, email, password, role, status, phone_number, municipality_id, school_config_id, failed_login_attempts, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 0, NOW(), NOW())',
         [username, `${username}@${slug}.edu.np`, hashedPw, 'Municipality_Admin', 'active', '+977-9800000001', mun.id]
       );
       munAdminIds[mun.code] = result.insertId;
-      console.log(`   ✅ Municipality Admin: ${username} / Municipality@123`);
+      console.log(`   ✅ Municipality Admin: ${username}`);
     }
     console.log();
 
@@ -309,7 +312,7 @@ async function main() {
 
       // ── School Admin ──────────────────────────────────────────────────────
       const adminUsername = `admin_${slug}`;
-      const adminPw = await hashPw('Admin@123');
+      const adminPw = await hashPw(process.env.DEMO_SEED_PASSWORD);
       const [adminResult] = await conn.query(
         'INSERT INTO users (username, email, password, role, status, phone_number, municipality_id, school_config_id, failed_login_attempts, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, NOW(), NOW())',
         [adminUsername, `admin@${slug}.edu.np`, adminPw, 'School_Admin', 'active', '+977-9800000010', school.municipalityId, school.id]
@@ -320,7 +323,7 @@ async function main() {
         [adminUserId, `${slug.toUpperCase()}-ADM-001`, 'School', 'Administrator', 'विद्यालय', 'प्रशासक', '1980-01-15', 'male', 'administrative', 'School Administrator', 'Administration', 'full_time', '2015-04-01', 60000, 'active']
       );
       allStaffBySchool[school.id]['admin'] = { userId: adminUserId, staffId: adminStaffResult.insertId };
-      console.log(`   ✅ School Admin: ${adminUsername} / Admin@123`);
+      console.log(`   ✅ School Admin: ${adminUsername}`);
 
       // ── Staff for each role ────────────────────────────────────────────────
       for (let i = 0; i < STAFF_ROLES.length; i++) {
@@ -422,8 +425,8 @@ async function main() {
 
       // ── Students + Parents ────────────────────────────────────────────────
       let studentCount = 0;
-      const studentPw = await hashPw('Student@123');
-      const parentPw = await hashPw('Parent@123');
+      const studentPw = await hashPw(process.env.DEMO_SEED_PASSWORD);
+      const parentPw = await hashPw(process.env.DEMO_SEED_PASSWORD);
 
       for (let clsIdx = 0; clsIdx < allClassesBySchool[school.id].length; clsIdx++) {
         const cls = allClassesBySchool[school.id][clsIdx];
@@ -632,32 +635,7 @@ async function main() {
     // ── PRINT SUMMARY ──────────────────────────────────────────────────────────
     console.log('\n' + '═'.repeat(70));
     console.log('🎉  SEEDING COMPLETE!\n');
-    console.log('📋  LOGIN CREDENTIALS\n');
-    console.log('MUNICIPALITY ADMINS:');
-    for (const mun of MUNICIPALITIES) {
-      const slug = mun.code.toLowerCase();
-      console.log(`  munadmin_${slug}  /  Municipality@123  (${mun.nameEn})`);
-    }
-    console.log('\nSCHOOL ADMINS (one per school):');
-    for (const sch of schools) {
-      const slug = sch.code.toLowerCase().replace(/-/g, '_');
-      console.log(`  admin_${slug}  /  Admin@123  (${sch.nameEn})`);
-    }
-    console.log('\nSTAFF (per school, replace {sch} with school slug e.g. kmc_sch1):');
-    console.log('  ct_{sch}      /  Teacher@123        (Class Teacher)');
-    console.log('  st_{sch}      /  Teacher@123        (Subject Teacher)');
-    console.log('  dh_{sch}      /  DeptHead@123       (Department Head)');
-    console.log('  eca_{sch}     /  ECACoord@123       (ECA Coordinator)');
-    console.log('  sc_{sch}      /  SportsCoord@123    (Sports Coordinator)');
-    console.log('  lib_{sch}     /  Librarian@123      (Librarian)');
-    console.log('  acc_{sch}     /  Accountant@123     (Accountant)');
-    console.log('  tm_{sch}      /  Transport@123      (Transport Manager)');
-    console.log('  hw_{sch}      /  Hostel@123         (Hostel Warden)');
-    console.log('  nts_{sch}     /  Staff@123          (Non-Teaching Staff)');
-    console.log('\nSTUDENTS (per school):');
-    console.log('  stu_{sch}_001 to stu_{sch}_150  /  Student@123');
-    console.log('\nPARENTS (per school):');
-    console.log('  par_{sch}_001 to par_{sch}_045  /  Parent@123');
+    console.log('Demo accounts use the supplied DEMO_SEED_PASSWORD.');
     console.log('\nExample school slugs: kmc_kmc_sch1, kmc_kmc_sch2, lmc_lmc_sch1, lmc_lmc_sch2');
 
     // Quick DB counts

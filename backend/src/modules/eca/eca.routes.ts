@@ -15,7 +15,11 @@ import {
   createEventValidation,
   recordAchievementValidation,
   recordAchievementDirectValidation,
-  getStudentECAHistoryValidation
+  getStudentECAHistoryValidation,
+  getEnrollmentsValidation,
+  getEventsValidation,
+  getAchievementsValidation,
+  getRecentActivitiesValidation,
 } from './eca.validation';
 
 /**
@@ -69,6 +73,7 @@ router.get(
 router.get(
   '/recent-activities',
   authorize(UserRole.SCHOOL_ADMIN, UserRole.ECA_COORDINATOR, UserRole.DEPARTMENT_HEAD),
+  getRecentActivitiesValidation,
   ecaController.getRecentActivities
 );
 
@@ -111,6 +116,7 @@ router.post(
 router.get(
   '/enrollments',
   authorize(...manageRoles),
+  getEnrollmentsValidation,
   ecaController.getEnrollments
 );
 
@@ -157,6 +163,7 @@ router.post(
 router.get(
   '/achievements',
   authorize(...readRoles),
+  getAchievementsValidation,
   ecaController.getAchievements
 );
 
@@ -180,6 +187,7 @@ router.post(
 router.get(
   '/events',
   authorize(...readRoles),
+  getEventsValidation,
   ecaController.getEvents
 );
 

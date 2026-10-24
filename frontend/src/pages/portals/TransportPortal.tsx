@@ -1,7 +1,7 @@
 import { YearSelectableDateField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box, Grid, Card, CardContent, Typography, Button, Divider, List, ListItem,
+  Box, Grid, Typography, Button, Divider, List, ListItem,
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog,
   DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select,
@@ -33,6 +33,7 @@ interface Vehicle { id: number; vehicleNumber: string; type: string; capacity: n
 interface PickupPoint { id: number; name: string; address: string; routeId: number | null; estimatedTime: string; status: string; }
 interface Driver { id: number; name: string; licenseNumber: string; licenseExpiry: string | null; phone: string; address: string; assignedVehicleId: number | null; status: string; }
 interface MaintenanceRecord { id: number; vehicleId: number; type: string; description: string; cost: number; date: string; nextDueDate: string | null; status: string; }
+type TransportFormData = Record<string, string | number | null | string[] | undefined>;
 
 const authHdr = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
 
@@ -68,7 +69,7 @@ const TransportPortal: React.FC = () => {
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
   const [editDriver, setEditDriver] = useState<Driver | null>(null);
   const [editMaintenance, setEditMaintenance] = useState<MaintenanceRecord | null>(null);
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<TransportFormData>({});
 
   const { user, accessToken } = useSelector((state: RootState) => state.auth);
   const navigate = useSlugNavigate();
@@ -104,7 +105,7 @@ const TransportPortal: React.FC = () => {
     }
   }, [accessToken, t]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { void Promise.resolve().then(loadData); }, [loadData]);
 
   const handleSaveRoute = async () => {
     if (![formData.routeName, formData.origin, formData.destination].every(value => typeof value === 'string' && value.trim())) {
@@ -131,6 +132,11 @@ const TransportPortal: React.FC = () => {
   };
 
   const handleSaveVehicle = async () => {
+    if (![formData.vehicleNumber, formData.type].every(value => typeof value === 'string' && value.trim())) {
+      setError(t('transport.vehicleRequiredFields'));
+      return;
+    }
+
     try {
       if (editVehicle) {
         await apiClient.put(`/api/v1/transport/vehicles/${editVehicle.id}`, formData, authHdr(accessToken!));
@@ -142,6 +148,11 @@ const TransportPortal: React.FC = () => {
   };
 
   const handleCreatePickup = async () => {
+    if (![formData.name, formData.address].every(value => typeof value === 'string' && value.trim())) {
+      setError(t('transport.pickupRequiredFields'));
+      return;
+    }
+
     try {
       await apiClient.post('/api/v1/transport/pickup-points', formData, authHdr(accessToken!));
       setPickupDialog(false); setFormData({}); loadData();
@@ -149,6 +160,11 @@ const TransportPortal: React.FC = () => {
   };
 
   const handleSaveDriver = async () => {
+    if (![formData.name, formData.licenseNumber].every(value => typeof value === 'string' && value.trim())) {
+      setError(t('transport.driverRequiredFields'));
+      return;
+    }
+
     try {
       if (editDriver) {
         await apiClient.put(`/api/v1/transport/drivers/${editDriver.id}`, formData, authHdr(accessToken!));
@@ -168,6 +184,11 @@ const TransportPortal: React.FC = () => {
   };
 
   const handleSaveMaintenance = async () => {
+    if (!Number.isInteger(Number(formData.vehicleId)) || Number(formData.vehicleId) <= 0 || typeof formData.type !== 'string' || !formData.type.trim()) {
+      setError(t('transport.maintenanceVehicleRequired'));
+      return;
+    }
+
     try {
       if (editMaintenance) {
         await apiClient.put(`/api/v1/transport/maintenance/${editMaintenance.id}`, formData, authHdr(accessToken!));
@@ -492,8 +513,8 @@ const TransportPortal: React.FC = () => {
           <TextField label={t('transport.capacity')} type="number" value={formData.capacity ?? 40} onChange={e => setFormData({ ...formData, capacity: Number(e.target.value) })} fullWidth />
           <TextField label={t('transport.driverName')} value={formData.driverName ?? ''} onChange={e => setFormData({ ...formData, driverName: e.target.value })} fullWidth />
           <TextField label={t('transport.driverPhone')} value={formData.driverPhone ?? ''} onChange={e => setFormData({ ...formData, driverPhone: e.target.value })} fullWidth />
-          <YearSelectableDateField label={t('transport.insuranceExpiry')} value={formData.insuranceExpiry ?? ''} onChange={e => setFormData({ ...formData, insuranceExpiry: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
-          <YearSelectableDateField label={t('transport.registrationExpiry')} value={formData.registrationExpiry ?? ''} onChange={e => setFormData({ ...formData, registrationExpiry: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
+          <YearSelectableDateField label={t('transport.insuranceExpiry')} value={typeof formData.insuranceExpiry === 'string' ? formData.insuranceExpiry : ''} onChange={e => setFormData({ ...formData, insuranceExpiry: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
+          <YearSelectableDateField label={t('transport.registrationExpiry')} value={typeof formData.registrationExpiry === 'string' ? formData.registrationExpiry : ''} onChange={e => setFormData({ ...formData, registrationExpiry: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => { setVehicleDialog(false); setEditVehicle(null); setFormData({}); }}>{t('common.cancel')}</Button>
@@ -522,7 +543,7 @@ const TransportPortal: React.FC = () => {
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
           <TextField label={t('common.name')} value={formData.name ?? ''} onChange={e => setFormData({ ...formData, name: e.target.value })} fullWidth required />
           <TextField label={t('transport.licenseNo')} value={formData.licenseNumber ?? ''} onChange={e => setFormData({ ...formData, licenseNumber: e.target.value })} fullWidth required />
-          <YearSelectableDateField label={t('transport.licenseExpiry')} value={formData.licenseExpiry ?? ''} onChange={e => setFormData({ ...formData, licenseExpiry: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
+          <YearSelectableDateField label={t('transport.licenseExpiry')} value={typeof formData.licenseExpiry === 'string' ? formData.licenseExpiry : ''} onChange={e => setFormData({ ...formData, licenseExpiry: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
           <TextField label={t('transport.phone')} value={formData.phone ?? ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} fullWidth />
           <TextField label={t('transport.address')} value={formData.address ?? ''} onChange={e => setFormData({ ...formData, address: e.target.value })} fullWidth />
           <TextField label={t('transport.assignedVehicleIdOptional')} type="number" value={formData.assignedVehicleId ?? ''} onChange={e => setFormData({ ...formData, assignedVehicleId: e.target.value ? Number(e.target.value) : null })} fullWidth />
@@ -552,8 +573,8 @@ const TransportPortal: React.FC = () => {
           </FormControl>
           <TextField label={t('transport.description')} value={formData.description ?? ''} onChange={e => setFormData({ ...formData, description: e.target.value })} fullWidth multiline rows={2} />
           <TextField label={t('transport.cost')} type="number" value={formData.cost ?? 0} onChange={e => setFormData({ ...formData, cost: Number(e.target.value) })} fullWidth />
-          <YearSelectableDateField label={t('transport.date')} value={formData.date ?? ''} onChange={e => setFormData({ ...formData, date: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
-          <YearSelectableDateField label={t('transport.nextDueDate')} value={formData.nextDueDate ?? ''} onChange={e => setFormData({ ...formData, nextDueDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
+          <YearSelectableDateField label={t('transport.date')} value={typeof formData.date === 'string' ? formData.date : ''} onChange={e => setFormData({ ...formData, date: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
+          <YearSelectableDateField label={t('transport.nextDueDate')} value={typeof formData.nextDueDate === 'string' ? formData.nextDueDate : ''} onChange={e => setFormData({ ...formData, nextDueDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
           <FormControl fullWidth>
             <InputLabel>{t('common.status')}</InputLabel>
             <Select label={t('common.status')} value={formData.status ?? 'scheduled'} onChange={e => setFormData({ ...formData, status: e.target.value })}>

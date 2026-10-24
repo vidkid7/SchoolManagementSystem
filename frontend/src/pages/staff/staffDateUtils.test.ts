@@ -1,4 +1,14 @@
-import { toNepalDateOnly } from './staffDateUtils';
+import { formatBSDate, parseBSDate, toNepalDateOnly } from './staffDateUtils';
+
+describe('BS date conversion', () => {
+  it('round trips a BS date through the picker date value', () => {
+    expect(formatBSDate(parseBSDate('2076-06-30'))).toBe('2076-06-30');
+  });
+
+  it('returns null for malformed BS dates', () => {
+    expect(parseBSDate('not-a-date')).toBeNull();
+  });
+});
 
 describe('toNepalDateOnly', () => {
   it('keeps date-only values unchanged', () => {

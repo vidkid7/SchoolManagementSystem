@@ -4,6 +4,7 @@
 
 $baseUrl = "http://localhost:3000/api/v1"
 $token = ""
+if (-not $env:QA_USERNAME -or -not $env:QA_PASSWORD) { throw "Set QA_USERNAME and QA_PASSWORD for the local QA account." }
 
 Write-Host "=== Finance Module Endpoint Tests ===" -ForegroundColor Cyan
 Write-Host ""
@@ -54,8 +55,8 @@ function Test-Endpoint {
 # 1. Login as accountant
 Write-Host "`n1. Authentication" -ForegroundColor Cyan
 $loginResponse = Test-Endpoint -Method "POST" -Endpoint "/auth/login" -Description "Login as Accountant" -Body @{
-    username = "accountant1"
-    password = "Accountant@123"
+    username = $env:QA_USERNAME
+    password = $env:QA_PASSWORD
 }
 
 if ($loginResponse -and $loginResponse.data.token) {

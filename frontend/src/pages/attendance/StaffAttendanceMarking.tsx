@@ -188,6 +188,8 @@ export function StaffAttendanceMarking() {
         <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
           <YearSelectableDateField
             label={t('attendance.date')}
+            id="staff-attendance-date"
+            name="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
             InputLabelProps={{ shrink: true }}
@@ -196,6 +198,8 @@ export function StaffAttendanceMarking() {
           <FormControl sx={{ width: 200 }}>
             <InputLabel id="staff-attendance-department-label">{t('attendance.department')}</InputLabel>
             <Select
+              id="staff-attendance-department"
+              name="department"
               labelId="staff-attendance-department-label"
               value={department}
               label={t('attendance.department')}
@@ -260,6 +264,8 @@ export function StaffAttendanceMarking() {
                     <TableCell sx={S.TD}>
                       <FormControl fullWidth size="small">
                         <Select
+                          id={`staff-attendance-status-${s.staffId}`}
+                          name={`attendanceStatus-${s.staffId}`}
                           value={s.attendance_status}
                           onChange={(e) => handleStatusChange(s.staffId, e.target.value)}
                           inputProps={{ 'aria-label': `${getFullName(s)} ${t('common.status')}` }}
@@ -275,6 +281,8 @@ export function StaffAttendanceMarking() {
                     </TableCell>
                     <TableCell sx={S.TD}>
                       <TextField
+                        id={`staff-attendance-remarks-${s.staffId}`}
+                        name={`remarks-${s.staffId}`}
                         fullWidth
                         size="small"
                         placeholder={t('attendance.addRemarks')}

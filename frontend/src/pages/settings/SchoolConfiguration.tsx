@@ -35,11 +35,8 @@ import {
   CircularProgress,
   Divider,
   Avatar,
-  IconButton,
   Tabs,
   Tab,
-  Switch,
-  FormControlLabel,
   Chip,
   useTheme,
 } from '@mui/material';
@@ -56,6 +53,7 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { C, useAdminStyles } from '../../theme/designTokens';
+import { isAxiosError } from 'axios';
 
 import { useTranslation } from 'react-i18next';
 
@@ -83,7 +81,7 @@ interface SchoolConfig {
   accentColor?: string;
   defaultLanguage?: string;
   dateFormat?: string;
-  fiscalYearStart?: number;
+  academicYearStartMonth?: number;
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -112,8 +110,8 @@ const DATE_FORMATS = [
 ];
 
 const LANGUAGES = [
-  { value: 'en', label: 'English' },
-  { value: 'ne', label: 'नेपाली (Nepali)' },
+  { value: 'english', label: 'English' },
+  { value: 'nepali', label: 'नेपाली (Nepali)' },
 ];
 
 const PROVINCES = [
@@ -125,6 +123,11 @@ const PROVINCES = [
   'Karnali Pradesh',
   'Sudurpashchim Pradesh',
 ];
+
+const getApiErrorMessage = (error: unknown, fallback: string): string => {
+  if (!isAxiosError<{ error?: { message?: string } }>(error)) return fallback;
+  return error.response?.data?.error?.message || fallback;
+};
 
 export const SchoolConfiguration = () => {
   const theme = useTheme();
@@ -141,10 +144,6 @@ export const SchoolConfiguration = () => {
   const [formData, setFormData] = useState<Partial<SchoolConfig>>({});
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  useEffect(() => {
-    fetchConfig();
-  }, []);
-
   const fetchConfig = async () => {
     try {
       setLoading(true);
@@ -156,17 +155,21 @@ export const SchoolConfiguration = () => {
       } else {
         setConfig(null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch config:', err);
-      if (err.response?.status === 404) {
+      if (isAxiosError(err) && err.response?.status === 404) {
         setConfig(null);
       } else {
-        setError(err.response?.data?.error?.message || 'Failed to load configuration');
+        setError(getApiErrorMessage(err, 'Failed to load configuration'));
       }
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchConfig);
+  }, []);
 
   const handleSave = async () => {
     try {
@@ -182,9 +185,9 @@ export const SchoolConfiguration = () => {
       }
       
       setEditMode(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to save config:', err);
-      setError(err.response?.data?.error?.message || 'Failed to save configuration');
+      setError(getApiErrorMessage(err, 'Failed to save configuration'));
     } finally {
       setSaving(false);
     }
@@ -201,9 +204,9 @@ export const SchoolConfiguration = () => {
       setFormData(response.data.data);
       setSuccess(t('settings.configCreated'));
       setCreateDialogOpen(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to create config:', err);
-      setError(err.response?.data?.error?.message || 'Failed to create configuration');
+      setError(getApiErrorMessage(err, 'Failed to create configuration'));
     } finally {
       setSaving(false);
     }
@@ -231,9 +234,9 @@ export const SchoolConfiguration = () => {
 
       setConfig(response.data.data);
       setSuccess(t('settings.logoUploaded'));
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to upload logo:', err);
-      setError(err.response?.data?.error?.message || 'Failed to upload logo');
+      setError(getApiErrorMessage(err, 'Failed to upload logo'));
     } finally {
       setUploading(false);
     }
@@ -254,9 +257,9 @@ export const SchoolConfiguration = () => {
       await apiClient.post(`/api/v1/config/school/${config.id}/deactivate`);
       setSuccess(t('settings.configDeactivated'));
       fetchConfig();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to deactivate config:', err);
-      setError(err.response?.data?.error?.message || 'Failed to deactivate configuration');
+      setError(getApiErrorMessage(err, 'Failed to deactivate configuration'));
     } finally {
       setSaving(false);
     }
@@ -276,7 +279,7 @@ export const SchoolConfiguration = () => {
     );
   }
 
-  if (!config && !createDialogOpen) {
+  if (!config) {
     return (
       <Box>
         <Paper sx={S.PAGE_HEADER}>
@@ -303,12 +306,22 @@ export const SchoolConfiguration = () => {
         <Dialog open={createDialogOpen} onClose={() => !saving && setCreateDialogOpen(false)} maxWidth="md" fullWidth>
           <DialogTitle>{t('settings.createConfigTitle')}</DialogTitle>
           <DialogContent>
-            <Box sx={{ pt: 2 }}>
+            {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+            <Box
+              component="form"
+              id="school-config-create-form"
+              sx={{ pt: 2 }}
+              onSubmit={(event) => {
+                event.preventDefault();
+                void handleCreate();
+              }}
+            >
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
                   <TextField
                     label={`${t('settings.schoolNameEn')} *`}
                     fullWidth
+                    required
                     value={formData.schoolNameEn || ''}
                     onChange={(e) => setFormData({ ...formData, schoolNameEn: e.target.value })}
                   />
@@ -317,6 +330,7 @@ export const SchoolConfiguration = () => {
                   <TextField
                     label={`${t('settings.schoolNameNp')} *`}
                     fullWidth
+                    required
                     value={formData.schoolNameNp || ''}
                     onChange={(e) => setFormData({ ...formData, schoolNameNp: e.target.value })}
                   />
@@ -325,6 +339,7 @@ export const SchoolConfiguration = () => {
                   <TextField
                     label={`${t('settings.schoolCode')} *`}
                     fullWidth
+                    required
                     value={formData.schoolCode || ''}
                     onChange={(e) => setFormData({ ...formData, schoolCode: e.target.value })}
                   />
@@ -334,6 +349,7 @@ export const SchoolConfiguration = () => {
                     label={`${t('common.email')} *`}
                     type="email"
                     fullWidth
+                    required
                     value={formData.email || ''}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
@@ -342,6 +358,7 @@ export const SchoolConfiguration = () => {
                   <TextField
                     label={`${t('common.phone')} *`}
                     fullWidth
+                    required
                     value={formData.phone || ''}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
@@ -349,6 +366,7 @@ export const SchoolConfiguration = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     label={t('settings.website')}
+                    type="url"
                     fullWidth
                     value={formData.website || ''}
                     onChange={(e) => setFormData({ ...formData, website: e.target.value })}
@@ -358,6 +376,7 @@ export const SchoolConfiguration = () => {
                   <TextField
                     label={`${t('settings.addressEn')} *`}
                     fullWidth
+                    required
                     value={formData.addressEn || ''}
                     onChange={(e) => setFormData({ ...formData, addressEn: e.target.value })}
                   />
@@ -366,6 +385,7 @@ export const SchoolConfiguration = () => {
                   <TextField
                     label={`${t('settings.addressNp')} *`}
                     fullWidth
+                    required
                     value={formData.addressNp || ''}
                     onChange={(e) => setFormData({ ...formData, addressNp: e.target.value })}
                   />
@@ -374,6 +394,7 @@ export const SchoolConfiguration = () => {
                   <TextField
                     label={`${t('settings.city')} *`}
                     fullWidth
+                    required
                     value={formData.city || ''}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   />
@@ -382,12 +403,13 @@ export const SchoolConfiguration = () => {
                   <TextField
                     label={`${t('settings.district')} *`}
                     fullWidth
+                    required
                     value={formData.district || ''}
                     onChange={(e) => setFormData({ ...formData, district: e.target.value })}
                   />
                 </Grid>
                 <Grid item xs={12} md={4}>
-                  <FormControl fullWidth>
+                  <FormControl fullWidth required>
                     <InputLabel id="school-province-edit-label">{t('settings.province')} *</InputLabel>
                     <Select
                       labelId="school-province-edit-label"
@@ -412,7 +434,8 @@ export const SchoolConfiguration = () => {
             </Button>
             <Button
               sx={S.BTN_PRIMARY}
-              onClick={handleCreate}
+              type="submit"
+              form="school-config-create-form"
               disabled={saving}
               startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
             >
@@ -590,7 +613,7 @@ export const SchoolConfiguration = () => {
                       type="number"
                       fullWidth
                       value={formData.establishedYear || ''}
-                      onChange={(e) => setFormData({ ...formData, establishedYear: parseInt(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, establishedYear: e.target.value ? parseInt(e.target.value, 10) : undefined })}
                       disabled={!editMode}
                     />
                   </Grid>
@@ -616,6 +639,7 @@ export const SchoolConfiguration = () => {
                   <Grid item xs={12} md={6}>
                     <TextField
                       label={t('settings.website')}
+                    type="url"
                       fullWidth
                       value={formData.website || ''}
                       onChange={(e) => setFormData({ ...formData, website: e.target.value })}
@@ -768,7 +792,7 @@ export const SchoolConfiguration = () => {
                 <FormControl fullWidth>
                   <InputLabel>{t('settings.defaultLanguage')}</InputLabel>
                   <Select
-                    value={formData.defaultLanguage || 'en'}
+                    value={formData.defaultLanguage || 'english'}
                     label={t('settings.defaultLanguage')}
                     onChange={(e) => setFormData({ ...formData, defaultLanguage: e.target.value })}
                     disabled={!editMode}
@@ -802,9 +826,9 @@ export const SchoolConfiguration = () => {
                 <FormControl fullWidth>
                   <InputLabel>{t('settings.fiscalYearStartMonth')}</InputLabel>
                   <Select
-                    value={formData.fiscalYearStart || 7}
+                    value={formData.academicYearStartMonth || 7}
                     label={t('settings.fiscalYearStartMonth')}
-                    onChange={(e) => setFormData({ ...formData, fiscalYearStart: Number(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, academicYearStartMonth: Number(e.target.value) })}
                     disabled={!editMode}
                   >
                     {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (

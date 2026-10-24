@@ -196,8 +196,8 @@ describe('Student Model - Data Encryption', () => {
 
       // Verify null values are not encrypted
       const foundStudent = await Student.findByPk(student.studentId);
-      expect(foundStudent?.fatherCitizenshipNo).toBeUndefined();
-      expect(foundStudent?.motherCitizenshipNo).toBeUndefined();
+      expect(foundStudent?.fatherCitizenshipNo).toBeNull();
+      expect(foundStudent?.motherCitizenshipNo).toBeNull();
     });
 
     it('should encrypt citizenship number on update', async () => {

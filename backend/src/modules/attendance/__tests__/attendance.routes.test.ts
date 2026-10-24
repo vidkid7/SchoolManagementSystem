@@ -4,9 +4,13 @@ import sequelize from '@config/database';
 import User, { UserRole } from '@models/User.model';
 import Student from '@models/Student.model';
 import Class from '@models/Class.model';
+import Staff, { EmploymentType, StaffCategory, StaffStatus } from '@models/Staff.model';
+import SchoolConfig from '@models/SchoolConfig.model';
 import { AcademicYear } from '@models/AcademicYear.model';
 import { AttendanceStatus } from '@models/AttendanceRecord.model';
 import LeaveApplication, { LeaveStatus } from '@models/LeaveApplication.model';
+import { initLeaveApplication } from '@models/LeaveApplication.model';
+import { setupLeaveApplicationAssociations } from '@models/associations';
 import jwt from 'jsonwebtoken';
 import { env } from '@config/env';
 
@@ -22,26 +26,35 @@ describe('Attendance Routes', () => {
   let teacherUser: User;
   let parentUser: User;
   let academicYear: AcademicYear;
+  let schoolConfigId: string;
   let testClass: Class;
   let student1: Student;
   let student2: Student;
 
   beforeAll(async () => {
+    initLeaveApplication(sequelize);
+    setupLeaveApplicationAssociations();
     await sequelize.sync({ force: true });
+
+    const schoolConfig = await SchoolConfig.create({ schoolNameEn: 'Attendance Test School' });
+    schoolConfigId = schoolConfig.id;
 
     // Create test users
     teacherUser = await User.create({
       username: 'teacher1',
       email: 'teacher@test.com',
       password: 'password123',
-      role: UserRole.CLASS_TEACHER
+      role: UserRole.CLASS_TEACHER,
+      schoolConfigId
     });
 
     parentUser = await User.create({
       username: 'parent1',
       email: 'parent@test.com',
       password: 'password123',
-      role: UserRole.PARENT
+      role: UserRole.PARENT,
+      schoolConfigId,
+      phoneNumber: '9841234567'
     });
 
     // Generate tokens
@@ -77,15 +90,28 @@ describe('Attendance Routes', () => {
       isCurrent: true
     });
 
+    const teacherStaff = await Staff.create({
+      userId: teacherUser.userId,
+      staffCode: 'ATT-TEACHER-001',
+      firstNameEn: 'Test',
+      lastNameEn: 'Teacher',
+      category: StaffCategory.TEACHING,
+      employmentType: EmploymentType.FULL_TIME,
+      joinDate: new Date('2024-04-13'),
+      status: StaffStatus.ACTIVE,
+      schoolConfigId
+    });
+
     // Create class
     testClass = await Class.create({
       gradeLevel: 5,
       section: 'A',
       shift: 'morning',
-      classTeacherId: teacherUser.userId,
+      classTeacherId: teacherStaff.staffId,
       capacity: 40,
       currentStrength: 2,
-      academicYearId: academicYear.academicYearId
+      academicYearId: academicYear.academicYearId,
+      schoolConfigId
     });
 
     // Create students
@@ -108,8 +134,9 @@ describe('Attendance Routes', () => {
       admissionDate: new Date('2024-04-13'),
       admissionClass: 1,
       currentClassId: testClass.classId,
-      status: 'ACTIVE' as any
-    });
+      status: 'active' as any,
+      schoolConfigId
+    } as any);
 
     student2 = await Student.create({
       studentCode: 'STU-2024-00002',
@@ -130,8 +157,9 @@ describe('Attendance Routes', () => {
       admissionDate: new Date('2024-04-13'),
       admissionClass: 1,
       currentClassId: testClass.classId,
-      status: 'ACTIVE' as any
-    });
+      status: 'active' as any,
+      schoolConfigId
+    } as any);
   });
 
   afterAll(async () => {
@@ -263,10 +291,12 @@ describe('Attendance Routes', () => {
 
     beforeAll(async () => {
       // Create a leave application to approve
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 10);
       const leave = await LeaveApplication.create({
         studentId: student1.studentId,
-        startDate: new Date(),
-        endDate: new Date(),
+        startDate: futureDate,
+        endDate: futureDate,
         reason: 'Test leave',
         appliedBy: parentUser.userId,
         appliedAt: new Date(),

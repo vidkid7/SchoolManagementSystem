@@ -4,7 +4,7 @@
  * Manage SMS, Email, and Push notifications
  */
 
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -25,21 +25,14 @@ import {
   Select,
   MenuItem,
   Chip,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Card,
   CardContent,
   Grid,
   Alert,
   CircularProgress,
   Snackbar,
-  Divider,
   Switch,
   FormControlLabel,
-  TextareaAutosize,
   useTheme,
 } from '@mui/material';
 import {
@@ -50,13 +43,9 @@ import {
   Email as EmailIcon,
   Notifications as PushIcon,
   Refresh as RefreshIcon,
-  Delete as DeleteIcon,
-  Schedule as ScheduleIcon,
-  CheckCircle as CheckCircleIcon,
-  Error as ErrorIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { C, useAdminStyles } from '../../theme/designTokens';
 import { useTranslation } from 'react-i18next';
 import { YearSelectableDateTimeField } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
 
@@ -75,13 +64,20 @@ const TabPanel = (props: TabPanelProps) => {
   );
 };
 
+const getRequestErrorMessage = (error: unknown, fallbackMessage: string): string => {
+  if (!error || typeof error !== 'object' || !('response' in error)) return fallbackMessage;
+  const response = (error as { response?: { data?: { error?: { message?: unknown } } } }).response;
+  const message = response?.data?.error?.message;
+  return typeof message === 'string' && message ? message : fallbackMessage;
+};
+
 interface NotificationHistory {
   id: number;
   type: 'sms' | 'email' | 'push';
   recipient: string;
   subject?: string;
   message: string;
-  status: 'sent' | 'failed' | 'pending';
+  status: 'sent' | 'failed' | 'partial' | 'pending';
   sentAt: string;
   error?: string;
 }
@@ -108,10 +104,23 @@ export const NotificationCenter = () => {
   const [tabValue, setTabValue] = useState(0);
   const [history, setHistory] = useState<NotificationHistory[]>([]);
   const [templates, setTemplates] = useState<(SMSTemplate | EmailTemplate)[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+
+  const handleUnsuccessfulDelivery = (
+    data: { success?: boolean; error?: { message?: string } },
+    fallbackMessage: string,
+  ): boolean => {
+    if (data.success !== false) return false;
+    setSnackbar({
+      open: true,
+      message: data.error?.message || fallbackMessage,
+      severity: 'error',
+    });
+    return true;
+  };
 
   const [smsSettings, setSmsSettings] = useState({
     provider: 'sparrow',
@@ -154,79 +163,84 @@ export const NotificationCenter = () => {
 
   const [smsBalance, setSmsBalance] = useState({ balance: 0, used: 0 });
 
-  useEffect(() => {
-    fetchHistory();
-    fetchTemplates();
-    fetchSettings();
-  }, []);
-
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     try {
-      setLoading(true);
       const response = await apiClient.get('/api/v1/communication/notifications/history');
       setHistory(response.data.data || []);
-    } catch (error) {
-      console.error('Failed to fetch notification history:', error);
+    } catch {
+      console.error('Failed to fetch notification history');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchTemplates = async () => {
+  const fetchTemplates = useCallback(async () => {
     try {
       const [smsRes, emailRes] = await Promise.all([
         apiClient.get('/api/v1/communication/templates?type=sms'),
         apiClient.get('/api/v1/communication/templates?type=email'),
       ]);
       setTemplates([...(smsRes.data.data || []), ...(emailRes.data.data || [])]);
-    } catch (error) {
-      console.error('Failed to fetch templates:', error);
+    } catch {
+      console.error('Failed to fetch templates');
     }
-  };
+  }, []);
 
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     try {
       const response = await apiClient.get('/api/v1/communication/settings');
       if (response.data.data) {
-        setSmsSettings(response.data.data.sms || smsSettings);
-        setEmailSettings(response.data.data.email || emailSettings);
+        if (response.data.data.sms) setSmsSettings(response.data.data.sms);
+        if (response.data.data.email) setEmailSettings(response.data.data.email);
         setSmsBalance(response.data.data.smsBalance || { balance: 0, used: 0 });
       }
-    } catch (error) {
-      console.error('Failed to fetch settings:', error);
+    } catch {
+      console.error('Failed to fetch settings');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Load server-owned data after mount; state updates occur after the API response.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchHistory();
+    void fetchTemplates();
+    void fetchSettings();
+  }, [fetchHistory, fetchTemplates, fetchSettings]);
 
   const handleSendSMS = async () => {
     try {
       setLoading(true);
-      await apiClient.post('/api/v1/communication/sms/send', {
+      const response = await apiClient.post('/api/v1/communication/sms/send', {
         recipients: smsForm.recipients.split(',').map(r => r.trim()),
         message: smsForm.message,
         scheduleTime: smsForm.scheduleTime || undefined,
       });
+      if (handleUnsuccessfulDelivery(response.data, t('notifications.failedToSendSms'))) return;
       setSnackbar({ open: true, message: t('notifications.smsSentSuccess'), severity: 'success' });
       setSmsForm({ recipients: '', message: '', templateId: '', scheduleTime: '' });
       fetchHistory();
-    } catch (error: any) {
-      setSnackbar({ open: true, message: error.response?.data?.error?.message || t('notifications.failedToSendSms'), severity: 'error' });
+    } catch (error: unknown) {
+      setSnackbar({ open: true, message: getRequestErrorMessage(error, t('notifications.failedToSendSms')), severity: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
   const handleSendBulkSMS = async () => {
+    if (!window.confirm(t('notifications.confirmBulkSms'))) return;
+
     try {
       setLoading(true);
-      await apiClient.post('/api/v1/communication/sms/bulk', {
+      const response = await apiClient.post('/api/v1/communication/sms/bulk', {
         message: smsForm.message,
         targetRoles: ['student', 'parent', 'staff'],
         scheduleTime: smsForm.scheduleTime || undefined,
       });
+      if (handleUnsuccessfulDelivery(response.data, t('notifications.failedToSendBulkSms'))) return;
       setSnackbar({ open: true, message: t('notifications.bulkSmsSentSuccess'), severity: 'success' });
       fetchHistory();
-    } catch (error: any) {
-      setSnackbar({ open: true, message: error.response?.data?.error?.message || t('notifications.failedToSendBulkSms'), severity: 'error' });
+    } catch (error: unknown) {
+      setSnackbar({ open: true, message: getRequestErrorMessage(error, t('notifications.failedToSendBulkSms')), severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -235,17 +249,18 @@ export const NotificationCenter = () => {
   const handleSendEmail = async () => {
     try {
       setLoading(true);
-      await apiClient.post('/api/v1/communication/email/send', {
+      const response = await apiClient.post('/api/v1/communication/email/send', {
         recipients: emailForm.recipients.split(',').map(r => r.trim()),
         subject: emailForm.subject,
         body: emailForm.body,
         scheduleTime: emailForm.scheduleTime || undefined,
       });
+      if (handleUnsuccessfulDelivery(response.data, t('notifications.failedToSendEmail'))) return;
       setSnackbar({ open: true, message: t('notifications.emailSentSuccess'), severity: 'success' });
       setEmailForm({ recipients: '', subject: '', body: '', templateId: '', scheduleTime: '' });
       fetchHistory();
-    } catch (error: any) {
-      setSnackbar({ open: true, message: error.response?.data?.error?.message || t('notifications.failedToSendEmail'), severity: 'error' });
+    } catch (error: unknown) {
+      setSnackbar({ open: true, message: getRequestErrorMessage(error, t('notifications.failedToSendEmail')), severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -254,17 +269,18 @@ export const NotificationCenter = () => {
   const handleSendPush = async () => {
     try {
       setLoading(true);
-      await apiClient.post('/api/v1/communication/push/send', {
+      const response = await apiClient.post('/api/v1/communication/push/send', {
         title: pushForm.title,
         message: pushForm.message,
         targetRoles: pushForm.targetRoles,
         scheduleTime: pushForm.scheduleTime || undefined,
       });
+      if (handleUnsuccessfulDelivery(response.data, t('notifications.failedToSendPush'))) return;
       setSnackbar({ open: true, message: t('notifications.pushSentSuccess'), severity: 'success' });
       setPushForm({ title: '', message: '', targetRoles: [], scheduleTime: '' });
       fetchHistory();
-    } catch (error: any) {
-      setSnackbar({ open: true, message: error.response?.data?.error?.message || t('notifications.failedToSendPush'), severity: 'error' });
+    } catch (error: unknown) {
+      setSnackbar({ open: true, message: getRequestErrorMessage(error, t('notifications.failedToSendPush')), severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -277,7 +293,7 @@ export const NotificationCenter = () => {
         email: emailSettings,
       });
       setSnackbar({ open: true, message: t('notifications.settingsSaved'), severity: 'success' });
-    } catch (error: any) {
+    } catch {
       setSnackbar({ open: true, message: t('notifications.failedToSaveSettings'), severity: 'error' });
     }
   };
@@ -286,6 +302,7 @@ export const NotificationCenter = () => {
     switch (status) {
       case 'sent': return 'success';
       case 'failed': return 'error';
+      case 'partial': return 'warning';
       case 'pending': return 'warning';
       default: return 'default';
     }
@@ -371,7 +388,7 @@ export const NotificationCenter = () => {
                       }}
                     >
                       <MenuItem value="">{t('notifications.none')}</MenuItem>
-                      {templates.filter(t => 'content' in t).map((template: any) => (
+                      {templates.filter(t => 'content' in t).map((template) => (
                         <MenuItem key={template.id} value={template.id}>
                           {template.name}
                         </MenuItem>
@@ -453,7 +470,7 @@ export const NotificationCenter = () => {
                   }}
                 >
                   <MenuItem value="">{t('notifications.none')}</MenuItem>
-                  {templates.filter(t => 'subject' in t).map((template: any) => (
+                    {templates.filter(t => 'subject' in t).map((template) => (
                     <MenuItem key={template.id} value={template.id}>
                       {template.name}
                     </MenuItem>

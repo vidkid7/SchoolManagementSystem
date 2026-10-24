@@ -75,6 +75,27 @@ function TabPanel(props: TabPanelProps) {
 
 const authHdr = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
 
+const toArray = (value: any, key: string): any[] => {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.[key])) return value[key];
+  return [];
+};
+
+const getSubjectName = (subject: any): string => {
+  if (typeof subject === 'string') return subject.trim();
+  return String(subject?.nameEn ?? subject?.name_en ?? subject?.name ?? subject?.code ?? '').trim();
+};
+
+const getClassName = (schoolClass: any): string => {
+  if (typeof schoolClass === 'string') return schoolClass.trim();
+  const explicitName = schoolClass?.className ?? schoolClass?.class_name ?? schoolClass?.name;
+  if (explicitName) return String(explicitName).trim();
+  const gradeLevel = schoolClass?.gradeLevel ?? schoolClass?.grade_level;
+  const section = String(schoolClass?.section ?? '').trim();
+  if (gradeLevel === undefined || gradeLevel === null || gradeLevel === '') return '';
+  return `Class ${gradeLevel}${section ? ` - Section ${section}` : ''}`;
+};
+
 export const AssignmentManagement = () => {
   const { accessToken } = useSelector((state: RootState) => state.auth);
   const theme = useTheme();
@@ -87,10 +108,16 @@ export const AssignmentManagement = () => {
   const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [submissions, setSubmissions] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [classes, setClasses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [gradeMarks, setGradeMarks] = useState<string>('');
   const [gradeFeedback, setGradeFeedback] = useState<string>('');
+  const [assignmentForm, setAssignmentForm] = useState({
+    title: '', subject: '', className: '', description: '', dueDate: '', totalMarks: '',
+  });
+  const [assignmentFormError, setAssignmentFormError] = useState<string | null>(null);
 
   const loadAssignments = useCallback(async () => {
     if (!accessToken) {
@@ -102,12 +129,26 @@ export const AssignmentManagement = () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await apiClient.get('/api/v1/assignments', { ...authHdr(accessToken), params: { limit: 50 } })
-        .catch(() => {
-          setError(t('portal.failedToLoadData'));
-          return { data: { data: { assignments: [] } } };
-        });
+      const [res, subjectsRes, classesRes] = await Promise.all([
+        apiClient.get('/api/v1/assignments', { ...authHdr(accessToken), params: { limit: 50 } })
+          .catch(() => {
+            setError(t('portal.failedToLoadData'));
+            return { data: { data: { assignments: [] } } };
+          }),
+        apiClient.get('/api/v1/academic/subjects', authHdr(accessToken))
+          .catch(() => {
+            setError(t('portal.failedToLoadData'));
+            return { data: { data: { subjects: [] } } };
+          }),
+        apiClient.get('/api/v1/academic/classes', authHdr(accessToken))
+          .catch(() => {
+            setError(t('portal.failedToLoadData'));
+            return { data: { data: { classes: [] } } };
+          }),
+      ]);
       setAssignments(res.data?.data?.assignments ?? res.data?.data ?? []);
+      setSubjects(toArray(subjectsRes.data?.data, 'subjects'));
+      setClasses(toArray(classesRes.data?.data, 'classes'));
     } catch {
       setError(t('portal.failedToLoadData'));
     } finally {
@@ -161,6 +202,23 @@ export const AssignmentManagement = () => {
   };
 
   const handleCreateAssignment = () => {
+    setSelectedAssignment(null);
+    setAssignmentForm({ title: '', subject: '', className: '', description: '', dueDate: '', totalMarks: '' });
+    setAssignmentFormError(null);
+    setOpenCreateDialog(true);
+  };
+
+  const handleEditAssignment = (assignment: any) => {
+    setSelectedAssignment(assignment);
+    setAssignmentForm({
+      title: assignment.title ?? '',
+      subject: assignment.subject ?? '',
+      className: assignment.className ?? assignment.class ?? '',
+      description: assignment.description ?? '',
+      dueDate: assignment.dueDate ? String(assignment.dueDate).slice(0, 10) : '',
+      totalMarks: assignment.totalMarks == null ? '' : String(assignment.totalMarks),
+    });
+    setAssignmentFormError(null);
     setOpenCreateDialog(true);
   };
 
@@ -179,21 +237,24 @@ export const AssignmentManagement = () => {
 
   const handleSaveAssignment = async () => {
     if (!accessToken) return;
+    const marks = Number(assignmentForm.totalMarks);
+    if (!assignmentForm.title.trim() || !assignmentForm.subject || !assignmentForm.className ||
+      !assignmentForm.dueDate || !Number.isFinite(marks) || marks <= 0) {
+      setAssignmentFormError(t('teacher.assignmentRequiredFields'));
+      return;
+    }
     try {
-      const formEl = document.querySelector('#assignment-form') as HTMLFormElement | null;
-      const formData: any = {};
-      if (formEl) {
-        const inputs = formEl.querySelectorAll('input, textarea, select');
-        inputs.forEach((el: any) => {
-          if (el.name) formData[el.name] = el.value;
-        });
+      const payload = { ...assignmentForm, title: assignmentForm.title.trim(), totalMarks: marks };
+      if (selectedAssignment) {
+        const res = await apiClient.put(`/api/v1/assignments/${selectedAssignment.id}`, payload, authHdr(accessToken));
+        setAssignments(prev => prev.map(item => item.id === selectedAssignment.id ? (res.data?.data ?? { ...item, ...payload }) : item));
+      } else {
+        const res = await apiClient.post('/api/v1/assignments', payload, authHdr(accessToken));
+        if (res.data?.data) setAssignments(prev => [res.data.data, ...prev]);
       }
-      await apiClient.post('/api/v1/assignments', formData, authHdr(accessToken));
       setOpenCreateDialog(false);
-      loadAssignments();
     } catch {
       setError(t('portal.failedToLoadData'));
-      setOpenCreateDialog(false);
     }
   };
 
@@ -353,7 +414,7 @@ export const AssignmentManagement = () => {
                         </Box>
 
                         <Typography variant="body2" color="text.secondary" gutterBottom>
-                          {assignment.subject} - {assignment.class}
+                          {assignment.subject} - {assignment.className ?? assignment.class}
                         </Typography>
 
                         <Grid container spacing={2} sx={{ mt: 2 }}>
@@ -384,7 +445,7 @@ export const AssignmentManagement = () => {
                             </Typography>
                             <LinearProgress
                               variant="determinate"
-                              value={(assignment.submissions / assignment.totalStudents) * 100}
+                              value={assignment.totalStudents > 0 ? (assignment.submissions / assignment.totalStudents) * 100 : 0}
                               sx={{ mt: 0.5 }}
                             />
                           </Grid>
@@ -407,10 +468,10 @@ export const AssignmentManagement = () => {
                       </Box>
 
                       <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-                        <IconButton size="small" color="primary">
+                        <IconButton size="small" color="primary" aria-label={t('teacher.viewSubmissions')} onClick={() => handleViewSubmissions(assignment)}>
                           <ViewIcon />
                         </IconButton>
-                        <IconButton size="small" color="primary">
+                        <IconButton size="small" color="primary" aria-label={t('common.edit')} onClick={() => handleEditAssignment(assignment)}>
                           <EditIcon />
                         </IconButton>
                         <IconButton size="small" color="error" onClick={() => handleDeleteAssignment(assignment.id)}>
@@ -441,7 +502,7 @@ export const AssignmentManagement = () => {
             </Typography>
             {selectedAssignment && (
               <Typography variant="body2" color="text.secondary">
-                {selectedAssignment.subject} - {selectedAssignment.class}
+                {selectedAssignment.subject} - {selectedAssignment.className ?? selectedAssignment.class}
               </Typography>
             )}
           </Box>
@@ -503,27 +564,30 @@ export const AssignmentManagement = () => {
 
       {/* Create Assignment Dialog */}
       <Dialog open={openCreateDialog} onClose={() => setOpenCreateDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>{t('teacher.createAssignment')}</DialogTitle>
+        <DialogTitle>{selectedAssignment ? t('common.edit') : t('teacher.createAssignment')}</DialogTitle>
         <DialogContent>
+          {assignmentFormError && <Alert severity="error" sx={{ mt: 1 }}>{assignmentFormError}</Alert>}
           <Grid container spacing={3} sx={{ mt: 1 }}>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
-                <InputLabel>{t('common.subject')}</InputLabel>
-                <Select label={t('common.subject')} defaultValue="">
-                  <MenuItem value="Mathematics">Mathematics</MenuItem>
-                  <MenuItem value="Physics">Physics</MenuItem>
-                  <MenuItem value="Chemistry">Chemistry</MenuItem>
+                <InputLabel id="assignment-subject-label">{t('common.subject')}</InputLabel>
+                <Select labelId="assignment-subject-label" label={t('common.subject')} value={assignmentForm.subject} onChange={(e) => setAssignmentForm(prev => ({ ...prev, subject: e.target.value }))}>
+                  {subjects.map((subject) => {
+                    const name = getSubjectName(subject);
+                    return name ? <MenuItem key={subject.subjectId ?? subject.id ?? name} value={name}>{name}</MenuItem> : null;
+                  })}
                 </Select>
               </FormControl>
             </Grid>
 
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
-                <InputLabel>{t('common.class')}</InputLabel>
-                <Select label={t('common.class')} defaultValue="">
-                  <MenuItem value="Class 10 A">Class 10 A</MenuItem>
-                  <MenuItem value="Class 10 B">Class 10 B</MenuItem>
-                  <MenuItem value="Class 11 Science">Class 11 Science</MenuItem>
+                <InputLabel id="assignment-class-label">{t('common.class')}</InputLabel>
+                <Select labelId="assignment-class-label" label={t('common.class')} value={assignmentForm.className} onChange={(e) => setAssignmentForm(prev => ({ ...prev, className: e.target.value }))}>
+                  {classes.map((schoolClass) => {
+                    const name = getClassName(schoolClass);
+                    return name ? <MenuItem key={schoolClass.classId ?? schoolClass.id ?? name} value={name}>{name}</MenuItem> : null;
+                  })}
                 </Select>
               </FormControl>
             </Grid>
@@ -533,6 +597,9 @@ export const AssignmentManagement = () => {
                 fullWidth
                 label={t('teacher.assignmentTitle')}
                 placeholder={t('teacher.assignmentTitle')}
+                value={assignmentForm.title}
+                onChange={(e) => setAssignmentForm(prev => ({ ...prev, title: e.target.value }))}
+                required
               />
             </Grid>
 
@@ -543,6 +610,8 @@ export const AssignmentManagement = () => {
                 rows={4}
                 label={t('common.description')}
                 placeholder={t('common.description')}
+                value={assignmentForm.description}
+                onChange={(e) => setAssignmentForm(prev => ({ ...prev, description: e.target.value }))}
               />
             </Grid>
 
@@ -551,6 +620,9 @@ export const AssignmentManagement = () => {
                 fullWidth
                 label={t('teacher.dueDate')}
                 InputLabelProps={{ shrink: true }}
+                value={assignmentForm.dueDate}
+                onChange={(e) => setAssignmentForm(prev => ({ ...prev, dueDate: e.target.value }))}
+                required
               />
             </Grid>
 
@@ -560,6 +632,10 @@ export const AssignmentManagement = () => {
                 type="number"
                 label={t('teacher.totalMarks')}
                 placeholder={t('teacher.totalMarks')}
+                value={assignmentForm.totalMarks}
+                onChange={(e) => setAssignmentForm(prev => ({ ...prev, totalMarks: e.target.value }))}
+                required
+                inputProps={{ min: 1, step: 1 }}
               />
             </Grid>
 

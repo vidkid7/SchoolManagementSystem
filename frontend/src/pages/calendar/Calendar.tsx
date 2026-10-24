@@ -66,7 +66,8 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import apiClient from '../../services/apiClient';
 import NepaliDate from 'nepali-date-converter';
-import { YearSelectableDatePicker, parseDateOnly, formatDateOnly } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
+import { YearSelectableDatePicker } from '../../components/YearSelectableDatePicker/YearSelectableDatePicker';
+import { parseDateOnly, formatDateOnly } from '../../components/YearSelectableDatePicker/dateUtils';
 
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 

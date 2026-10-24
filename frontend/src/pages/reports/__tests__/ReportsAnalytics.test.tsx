@@ -162,14 +162,27 @@ describe('ReportsAnalytics', () => {
     expect(exportButtons.length).toBeGreaterThan(0);
   });
 
+  it('hides library export controls from librarians who cannot export reports', async () => {
+    store.dispatch(setUser({ userId: 1, username: 'qa', email: 'qa@example.test', role: 'Librarian' }));
+    renderReports();
+
+    fireEvent.click(await screen.findByRole('tab', { name: /Library/ }));
+
+    expect(screen.queryByRole('button', { name: 'PDF' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Excel' })).not.toBeInTheDocument();
+  });
+
   it('should handle PDF export', async () => {
     const mockBlob = new Blob(['pdf content'], { type: 'application/pdf' });
     mockedApiClient.get.mockResolvedValue({ data: mockBlob, headers: { 'content-type': 'application/pdf' } } as any);
 
     // Mock URL.createObjectURL
     global.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
-    
-    jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    global.URL.revokeObjectURL = jest.fn();
+    const downloadedFiles: string[] = [];
+    jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      downloadedFiles.push(this.download);
+    });
 
     renderReports();
     fireEvent.click((await screen.findAllByRole('button', { name: /PDF/ }))[0]);
@@ -179,6 +192,9 @@ describe('ReportsAnalytics', () => {
         '/api/v1/reports/export/pdf/enrollment',
         expect.any(Object)
       );
+      expect(downloadedFiles).toContain('enrollment-report.pdf');
+      expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
+      expect(screen.getByText('reports.exportSuccess')).toBeInTheDocument();
     });
   });
 
@@ -189,8 +205,11 @@ describe('ReportsAnalytics', () => {
     mockedApiClient.get.mockResolvedValue({ data: mockBlob, headers: { 'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' } } as any);
 
     global.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
-    
-    jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    global.URL.revokeObjectURL = jest.fn();
+    const downloadedFiles: string[] = [];
+    jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      downloadedFiles.push(this.download);
+    });
 
     renderReports();
     fireEvent.click((await screen.findAllByRole('button', { name: /Excel/ }))[0]);
@@ -200,6 +219,9 @@ describe('ReportsAnalytics', () => {
         '/api/v1/reports/export/excel/enrollment',
         expect.any(Object)
       );
+      expect(downloadedFiles).toContain('enrollment-report.xlsx');
+      expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
+      expect(screen.getByText('reports.exportSuccess')).toBeInTheDocument();
     });
   });
 

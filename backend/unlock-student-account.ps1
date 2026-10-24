@@ -38,9 +38,7 @@ WHERE username = 'student1';
     mysql -u root -p -D school_management_system -e $verifyQuery
     
     Write-Host ""
-    Write-Host "You can now try logging in with:" -ForegroundColor Green
-    Write-Host "Username: student1" -ForegroundColor White
-    Write-Host "Password: Student@123" -ForegroundColor White
+    Write-Host "You can now sign in using the account's current password." -ForegroundColor Green
 } else {
     Write-Host "✗ Failed to unlock account" -ForegroundColor Red
     Write-Host "Please check database connection" -ForegroundColor Yellow

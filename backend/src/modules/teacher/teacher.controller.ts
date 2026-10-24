@@ -480,11 +480,6 @@ export const createBehaviorRecord = async (
     const staff = req.user?.userId ? await teacherService.getStaffFromUserId(req.user.userId) : null;
     const classData = staff ? await teacherService.getMyClass(staff.staffId) : { students: [] };
     const student = (classData.students ?? []).find((item: any) => Number(item.studentId) === Number(studentId));
-    const existingStudent = student
-      ? student
-      : await Student.findByPk(Number(studentId), {
-          attributes: ['studentId', 'firstNameEn', 'lastNameEn'],
-        });
 
     if (!student && !isSchoolAdmin(req)) {
       res.status(403).json({
@@ -493,6 +488,12 @@ export const createBehaviorRecord = async (
       });
       return;
     }
+
+    const existingStudent = student
+      ? student
+      : await Student.findByPk(Number(studentId), {
+          attributes: ['studentId', 'firstNameEn', 'lastNameEn'],
+        });
 
     if (!existingStudent) {
       res.status(404).json({

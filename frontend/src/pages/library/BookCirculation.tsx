@@ -4,11 +4,11 @@ import { YearSelectableDateField } from '../../components/YearSelectableDatePick
  * Issue and return books, manage borrowing history
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useAdminStyles } from '../../theme/designTokens';
 import {
   Box,
   Paper,
@@ -27,7 +27,6 @@ import {
   DialogActions,
   Autocomplete,
   TextField,
-  MenuItem,
   Chip,
   Alert,
   Grid,
@@ -46,12 +45,14 @@ import apiClient from '../../services/apiClient';
 import { createIssueBookPayload } from './issueBookPayload';
 import { createReserveBookPayload } from './reserveBookPayload';
 import { CirculationRow as Circulation, normalizeCirculation } from './circulationRow';
+import { calculateOverdueFine, getOverdueDays } from './circulationFine';
 
 interface BookOption {
   bookId: number;
   accessionNumber: string;
   title: string;
   availableCopies: number;
+  available_copies?: number;
 }
 
 interface StudentOption {
@@ -65,6 +66,41 @@ interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
   value: number;
+}
+
+interface ReservationRow {
+  reservationId?: number;
+  id?: number;
+  book?: { title?: string };
+  Book?: { title?: string };
+  bookTitle?: string;
+  bookId?: number;
+  student?: { firstNameEn?: string; lastNameEn?: string };
+  Student?: { firstNameEn?: string; lastNameEn?: string };
+  studentId?: number;
+  status?: string;
+  reservationDate?: string;
+}
+
+interface FineRow {
+  fineId?: number;
+  id?: number;
+  balance?: string | number;
+  fineAmount?: string | number;
+  fineReason?: string;
+  status?: string;
+}
+
+interface ApiErrorPayload {
+  message?: string;
+  error?: string;
+  errors?: Array<{ message?: string }>;
+}
+
+function getApiErrorPayload(error: unknown): ApiErrorPayload {
+  if (!error || typeof error !== 'object') return {};
+  const response = (error as { response?: { data?: unknown } }).response;
+  return response?.data && typeof response.data === 'object' ? response.data as ApiErrorPayload : {};
 }
 
 function TabPanel(props: TabPanelProps) {
@@ -114,9 +150,11 @@ export function BookCirculation() {
 
   useEffect(() => {
     if (!location.state?.openIssueDialog) return;
-    setError('');
-    setIssueDialog(true);
-    navigate(location.pathname, { replace: true, state: null });
+    void Promise.resolve().then(() => {
+      setError('');
+      setIssueDialog(true);
+      navigate(location.pathname, { replace: true, state: null });
+    });
   }, [location.pathname, location.state, navigate]);
 
   // Return Dialog
@@ -125,14 +163,13 @@ export function BookCirculation() {
   const [fineAmount, setFineAmount] = useState(0);
 
   // Reservations
-  const [reservations, setReservations] = useState<any[]>([]);
+  const [reservations, setReservations] = useState<ReservationRow[]>([]);
   const [reservationBookId, setReservationBookId] = useState('');
   const [selectedReservationBook, setSelectedReservationBook] = useState<BookOption | null>(null);
   const [reservationBooks, setReservationBooks] = useState<BookOption[]>([]);
   const [reservationBookSearch, setReservationBookSearch] = useState('');
   const [reservationsLoading, setReservationsLoading] = useState(false);
   const [reserveDialog, setReserveDialog] = useState(false);
-  const [reserveForm, setReserveForm] = useState({ bookId: '', studentId: '' });
   const [reserveBookOptions, setReserveBookOptions] = useState<BookOption[]>([]);
   const [reserveStudentOptions, setReserveStudentOptions] = useState<StudentOption[]>([]);
   const [reserveBookSearch, setReserveBookSearch] = useState('');
@@ -144,13 +181,8 @@ export function BookCirculation() {
 
   // Fines by student
   const [finesStudentId, setFinesStudentId] = useState('');
-  const [finesList, setFinesList] = useState<any[]>([]);
+  const [finesList, setFinesList] = useState<FineRow[]>([]);
   const [finesLoading, setFinesLoading] = useState(false);
-
-  useEffect(() => {
-    if (tabValue < 3) fetchCirculations();
-    else if (tabValue === 3 && reservationBookId) fetchReservations();
-  }, [tabValue, page, rowsPerPage, reservationBookId]);
 
   useEffect(() => {
     if (!issueDialog) return;
@@ -163,7 +195,7 @@ export function BookCirculation() {
         });
         const data = response.data?.data;
         const books: BookOption[] = Array.isArray(data) ? data : data?.books || [];
-        if (!cancelled) setIssueBooks(books.filter((book) => Number(book.availableCopies ?? (book as any).available_copies) > 0));
+        if (!cancelled) setIssueBooks(books.filter((book) => Number(book.availableCopies ?? book.available_copies) > 0));
       } catch {
         if (!cancelled) setIssueBooks([]);
       } finally {
@@ -250,8 +282,9 @@ export function BookCirculation() {
     };
   }, [reserveDialog, reserveStudentSearch]);
 
-  const fetchCirculations = async () => {
+  const fetchCirculations = useCallback(async () => {
     try {
+      setError('');
       setLoading(true);
       const status = tabValue === 0 ? 'issued' : tabValue === 1 ? 'overdue' : 'returned';
       const response = await apiClient.get('/library/circulation', {
@@ -264,13 +297,14 @@ export function BookCirculation() {
       const rows = Array.isArray(response.data?.data) ? response.data.data : [];
       setCirculations(rows.map(normalizeCirculation));
       setTotal(response.data?.meta?.total || 0);
-    } catch (err) {
-      console.error('Failed to fetch circulations:', err);
+    } catch {
       setCirculations([]);
+      setTotal(0);
+      setError(t('library.failedToLoadCirculation'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, rowsPerPage, t, tabValue]);
 
   const handleIssueBook = async () => {
     if (!selectedIssueBook || !selectedIssueStudent) {
@@ -284,10 +318,10 @@ export function BookCirculation() {
       closeIssueDialog();
       fetchCirculations();
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err: any) {
-      const responseData = err.response?.data;
+    } catch (requestError: unknown) {
+      const responseData = getApiErrorPayload(requestError);
       const validationMessages = Array.isArray(responseData?.errors)
-        ? responseData.errors.map((item: { message?: string }) => item.message).filter(Boolean)
+        ? responseData.errors.map((item) => item.message).filter((message): message is string => Boolean(message))
         : [];
       setError(validationMessages.join(' ') || responseData?.message || responseData?.error || t('library.failedToIssueBook'));
     }
@@ -305,8 +339,8 @@ export function BookCirculation() {
       setSelectedCirculation(null);
       fetchCirculations();
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('library.failedToReturnBook'));
+    } catch (requestError: unknown) {
+      setError(getApiErrorPayload(requestError).message || t('library.failedToReturnBook'));
     }
   };
 
@@ -316,8 +350,8 @@ export function BookCirculation() {
       setSuccess(t('library.finePaidSuccess'));
       fetchCirculations();
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('library.failedToProcessPayment'));
+    } catch (requestError: unknown) {
+      setError(getApiErrorPayload(requestError).message || t('library.failedToProcessPayment'));
     }
   };
 
@@ -327,23 +361,28 @@ export function BookCirculation() {
       setSuccess(t('library.bookRenewedSuccess'));
       fetchCirculations();
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('library.failedToRenewBook'));
+    } catch (requestError: unknown) {
+      setError(getApiErrorPayload(requestError).message || t('library.failedToRenewBook'));
     }
   };
 
-  const fetchReservations = async () => {
+  const fetchReservations = useCallback(async () => {
     if (!reservationBookId) return;
     setReservationsLoading(true);
     try {
       const res = await apiClient.get('/library/reservations', { params: { bookId: reservationBookId } });
-      setReservations(res.data?.data ?? []);
+      setReservations(Array.isArray(res.data?.data) ? res.data.data as ReservationRow[] : []);
     } catch {
       setReservations([]);
     } finally {
       setReservationsLoading(false);
     }
-  };
+  }, [reservationBookId]);
+
+  useEffect(() => {
+    if (tabValue < 3) void Promise.resolve().then(fetchCirculations);
+    else if (tabValue === 3 && reservationBookId) void Promise.resolve().then(fetchReservations);
+  }, [fetchCirculations, fetchReservations, page, reservationBookId, rowsPerPage, tabValue]);
 
   const handleCancelReservation = async (reservationId: number) => {
     try {
@@ -351,8 +390,8 @@ export function BookCirculation() {
       setSuccess(t('library.reservationCancelled'));
       fetchReservations();
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('library.failedToCancelReservation'));
+    } catch (requestError: unknown) {
+      setError(getApiErrorPayload(requestError).message || t('library.failedToCancelReservation'));
     }
   };
 
@@ -363,13 +402,13 @@ export function BookCirculation() {
       });
       setSuccess(t('library.bookReservedSuccess'));
       setReserveDialog(false);
-      setReserveForm({ bookId: '', studentId: '' });
       setSelectedReserveBook(null);
       setSelectedReserveStudent(null);
       if (reservationBookId) fetchReservations();
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.error || err.response?.data?.message || t('library.failedToReserveBook'));
+    } catch (requestError: unknown) {
+      const responseData = getApiErrorPayload(requestError);
+      setError(responseData.error || responseData.message || t('library.failedToReserveBook'));
     }
   };
 
@@ -379,9 +418,9 @@ export function BookCirculation() {
     try {
       const res = await apiClient.get(`/library/fines/${finesStudentId}`);
       setFinesList(Array.isArray(res.data?.data) ? res.data.data : []);
-    } catch (err: any) {
+    } catch (requestError: unknown) {
       setFinesList([]);
-      setError(err.response?.data?.message || t('library.failedToFetchFines'));
+      setError(getApiErrorPayload(requestError).message || t('library.failedToFetchFines'));
     } finally {
       setFinesLoading(false);
     }
@@ -396,22 +435,14 @@ export function BookCirculation() {
       setSuccess(t('library.finePaidSuccess'));
       fetchFines();
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('library.failedToProcessPayment'));
+    } catch (requestError: unknown) {
+      setError(getApiErrorPayload(requestError).message || t('library.failedToProcessPayment'));
     }
   };
 
   const openReturnDialog = (circulation: Circulation) => {
     setSelectedCirculation(circulation);
-    // Calculate fine if overdue
-    if (circulation.status === 'overdue') {
-      const dueDate = new Date(circulation.dueDate);
-      const today = new Date();
-      const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-      setFineAmount(daysOverdue * 10); // NPR 10 per day
-    } else {
-      setFineAmount(0);
-    }
+    setFineAmount(circulation.status === 'overdue' ? calculateOverdueFine(circulation.dueDate) : 0);
     setReturnDialog(true);
   };
 
@@ -428,7 +459,6 @@ export function BookCirculation() {
               startIcon={<ReserveIcon />}
               onClick={() => {
                 setError('');
-                setReserveForm({ bookId: '', studentId: '' });
                 setSelectedReserveBook(null);
                 setSelectedReserveStudent(null);
                 setReserveBookSearch('');
@@ -483,7 +513,7 @@ export function BookCirculation() {
                   </TableRow>
                 ) : circulations.length === 0 ? (
                   <TableRow sx={S.TR_HOVER}>
-                    <TableCell colSpan={7} align="center" sx={S.TD}>{t('library.noIssuedBooks')}</TableCell>
+                    <TableCell colSpan={7} align="center" sx={S.TD}>{error ? t('library.circulationUnavailable') : t('library.noIssuedBooks')}</TableCell>
                   </TableRow>
                 ) : (
                   circulations.map((circulation) => (
@@ -554,13 +584,11 @@ export function BookCirculation() {
                   </TableRow>
                 ) : circulations.length === 0 ? (
                   <TableRow sx={S.TR_HOVER}>
-                    <TableCell colSpan={6} align="center" sx={S.TD}>{t('library.noOverdueBooks')}</TableCell>
+                    <TableCell colSpan={6} align="center" sx={S.TD}>{error ? t('library.circulationUnavailable') : t('library.noOverdueBooks')}</TableCell>
                   </TableRow>
                 ) : (
                   circulations.map((circulation) => {
-                    const daysOverdue = Math.floor(
-                      (new Date().getTime() - new Date(circulation.dueDate).getTime()) / (1000 * 60 * 60 * 24)
-                    );
+                    const daysOverdue = getOverdueDays(circulation.dueDate);
                     return (
                       <TableRow key={circulation.circulationId} sx={S.TR_HOVER}>
                         <TableCell sx={S.TD}>{circulation.bookTitle}</TableCell>
@@ -569,7 +597,7 @@ export function BookCirculation() {
                         <TableCell sx={S.TD}>
                           <Chip label={`${daysOverdue} days`} color="error" size="small" />
                         </TableCell>
-                        <TableCell align="right" sx={S.TD}>NPR {(daysOverdue * 10).toLocaleString()}</TableCell>
+                        <TableCell align="right" sx={S.TD}>NPR {calculateOverdueFine(circulation.dueDate).toLocaleString()}</TableCell>
                         <TableCell align="center" sx={S.TD}>
                           <Button
                             size="small"
@@ -695,22 +723,25 @@ export function BookCirculation() {
                 ) : reservations.length === 0 ? (
                   <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('library.noReservations')}</TableCell></TableRow>
                 ) : (
-                  reservations.map((r: any) => (
-                    <TableRow key={r.reservationId ?? r.id} sx={S.TR_HOVER}>
-                      <TableCell sx={S.TD}>{r.reservationId ?? r.id}</TableCell>
-                      <TableCell sx={S.TD}>{r.book?.title ?? r.Book?.title ?? r.bookTitle ?? r.bookId}</TableCell>
-                      <TableCell sx={S.TD}>{r.student ? `${r.student.firstNameEn ?? ''} ${r.student.lastNameEn ?? ''}`.trim() : r.Student ? `${r.Student.firstNameEn ?? ''} ${r.Student.lastNameEn ?? ''}`.trim() : r.studentId}</TableCell>
-                      <TableCell sx={S.TD}><Chip label={r.status ?? 'pending'} size="small" /></TableCell>
-                      <TableCell sx={S.TD}>{r.reservationDate ? new Date(r.reservationDate).toLocaleDateString() : '-'}</TableCell>
-                      <TableCell align="center" sx={S.TD}>
-                        {r.status !== 'cancelled' && r.status !== 'fulfilled' && (
-                          <Button size="small" color="error" startIcon={<CancelIcon />} onClick={() => handleCancelReservation(r.reservationId ?? r.id)}>
-                            {t('library.cancel')}
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  reservations.map((r) => {
+                    const reservationId = r.reservationId ?? r.id;
+                    return (
+                      <TableRow key={reservationId ?? `${r.bookId}-${r.studentId}`} sx={S.TR_HOVER}>
+                        <TableCell sx={S.TD}>{reservationId}</TableCell>
+                        <TableCell sx={S.TD}>{r.book?.title ?? r.Book?.title ?? r.bookTitle ?? r.bookId}</TableCell>
+                        <TableCell sx={S.TD}>{r.student ? `${r.student.firstNameEn ?? ''} ${r.student.lastNameEn ?? ''}`.trim() : r.Student ? `${r.Student.firstNameEn ?? ''} ${r.Student.lastNameEn ?? ''}`.trim() : r.studentId}</TableCell>
+                        <TableCell sx={S.TD}><Chip label={r.status ?? 'pending'} size="small" /></TableCell>
+                        <TableCell sx={S.TD}>{r.reservationDate ? new Date(r.reservationDate).toLocaleDateString() : '-'}</TableCell>
+                        <TableCell align="center" sx={S.TD}>
+                          {r.status !== 'cancelled' && r.status !== 'fulfilled' && reservationId !== undefined && (
+                            <Button size="small" color="error" startIcon={<CancelIcon />} onClick={() => handleCancelReservation(reservationId)}>
+                              {t('library.cancel')}
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
@@ -751,19 +782,21 @@ export function BookCirculation() {
                 ) : finesList.length === 0 ? (
                   <TableRow sx={S.TR_HOVER}><TableCell colSpan={6} align="center" sx={S.TD}>{t('library.noFines')}</TableCell></TableRow>
                 ) : (
-                  finesList.map((f: any) => {
-                    const balance = parseFloat(f.balance ?? f.fineAmount ?? 0);
+                  finesList.map((f) => {
+                    const balance = Number(f.balance ?? f.fineAmount ?? 0);
+                    const fineAmountValue = Number(f.fineAmount ?? 0);
+                    const fineId = f.fineId ?? f.id;
                     const paid = (f.status ?? '').toLowerCase() === 'paid';
                     return (
-                      <TableRow key={f.fineId ?? f.id} sx={S.TR_HOVER}>
-                        <TableCell sx={S.TD}>{f.fineId ?? f.id}</TableCell>
-                        <TableCell sx={S.TD}>NPR {parseFloat(f.fineAmount ?? 0).toLocaleString()}</TableCell>
+                      <TableRow key={fineId ?? 'unknown-fine'} sx={S.TR_HOVER}>
+                        <TableCell sx={S.TD}>{fineId}</TableCell>
+                        <TableCell sx={S.TD}>NPR {fineAmountValue.toLocaleString()}</TableCell>
                         <TableCell sx={S.TD}>NPR {balance.toLocaleString()}</TableCell>
                         <TableCell sx={S.TD}>{f.fineReason ?? '-'}</TableCell>
                         <TableCell sx={S.TD}><Chip label={f.status ?? 'pending'} size="small" color={paid ? 'success' : 'warning'} /></TableCell>
                         <TableCell align="center" sx={S.TD}>
-                          {!paid && balance > 0 && (
-                            <Button size="small" variant="outlined" sx={S.BTN_OUTLINE} startIcon={<PaymentIcon />} onClick={() => handlePayFineById(f.fineId ?? f.id, balance)}>
+                          {!paid && balance > 0 && fineId !== undefined && (
+                            <Button size="small" variant="outlined" sx={S.BTN_OUTLINE} startIcon={<PaymentIcon />} onClick={() => handlePayFineById(fineId, balance)}>
                               {t('library.pay')}
                             </Button>
                           )}
@@ -783,6 +816,7 @@ export function BookCirculation() {
           page={tabValue < 3 ? page : 0}
           onPageChange={(_, newPage) => tabValue < 3 && setPage(newPage)}
           rowsPerPage={tabValue < 3 ? rowsPerPage : 10}
+          rowsPerPageOptions={[10, 20, 50, 100]}
           onRowsPerPageChange={(e) => { if (tabValue < 3) { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); } }}
         />
       </Paper>
@@ -894,12 +928,10 @@ export function BookCirculation() {
                   setReserveBookSearch(value);
                   if (reason === 'input' || reason === 'clear') {
                     setSelectedReserveBook(null);
-                    setReserveForm((prev) => ({ ...prev, bookId: '' }));
                   }
                 }}
                 onChange={(_, book) => {
                   setSelectedReserveBook(book);
-                  setReserveForm((prev) => ({ ...prev, bookId: book ? String(book.bookId) : '' }));
                 }}
                 noOptionsText={reserveBooksLoading ? t('library.loading') : 'No unavailable books found'}
                 renderInput={(params) => <TextField {...params} label={t('library.book')} required />}
@@ -917,12 +949,10 @@ export function BookCirculation() {
                   setReserveStudentSearch(value);
                   if (reason === 'input' || reason === 'clear') {
                     setSelectedReserveStudent(null);
-                    setReserveForm((prev) => ({ ...prev, studentId: '' }));
                   }
                 }}
                 onChange={(_, student) => {
                   setSelectedReserveStudent(student);
-                  setReserveForm((prev) => ({ ...prev, studentId: student ? String(student.studentId) : '' }));
                 }}
                 renderInput={(params) => <TextField {...params} label={t('library.student')} required />}
               />

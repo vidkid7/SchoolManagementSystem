@@ -351,27 +351,37 @@ export class BackupService {
    * Find backup file in local or external storage
    */
   private async findBackupFile(filename: string): Promise<string | null> {
+    if (!this.isSafeBackupFilename(filename)) return null;
+
     // Check local storage
-    const localPath = path.join(this.config.backupPath, filename);
-    try {
-      await fs.access(localPath);
-      return localPath;
-    } catch {
-      // File not in local storage
-    }
+    const localPath = await this.findRegularBackupFile(this.config.backupPath, filename);
+    if (localPath) return localPath;
 
     // Check external storage
     if (this.config.externalStoragePath) {
-      const externalPath = path.join(this.config.externalStoragePath, filename);
-      try {
-        await fs.access(externalPath);
-        return externalPath;
-      } catch {
-        // File not in external storage
-      }
+      return this.findRegularBackupFile(this.config.externalStoragePath, filename);
     }
 
     return null;
+  }
+
+  private isSafeBackupFilename(filename: string): boolean {
+    return typeof filename === 'string'
+      && filename.length <= 255
+      && /^backup_[A-Za-z0-9][A-Za-z0-9_-]*\.sql(?:\.gz)?$/.test(filename);
+  }
+
+  private async findRegularBackupFile(directory: string, filename: string): Promise<string | null> {
+    const resolvedDirectory = path.resolve(directory);
+    const backupPath = path.resolve(resolvedDirectory, filename);
+    if (path.dirname(backupPath) !== resolvedDirectory) return null;
+
+    try {
+      const stats = await fs.lstat(backupPath);
+      return stats.isFile() && !stats.isSymbolicLink() ? backupPath : null;
+    } catch {
+      return null;
+    }
   }
 
   /**

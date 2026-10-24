@@ -292,6 +292,10 @@ class AuditService {
         where.action = filters.action;
       }
 
+      if (filters.ipAddress) {
+        where.ipAddress = filters.ipAddress;
+      }
+
       if (filters.startDate || filters.endDate) {
         const timestampFilter: any = {};
         if (filters.startDate) {
@@ -301,6 +305,13 @@ class AuditService {
           timestampFilter[Op.lte] = filters.endDate;
         }
         where.timestamp = timestampFilter;
+      }
+
+      if (filters.search) {
+        (where as any)[Op.or] = [
+          { entityType: { [Op.like]: `%${filters.search}%` } },
+          { changedFields: { [Op.like]: `%${filters.search}%` } },
+        ];
       }
 
       const logs = await AuditLog.findAll({

@@ -9,6 +9,7 @@ import Team from '@models/Team.model';
 import SportsEnrollment from '@models/SportsEnrollment.model';
 import SportsAchievement from '@models/SportsAchievement.model';
 import Tournament from '@models/Tournament.model';
+import { assertStudentAccess, getPortalStudentIds } from '@modules/security/studentAccess';
 
 const serializeTeam = (team: any) => {
   const values = typeof team?.get === 'function' ? team.get({ plain: false }) : team;
@@ -767,7 +768,13 @@ class SportsController {
       if (req.query.sportId) filters.sportId = parseInt(req.query.sportId as string);
       if (req.query.teamId) filters.teamId = parseInt(req.query.teamId as string);
       if (req.query.tournamentId) filters.tournamentId = parseInt(req.query.tournamentId as string);
-      if (req.query.studentId) filters.studentId = parseInt(req.query.studentId as string);
+      if (req.query.studentId) {
+        filters.studentId = parseInt(req.query.studentId as string);
+        await assertStudentAccess(req, filters.studentId);
+      } else {
+        const studentIds = await getPortalStudentIds(req);
+        if (studentIds) filters.studentId = { [Op.in]: studentIds };
+      }
       if (req.query.type) filters.type = req.query.type;
       if (req.query.level) filters.level = req.query.level;
 
@@ -811,6 +818,7 @@ class SportsController {
       }
 
       const studentId = parseInt(req.params.studentId);
+      await assertStudentAccess(req, studentId);
 
       // Get enrollments
       const enrollments = await sportsEnrollmentService.getStudentEnrollments(studentId);

@@ -36,7 +36,7 @@ export interface FeeReminderAttributes {
   smsGatewayId?: string;
   sentAt?: Date;
   deliveredAt?: Date;
-  failureReason?: string;
+  failureReason?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -56,21 +56,21 @@ export interface FeeReminderCreationAttributes extends Optional<FeeReminderAttri
  */
 class FeeReminder extends Model<FeeReminderAttributes, FeeReminderCreationAttributes> 
   implements FeeReminderAttributes {
-  public feeReminderId!: number;
-  public invoiceId!: number;
-  public studentId!: number;
-  public reminderType!: ReminderType;
-  public daysOverdue!: number;
-  public phoneNumber!: string;
-  public message!: string;
-  public status!: ReminderStatus;
-  public smsGatewayId?: string;
-  public sentAt?: Date;
-  public deliveredAt?: Date;
-  public failureReason?: string;
+  declare public feeReminderId: number;
+  declare public invoiceId: number;
+  declare public studentId: number;
+  declare public reminderType: ReminderType;
+  declare public daysOverdue: number;
+  declare public phoneNumber: string;
+  declare public message: string;
+  declare public status: ReminderStatus;
+  declare public smsGatewayId?: string;
+  declare public sentAt?: Date;
+  declare public deliveredAt?: Date;
+  declare public failureReason?: string | null;
   
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   /**
    * Check if reminder is pending
@@ -315,22 +315,22 @@ export interface ReminderConfigCreationAttributes extends Optional<ReminderConfi
  */
 class ReminderConfig extends Model<ReminderConfigAttributes, ReminderConfigCreationAttributes> 
   implements ReminderConfigAttributes {
-  public reminderConfigId!: number;
-  public name!: string;
-  public description?: string;
-  public firstReminderDays!: number;
-  public secondReminderDays!: number;
-  public thirdReminderDays!: number;
-  public finalReminderDays!: number;
-  public isActive!: boolean;
-  public isDefault!: boolean;
-  public messageTemplateFirst?: string;
-  public messageTemplateSecond?: string;
-  public messageTemplateThird?: string;
-  public messageTemplateFinal?: string;
+  declare public reminderConfigId: number;
+  declare public name: string;
+  declare public description?: string;
+  declare public firstReminderDays: number;
+  declare public secondReminderDays: number;
+  declare public thirdReminderDays: number;
+  declare public finalReminderDays: number;
+  declare public isActive: boolean;
+  declare public isDefault: boolean;
+  declare public messageTemplateFirst?: string;
+  declare public messageTemplateSecond?: string;
+  declare public messageTemplateThird?: string;
+  declare public messageTemplateFinal?: string;
   
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   /**
    * Get reminder days for a specific type

@@ -54,7 +54,7 @@ class EnhancedValidationService {
         warnings
       };
     } catch (error) {
-      logger.error('Error validating age for grade', { error, dateOfBirth, gradeLevel });
+      logger.error('Error validating age for grade');
       return {
         isValid: false,
         errors: ['Failed to validate age for grade'],
@@ -103,11 +103,7 @@ class EnhancedValidationService {
         warnings
       };
     } catch (error) {
-      logger.error('Error validating roll number uniqueness', { 
-        error, 
-        classId, 
-        rollNumber 
-      });
+      logger.error('Error validating roll number uniqueness');
       return {
         isValid: false,
         errors: ['Failed to validate roll number uniqueness'],
@@ -152,7 +148,7 @@ class EnhancedValidationService {
         warnings
       };
     } catch (error) {
-      logger.error('Error validating BS/AD date match', { error, dateBS, dateAD });
+      logger.error('Error validating BS/AD date match');
       return {
         isValid: false,
         errors: ['Invalid BS date format or conversion failed'],
@@ -288,7 +284,7 @@ class EnhancedValidationService {
         warnings: allWarnings
       };
     } catch (error) {
-      logger.error('Error in comprehensive validation', { error, studentData });
+      logger.error('Error in comprehensive validation');
       return {
         isValid: false,
         errors: ['Validation failed due to system error'],
@@ -331,7 +327,7 @@ class EnhancedValidationService {
       const maxRoll = Math.max(...students.map(s => s.rollNumber || 0));
       return maxRoll + 1;
     } catch (error) {
-      logger.error('Error getting next roll number', { error, classId });
+      logger.error('Error getting next roll number');
       return 1;
     }
   }

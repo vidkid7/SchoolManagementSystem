@@ -6,7 +6,7 @@
  * Requirements: 25.6
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Paper,
@@ -33,13 +33,14 @@ import {
   Download as DownloadIcon,
   Visibility as ViewIcon,
   Description as DescriptionIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
-import apiClient from '../../services/apiClient';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import apiClient, { resolveApiAssetUrl } from '../../services/apiClient';
+import { C, useAdminStyles } from '../../theme/designTokens';
 import { useTranslation } from 'react-i18next';
 
 interface StudentCertificate {
-  id: number;
+  certificateId: number;
   certificateNumber: string;
   type: string;
   templateName: string;
@@ -59,28 +60,37 @@ export const StudentCertificates = () => {
   const [selectedCertificate, setSelectedCertificate] = useState<StudentCertificate | null>(null);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchCertificates();
-  }, []);
-
-const fetchCertificates = async () => {
+  const fetchCertificates = useCallback(async () => {
     try {
       setLoading(true);
-      // Get current student ID from auth context or localStorage
-      const studentId = localStorage.getItem('studentId') || '1'; // Fallback for demo
+      const profileResponse = await apiClient.get('/api/v1/students/me/profile');
+      const studentId = profileResponse.data.data?.studentId;
+      if (!Number.isSafeInteger(studentId) || studentId <= 0) {
+        setCertificates([]);
+        setError('');
+        return;
+      }
+
       const response = await apiClient.get(`/api/v1/certificates/student/${studentId}`);
-      setCertificates(response.data.data || []);
+      setCertificates(Array.isArray(response.data.data) ? response.data.data : []);
     } catch (err) {
       console.error('Failed to fetch certificates:', err);
       setError(t('certificates.noCertificates'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void fetchCertificates();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [fetchCertificates]);
 
   const handleDownload = (certificate: StudentCertificate) => {
     if (certificate.pdfUrl) {
-      window.open(certificate.pdfUrl, '_blank');
+      window.open(resolveApiAssetUrl(certificate.pdfUrl), '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -166,7 +176,7 @@ const fetchCertificates = async () => {
             </TableHead>
             <TableBody>
               {displayedCertificates.map((cert) => (
-                <TableRow key={cert.id} hover sx={S.TR_HOVER}>
+                <TableRow key={cert.certificateId} hover sx={S.TR_HOVER}>
                   <TableCell sx={S.TD}>
                     <Typography variant="body2" fontWeight="bold">
                       {cert.certificateNumber}
@@ -199,7 +209,8 @@ const fetchCertificates = async () => {
                   <TableCell align="right" sx={S.TD}>
                     <IconButton
                       size="small"
-                      title="View Details"
+                      title={t('certificates.viewDetails')}
+                      aria-label={t('certificates.viewDetails')}
                       onClick={() => handleView(cert)}
                     >
                       <ViewIcon />
@@ -207,7 +218,8 @@ const fetchCertificates = async () => {
                     {cert.pdfUrl && cert.status === 'active' && (
                       <IconButton
                         size="small"
-                        title="Download PDF"
+                        title={t('certificates.downloadPdf')}
+                        aria-label={t('certificates.downloadPdf')}
                         color="primary"
                         onClick={() => handleDownload(cert)}
                       >
@@ -238,15 +250,18 @@ const fetchCertificates = async () => {
             zIndex: 1300,
           }}
           onClick={() => setSelectedCertificate(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="student-certificate-dialog-title"
         >
           <Paper sx={{ ...S.GLASS, maxWidth: 600, width: '90%', maxHeight: '90vh', overflow: 'auto', m: 2 }} onClick={(e) => e.stopPropagation()}>
             <Box sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h5">
+                <Typography id="student-certificate-dialog-title" variant="h5">
                   {t('certificates.certificateDetailTitle')}
                 </Typography>
-                <IconButton onClick={() => setSelectedCertificate(null)}>
-                  <DownloadIcon />
+                <IconButton aria-label={t('common.close')} onClick={() => setSelectedCertificate(null)}>
+                  <CloseIcon />
                 </IconButton>
               </Box>
               

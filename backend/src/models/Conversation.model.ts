@@ -30,15 +30,15 @@ export class Conversation
   extends Model<ConversationAttributes, ConversationCreationAttributes>
   implements ConversationAttributes
 {
-  public conversationId!: number;
-  public participant1Id!: number;
-  public participant2Id!: number;
-  public lastMessageId?: number;
-  public lastMessageAt?: Date;
-  public unreadCountUser1!: number;
-  public unreadCountUser2!: number;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public conversationId: number;
+  declare public participant1Id: number;
+  declare public participant2Id: number;
+  declare public lastMessageId?: number;
+  declare public lastMessageAt?: Date;
+  declare public unreadCountUser1: number;
+  declare public unreadCountUser2: number;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   // Instance methods
   public getUnreadCount(userId: number): number {

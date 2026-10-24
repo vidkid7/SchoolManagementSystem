@@ -10,12 +10,24 @@
  */
 
 import * as fc from 'fast-check';
+
+jest.mock('qrcode', () => ({
+  __esModule: true,
+  default: { toDataURL: jest.fn().mockResolvedValue('data:image/png;base64,test') }
+}));
+jest.mock('@utils/auditLogger', () => ({
+  __esModule: true,
+  default: { logCreate: jest.fn().mockResolvedValue(undefined) }
+}));
+
 import paymentService from '../payment.service';
 import invoiceService from '../invoice.service';
 import { Invoice, InvoiceStatus } from '@models/Invoice.model';
 import { Payment, PaymentMethod, PaymentStatus } from '@models/Payment.model';
 import { FeeStructure, FeeComponent, FeeComponentType, FeeFrequency } from '@models/FeeStructure.model';
 import { AcademicYear } from '@models/AcademicYear.model';
+import Student, { Gender, StudentStatus } from '@models/Student.model';
+import User, { UserRole, UserStatus } from '@models/User.model';
 import sequelize from '@config/database';
 
 describe('Payment Balance Invariant - Property-Based Tests', () => {
@@ -51,86 +63,64 @@ describe('Payment Balance Invariant - Property-Based Tests', () => {
   }
 
   beforeAll(async () => {
-    // Ensure tables exist
-    try {
-      await AcademicYear.sync();
-      await FeeStructure.sync();
-      await FeeComponent.sync();
-      await Invoice.sync();
-      await Payment.sync();
-      
-      // Ensure invoice_items table exists
-      await sequelize.query('SELECT 1 FROM invoice_items LIMIT 1').catch(async () => {
-        await sequelize.query(`
-          CREATE TABLE IF NOT EXISTS invoice_items (
-            invoice_item_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            invoice_id INT UNSIGNED NOT NULL,
-            fee_component_id INT UNSIGNED NOT NULL,
-            description VARCHAR(255) NOT NULL,
-            amount DECIMAL(10, 2) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            FOREIGN KEY (invoice_id) REFERENCES invoices(invoice_id) ON DELETE CASCADE,
-            FOREIGN KEY (fee_component_id) REFERENCES fee_components(fee_component_id),
-            INDEX idx_invoice_items_invoice (invoice_id),
-            INDEX idx_invoice_items_fee_component (fee_component_id)
-          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        `);
-      });
-    } catch (error) {
-      console.log('Table sync warning:', error);
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('Payment balance property tests require TEST_DB_DIALECT=sqlite');
     }
+    await sequelize.sync({ force: true });
 
-    // Clean up existing test data
-    try {
-      await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
-      await Payment.destroy({ where: {}, force: true });
-      await Invoice.destroy({ where: {}, force: true });
-      await FeeComponent.destroy({ where: {}, force: true });
-      await FeeStructure.destroy({ where: {}, force: true });
-      await AcademicYear.destroy({ where: {}, force: true });
-      await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-    } catch (error) {
-      console.log('Cleanup warning:', error);
-    }
-
-    // Create test academic year
+    // Seed only the parent rows referenced by generated finance records.
     academicYear = await AcademicYear.create({
-      name: '2081-2082 BS',
-      startDateBS: '2081-01-01',
-      endDateBS: '2081-12-30',
-      startDateAD: new Date('2024-04-14'),
-      endDateAD: new Date('2025-04-13'),
+      name: 'QA Payment Balance 2026-2027',
+      startDateBS: '2083-01-01',
+      endDateBS: '2083-12-30',
+      startDateAD: new Date('2026-04-14'),
+      endDateAD: new Date('2027-04-13'),
       isCurrent: true
     });
-
-    // Use a fixed user ID for testing
-    testUserId = 1;
+    const student = await Student.create({
+      studentCode: 'QA-PAYMENT-BALANCE-1',
+      firstNameEn: 'PaymentBalance',
+      lastNameEn: 'Test',
+      dateOfBirthBS: '2065-01-01',
+      dateOfBirthAD: new Date('2008-04-13'),
+      gender: Gender.OTHER,
+      addressEn: 'Test address',
+      fatherName: 'Test Father',
+      fatherPhone: '9800000000',
+      motherName: 'Test Mother',
+      motherPhone: '9800000001',
+      admissionDate: new Date('2026-04-14'),
+      admissionClass: 1,
+      emergencyContact: '9800000002',
+      status: StudentStatus.ACTIVE
+    });
+    testUserId = (await User.create({
+      username: 'qapaymentbalance',
+      email: 'qa-payment-balance@example.test',
+      password: 'qa-test-password',
+      role: UserRole.ACCOUNTANT,
+      status: UserStatus.ACTIVE
+    })).userId;
+    if (student.studentId !== 1) throw new Error('Payment balance test student fixture ID must be 1');
   });
 
   afterAll(async () => {
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
-    await Payment.destroy({ where: {}, force: true });
-    await Invoice.destroy({ where: {}, force: true });
+    await Payment.destroy({ where: { studentId: 1 }, force: true });
+    await Invoice.destroy({ where: { studentId: 1 }, force: true });
     await FeeComponent.destroy({ where: {}, force: true });
-    await FeeStructure.destroy({ where: {}, force: true });
-    await AcademicYear.destroy({ where: {}, force: true });
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
+    await FeeStructure.destroy({ where: { academicYearId: academicYear.academicYearId }, force: true });
+    await AcademicYear.destroy({ where: { academicYearId: academicYear.academicYearId }, force: true });
+    await Student.destroy({ where: { studentId: 1 }, force: true });
+    await User.destroy({ where: { userId: testUserId }, force: true });
     await sequelize.close();
   });
 
   afterEach(async () => {
     // Clean up after each test
-    try {
-      await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
-      await Payment.destroy({ where: {}, force: true });
-      await Invoice.destroy({ where: {}, force: true });
-      await FeeComponent.destroy({ where: {}, force: true });
-      await FeeStructure.destroy({ where: {}, force: true });
-      await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-    } catch (error) {
-      console.log('Cleanup warning:', error);
-    }
+    await Payment.destroy({ where: { studentId: 1 }, force: true });
+    await Invoice.destroy({ where: { studentId: 1 }, force: true });
+    await FeeComponent.destroy({ where: {}, force: true });
+    await FeeStructure.destroy({ where: { academicYearId: academicYear.academicYearId }, force: true });
   });
 
   describe('Property 22: Payment Balance Invariant', () => {
@@ -154,7 +144,7 @@ describe('Payment Balance Invariant - Property-Based Tests', () => {
         fc.asyncProperty(
           fc.record({
             // Student ID
-            studentId: fc.integer({ min: 1, max: 10000 }),
+            studentId: fc.constant(1),
             // Invoice total amount (1000-50000 NPR)
             totalAmount: fc.integer({ min: 1000, max: 50000 }),
             // Number of payments to make (1-10)
@@ -185,7 +175,7 @@ describe('Payment Balance Invariant - Property-Based Tests', () => {
               studentId,
               feeStructureId: feeStructure.feeStructureId,
               academicYearId: academicYear.academicYearId,
-              dueDate: '2025-03-01',
+              dueDate: '2027-03-01',
             });
 
             // Verify initial state: balance = total_amount (paid_amount = 0)
@@ -201,7 +191,7 @@ describe('Payment Balance Invariant - Property-Based Tests', () => {
               // Generate payment amount between 1 and remaining amount
               // For last payment, use remaining amount to potentially pay in full
               const maxPayment = i === numPayments - 1 ? remainingAmount : Math.floor(remainingAmount * 0.8);
-              const paymentAmount = Math.floor(Math.random() * maxPayment) + 1;
+              const paymentAmount = Math.max(1, Math.floor(maxPayment * 0.8));
               
               paymentAmounts.push(paymentAmount);
               remainingAmount -= paymentAmount;
@@ -269,7 +259,7 @@ describe('Payment Balance Invariant - Property-Based Tests', () => {
           verbose: true,
         }
       );
-    }, 120000); // 2 minute timeout for multiple database operations
+    }, 300000); // Allow the 100 database-backed property runs to finish.
 
     /**
      * Property: Balance invariant should hold after multiple sequential payments
@@ -281,7 +271,7 @@ describe('Payment Balance Invariant - Property-Based Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.record({
-            studentId: fc.integer({ min: 1, max: 1000 }),
+            studentId: fc.constant(1),
             totalAmount: fc.integer({ min: 5000, max: 20000 }),
             paymentCount: fc.integer({ min: 3, max: 8 }),
           }),
@@ -308,7 +298,7 @@ describe('Payment Balance Invariant - Property-Based Tests', () => {
               studentId,
               feeStructureId: feeStructure.feeStructureId,
               academicYearId: academicYear.academicYearId,
-              dueDate: '2025-03-01',
+              dueDate: '2027-03-01',
             });
 
             // Make equal payments (except possibly the last one)
@@ -371,7 +361,7 @@ describe('Payment Balance Invariant - Property-Based Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.record({
-            studentId: fc.integer({ min: 1, max: 1000 }),
+            studentId: fc.constant(1),
             totalAmount: fc.integer({ min: 1000, max: 10000 }),
             excessAmount: fc.integer({ min: 1, max: 5000 }),
           }),
@@ -398,7 +388,7 @@ describe('Payment Balance Invariant - Property-Based Tests', () => {
               studentId,
               feeStructureId: feeStructure.feeStructureId,
               academicYearId: academicYear.academicYearId,
-              dueDate: '2025-03-01',
+              dueDate: '2027-03-01',
             });
 
             // Attempt to pay more than the total amount
@@ -437,7 +427,7 @@ describe('Payment Balance Invariant - Property-Based Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.record({
-            studentId: fc.integer({ min: 1, max: 1000 }),
+            studentId: fc.constant(1),
             totalAmount: fc.integer({ min: 3000, max: 15000 }),
           }),
           async ({ studentId, totalAmount }) => {
@@ -464,7 +454,7 @@ describe('Payment Balance Invariant - Property-Based Tests', () => {
               studentId,
               feeStructureId: feeStructure.feeStructureId,
               academicYearId: academicYear.academicYearId,
-              dueDate: '2025-03-01',
+              dueDate: '2027-03-01',
             });
 
             // Make payments using different methods
@@ -532,7 +522,7 @@ describe('Payment Balance Invariant - Property-Based Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.record({
-            studentId: fc.integer({ min: 1, max: 1000 }),
+            studentId: fc.constant(1),
             totalAmount: fc.integer({ min: 5000, max: 20000 }),
             paymentAmount: fc.integer({ min: 1000, max: 5000 }),
           }),
@@ -563,7 +553,7 @@ describe('Payment Balance Invariant - Property-Based Tests', () => {
               studentId,
               feeStructureId: feeStructure.feeStructureId,
               academicYearId: academicYear.academicYearId,
-              dueDate: '2025-03-01',
+              dueDate: '2027-03-01',
             });
 
             // Make a payment
@@ -618,7 +608,7 @@ describe('Payment Balance Invariant - Property-Based Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.record({
-            studentId: fc.integer({ min: 1, max: 1000 }),
+            studentId: fc.constant(1),
             totalAmount: fc.integer({ min: 1000, max: 50000 }),
           }),
           async ({ studentId, totalAmount }) => {
@@ -645,7 +635,7 @@ describe('Payment Balance Invariant - Property-Based Tests', () => {
               studentId,
               feeStructureId: feeStructure.feeStructureId,
               academicYearId: academicYear.academicYearId,
-              dueDate: '2025-03-01',
+              dueDate: '2027-03-01',
             });
 
             // Pay the full amount

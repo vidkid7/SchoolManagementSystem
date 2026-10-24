@@ -35,6 +35,7 @@ import {
 import { useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
+import { useCurrentAcademicYear } from '../../hooks/useCurrentAcademicYear';
 import { useTranslation } from 'react-i18next';
 import apiClient from '../../services/apiClient';
 import { RootState } from '../../store';
@@ -53,6 +54,7 @@ interface FinanceStats {
 interface FeeStructure {
   feeStructureId: number;
   name: string;
+  academicYearId?: number;
   totalAmount: number;
   isActive: boolean;
   description?: string;
@@ -110,6 +112,18 @@ interface ProfileData {
 }
 
 const authHdr = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
+const todayForDateInput = () => {
+  const today = new Date();
+  const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60_000);
+  return localDate.toISOString().slice(0, 10);
+};
+const emptyFeeForm = (academicYearId = '') => ({
+  name: '',
+  description: '',
+  academicYearId,
+  classId: '',
+  components: [{ name: '', type: 'monthly', amount: '', frequency: 'monthly', isMandatory: true }],
+});
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 function TabPanel({ children, value, index }: { children: React.ReactNode; value: number; index: number }) {
@@ -169,14 +183,15 @@ const AccountantPortal: React.FC = () => {
 
   // Dialog state
   const [invoiceDialog, setInvoiceDialog] = useState(false);
-  const [invoiceForm, setInvoiceForm] = useState({ studentId: '', feeStructureId: '', dueDate: '', description: '' });
+  const [invoiceForm, setInvoiceForm] = useState({ studentId: '', feeStructureId: '', academicYearId: '', dueDate: '', description: '' });
   const [paymentDialog, setPaymentDialog] = useState(false);
-  const [paymentForm, setPaymentForm] = useState({ invoiceId: '', amount: '', method: 'cash', transactionId: '', remarks: '' });
+  const [paymentForm, setPaymentForm] = useState({ invoiceId: '', studentId: '', amount: '', method: 'cash', paymentDate: todayForDateInput(), transactionId: '', remarks: '' });
   const [feeDialog, setFeeDialog] = useState(false);
   const [editFee, setEditFee] = useState<FeeStructure | null>(null);
-  const [feeForm, setFeeForm] = useState({ name: '', description: '', components: [{ name: '', type: 'monthly', amount: '', frequency: 'monthly', isMandatory: true }] });
+  const [feeForm, setFeeForm] = useState(emptyFeeForm());
 
   const { user, accessToken } = useSelector((state: RootState) => state.auth);
+  const { currentYear, academicYears } = useCurrentAcademicYear();
   const navigate = useSlugNavigate();
   const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
   const nav = (path: string) => navigate(path);
@@ -214,7 +229,7 @@ const AccountantPortal: React.FC = () => {
   const loadTabData = useCallback(async (t: number) => {
     if (!accessToken) return;
     try {
-      if (t === 1) {
+      if (t === 1 || t === 2) {
         const r = await apiClient.get('/api/v1/finance/fee-structures', authHdr(accessToken));
         setFeeStructures(Array.isArray(r.data?.data) ? r.data.data : []);
       } else if (t === 5) {
@@ -243,34 +258,53 @@ const AccountantPortal: React.FC = () => {
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
   const handleCreateInvoice = async () => {
-    if (!accessToken || !invoiceForm.studentId || !invoiceForm.dueDate) return;
+    const studentId = Number(invoiceForm.studentId);
+    const feeStructureId = Number(invoiceForm.feeStructureId);
+    const academicYearId = Number(invoiceForm.academicYearId || currentYear?.academicYearId);
+    if (!accessToken) return;
+    if (!Number.isInteger(studentId) || studentId <= 0 || !Number.isInteger(feeStructureId) || feeStructureId <= 0 ||
+      !Number.isInteger(academicYearId) || academicYearId <= 0 || !invoiceForm.dueDate) {
+      setError(t('finance.invoiceRequiredFields') || 'Enter valid student, fee structure, academic year, and due date values');
+      return;
+    }
     try {
       await apiClient.post('/api/v1/finance/invoices', {
-        studentId: Number(invoiceForm.studentId),
-        ...(invoiceForm.feeStructureId && { feeStructureId: Number(invoiceForm.feeStructureId) }),
+        studentId,
+        feeStructureId,
+        academicYearId,
         dueDate: invoiceForm.dueDate,
         ...(invoiceForm.description && { description: invoiceForm.description }),
       }, authHdr(accessToken));
       setSuccess(t('finance.invoiceGeneratedSuccess') || 'Invoice generated successfully');
       setInvoiceDialog(false);
-      setInvoiceForm({ studentId: '', feeStructureId: '', dueDate: '', description: '' });
+      setInvoiceForm({ studentId: '', feeStructureId: '', academicYearId: currentYear ? String(currentYear.academicYearId) : '', dueDate: '', description: '' });
       loadCore();
     } catch { setError(t('finance.failedToGenerateInvoice') || 'Failed to generate invoice'); }
   };
 
   const handleRecordPayment = async () => {
-    if (!accessToken || !paymentForm.invoiceId || !paymentForm.amount) return;
+    const invoiceId = Number(paymentForm.invoiceId);
+    const studentId = Number(paymentForm.studentId);
+    const amount = Number(paymentForm.amount);
+    if (!accessToken) return;
+    if (!Number.isInteger(invoiceId) || invoiceId <= 0 || !Number.isInteger(studentId) || studentId <= 0 ||
+      !Number.isFinite(amount) || amount <= 0 || !paymentForm.paymentDate) {
+      setError(t('finance.paymentRequiredFields') || 'Enter valid invoice, student, amount, and payment date values');
+      return;
+    }
     try {
       await apiClient.post('/api/v1/finance/payments', {
-        invoiceId: Number(paymentForm.invoiceId),
-        amount: Number(paymentForm.amount),
+        invoiceId,
+        studentId,
+        amount,
         paymentMethod: paymentForm.method,
+        paymentDate: paymentForm.paymentDate,
         ...(paymentForm.transactionId && { transactionId: paymentForm.transactionId }),
         ...(paymentForm.remarks && { remarks: paymentForm.remarks }),
       }, authHdr(accessToken));
       setSuccess(t('finance.paymentRecordedSuccess') || 'Payment recorded successfully');
       setPaymentDialog(false);
-      setPaymentForm({ invoiceId: '', amount: '', method: 'cash', transactionId: '', remarks: '' });
+      setPaymentForm({ invoiceId: '', studentId: '', amount: '', method: 'cash', paymentDate: todayForDateInput(), transactionId: '', remarks: '' });
       loadCore();
     } catch { setError(t('finance.failedToRecordPayment') || 'Failed to record payment'); }
   };
@@ -295,25 +329,37 @@ const AccountantPortal: React.FC = () => {
   };
 
   const handleSaveFeeStructure = async () => {
-    if (!accessToken || !feeForm.name) return;
+    if (!accessToken) return;
+    const name = feeForm.name.trim();
+    const academicYearId = Number(feeForm.academicYearId || currentYear?.academicYearId);
+    const components = feeForm.components
+      .filter(c => c.name.trim() && Number.isFinite(Number(c.amount)) && Number(c.amount) > 0)
+      .map(c => ({ name: c.name.trim(), type: c.type, amount: Number(c.amount), frequency: c.frequency, isMandatory: c.isMandatory }));
+    if (!name || !Number.isInteger(academicYearId) || academicYearId <= 0 ||
+      (!editFee && components.length === 0) ||
+      (!editFee && feeForm.components.some(c => (c.name.trim() || c.amount) && (!c.name.trim() || !Number.isFinite(Number(c.amount)) || Number(c.amount) <= 0)))) {
+      setError(t('finance.feeStructureRequiredFields') || 'Enter a name, academic year, and at least one valid fee component');
+      return;
+    }
     try {
       if (editFee) {
         await apiClient.put(`/api/v1/finance/fee-structures/${editFee.feeStructureId}`,
-          { name: feeForm.name, description: feeForm.description || undefined }, authHdr(accessToken));
+          { name, description: feeForm.description.trim() || undefined }, authHdr(accessToken));
         setSuccess(t('finance.feeStructureUpdated') || 'Fee structure updated');
       } else {
         await apiClient.post('/api/v1/finance/fee-structures', {
-          name: feeForm.name,
-          description: feeForm.description || undefined,
-          components: feeForm.components.filter(c => c.name && c.amount).map(c => ({
-            name: c.name, type: c.type, amount: Number(c.amount), frequency: c.frequency, isMandatory: c.isMandatory,
-          })),
+          name,
+          academicYearId,
+          applicableClasses: feeForm.classId ? [Number(feeForm.classId)] : Array.from({ length: 12 }, (_, index) => index + 1),
+          applicableShifts: ['morning', 'day', 'evening'],
+          description: feeForm.description.trim() || undefined,
+          feeComponents: components,
         }, authHdr(accessToken));
         setSuccess(t('finance.feeStructureCreated') || 'Fee structure created');
       }
       setFeeDialog(false);
       setEditFee(null);
-      setFeeForm({ name: '', description: '', components: [{ name: '', type: 'monthly', amount: '', frequency: 'monthly', isMandatory: true }] });
+      setFeeForm(emptyFeeForm(currentYear ? String(currentYear.academicYearId) : ''));
       loadTabData(1);
     } catch { setError(t('finance.failedToSaveFeeStructure') || 'Failed to save fee structure'); }
   };
@@ -329,7 +375,7 @@ const AccountantPortal: React.FC = () => {
 
   const openEditFee = (fs: FeeStructure) => {
     setEditFee(fs);
-    setFeeForm({ name: fs.name, description: fs.description ?? '', components: [{ name: '', type: 'monthly', amount: '', frequency: 'monthly', isMandatory: true }] });
+    setFeeForm({ ...emptyFeeForm(fs.academicYearId ? String(fs.academicYearId) : ''), name: fs.name, description: fs.description ?? '' });
     setFeeDialog(true);
   };
 
@@ -619,7 +665,7 @@ const AccountantPortal: React.FC = () => {
             <Typography variant="caption" sx={{ color: theme.palette.text.disabled }}>{t('finance.feeStructuresSubtitle') || 'Manage fee plans and components'}</Typography>
           </Box>
           <Button variant="contained" startIcon={<AddIcon />}
-            onClick={() => { setEditFee(null); setFeeForm({ name: '', description: '', components: [{ name: '', type: 'monthly', amount: '', frequency: 'monthly', isMandatory: true }] }); setFeeDialog(true); }}
+            onClick={() => { setEditFee(null); setError(null); setFeeForm(emptyFeeForm(currentYear ? String(currentYear.academicYearId) : '')); setFeeDialog(true); }}
             sx={BTN_PRIMARY}>
             {t('finance.newStructure') || 'New Structure'}
           </Button>
@@ -664,7 +710,7 @@ const AccountantPortal: React.FC = () => {
             <Typography variant="caption" sx={{ color: theme.palette.text.disabled }}>{invoices.length} {t('finance.invoicesFound') || 'invoices loaded'}</Typography>
           </Box>
           <Box display="flex" gap={1}>
-            <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setInvoiceDialog(true)} sx={BTN_OUTLINE}>
+            <Button variant="outlined" startIcon={<AddIcon />} onClick={() => { setError(null); setInvoiceForm(p => ({ ...p, academicYearId: currentYear ? String(currentYear.academicYearId) : p.academicYearId })); setInvoiceDialog(true); }} sx={BTN_OUTLINE}>
               {t('finance.generateInvoice') || 'Generate Invoice'}
             </Button>
             <Button variant="contained" onClick={() => nav('/finance/invoices/bulk-generate')} sx={BTN_PRIMARY}>
@@ -697,7 +743,7 @@ const AccountantPortal: React.FC = () => {
                         </IconButton>
                       </Tooltip>
                       <Tooltip title={t('finance.recordPayment') || 'Record Payment'}>
-                        <IconButton size="small" sx={{ color: C.success, '&:hover': { background: C.successBg } }} onClick={() => { setPaymentForm(p => ({ ...p, invoiceId: String(id) })); setPaymentDialog(true); }}>
+                        <IconButton size="small" sx={{ color: C.success, '&:hover': { background: C.successBg } }} onClick={() => { setError(null); setPaymentForm(p => ({ ...p, invoiceId: String(id), studentId: String(inv.studentId), paymentDate: todayForDateInput() })); setPaymentDialog(true); }}>
                           <PaymentIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
@@ -1163,8 +1209,23 @@ const AccountantPortal: React.FC = () => {
           <Box sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField label={`${t('finance.studentId')} *`} type="number" fullWidth value={invoiceForm.studentId} sx={TF}
               onChange={e => setInvoiceForm(p => ({ ...p, studentId: e.target.value }))} />
-            <TextField label={`${t('finance.feeStructureId')} (${t('finance.optional')})`} type="number" fullWidth value={invoiceForm.feeStructureId} sx={TF}
-              onChange={e => setInvoiceForm(p => ({ ...p, feeStructureId: e.target.value }))} />
+            <FormControl fullWidth required>
+              <InputLabel id="invoice-fee-structure-label">{t('finance.feeStructureId')}</InputLabel>
+              <Select labelId="invoice-fee-structure-label" value={invoiceForm.feeStructureId} label={t('finance.feeStructureId')}
+                onChange={e => setInvoiceForm(p => ({ ...p, feeStructureId: String(e.target.value) }))}>
+                {feeStructures.map(fee => <MenuItem key={fee.feeStructureId} value={String(fee.feeStructureId)}>{fee.name}</MenuItem>)}
+              </Select>
+            </FormControl>
+            <FormControl fullWidth required>
+              <InputLabel id="invoice-academic-year-label">{t('finance.academicYear')}</InputLabel>
+              <Select labelId="invoice-academic-year-label" value={invoiceForm.academicYearId || (currentYear ? String(currentYear.academicYearId) : '')}
+                label={t('finance.academicYear')}
+                onChange={e => setInvoiceForm(p => ({ ...p, academicYearId: String(e.target.value) }))}>
+                {academicYears.map(year => <MenuItem key={year.academicYearId} value={String(year.academicYearId)}>{year.name}</MenuItem>)}
+                {currentYear && !academicYears.some(year => year.academicYearId === currentYear.academicYearId) &&
+                  <MenuItem value={String(currentYear.academicYearId)}>{currentYear.name}</MenuItem>}
+              </Select>
+            </FormControl>
             <YearSelectableDateField label={`${t('finance.dueDate')} *`} fullWidth InputLabelProps={{ shrink: true }} value={invoiceForm.dueDate} sx={TF}
               onChange={e => setInvoiceForm(p => ({ ...p, dueDate: e.target.value }))} />
             <TextField label={`${t('finance.description')} (${t('finance.optional')})`} fullWidth multiline rows={2} value={invoiceForm.description} sx={TF}
@@ -1173,7 +1234,7 @@ const AccountantPortal: React.FC = () => {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
           <Button onClick={() => setInvoiceDialog(false)} sx={BTN_GHOST}>{t('common.cancel') || 'Cancel'}</Button>
-          <Button variant="contained" onClick={handleCreateInvoice} disabled={!invoiceForm.studentId || !invoiceForm.dueDate} sx={BTN_PRIMARY}>
+          <Button variant="contained" onClick={handleCreateInvoice} disabled={!invoiceForm.studentId || !invoiceForm.feeStructureId || !invoiceForm.dueDate} sx={BTN_PRIMARY}>
             {t('finance.generate') || 'Generate'}
           </Button>
         </DialogActions>
@@ -1194,8 +1255,12 @@ const AccountantPortal: React.FC = () => {
           <Box sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField label={`${t('finance.invoiceId')} *`} type="number" fullWidth value={paymentForm.invoiceId} sx={TF}
               onChange={e => setPaymentForm(p => ({ ...p, invoiceId: e.target.value }))} />
+            <TextField label={`${t('finance.studentId')} *`} type="number" fullWidth value={paymentForm.studentId} sx={TF}
+              onChange={e => setPaymentForm(p => ({ ...p, studentId: e.target.value }))} />
             <TextField label={`${t('finance.amountRs')} *`} type="number" fullWidth value={paymentForm.amount} sx={TF}
               onChange={e => setPaymentForm(p => ({ ...p, amount: e.target.value }))} />
+            <YearSelectableDateField label={`${t('finance.paymentDate')} *`} fullWidth InputLabelProps={{ shrink: true }} value={paymentForm.paymentDate} sx={TF}
+              onChange={e => setPaymentForm(p => ({ ...p, paymentDate: e.target.value }))} />
             <FormControl fullWidth>
               <InputLabel sx={{ color: theme.palette.text.secondary, '&.Mui-focused': { color: C.primary } }}>{t('finance.paymentMethod')}</InputLabel>
               <Select value={paymentForm.method} label={t('finance.paymentMethod')} onChange={e => setPaymentForm(p => ({ ...p, method: e.target.value }))} sx={TF}>
@@ -1212,7 +1277,7 @@ const AccountantPortal: React.FC = () => {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
           <Button onClick={() => setPaymentDialog(false)} sx={BTN_GHOST}>{t('common.cancel') || 'Cancel'}</Button>
-          <Button variant="contained" onClick={handleRecordPayment} disabled={!paymentForm.invoiceId || !paymentForm.amount} sx={BTN_PRIMARY}>
+          <Button variant="contained" onClick={handleRecordPayment} disabled={!paymentForm.invoiceId || !paymentForm.studentId || !paymentForm.amount || !paymentForm.paymentDate} sx={BTN_PRIMARY}>
             {t('finance.recordPayment') || 'Record Payment'}
           </Button>
         </DialogActions>
@@ -1237,6 +1302,25 @@ const AccountantPortal: React.FC = () => {
               onChange={e => setFeeForm(p => ({ ...p, description: e.target.value }))} />
             {!editFee && (
               <>
+                <FormControl fullWidth>
+                  <InputLabel id="fee-academic-year-label">{t('finance.academicYear')}</InputLabel>
+                  <Select labelId="fee-academic-year-label" value={feeForm.academicYearId || (currentYear ? String(currentYear.academicYearId) : '')}
+                    label={t('finance.academicYear')}
+                    onChange={e => setFeeForm(p => ({ ...p, academicYearId: String(e.target.value) }))}>
+                    {academicYears.map(year => <MenuItem key={year.academicYearId} value={String(year.academicYearId)}>{year.name}</MenuItem>)}
+                    {currentYear && !academicYears.some(year => year.academicYearId === currentYear.academicYearId) &&
+                      <MenuItem value={String(currentYear.academicYearId)}>{currentYear.name}</MenuItem>}
+                  </Select>
+                </FormControl>
+                <FormControl fullWidth>
+                  <InputLabel id="fee-class-label">{t('finance.className')}</InputLabel>
+                  <Select labelId="fee-class-label" value={feeForm.classId} label={t('finance.className')}
+                    onChange={e => setFeeForm(p => ({ ...p, classId: String(e.target.value) }))}>
+                    <MenuItem value="">{t('finance.allClasses') || 'All classes'}</MenuItem>
+                    {Array.from({ length: 12 }, (_, index) => index + 1).map(classId =>
+                      <MenuItem key={classId} value={String(classId)}>{t('finance.class')} {classId}</MenuItem>)}
+                  </Select>
+                </FormControl>
                 <Typography variant="caption" sx={{ color: theme.palette.text.disabled, textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.06em' }}>
                   {t('finance.feeComponents') || 'Fee Components'}
                 </Typography>

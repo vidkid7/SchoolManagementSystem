@@ -3,8 +3,8 @@
  * For Department Heads to supervise their department staff
  */
 
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import {
   Box,
   Paper,
@@ -28,6 +28,10 @@ import {
   Tabs,
   Tab,
   useTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -37,9 +41,8 @@ import {
   Assessment as AssessmentIcon,
   Schedule as ScheduleIcon,
 } from '@mui/icons-material';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useAdminStyles } from '../../theme/designTokens';
 import api from '../../config/api';
-import { useTranslation } from 'react-i18next';
 
 interface Teacher {
   staffId: number;
@@ -65,8 +68,7 @@ interface DepartmentStats {
 export function DepartmentTeachers() {
   const theme = useTheme();
   const S = useAdminStyles(theme);
-  const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useSlugNavigate();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [stats, setStats] = useState<DepartmentStats>({
     totalTeachers: 0,
@@ -78,23 +80,27 @@ export function DepartmentTeachers() {
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState('');
   const [tab, setTab] = useState(0);
+  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
 
-  useEffect(() => {
-    fetchTeachers();
-  }, []);
-
-  const fetchTeachers = async () => {
+  const fetchTeachers = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get('/department/teachers');
       setTeachers(response.data?.data?.teachers || []);
-      setStats(response.data?.data?.stats || stats);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load teachers');
+      setStats((currentStats) => response.data?.data?.stats || currentStats);
+    } catch (err: unknown) {
+      const message = typeof err === 'object' && err !== null && 'response' in err
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+        : undefined;
+      setError(message || 'Failed to load teachers');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchTeachers);
+  }, [fetchTeachers]);
 
   const filteredTeachers = teachers.filter((teacher) =>
     searchQuery === '' ||
@@ -154,6 +160,7 @@ export function DepartmentTeachers() {
       <Paper sx={{ ...S.GLASS, p: 2, mb: 2 }}>
         <TextField
           fullWidth
+          label="Search by name or position"
           placeholder="Search by name or position..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -258,19 +265,24 @@ export function DepartmentTeachers() {
                   <TableCell align="center" sx={S.TD}>
                     <IconButton
                       size="small"
-                      onClick={() => navigate(`/staff/${teacher.staffId}`)}
+                      onClick={() => setSelectedTeacher(teacher)}
+                      aria-label={`View details for ${teacher.firstName} ${teacher.lastName}`}
                       title="View Details"
                     >
                       <ViewIcon fontSize="small" />
                     </IconButton>
                     <IconButton
                       size="small"
+                      onClick={() => navigate('/academic/timetable')}
+                      aria-label={`View schedule for ${teacher.firstName} ${teacher.lastName}`}
                       title="View Schedule"
                     >
                       <ScheduleIcon fontSize="small" />
                     </IconButton>
                     <IconButton
                       size="small"
+                      onClick={() => navigate('/portal/department-head')}
+                      aria-label={`View department performance for ${teacher.firstName} ${teacher.lastName}`}
                       title="Performance"
                     >
                       <AssessmentIcon fontSize="small" />
@@ -282,6 +294,24 @@ export function DepartmentTeachers() {
           </TableBody>
         </Table>
       </TableContainer>
+      <Dialog open={Boolean(selectedTeacher)} onClose={() => setSelectedTeacher(null)} aria-labelledby="teacher-details-title">
+        <DialogTitle id="teacher-details-title">Teacher Details</DialogTitle>
+        <DialogContent dividers>
+          {selectedTeacher && (
+            <Box sx={{ minWidth: { sm: 360 }, display: 'grid', gap: 1 }}>
+              <Typography><strong>Name:</strong> {selectedTeacher.firstName} {selectedTeacher.lastName}</Typography>
+              <Typography><strong>Position:</strong> {selectedTeacher.position}</Typography>
+              <Typography><strong>Department:</strong> {selectedTeacher.department}</Typography>
+              <Typography><strong>Email:</strong> {selectedTeacher.email || '—'}</Typography>
+              <Typography><strong>Phone:</strong> {selectedTeacher.phone || '—'}</Typography>
+              <Typography><strong>Status:</strong> {selectedTeacher.status}</Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSelectedTeacher(null)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

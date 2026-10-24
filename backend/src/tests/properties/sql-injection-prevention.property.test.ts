@@ -25,16 +25,25 @@ import { detectSqlInjection } from '../../middleware/validation';
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
-describe('Property 29: SQL Injection Prevention', () => {
+// This legacy integration suite deletes rows from users and students. Require
+// an explicit opt-in and a database name reserved for tests before connecting.
+const allowDatabaseProperties = process.env.RUN_DB_SECURITY_TESTS === 'true';
+
+(allowDatabaseProperties ? describe : describe.skip)('Property 29: SQL Injection Prevention', () => {
   let sequelize: Sequelize;
   let queryInterface: QueryInterface;
 
   beforeAll(async () => {
+    const databaseName = process.env.DB_NAME;
+    if (!databaseName || !/_test$/i.test(databaseName)) {
+      throw new Error('RUN_DB_SECURITY_TESTS requires DB_NAME to name a dedicated database ending in _test');
+    }
+
     // Create test database connection
     const dbConfig: Options = {
       host: process.env.DB_HOST || 'localhost',
       port: parseInt(process.env.DB_PORT || '3306'),
-      database: process.env.DB_NAME || 'school_management_system',
+      database: databaseName,
       username: process.env.DB_USER || 'root',
       password: process.env.DB_PASSWORD || '',
       dialect: 'mysql',

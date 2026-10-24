@@ -1,4 +1,4 @@
-import { Transaction } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
 import { Payment, PaymentAttributes, PaymentCreationAttributes, PaymentMethod, PaymentStatus } from '@models/Payment.model';
 import { InstallmentPlan, InstallmentPlanAttributes, InstallmentPlanCreationAttributes } from '@models/Payment.model';
 
@@ -102,16 +102,16 @@ class PaymentRepository {
 
     if (filters.startDate && filters.endDate) {
       where.paymentDate = {
-        $gte: filters.startDate,
-        $lte: filters.endDate
+        [Op.gte]: filters.startDate,
+        [Op.lte]: filters.endDate
       };
     } else if (filters.startDate) {
       where.paymentDate = {
-        $gte: filters.startDate
+        [Op.gte]: filters.startDate
       };
     } else if (filters.endDate) {
       where.paymentDate = {
-        $lte: filters.endDate
+        [Op.lte]: filters.endDate
       };
     }
 
@@ -222,8 +222,8 @@ class PaymentRepository {
 
     if (startDate && endDate) {
       where.paymentDate = {
-        $gte: startDate,
-        $lte: endDate
+        [Op.gte]: startDate,
+        [Op.lte]: endDate
       };
     }
 
@@ -378,16 +378,16 @@ class PaymentRepository {
 
     if (startDate && endDate) {
       where.paymentDate = {
-        $gte: startDate,
-        $lte: endDate
+        [Op.gte]: startDate,
+        [Op.lte]: endDate
       };
     } else if (startDate) {
       where.paymentDate = {
-        $gte: startDate
+        [Op.gte]: startDate
       };
     } else if (endDate) {
       where.paymentDate = {
-        $lte: endDate
+        [Op.lte]: endDate
       };
     }
 

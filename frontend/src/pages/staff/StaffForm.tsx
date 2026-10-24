@@ -41,12 +41,12 @@ import {
   LocationOn as LocationIcon,
   ContactEmergency as EmergencyIcon,
   Badge as BadgeIcon,
-  CalendarMonth as CalendarIcon,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import apiClient from '../../services/apiClient';
 import { formatLocalDate } from '../../utils/dateUtils';
-import { toNepalDateOnly } from './staffDateUtils';
+import { formatBSDate, parseBSDate, toNepalDateOnly } from './staffDateUtils';
+import { BSDatePicker } from '../../components/BSDatePicker/BSDatePicker';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { motion } from 'framer-motion';
 
@@ -495,20 +495,13 @@ export const StaffForm = () => {
                         }
                       }}
                       render={({ field }) => (
-                        <StyledTextField
-                          {...field}
+                        <BSDatePicker
                           label={`${t('staff.form.dateOfBirth')} *`}
-                          fullWidth
-                          placeholder="2055-01-15"
+                          value={parseBSDate(field.value)}
+                          onChange={(date) => field.onChange(formatBSDate(date))}
+                          required
                           error={!!errors.date_of_birth_bs}
                           helperText={errors.date_of_birth_bs?.message || t('staff.form.dateFormatHint')}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <CalendarIcon fontSize="small" color="action" />
-                              </InputAdornment>
-                            ),
-                          }}
                         />
                       )}
                     />
@@ -521,8 +514,8 @@ export const StaffForm = () => {
                       rules={{ required: t('staff.form.required') }}
                       render={({ field }) => (
                         <FormControl fullWidth error={!!errors.gender}>
-                          <InputLabel>{t('staff.form.gender')} *</InputLabel>
-                          <StyledSelect {...field} label={`${t('staff.form.gender')} *`}>
+                          <InputLabel id="staff-gender-label">{t('staff.form.gender')} *</InputLabel>
+                          <StyledSelect {...field} labelId="staff-gender-label" label={`${t('staff.form.gender')} *`}>
                             <MenuItem value="male">{t('staff.form.male')}</MenuItem>
                             <MenuItem value="female">{t('staff.form.female')}</MenuItem>
                             <MenuItem value="other">{t('staff.form.other')}</MenuItem>
@@ -548,8 +541,8 @@ export const StaffForm = () => {
                       rules={{ required: t('staff.form.required') }}
                       render={({ field }) => (
                         <FormControl fullWidth error={!!errors.position}>
-                          <InputLabel>{t('staff.position')} *</InputLabel>
-                          <StyledSelect {...field} label={`${t('staff.position')} *`} value={field.value || ''}>
+                          <InputLabel id="staff-position-label">{t('staff.position')} *</InputLabel>
+                          <StyledSelect {...field} labelId="staff-position-label" label={`${t('staff.position')} *`} value={field.value || ''}>
                             <MenuItem value="principal">{t('staff.positions.principal')}</MenuItem>
                             <MenuItem value="vice_principal">{t('staff.positions.vicePrincipal')}</MenuItem>
                             <MenuItem value="teacher">{t('staff.positions.teacher')}</MenuItem>
@@ -581,8 +574,8 @@ export const StaffForm = () => {
                       rules={{ required: t('staff.form.required') }}
                       render={({ field }) => (
                         <FormControl fullWidth error={!!errors.department}>
-                          <InputLabel>{t('staff.department')} *</InputLabel>
-                          <StyledSelect {...field} label={`${t('staff.department')} *`} value={field.value || ''}>
+                          <InputLabel id="staff-department-label">{t('staff.department')} *</InputLabel>
+                          <StyledSelect {...field} labelId="staff-department-label" label={`${t('staff.department')} *`} value={field.value || ''}>
                             <MenuItem value="academic">{t('staff.departments.academic')}</MenuItem>
                             <MenuItem value="administration">{t('staff.departments.administration')}</MenuItem>
                             <MenuItem value="support">{t('staff.departments.support')}</MenuItem>
@@ -610,20 +603,13 @@ export const StaffForm = () => {
                         }
                       }}
                       render={({ field }) => (
-                        <StyledTextField
-                          {...field}
+                        <BSDatePicker
                           label={`${t('staff.form.joiningDate')} *`}
-                          fullWidth
-                          placeholder="2078-04-01"
+                          value={parseBSDate(field.value)}
+                          onChange={(date) => field.onChange(formatBSDate(date))}
+                          required
                           error={!!errors.joining_date_bs}
                           helperText={errors.joining_date_bs?.message || t('staff.form.dateFormatHint')}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <CalendarIcon fontSize="small" color="action" />
-                              </InputAdornment>
-                            ),
-                          }}
                         />
                       )}
                     />
@@ -680,8 +666,8 @@ export const StaffForm = () => {
                       control={control}
                       render={({ field }) => (
                         <FormControl fullWidth>
-                          <InputLabel>{t('staff.status')}</InputLabel>
-                          <StyledSelect {...field} label={t('staff.status')}>
+                          <InputLabel id="staff-status-label">{t('staff.status')}</InputLabel>
+                          <StyledSelect {...field} labelId="staff-status-label" label={t('staff.status')}>
                             <MenuItem value="active">{t('staff.active')}</MenuItem>
                             <MenuItem value="inactive">{t('staff.inactive')}</MenuItem>
                             <MenuItem value="on_leave">{t('staff.onLeave')}</MenuItem>
@@ -697,8 +683,8 @@ export const StaffForm = () => {
                       control={control}
                       render={({ field }) => (
                         <FormControl fullWidth>
-                          <InputLabel>{t('staff.role')}</InputLabel>
-                          <StyledSelect {...field} label={t('staff.role')} value={field.value || ''}>
+                          <InputLabel id="staff-role-label">{t('staff.role')}</InputLabel>
+                          <StyledSelect {...field} labelId="staff-role-label" label={t('staff.role')} value={field.value || ''}>
                             <MenuItem value="">{t('staff.roles.none')}</MenuItem>
                             <MenuItem value="School_Admin">{t('staff.roles.schoolAdmin')}</MenuItem>
                             <MenuItem value="Class_Teacher">{t('staff.roles.classTeacher')}</MenuItem>

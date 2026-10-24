@@ -13,6 +13,4 @@ Write-Host "2. Use the forgot password feature in the app" -ForegroundColor Gree
 Write-Host "   OR" -ForegroundColor Yellow
 Write-Host "3. Manually update in database (not recommended)" -ForegroundColor Green
 
-Write-Host "`nDefault student credentials:" -ForegroundColor Cyan
-Write-Host "Username: student1" -ForegroundColor White
-Write-Host "Password: Student@123" -ForegroundColor White
+Write-Host "`nNo default student password is assumed. Use the account recovery flow." -ForegroundColor Cyan

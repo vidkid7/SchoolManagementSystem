@@ -11,14 +11,12 @@ describe('Class Model', () => {
   let academicYear: AcademicYear;
 
   beforeAll(async () => {
-    // Disable foreign key checks temporarily
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
-    
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('Class model tests require TEST_DB_DIALECT=sqlite');
+    }
     // Sync database schema
     await sequelize.sync({ force: true });
-    
-    // Re-enable foreign key checks
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
+    await sequelize.query('PRAGMA foreign_keys = OFF');
 
     // Create a test academic year
     academicYear = await AcademicYear.create({

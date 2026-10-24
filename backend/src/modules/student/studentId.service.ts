@@ -17,6 +17,7 @@ import Student from '@models/Student.model';
  */
 class StudentIdService {
   private sequenceTableEnsured = false;
+  private sqliteSequenceQueue: Promise<void> = Promise.resolve();
 
   private getCodePrefix(admissionYear: number): string {
     return `${env.DEFAULT_SCHOOL_CODE}-${admissionYear}-`;
@@ -25,14 +26,25 @@ class StudentIdService {
   private async ensureSequenceTable(): Promise<void> {
     if (this.sequenceTableEnsured) return;
 
-    await sequelize.query(`
-      CREATE TABLE IF NOT EXISTS student_id_sequences (
-        admission_year INT UNSIGNED NOT NULL PRIMARY KEY,
-        last_sequence INT UNSIGNED NOT NULL DEFAULT 0,
-        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      )
-    `);
+    if (sequelize.getDialect() === 'sqlite') {
+      await sequelize.query(`
+        CREATE TABLE IF NOT EXISTS student_id_sequences (
+          admission_year INTEGER NOT NULL PRIMARY KEY,
+          last_sequence INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+    } else {
+      await sequelize.query(`
+        CREATE TABLE IF NOT EXISTS student_id_sequences (
+          admission_year INT UNSIGNED NOT NULL PRIMARY KEY,
+          last_sequence INT UNSIGNED NOT NULL DEFAULT 0,
+          created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+      `);
+    }
 
     this.sequenceTableEnsured = true;
   }
@@ -79,7 +91,7 @@ class StudentIdService {
   ): Promise<number> {
     await this.ensureSequenceTable();
 
-    const lockClause = transaction ? ' FOR UPDATE' : '';
+    const lockClause = transaction && sequelize.getDialect() !== 'sqlite' ? ' FOR UPDATE' : '';
     const rows = await sequelize.query<{ last_sequence: number }>(
       `SELECT last_sequence FROM student_id_sequences WHERE admission_year = :admissionYear${lockClause}`,
       {
@@ -98,11 +110,12 @@ class StudentIdService {
   ): Promise<number> {
     await this.ensureSequenceTable();
 
+    const isSqlite = sequelize.getDialect() === 'sqlite';
     await sequelize.query(
-      `INSERT IGNORE INTO student_id_sequences
+      `${isSqlite ? 'INSERT OR IGNORE' : 'INSERT IGNORE'} INTO student_id_sequences
         (admission_year, last_sequence, created_at, updated_at)
        VALUES
-        (:admissionYear, 0, NOW(), NOW())`,
+        (:admissionYear, 0, ${isSqlite ? 'CURRENT_TIMESTAMP' : 'NOW()'}, ${isSqlite ? 'CURRENT_TIMESTAMP' : 'NOW()'})`,
       {
         replacements: { admissionYear },
         transaction
@@ -115,7 +128,7 @@ class StudentIdService {
 
     await sequelize.query(
       `UPDATE student_id_sequences
-       SET last_sequence = :sequentialNumber, updated_at = NOW()
+       SET last_sequence = :sequentialNumber, updated_at = ${isSqlite ? 'CURRENT_TIMESTAMP' : 'NOW()'}
        WHERE admission_year = :admissionYear`,
       {
         replacements: { admissionYear, sequentialNumber },
@@ -130,6 +143,8 @@ class StudentIdService {
     admissionYear: number,
     transaction: Transaction
   ): Promise<void> {
+    if (sequelize.getDialect() === 'sqlite') return;
+
     const lockName = `student_id_sequence_${admissionYear}`;
     const rows = await sequelize.query<{ acquired: number }>(
       'SELECT GET_LOCK(:lockName, 10) AS acquired',
@@ -149,6 +164,8 @@ class StudentIdService {
     admissionYear: number,
     transaction: Transaction
   ): Promise<void> {
+    if (sequelize.getDialect() === 'sqlite') return;
+
     const lockName = `student_id_sequence_${admissionYear}`;
     await sequelize.query('SELECT RELEASE_LOCK(:lockName)', {
       replacements: { lockName },
@@ -175,6 +192,24 @@ class StudentIdService {
    * @returns Generated unique student ID
    */
   async generateStudentId(admissionDate: Date, transaction?: Transaction): Promise<string> {
+    if (sequelize.getDialect() === 'sqlite' && !transaction) {
+      const previous = this.sqliteSequenceQueue;
+      let release: () => void = () => undefined;
+      this.sqliteSequenceQueue = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await previous;
+      try {
+        return await this.generateStudentIdUnlocked(admissionDate);
+      } finally {
+        release();
+      }
+    }
+
+    return this.generateStudentIdUnlocked(admissionDate, transaction);
+  }
+
+  private async generateStudentIdUnlocked(admissionDate: Date, transaction?: Transaction): Promise<string> {
     try {
       const schoolPrefix = env.DEFAULT_SCHOOL_CODE;
       const admissionYear = admissionDate.getFullYear();
@@ -283,6 +318,15 @@ class StudentIdService {
    */
   async countStudentsByAdmissionYear(admissionYear: number): Promise<number> {
     try {
+      if (sequelize.getDialect() === 'sqlite') {
+        return await Student.count({
+          where: sequelize.where(
+            sequelize.fn('strftime', '%Y', sequelize.col('admission_date')),
+            String(admissionYear)
+          )
+        });
+      }
+
       return await Student.count({
         where: sequelize.where(
           sequelize.fn('YEAR', sequelize.col('admission_date')),

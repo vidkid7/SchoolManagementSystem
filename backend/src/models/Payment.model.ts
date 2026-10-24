@@ -75,24 +75,24 @@ export interface PaymentCreationAttributes extends Optional<PaymentAttributes,
  */
 class Payment extends Model<PaymentAttributes, PaymentCreationAttributes> 
   implements PaymentAttributes {
-  public paymentId!: number;
-  public receiptNumber!: string;
-  public invoiceId!: number;
-  public studentId!: number;
-  public amount!: number;
-  public paymentMethod!: PaymentMethod;
-  public paymentDate!: string;
-  public transactionId?: string;
-  public gatewayResponse?: any;
-  public receivedBy!: number;
-  public remarks?: string;
-  public status!: PaymentStatus;
-  public qrCode?: string;
-  public installmentNumber?: number;
-  public installmentPlanId?: number;
+  declare public paymentId: number;
+  declare public receiptNumber: string;
+  declare public invoiceId: number;
+  declare public studentId: number;
+  declare public amount: number;
+  declare public paymentMethod: PaymentMethod;
+  declare public paymentDate: string;
+  declare public transactionId?: string;
+  declare public gatewayResponse?: any;
+  declare public receivedBy: number;
+  declare public remarks?: string;
+  declare public status: PaymentStatus;
+  declare public qrCode?: string;
+  declare public installmentNumber?: number;
+  declare public installmentPlanId?: number;
   
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   /**
    * Check if payment is online
@@ -339,22 +339,22 @@ export interface InstallmentPlanCreationAttributes extends Optional<InstallmentP
  */
 class InstallmentPlan extends Model<InstallmentPlanAttributes, InstallmentPlanCreationAttributes> 
   implements InstallmentPlanAttributes {
-  public installmentPlanId!: number;
-  public invoiceId!: number;
-  public studentId!: number;
-  public totalAmount!: number;
-  public numberOfInstallments!: number;
-  public installmentAmount!: number;
-  public frequency!: InstallmentFrequency;
-  public startDate!: string;
-  public status!: InstallmentPlanStatus;
-  public createdBy!: number;
+  declare public installmentPlanId: number;
+  declare public invoiceId: number;
+  declare public studentId: number;
+  declare public totalAmount: number;
+  declare public numberOfInstallments: number;
+  declare public installmentAmount: number;
+  declare public frequency: InstallmentFrequency;
+  declare public startDate: string;
+  declare public status: InstallmentPlanStatus;
+  declare public createdBy: number;
   
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   // Association properties
-  public readonly payments?: Payment[];
+  declare public readonly payments?: Payment[];
 
   /**
    * Check if plan is active

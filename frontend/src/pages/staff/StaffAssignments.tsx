@@ -498,7 +498,7 @@ export const StaffAssignments = () => {
                 <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
                   <Box sx={{ textAlign: 'center' }}>
                     <SchoolIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
-                    <Typography variant="h6" color="text.secondary">
+                    <Typography variant="h6" component="p" color="text.secondary">
                       {t('staff.form.noAssignments')}
                     </Typography>
                     <Button
@@ -688,6 +688,7 @@ export const StaffAssignments = () => {
                     checked={isActive}
                     onChange={(e) => setIsActive(e.target.checked)}
                     color="success"
+                    inputProps={{ id: 'staff-assignment-active', name: 'isActive' }}
                   />
                 }
                 label={t('common.active')}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -57,12 +57,12 @@ interface AuditLog {
   entityId: number | null;
   entityUuid?: string | null;
   action: 'create' | 'update' | 'delete' | 'restore';
-  oldValue: any;
-  newValue: any;
+  oldValue: unknown;
+  newValue: unknown;
   changedFields: string[] | null;
   ipAddress: string | null;
   userAgent: string | null;
-  metadata: Record<string, any> | null;
+  metadata: Record<string, unknown> | null;
   timestamp: string;
 }
 
@@ -73,6 +73,23 @@ interface AuditLogStats {
   oldestLog: string | null;
   newestLog: string | null;
 }
+
+interface AuditFilters {
+  userId: string;
+  entityType: string;
+  entityId: string;
+  action: string;
+  startDate: Date | null;
+  endDate: Date | null;
+  ipAddress: string;
+  search: string;
+}
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (typeof error !== 'object' || error === null || !('response' in error)) return fallback;
+  const response = (error as { response?: { data?: { error?: { message?: unknown } } } }).response;
+  return typeof response?.data?.error?.message === 'string' ? response.data.error.message : fallback;
+};
 
 const AuditLogs: React.FC = () => {
   const { t } = useTranslation();
@@ -91,7 +108,7 @@ const AuditLogs: React.FC = () => {
   const auditLogRequestSequence = React.useRef(0);
 
   // Filter states
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<AuditFilters>({
     userId: '',
     entityType: '',
     entityId: '',
@@ -101,19 +118,15 @@ const AuditLogs: React.FC = () => {
     ipAddress: '',
     search: '',
   });
+  const [appliedFilters, setAppliedFilters] = useState<AuditFilters>(filters);
 
-  useEffect(() => {
-    fetchAuditLogs();
-    fetchStats();
-  }, [page, rowsPerPage]);
-
-  const fetchAuditLogs = async (activeFilters = filters) => {
+  const fetchAuditLogs = useCallback(async (activeFilters: AuditFilters) => {
     const requestSequence = ++auditLogRequestSequence.current;
     setLoading(true);
     setError(null);
 
     try {
-      const params: any = {
+      const params: Record<string, string | number> = {
         page: page + 1,
         limit: rowsPerPage,
       };
@@ -132,36 +145,43 @@ const AuditLogs: React.FC = () => {
       if (requestSequence !== auditLogRequestSequence.current) return;
       setLogs(response.data.data);
       setTotalLogs(response.data.pagination.total);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (requestSequence === auditLogRequestSequence.current) {
-        setError(err.response?.data?.error?.message || t('audit.failedToFetch'));
+        setError(getErrorMessage(err, t('audit.failedToFetch')));
       }
     } finally {
       if (requestSequence === auditLogRequestSequence.current) {
         setLoading(false);
       }
     }
-  };
+  }, [page, rowsPerPage, t]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const response = await apiClient.get('/api/v1/audit/stats');
       setStats(response.data.data);
     } catch (err) {
       console.error('Failed to fetch stats:', err);
     }
-  };
+  }, []);
 
-  const handleFilterChange = (field: string, value: any) => {
+  useEffect(() => {
+    // These loaders update UI state only after their asynchronous API requests complete.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchAuditLogs(appliedFilters);
+    fetchStats();
+  }, [appliedFilters, fetchAuditLogs, fetchStats]);
+
+  const handleFilterChange = <K extends keyof AuditFilters>(field: K, value: AuditFilters[K]) => {
     setFilters(prev => ({ ...prev, [field]: value }));
   };
 
   const handleApplyFilters = () => {
+    setAppliedFilters(filters);
     if (page !== 0) {
       setPage(0);
       return;
     }
-    fetchAuditLogs();
   };
 
   const handleClearFilters = () => {
@@ -176,22 +196,24 @@ const AuditLogs: React.FC = () => {
       search: '',
     };
     setFilters(clearedFilters);
+    setAppliedFilters(clearedFilters);
     if (page !== 0) {
       setPage(0);
       return;
     }
-    fetchAuditLogs(clearedFilters);
   };
 
   const handleExport = async () => {
     try {
-      const params: any = {};
-      if (filters.userId) params.userId = filters.userId;
-      if (filters.entityType) params.entityType = filters.entityType;
-      if (filters.entityId) params.entityId = filters.entityId;
-      if (filters.action) params.action = filters.action;
-      if (filters.startDate) params.startDate = filters.startDate.toISOString();
-      if (filters.endDate) params.endDate = filters.endDate.toISOString();
+      const params: Record<string, string> = {};
+      if (appliedFilters.userId) params.userId = appliedFilters.userId;
+      if (appliedFilters.entityType) params.entityType = appliedFilters.entityType;
+      if (appliedFilters.entityId) params.entityId = appliedFilters.entityId;
+      if (appliedFilters.action) params.action = appliedFilters.action;
+      if (appliedFilters.startDate) params.startDate = appliedFilters.startDate.toISOString();
+      if (appliedFilters.endDate) params.endDate = appliedFilters.endDate.toISOString();
+      if (appliedFilters.ipAddress) params.ipAddress = appliedFilters.ipAddress;
+      if (appliedFilters.search) params.search = appliedFilters.search;
 
       const response = await apiClient.get('/api/v1/audit/export', { params });
 
@@ -203,8 +225,11 @@ const AuditLogs: React.FC = () => {
       link.href = url;
       link.download = `audit-logs-${new Date().toISOString()}.json`;
       link.click();
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || t('audit.failedToExport'));
+      window.setTimeout(() => {
+        if (typeof URL.revokeObjectURL === 'function') URL.revokeObjectURL(url);
+      }, 0);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, t('audit.failedToExport')));
     }
   };
 
@@ -216,10 +241,10 @@ const AuditLogs: React.FC = () => {
     try {
       const response = await apiClient.post('/api/v1/audit/rotate', { retentionDays: 365 });
       alert(t('audit.rotateSuccess', { count: response.data.data.deletedCount }));
-      fetchAuditLogs();
+      fetchAuditLogs(appliedFilters);
       fetchStats();
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || t('audit.failedToRotate'));
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, t('audit.failedToRotate')));
     }
   };
 
@@ -299,7 +324,7 @@ const AuditLogs: React.FC = () => {
           </Box>
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             <Tooltip title={t('audit.refresh')}>
-              <Button variant="outlined" startIcon={<RefreshIcon />} onClick={() => fetchAuditLogs()} sx={S.BTN_OUTLINE}>
+              <Button variant="outlined" startIcon={<RefreshIcon />} onClick={() => fetchAuditLogs(appliedFilters)} sx={S.BTN_OUTLINE}>
                 {t('audit.refresh')}
               </Button>
             </Tooltip>
@@ -575,7 +600,7 @@ const AuditLogs: React.FC = () => {
                                 }}
                               >
                                 <Grid container spacing={2}>
-                                  {log.oldValue && (
+                                  {log.oldValue !== null && log.oldValue !== undefined && (
                                     <Grid item xs={12} md={6}>
                                       <Typography
                                         variant="subtitle2"
@@ -599,7 +624,7 @@ const AuditLogs: React.FC = () => {
                                       </Box>
                                     </Grid>
                                   )}
-                                  {log.newValue && (
+                                  {log.newValue !== null && log.newValue !== undefined && (
                                     <Grid item xs={12} md={6}>
                                       <Typography
                                         variant="subtitle2"

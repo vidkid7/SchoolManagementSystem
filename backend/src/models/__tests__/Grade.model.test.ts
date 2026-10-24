@@ -3,7 +3,11 @@ import sequelize from '@config/database';
 
 describe('Grade Model', () => {
   beforeAll(async () => {
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('Grade model tests require TEST_DB_DIALECT=sqlite');
+    }
     await sequelize.sync({ force: true });
+    await sequelize.query('PRAGMA foreign_keys = OFF');
   });
 
   afterAll(async () => {

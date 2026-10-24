@@ -196,8 +196,8 @@ export function calculateGPA(subjects: SubjectGrade[]): number {
     throw new Error('Subjects array must not be empty');
   }
 
-  let totalWeightedPoints = 0;
-  let totalCreditHours = 0;
+  const weightedPoints: number[] = [];
+  const creditHours: number[] = [];
 
   for (const subject of subjects) {
     // Validate subject data
@@ -209,16 +209,21 @@ export function calculateGPA(subjects: SubjectGrade[]): number {
       throw new Error(`Invalid grade point for subject ${subject.subjectName}: ${subject.gradePoint}`);
     }
 
-    // Calculate weighted points
-    totalWeightedPoints += subject.creditHours * subject.gradePoint;
-    totalCreditHours += subject.creditHours;
+    weightedPoints.push(subject.creditHours * subject.gradePoint);
+    creditHours.push(subject.creditHours);
   }
+
+  // Sum in a canonical order so equivalent subject lists yield the same
+  // result despite floating-point addition being order-sensitive.
+  const totalWeightedPoints = weightedPoints.sort((a, b) => a - b).reduce((sum, points) => sum + points, 0);
+  const totalCreditHours = creditHours.sort((a, b) => a - b).reduce((sum, hours) => sum + hours, 0);
 
   // Calculate GPA
   const gpa = totalWeightedPoints / totalCreditHours;
 
-  // Round to 2 decimal places
-  return Math.round(gpa * 100) / 100;
+  // The small offset corrects binary floating-point values just below exact
+  // half-cent boundaries (for example, 0.525 represented as 52.499999...).
+  return Math.round((gpa + 1e-10) * 100) / 100;
 }
 
 /**

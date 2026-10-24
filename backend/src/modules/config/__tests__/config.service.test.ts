@@ -19,6 +19,13 @@ describe('Config Service', () => {
         schoolNameNp: 'परीक्षण विद्यालय',
         schoolCode: 'TEST001',
         addressEn: '123 Test Street',
+        city: 'Kathmandu',
+        district: 'Kathmandu',
+        province: 'Bagmati Pradesh',
+        establishedYear: 2001,
+        affiliationNumber: 'AFF-123',
+        principalName: 'Test Principal',
+        primaryColor: '#123456',
         phone: '01-1234567',
         email: 'test@school.edu.np',
       };
@@ -33,8 +40,8 @@ describe('Config Service', () => {
         updatedAt: new Date(),
       };
 
-      (SchoolConfig.findOne as jest.Mock).mockResolvedValue(null);
-      (SchoolConfig.create as jest.Mock).mockResolvedValue(mockConfig);
+      (SchoolConfig.findOne as jest.Mock).mockResolvedValue(null as never);
+      (SchoolConfig.create as jest.Mock).mockResolvedValue(mockConfig as never);
 
       const config = await configService.createConfig(configData, 123);
 
@@ -45,6 +52,13 @@ describe('Config Service', () => {
       expect(config.isActive).toBe(true);
       expect(config.academicYearStartMonth).toBe(1);
       expect(config.termsPerYear).toBe(3);
+      expect(config.city).toBe('Kathmandu');
+      expect(config.district).toBe('Kathmandu');
+      expect(config.province).toBe('Bagmati Pradesh');
+      expect(config.establishedYear).toBe(2001);
+      expect(config.affiliationNumber).toBe('AFF-123');
+      expect(config.principalName).toBe('Test Principal');
+      expect(config.primaryColor).toBe('#123456');
     });
 
     it('should throw error if active config already exists', async () => {
@@ -52,7 +66,7 @@ describe('Config Service', () => {
         schoolNameEn: 'First School',
       };
 
-      (SchoolConfig.findOne as jest.Mock).mockResolvedValue({ id: '1', isActive: true });
+      (SchoolConfig.findOne as jest.Mock).mockResolvedValue({ id: '1', isActive: true } as never);
 
       await expect(
         configService.createConfig(configData, 123)
@@ -75,8 +89,8 @@ describe('Config Service', () => {
         updatedAt: new Date(),
       };
 
-      (SchoolConfig.findOne as jest.Mock).mockResolvedValue(null);
-      (SchoolConfig.create as jest.Mock).mockResolvedValue(mockConfig);
+      (SchoolConfig.findOne as jest.Mock).mockResolvedValue(null as never);
+      (SchoolConfig.create as jest.Mock).mockResolvedValue(mockConfig as never);
 
       const config = await configService.createConfig(configData, 123);
 
@@ -107,8 +121,8 @@ describe('Config Service', () => {
         updatedAt: new Date(),
       };
 
-      (SchoolConfig.findOne as jest.Mock).mockResolvedValue(null);
-      (SchoolConfig.create as jest.Mock).mockResolvedValue(mockConfig);
+      (SchoolConfig.findOne as jest.Mock).mockResolvedValue(null as never);
+      (SchoolConfig.create as jest.Mock).mockResolvedValue(mockConfig as never);
 
       const config = await configService.createConfig(configData, 123);
 
@@ -131,7 +145,7 @@ describe('Config Service', () => {
         updatedAt: new Date(),
       };
 
-      (SchoolConfig.findOne as jest.Mock).mockResolvedValue(mockConfig);
+      (SchoolConfig.findOne as jest.Mock).mockResolvedValue(mockConfig as never);
 
       const activeConfig = await configService.getActiveConfig();
 
@@ -141,7 +155,7 @@ describe('Config Service', () => {
     });
 
     it('should return null if no active configuration exists', async () => {
-      (SchoolConfig.findOne as jest.Mock).mockResolvedValue(null);
+      (SchoolConfig.findOne as jest.Mock).mockResolvedValue(null as never);
 
       const activeConfig = await configService.getActiveConfig();
 
@@ -156,7 +170,7 @@ describe('Config Service', () => {
         schoolNameEn: 'Original School',
         phone: '01-1111111',
         isActive: true,
-        update: jest.fn().mockResolvedValue(true),
+        update: jest.fn().mockResolvedValue(true as never),
         toJSON: jest.fn().mockReturnValue({
           id: '1',
           schoolNameEn: 'Original School',
@@ -164,7 +178,7 @@ describe('Config Service', () => {
         }),
       };
 
-      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(mockConfig);
+      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(mockConfig as never);
 
       mockConfig.update.mockImplementation((data) => {
         Object.assign(mockConfig, data);
@@ -177,6 +191,10 @@ describe('Config Service', () => {
           schoolNameEn: 'Updated School',
           phone: '01-2222222',
           website: 'https://updated.school.edu.np',
+          city: 'Pokhara',
+          primaryColor: '#abcdef',
+          defaultLanguage: 'english',
+          academicYearStartMonth: 7,
         },
         123
       );
@@ -184,10 +202,14 @@ describe('Config Service', () => {
       expect(updatedConfig.schoolNameEn).toBe('Updated School');
       expect(updatedConfig.phone).toBe('01-2222222');
       expect(updatedConfig.website).toBe('https://updated.school.edu.np');
+      expect(updatedConfig.city).toBe('Pokhara');
+      expect(updatedConfig.primaryColor).toBe('#abcdef');
+      expect(updatedConfig.defaultLanguage).toBe('english');
+      expect(updatedConfig.academicYearStartMonth).toBe(7);
     });
 
     it('should throw error if config not found', async () => {
-      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(null);
+      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(null as never);
 
       await expect(
         configService.updateConfig('non-existent-id', { schoolNameEn: 'Test' }, 123)
@@ -200,7 +222,7 @@ describe('Config Service', () => {
         schoolNameEn: 'Test School',
         termsPerYear: 3,
         academicYearStartMonth: 1,
-        update: jest.fn().mockResolvedValue(true),
+        update: jest.fn().mockResolvedValue(true as never),
         toJSON: jest.fn().mockReturnValue({
           id: '1',
           schoolNameEn: 'Test School',
@@ -209,7 +231,7 @@ describe('Config Service', () => {
         }),
       };
 
-      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(mockConfig);
+      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(mockConfig as never);
 
       mockConfig.update.mockImplementation((data) => {
         Object.assign(mockConfig, data);
@@ -235,7 +257,7 @@ describe('Config Service', () => {
         schoolNameEn: 'Test School',
         phone: '01-1111111',
         email: 'test@school.edu.np',
-        update: jest.fn().mockResolvedValue(true),
+        update: jest.fn().mockResolvedValue(true as never),
         toJSON: jest.fn().mockReturnValue({
           id: '1',
           schoolNameEn: 'Test School',
@@ -244,7 +266,7 @@ describe('Config Service', () => {
         }),
       };
 
-      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(mockConfig);
+      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(mockConfig as never);
 
       mockConfig.update.mockImplementation((data) => {
         Object.assign(mockConfig, data);
@@ -269,11 +291,11 @@ describe('Config Service', () => {
         id: '1',
         schoolNameEn: 'Test School',
         logoUrl: null,
-        update: jest.fn().mockResolvedValue(true),
+        update: jest.fn().mockResolvedValue(true as never),
         toJSON: jest.fn().mockReturnValue({ id: '1', logoUrl: null }),
       };
 
-      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(mockConfig);
+      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(mockConfig as never);
 
       mockConfig.update.mockImplementation((data) => {
         Object.assign(mockConfig, data);
@@ -287,7 +309,7 @@ describe('Config Service', () => {
     });
 
     it('should throw error if config not found', async () => {
-      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(null);
+      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(null as never);
 
       await expect(
         configService.uploadLogo('non-existent-id', '/uploads/logos/test.png', 123)
@@ -299,11 +321,11 @@ describe('Config Service', () => {
         id: '1',
         schoolNameEn: 'Test School',
         logoUrl: '/uploads/logos/old-logo.png',
-        update: jest.fn().mockResolvedValue(true),
+        update: jest.fn().mockResolvedValue(true as never),
         toJSON: jest.fn().mockReturnValue({ id: '1', logoUrl: '/uploads/logos/old-logo.png' }),
       };
 
-      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(mockConfig);
+      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(mockConfig as never);
 
       mockConfig.update.mockImplementation((data) => {
         Object.assign(mockConfig, data);
@@ -323,11 +345,11 @@ describe('Config Service', () => {
         id: '1',
         schoolNameEn: 'Test School',
         isActive: true,
-        update: jest.fn().mockResolvedValue(true),
+        update: jest.fn().mockResolvedValue(true as never),
         toJSON: jest.fn().mockReturnValue({ id: '1', isActive: true }),
       };
 
-      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(mockConfig);
+      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(mockConfig as never);
 
       mockConfig.update.mockImplementation((data) => {
         Object.assign(mockConfig, data);
@@ -343,7 +365,7 @@ describe('Config Service', () => {
     });
 
     it('should throw error if config not found', async () => {
-      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(null);
+      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(null as never);
 
       await expect(
         configService.deactivateConfig('non-existent-id', 123)
@@ -361,7 +383,7 @@ describe('Config Service', () => {
         updatedAt: new Date(),
       };
 
-      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(mockConfig);
+      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(mockConfig as never);
 
       const foundConfig = await configService.getConfigById('1');
 
@@ -371,7 +393,7 @@ describe('Config Service', () => {
     });
 
     it('should throw error if config not found', async () => {
-      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(null);
+      (SchoolConfig.findByPk as jest.Mock).mockResolvedValue(null as never);
 
       await expect(configService.getConfigById('non-existent-id')).rejects.toThrow(
         'School configuration not found'
@@ -394,8 +416,8 @@ describe('Config Service', () => {
         updatedAt: new Date(),
       };
 
-      (SchoolConfig.findOne as jest.Mock).mockResolvedValue(null);
-      (SchoolConfig.create as jest.Mock).mockResolvedValue(mockConfig);
+      (SchoolConfig.findOne as jest.Mock).mockResolvedValue(null as never);
+      (SchoolConfig.create as jest.Mock).mockResolvedValue(mockConfig as never);
 
       const config = await configService.createConfig(configData, 123);
 
@@ -418,8 +440,8 @@ describe('Config Service', () => {
         updatedAt: new Date(),
       };
 
-      (SchoolConfig.findOne as jest.Mock).mockResolvedValue(null);
-      (SchoolConfig.create as jest.Mock).mockResolvedValue(mockConfig);
+      (SchoolConfig.findOne as jest.Mock).mockResolvedValue(null as never);
+      (SchoolConfig.create as jest.Mock).mockResolvedValue(mockConfig as never);
 
       const config = await configService.createConfig(configData, 123);
 
@@ -442,8 +464,8 @@ describe('Config Service', () => {
         updatedAt: new Date(),
       };
 
-      (SchoolConfig.findOne as jest.Mock).mockResolvedValue(null);
-      (SchoolConfig.create as jest.Mock).mockResolvedValue(mockConfig);
+      (SchoolConfig.findOne as jest.Mock).mockResolvedValue(null as never);
+      (SchoolConfig.create as jest.Mock).mockResolvedValue(mockConfig as never);
 
       const config = await configService.createConfig(configData, 123);
 
@@ -466,8 +488,8 @@ describe('Config Service', () => {
         updatedAt: new Date(),
       };
 
-      (SchoolConfig.findOne as jest.Mock).mockResolvedValue(null);
-      (SchoolConfig.create as jest.Mock).mockResolvedValue(mockConfig);
+      (SchoolConfig.findOne as jest.Mock).mockResolvedValue(null as never);
+      (SchoolConfig.create as jest.Mock).mockResolvedValue(mockConfig as never);
 
       const config = await configService.createConfig(configData, 123);
 

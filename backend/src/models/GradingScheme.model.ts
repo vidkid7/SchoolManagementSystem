@@ -30,14 +30,14 @@ export class GradingScheme
   extends Model<GradingSchemeAttributes, GradingSchemeCreationAttributes>
   implements GradingSchemeAttributes
 {
-  public id!: string;
-  public name!: string;
-  public description?: string;
-  public isDefault!: boolean;
-  public isActive!: boolean;
-  public grades!: GradeDefinition[];
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public id: string;
+  declare public name: string;
+  declare public description?: string;
+  declare public isDefault: boolean;
+  declare public isActive: boolean;
+  declare public grades: GradeDefinition[];
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 }
 
 GradingScheme.init(

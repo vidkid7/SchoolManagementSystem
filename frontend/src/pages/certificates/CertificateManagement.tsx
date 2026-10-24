@@ -56,7 +56,7 @@ import {
   CheckBoxOutlineBlank as CheckBoxOutlineBlankIcon,
 } from '@mui/icons-material';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
-import apiClient from '../../services/apiClient';
+import apiClient, { resolveApiAssetUrl } from '../../services/apiClient';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
 import { useTranslation } from 'react-i18next';
 import { extractTemplateVariables } from './certificateTemplateUtils';
@@ -708,7 +708,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
                         <IconButton
                           size="small"
                           title="Download PDF"
-                          onClick={() => window.open(cert.pdfUrl, '_blank')}
+                          onClick={() => window.open(resolveApiAssetUrl(cert.pdfUrl!), '_blank', 'noopener,noreferrer')}
                         >
                           <DownloadIcon />
                         </IconButton>
@@ -892,7 +892,7 @@ const handleRevokeCertificate = async (certificateId: number) => {
                     <Button
                       variant="outlined" sx={S.BTN_OUTLINE}
                       startIcon={<DownloadIcon />}
-                      onClick={() => window.open(selectedCertificate.pdfUrl, '_blank')}
+                      onClick={() => window.open(resolveApiAssetUrl(selectedCertificate.pdfUrl!), '_blank', 'noopener,noreferrer')}
                     >
                       {t('certificates.downloadPdf')}
                     </Button>

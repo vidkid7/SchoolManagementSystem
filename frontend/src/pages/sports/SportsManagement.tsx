@@ -50,6 +50,12 @@ const ACHIEVEMENT_LEVEL_OPTIONS = [
   { value: 'international', label: 'International' },
 ];
 
+const formatTournamentDate = (value?: string | Date | null): string => {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
+};
+
 interface StaffOption {
   staffId: number;
   name: string;
@@ -530,8 +536,8 @@ export function SportsManagement() {
                   <TableRow key={item.tournamentId ?? item.id ?? `tournament-${index}`} sx={S.TR_HOVER}>
                     <TableCell sx={S.TD}>{item.name}</TableCell>
                     <TableCell sx={S.TD}>{item.sportName ?? getSportLabel(item.sportId)}</TableCell>
-                    <TableCell sx={S.TD}>{new Date(item.startDate).toLocaleDateString()}</TableCell>
-                    <TableCell sx={S.TD}>{new Date(item.endDate).toLocaleDateString()}</TableCell>
+                    <TableCell sx={S.TD}>{formatTournamentDate(item.startDate)}</TableCell>
+                    <TableCell sx={S.TD}>{formatTournamentDate(item.endDate)}</TableCell>
                     <TableCell sx={S.TD}>{item.venue}</TableCell>
                     <TableCell sx={S.TD}><Chip label={item.status} size="small" /></TableCell>
                   </TableRow>
@@ -697,7 +703,7 @@ export function SportsManagement() {
           <Grid container spacing={2} sx={{ mt: 1 }}>
             {tabValue === 0 && (
               <>
-                <Grid item xs={12}><TextField label={t('sports.sportName')} value={formData.name || ''} onChange={(e) => setFormData({ ...formData, name: e.target.value })} fullWidth /></Grid>
+                <Grid item xs={12}><TextField label={t('sports.sportName')} value={formData.name || ''} onChange={(e) => { setFormData({ ...formData, name: e.target.value }); if (e.target.value.trim()) setError(''); }} required error={tabValue === 0 && error === 'Name is required.'} helperText={tabValue === 0 && error === 'Name is required.' ? error : undefined} fullWidth /></Grid>
                 <Grid item xs={12} md={6}>
                   <TextField select label={t('sports.category')} value={formData.category || ''} onChange={(e) => setFormData({ ...formData, category: e.target.value })} fullWidth>
                     {SPORT_CATEGORY_OPTIONS.map((option) => (

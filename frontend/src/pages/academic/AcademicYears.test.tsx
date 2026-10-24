@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { AcademicYears } from './AcademicYears';
 import apiClient from '../../services/apiClient';
@@ -34,7 +34,11 @@ jest.mock('../../services/apiClient', () => ({
 }));
 
 jest.mock('../../components/YearSelectableDatePicker/YearSelectableDatePicker', () => ({
-  YearSelectableDateField: ({ label }: { label: string }) => <input aria-label={label} />,
+  YearSelectableDateField: ({ label, value, onChange }: {
+    label: string;
+    value?: string;
+    onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  }) => <input aria-label={label} value={value ?? ''} onChange={onChange} />,
 }));
 
 const renderPage = () => render(
@@ -44,6 +48,8 @@ const renderPage = () => render(
 );
 
 beforeEach(() => {
+  currentAcademicYear.startDateAD = '2026-07-17';
+  currentAcademicYear.endDateAD = '2027-07-16';
   (apiClient.get as jest.Mock).mockResolvedValue({ data: { data: [] } });
   (apiClient.post as jest.Mock).mockClear();
 });
@@ -64,6 +70,28 @@ describe('AcademicYears', () => {
     fireEvent.click(screen.getByRole('button', { name: 'common.cancel' }));
 
     expect(screen.queryByText('academicYears.fillAllRequiredFields')).not.toBeInTheDocument();
+  });
+
+  it('shows year validation inside the dialog and skips the invalid API request', () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'academicYears.addAcademicYear' }));
+    const dialog = screen.getByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'common.save' }));
+
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('academicYears.fillAllRequiredFields');
+    expect(apiClient.post).not.toHaveBeenCalled();
+  });
+
+  it('prefills Nepal DATEONLY API timestamps without shifting the displayed day', () => {
+    currentAcademicYear.startDateAD = '2026-07-16T18:15:00.000Z';
+    currentAcademicYear.endDateAD = '2027-07-15T18:15:00.000Z';
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'academicYears.editAcademicYear 2083-2084' }));
+
+    expect(screen.getByRole('textbox', { name: 'academicYears.startDateAD' })).toHaveValue('2026-07-17');
+    expect(screen.getByRole('textbox', { name: 'academicYears.endDateAD' })).toHaveValue('2027-07-16');
   });
 
   it('shows term validation inside the dialog and skips the invalid API request', async () => {

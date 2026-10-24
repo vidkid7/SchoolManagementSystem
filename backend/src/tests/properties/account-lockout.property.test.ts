@@ -26,7 +26,30 @@ import { connectRedis, closeRedis, getRedisClient } from '@config/redis';
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
-describe('Property 9: Account Lockout After Failed Attempts', () => {
+const dedicatedRedisUrl = process.env.REDIS_TEST_URL;
+let dedicatedRedisDatabase = -1;
+try {
+  dedicatedRedisDatabase = Number(new URL(dedicatedRedisUrl || '').pathname.slice(1));
+} catch {
+  dedicatedRedisDatabase = -1;
+}
+const redisLockoutOptIn = process.env.RUN_REDIS_LOCKOUT_TESTS === 'true';
+const canRunRedisLockoutTests = redisLockoutOptIn && Boolean(dedicatedRedisUrl) && dedicatedRedisDatabase >= 1;
+
+if (redisLockoutOptIn && !canRunRedisLockoutTests) {
+  throw new Error('Set REDIS_TEST_URL to a dedicated Redis database with index 1 or higher before opting in.');
+}
+
+const describeWithDedicatedRedis = canRunRedisLockoutTests ? describe : describe.skip;
+const isolatedIdentifier = (identifier: string) => `qa-property-${identifier}`;
+const recordLockoutAttempt = (identifier: string, userId: number) =>
+  accountLockoutService.recordFailedAttempt(isolatedIdentifier(identifier), userId);
+const readLockoutStatus = (identifier: string) =>
+  accountLockoutService.checkLockoutStatus(isolatedIdentifier(identifier));
+const resetLockoutStatus = (identifier: string, userId: number) =>
+  accountLockoutService.resetFailedAttempts(isolatedIdentifier(identifier), userId);
+
+describeWithDedicatedRedis('Property 9: Account Lockout After Failed Attempts', () => {
   const MAX_FAILED_ATTEMPTS = 5;
   const LOCKOUT_DURATION_SECONDS = 15 * 60; // 15 minutes
 
@@ -34,7 +57,10 @@ describe('Property 9: Account Lockout After Failed Attempts', () => {
    * Initialize Redis before all tests
    */
   beforeAll(async () => {
-    await connectRedis();
+    process.env.REDIS_URL = dedicatedRedisUrl;
+    delete process.env.REDIS_HOST;
+    const client = await connectRedis();
+    if (!client) throw new Error('Dedicated Redis test database is unavailable.');
   });
 
   /**
@@ -50,9 +76,12 @@ describe('Property 9: Account Lockout After Failed Attempts', () => {
   const cleanupRedisKeys = async (identifiers: string[]) => {
     try {
       const client = getRedisClient();
+      if (!client) return;
+
       for (const identifier of identifiers) {
-        await client.del(`failed_login_attempts:${identifier}`);
-        await client.del(`account_lockout:${identifier}`);
+        const keyIdentifier = isolatedIdentifier(identifier);
+        await client.del(`failed_login_attempts:${keyIdentifier}`);
+        await client.del(`account_lockout:${keyIdentifier}`);
       }
     } catch (error) {
       // Ignore cleanup errors
@@ -80,7 +109,7 @@ describe('Property 9: Account Lockout After Failed Attempts', () => {
           try {
             // Record 4 failed attempts - should NOT lock
             for (let i = 0; i < 4; i++) {
-              const status = await accountLockoutService.recordFailedAttempt(
+              const status = await recordLockoutAttempt(
                 identifier,
                 userId
               );
@@ -91,13 +120,13 @@ describe('Property 9: Account Lockout After Failed Attempts', () => {
             }
 
             // Check status after 4 attempts - should NOT be locked
-            const statusBefore = await accountLockoutService.checkLockoutStatus(identifier);
+            const statusBefore = await readLockoutStatus(identifier);
             expect(statusBefore.isLocked).toBe(false);
             expect(statusBefore.failedAttempts).toBe(4);
             expect(statusBefore.remainingAttempts).toBe(1);
 
             // 5th failed attempt - should trigger lockout
-            const lockoutStatus = await accountLockoutService.recordFailedAttempt(
+            const lockoutStatus = await recordLockoutAttempt(
               identifier,
               userId
             );
@@ -111,7 +140,7 @@ describe('Property 9: Account Lockout After Failed Attempts', () => {
             expect(lockoutStatus.lockoutTimeRemaining).toBeLessThanOrEqual(LOCKOUT_DURATION_SECONDS);
 
             // Verify lockout status persists
-            const statusAfter = await accountLockoutService.checkLockoutStatus(identifier);
+            const statusAfter = await readLockoutStatus(identifier);
             expect(statusAfter.isLocked).toBe(true);
             expect(statusAfter.failedAttempts).toBe(MAX_FAILED_ATTEMPTS);
             expect(statusAfter.remainingAttempts).toBe(0);
@@ -147,7 +176,7 @@ describe('Property 9: Account Lockout After Failed Attempts', () => {
           try {
             // Record N failed attempts (where N < 5)
             for (let i = 0; i < attemptCount; i++) {
-              const status = await accountLockoutService.recordFailedAttempt(
+              const status = await recordLockoutAttempt(
                 identifier,
                 userId
               );
@@ -158,7 +187,7 @@ describe('Property 9: Account Lockout After Failed Attempts', () => {
             }
 
             // Verify account is NOT locked
-            const finalStatus = await accountLockoutService.checkLockoutStatus(identifier);
+            const finalStatus = await readLockoutStatus(identifier);
             expect(finalStatus.isLocked).toBe(false);
             expect(finalStatus.failedAttempts).toBe(attemptCount);
             expect(finalStatus.remainingAttempts).toBe(MAX_FAILED_ATTEMPTS - attemptCount);
@@ -195,19 +224,19 @@ describe('Property 9: Account Lockout After Failed Attempts', () => {
           try {
             // Record some failed attempts
             for (let i = 0; i < failedAttempts; i++) {
-              await accountLockoutService.recordFailedAttempt(identifier, userId);
+              await recordLockoutAttempt(identifier, userId);
             }
 
             // Verify failed attempts are tracked
-            const statusBefore = await accountLockoutService.checkLockoutStatus(identifier);
+            const statusBefore = await readLockoutStatus(identifier);
             expect(statusBefore.failedAttempts).toBe(failedAttempts);
             expect(statusBefore.isLocked).toBe(false);
 
             // Simulate successful login by resetting attempts
-            await accountLockoutService.resetFailedAttempts(identifier, userId);
+            await resetLockoutStatus(identifier, userId);
 
             // Verify counter is reset
-            const statusAfter = await accountLockoutService.checkLockoutStatus(identifier);
+            const statusAfter = await readLockoutStatus(identifier);
             expect(statusAfter.failedAttempts).toBe(0);
             expect(statusAfter.remainingAttempts).toBe(MAX_FAILED_ATTEMPTS);
             expect(statusAfter.isLocked).toBe(false);
@@ -242,22 +271,22 @@ describe('Property 9: Account Lockout After Failed Attempts', () => {
           try {
             // Trigger lockout with 5 failed attempts
             for (let i = 0; i < MAX_FAILED_ATTEMPTS; i++) {
-              await accountLockoutService.recordFailedAttempt(identifier, userId);
+              await recordLockoutAttempt(identifier, userId);
             }
 
             // Verify account is locked
-            const lockoutStatus = await accountLockoutService.checkLockoutStatus(identifier);
+            const lockoutStatus = await readLockoutStatus(identifier);
             expect(lockoutStatus.isLocked).toBe(true);
             expect(lockoutStatus.lockoutExpiresAt).toBeDefined();
 
             // Check lockout persists immediately after
-            const statusCheck1 = await accountLockoutService.checkLockoutStatus(identifier);
+            const statusCheck1 = await readLockoutStatus(identifier);
             expect(statusCheck1.isLocked).toBe(true);
 
             // Wait a short time and verify still locked
             await new Promise(resolve => setTimeout(resolve, 100));
 
-            const statusCheck2 = await accountLockoutService.checkLockoutStatus(identifier);
+            const statusCheck2 = await readLockoutStatus(identifier);
             expect(statusCheck2.isLocked).toBe(true);
             expect(statusCheck2.lockoutTimeRemaining).toBeDefined();
             
@@ -299,22 +328,22 @@ describe('Property 9: Account Lockout After Failed Attempts', () => {
           try {
             // Trigger lockout with 5 failed attempts
             for (let i = 0; i < MAX_FAILED_ATTEMPTS; i++) {
-              await accountLockoutService.recordFailedAttempt(identifier, userId);
+              await recordLockoutAttempt(identifier, userId);
             }
 
             // Get initial lockout status
-            const initialStatus = await accountLockoutService.checkLockoutStatus(identifier);
+            const initialStatus = await readLockoutStatus(identifier);
             expect(initialStatus.isLocked).toBe(true);
             const initialExpiresAt = initialStatus.lockoutExpiresAt;
 
             // Record additional failed attempts
             for (let i = 0; i < additionalAttempts; i++) {
-              const status = await accountLockoutService.recordFailedAttempt(identifier, userId);
+              const status = await recordLockoutAttempt(identifier, userId);
               expect(status.isLocked).toBe(true);
             }
 
             // Verify lockout status is maintained
-            const finalStatus = await accountLockoutService.checkLockoutStatus(identifier);
+            const finalStatus = await readLockoutStatus(identifier);
             expect(finalStatus.isLocked).toBe(true);
             expect(finalStatus.failedAttempts).toBeGreaterThanOrEqual(MAX_FAILED_ATTEMPTS);
             
@@ -358,18 +387,18 @@ describe('Property 9: Account Lockout After Failed Attempts', () => {
           try {
             // Trigger lockout
             for (let i = 0; i < MAX_FAILED_ATTEMPTS; i++) {
-              await accountLockoutService.recordFailedAttempt(identifier, userId);
+              await recordLockoutAttempt(identifier, userId);
             }
 
             // Verify account is locked
-            const lockedStatus = await accountLockoutService.checkLockoutStatus(identifier);
+            const lockedStatus = await readLockoutStatus(identifier);
             expect(lockedStatus.isLocked).toBe(true);
 
             // Admin unlocks the account
-            await accountLockoutService.unlockAccount(identifier, adminUserId);
+            await accountLockoutService.unlockAccount(isolatedIdentifier(identifier), adminUserId);
 
             // Verify account is unlocked
-            const unlockedStatus = await accountLockoutService.checkLockoutStatus(identifier);
+            const unlockedStatus = await readLockoutStatus(identifier);
             expect(unlockedStatus.isLocked).toBe(false);
             expect(unlockedStatus.failedAttempts).toBe(0);
             expect(unlockedStatus.remainingAttempts).toBe(MAX_FAILED_ATTEMPTS);
@@ -436,17 +465,17 @@ describe('Property 9: Account Lockout After Failed Attempts', () => {
           try {
             // Record failed attempts for identifier1
             for (let i = 0; i < attempts1; i++) {
-              await accountLockoutService.recordFailedAttempt(identifier1, userId1);
+              await recordLockoutAttempt(identifier1, userId1);
             }
 
             // Record failed attempts for identifier2
             for (let i = 0; i < attempts2; i++) {
-              await accountLockoutService.recordFailedAttempt(identifier2, userId2);
+              await recordLockoutAttempt(identifier2, userId2);
             }
 
             // Check status for both identifiers
-            const status1 = await accountLockoutService.checkLockoutStatus(identifier1);
-            const status2 = await accountLockoutService.checkLockoutStatus(identifier2);
+            const status1 = await readLockoutStatus(identifier1);
+            const status2 = await readLockoutStatus(identifier2);
 
             // Verify independent tracking - each has their own count
             expect(status1.failedAttempts).toBe(attempts1);
@@ -456,10 +485,10 @@ describe('Property 9: Account Lockout After Failed Attempts', () => {
 
             // Verify changing one doesn't affect the other
             // Add one more attempt to identifier1
-            await accountLockoutService.recordFailedAttempt(identifier1, userId1);
+            await recordLockoutAttempt(identifier1, userId1);
             
-            const updatedStatus1 = await accountLockoutService.checkLockoutStatus(identifier1);
-            const updatedStatus2 = await accountLockoutService.checkLockoutStatus(identifier2);
+            const updatedStatus1 = await readLockoutStatus(identifier1);
+            const updatedStatus2 = await readLockoutStatus(identifier2);
             
             // identifier1 should have increased
             expect(updatedStatus1.failedAttempts).toBe(attempts1 + 1);
@@ -497,11 +526,11 @@ describe('Property 9: Account Lockout After Failed Attempts', () => {
           try {
             // Trigger lockout
             for (let i = 0; i < MAX_FAILED_ATTEMPTS; i++) {
-              await accountLockoutService.recordFailedAttempt(identifier, userId);
+              await recordLockoutAttempt(identifier, userId);
             }
 
             // Get initial lockout time
-            const status1 = await accountLockoutService.checkLockoutStatus(identifier);
+            const status1 = await readLockoutStatus(identifier);
             expect(status1.isLocked).toBe(true);
             const initialTimeRemaining = status1.lockoutTimeRemaining;
 
@@ -509,7 +538,7 @@ describe('Property 9: Account Lockout After Failed Attempts', () => {
             await new Promise(resolve => setTimeout(resolve, waitTimeMs));
 
             // Get updated lockout time
-            const status2 = await accountLockoutService.checkLockoutStatus(identifier);
+            const status2 = await readLockoutStatus(identifier);
             expect(status2.isLocked).toBe(true);
             const updatedTimeRemaining = status2.lockoutTimeRemaining;
 
@@ -558,11 +587,11 @@ describe('Property 9: Account Lockout After Failed Attempts', () => {
             const attempts = shouldLock ? MAX_FAILED_ATTEMPTS : 2;
             
             for (let i = 0; i < attempts; i++) {
-              await accountLockoutService.recordFailedAttempt(identifier, userId);
+              await recordLockoutAttempt(identifier, userId);
             }
 
             // Get lockout status
-            const status = await accountLockoutService.checkLockoutStatus(identifier);
+            const status = await readLockoutStatus(identifier);
 
             // Verify all required fields are present
             expect(status).toHaveProperty('isLocked');

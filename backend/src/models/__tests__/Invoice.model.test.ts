@@ -241,7 +241,7 @@ describe('Invoice Model', () => {
         studentId: 1,
         feeStructureId: 1,
         academicYearId: 1,
-        dueDate: '2025-03-01',
+        dueDate: '2099-03-01',
         subtotal: 10000,
         discount: 0,
         totalAmount: 10000,
@@ -482,7 +482,7 @@ describe('Invoice Model', () => {
       invoice.rejectDiscount();
 
       expect(invoice.discount).toBe(0);
-      expect(invoice.discountReason).toBeUndefined();
+      expect(invoice.discountReason).toBeNull();
       expect(invoice.discountApprovalStatus).toBe(DiscountApprovalStatus.REJECTED);
       expect(invoice.totalAmount).toBe(10000);
       expect(invoice.balance).toBe(10000);

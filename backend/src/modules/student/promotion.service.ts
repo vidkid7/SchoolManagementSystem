@@ -141,6 +141,7 @@ class PromotionService {
       totalMarks?: number;
       rank?: number;
       hasFailingGrades?: boolean;
+      remarks?: string;
     },
     criteria: PromotionEligibilityCriteria = this.DEFAULT_CRITERIA,
     userId?: number,
@@ -184,7 +185,7 @@ class PromotionService {
         completionStatus: eligibilityCheck.eligible ? CompletionStatus.PROMOTED : CompletionStatus.FAILED,
         promotionEligible: eligibilityCheck.eligible,
         promotedToClass: eligibilityCheck.eligible ? nextGradeLevel : undefined,
-        remarks: eligibilityCheck.reason,
+        remarks: [eligibilityCheck.reason, academicData.remarks].filter(Boolean).join(' — ') || undefined,
         promotedBy: userId,
         promotedAt: eligibilityCheck.eligible ? new Date() : undefined
       }, { transaction });

@@ -408,4 +408,14 @@ export const communicationValidation = {
       .optional()
       .allow(null),
   }),
+
+  announcementIdParam: Joi.object({
+    announcementId: Joi.number().integer().positive().required(),
+  }),
+
+  announcementListQuery: Joi.object({
+    targetAudience: Joi.string().valid('all', 'students', 'parents', 'teachers', 'staff').optional(),
+    page: Joi.number().integer().min(1).optional(),
+    limit: Joi.number().integer().min(1).max(100).optional(),
+  }),
 };

@@ -10,6 +10,9 @@ require('dotenv').config({ path: './backend/.env' });
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
+if (process.env.NODE_ENV === 'production' || process.env.ALLOW_DEMO_SEED !== 'true' || !process.env.DEMO_SEED_PASSWORD || process.env.DEMO_SEED_PASSWORD.length < 16) {
+  throw new Error('Demo seeding is disabled in production. For local use, set ALLOW_DEMO_SEED=true and a 16+ character DEMO_SEED_PASSWORD.');
+}
 
 const SCHOOL_CONFIG_ID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
 
@@ -82,17 +85,17 @@ const SUBJECTS = [
 ];
 
 const STAFF_ROLES = [
-  { role: 'School_Admin',        suffix: 'admin',  password: 'Admin@123',      position: 'School Administrator', employment_type: 'permanent' },
-  { role: 'Class_Teacher',       suffix: 'ct',     password: 'Teacher@123',     position: 'Class Teacher',        employment_type: 'permanent' },
-  { role: 'Subject_Teacher',     suffix: 'st',     password: 'Teacher@123',     position: 'Subject Teacher',      employment_type: 'permanent' },
-  { role: 'Department_Head',     suffix: 'dh',     password: 'DeptHead@123',    position: 'Department Head',      employment_type: 'permanent' },
-  { role: 'ECA_Coordinator',     suffix: 'eca',    password: 'ECACoord@123',    position: 'ECA Coordinator',      employment_type: 'permanent' },
-  { role: 'Sports_Coordinator',  suffix: 'sc',     password: 'SportsCoord@123', position: 'Sports Coordinator',   employment_type: 'permanent' },
-  { role: 'Librarian',           suffix: 'lib',    password: 'Librarian@123',   position: 'Librarian',            employment_type: 'permanent' },
-  { role: 'Accountant',          suffix: 'acc',    password: 'Accountant@123',  position: 'Accountant',           employment_type: 'permanent' },
-  { role: 'Transport_Manager',   suffix: 'tm',     password: 'Transport@123',   position: 'Transport Manager',    employment_type: 'contract'  },
-  { role: 'Hostel_Warden',       suffix: 'hw',     password: 'Hostel@123',      position: 'Hostel Warden',        employment_type: 'permanent' },
-  { role: 'Non_Teaching_Staff',  suffix: 'nts',    password: 'Staff@123',       position: 'Office Staff',         employment_type: 'temporary' },
+  { role: 'School_Admin',        suffix: 'admin',  password: process.env.DEMO_SEED_PASSWORD,      position: 'School Administrator', employment_type: 'permanent' },
+  { role: 'Class_Teacher',       suffix: 'ct',     password: process.env.DEMO_SEED_PASSWORD,     position: 'Class Teacher',        employment_type: 'permanent' },
+  { role: 'Subject_Teacher',     suffix: 'st',     password: process.env.DEMO_SEED_PASSWORD,     position: 'Subject Teacher',      employment_type: 'permanent' },
+  { role: 'Department_Head',     suffix: 'dh',     password: process.env.DEMO_SEED_PASSWORD,    position: 'Department Head',      employment_type: 'permanent' },
+  { role: 'ECA_Coordinator',     suffix: 'eca',    password: process.env.DEMO_SEED_PASSWORD,    position: 'ECA Coordinator',      employment_type: 'permanent' },
+  { role: 'Sports_Coordinator',  suffix: 'sc',     password: process.env.DEMO_SEED_PASSWORD, position: 'Sports Coordinator',   employment_type: 'permanent' },
+  { role: 'Librarian',           suffix: 'lib',    password: process.env.DEMO_SEED_PASSWORD,   position: 'Librarian',            employment_type: 'permanent' },
+  { role: 'Accountant',          suffix: 'acc',    password: process.env.DEMO_SEED_PASSWORD,  position: 'Accountant',           employment_type: 'permanent' },
+  { role: 'Transport_Manager',   suffix: 'tm',     password: process.env.DEMO_SEED_PASSWORD,   position: 'Transport Manager',    employment_type: 'contract'  },
+  { role: 'Hostel_Warden',       suffix: 'hw',     password: process.env.DEMO_SEED_PASSWORD,      position: 'Hostel Warden',        employment_type: 'permanent' },
+  { role: 'Non_Teaching_Staff',  suffix: 'nts',    password: process.env.DEMO_SEED_PASSWORD,       position: 'Office Staff',         employment_type: 'temporary' },
 ];
 
 // ─── MAIN ──────────────────────────────────────────────────────────────────────
@@ -297,8 +300,8 @@ async function main() {
     const allStudentIds = [];
     const FIRST_NAMES = ['Aarav','Priya','Rohan','Sita','Kiran','Anita','Bikash','Sunita','Dipak','Nisha','Suresh','Laxmi','Rajan','Maya','Arjun'];
     const LAST_NAMES  = ['Sharma','Thapa','Gurung','Poudel','Adhikari','Karki','Shrestha','Tamang','Rai','Magar','Limbu','Chhetri','Pandey','Bista','Maharjan'];
-    const stuHashedPw = await h('Student@123');
-    const parHashedPw = await h('Parent@123');
+    const stuHashedPw = await h(process.env.DEMO_SEED_PASSWORD);
+    const parHashedPw = await h(process.env.DEMO_SEED_PASSWORD);
 
     let stuCounter = 1;
     for (const cls of classIds) {
@@ -583,24 +586,7 @@ async function main() {
 
     console.log('\n' + '═'.repeat(70));
     console.log('🎉  RAILWAY SEEDING COMPLETE!\n');
-    console.log('📋  LOGIN CREDENTIALS\n');
-    console.log('SCHOOL ADMIN:');
-    console.log('  admin_school     /  Admin@123');
-    console.log('\nSTAFF ACCOUNTS:');
-    console.log('  ct_school        /  Teacher@123        (Class Teacher)');
-    console.log('  st_school        /  Teacher@123        (Subject Teacher)');
-    console.log('  dh_school        /  DeptHead@123       (Department Head)');
-    console.log('  eca_school       /  ECACoord@123       (ECA Coordinator)');
-    console.log('  sc_school        /  SportsCoord@123    (Sports Coordinator)');
-    console.log('  lib_school       /  Librarian@123      (Librarian)');
-    console.log('  acc_school       /  Accountant@123     (Accountant)');
-    console.log('  tm_school        /  Transport@123      (Transport Manager)');
-    console.log('  hw_school        /  Hostel@123         (Hostel Warden)');
-    console.log('  nts_school       /  Staff@123          (Non-Teaching Staff)');
-    console.log('\nSTUDENTS:');
-    console.log('  student_0001 to student_' + pad(allStudentIds.length, 4) + '  /  Student@123');
-    console.log('\nPARENTS:');
-    console.log('  parent_0001, parent_0004, parent_0007, ...  /  Parent@123');
+    console.log('Demo accounts use the supplied DEMO_SEED_PASSWORD.');
     console.log('\n📊  DATA COUNTS:');
     for (const [t, cnt] of Object.entries(counts)) {
       console.log(`  ${t.padEnd(22)}: ${cnt}`);

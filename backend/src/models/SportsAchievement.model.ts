@@ -39,28 +39,28 @@ export class SportsAchievement
   extends Model<SportsAchievementAttributes, SportsAchievementCreationAttributes>
   implements SportsAchievementAttributes
 {
-  public achievementId!: number;
-  public sportId!: number;
-  public studentId!: number;
-  public teamId?: number;
-  public tournamentId?: number;
-  public title!: string;
-  public titleNp?: string;
-  public type!: 'medal' | 'trophy' | 'certificate' | 'rank' | 'record' | 'recognition';
-  public level!: 'school' | 'inter_school' | 'district' | 'regional' | 'national' | 'international';
-  public position?: string;
-  public medal?: 'gold' | 'silver' | 'bronze';
-  public recordType?: string;
-  public recordValue?: string;
-  public description?: string;
-  public descriptionNp?: string;
-  public achievementDate!: Date;
-  public achievementDateBS?: string;
-  public certificateUrl?: string;
-  public photoUrl?: string;
-  public remarks?: string;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public achievementId: number;
+  declare public sportId: number;
+  declare public studentId: number;
+  declare public teamId?: number;
+  declare public tournamentId?: number;
+  declare public title: string;
+  declare public titleNp?: string;
+  declare public type: 'medal' | 'trophy' | 'certificate' | 'rank' | 'record' | 'recognition';
+  declare public level: 'school' | 'inter_school' | 'district' | 'regional' | 'national' | 'international';
+  declare public position?: string;
+  declare public medal?: 'gold' | 'silver' | 'bronze';
+  declare public recordType?: string;
+  declare public recordValue?: string;
+  declare public description?: string;
+  declare public descriptionNp?: string;
+  declare public achievementDate: Date;
+  declare public achievementDateBS?: string;
+  declare public certificateUrl?: string;
+  declare public photoUrl?: string;
+  declare public remarks?: string;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   public isHighLevel(): boolean {
     return ['national', 'international'].includes(this.level);

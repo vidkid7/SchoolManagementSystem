@@ -8,6 +8,22 @@ import ECA from '@models/ECA.model';
 import ECAAchievement from '@models/ECAAchievement.model';
 import ECAEnrollment from '@models/ECAEnrollment.model';
 import ECAEvent from '@models/ECAEvent.model';
+import { assertStudentAccess, getPortalStudentIds } from '@modules/security/studentAccess';
+
+function sendValidationErrors(req: Request, res: Response): boolean {
+  const errors = validationResult(req);
+  if (errors.isEmpty()) return false;
+
+  res.status(400).json({
+    success: false,
+    error: {
+      code: 'VALIDATION_ERROR',
+      message: 'Validation failed',
+      details: errors.array(),
+    },
+  });
+  return true;
+}
 
 /**
  * ECA Controller
@@ -418,6 +434,8 @@ class ECAController {
    */
   async getEvents(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      if (sendValidationErrors(req, res)) return;
+
       const filters: any = {};
       if (req.query.ecaId) filters.ecaId = parseInt(req.query.ecaId as string);
       if (req.query.type) filters.type = req.query.type;
@@ -509,6 +527,7 @@ class ECAController {
       }
 
       const studentId = parseInt(req.params.studentId);
+      await assertStudentAccess(req, studentId);
 
       // Get enrollments
       const enrollments = await ecaEnrollmentService.getStudentEnrollments(studentId);
@@ -625,6 +644,8 @@ class ECAController {
    */
   async getRecentActivities(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      if (sendValidationErrors(req, res)) return;
+
       const limit = Number(req.query.limit) || 10;
 
       const [enrollments, events, achievements] = await Promise.all([
@@ -702,6 +723,8 @@ class ECAController {
    */
   async getEnrollments(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      if (sendValidationErrors(req, res)) return;
+
       const filters: any = {};
       if (req.query.ecaId) filters.ecaId = parseInt(req.query.ecaId as string);
       if (req.query.studentId) filters.studentId = parseInt(req.query.studentId as string);
@@ -817,9 +840,17 @@ class ECAController {
    */
   async getAchievements(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      if (sendValidationErrors(req, res)) return;
+
       const filters: any = {};
       if (req.query.ecaId) filters.ecaId = parseInt(req.query.ecaId as string);
-      if (req.query.studentId) filters.studentId = parseInt(req.query.studentId as string);
+      if (req.query.studentId) {
+        filters.studentId = parseInt(req.query.studentId as string);
+        await assertStudentAccess(req, filters.studentId);
+      } else {
+        const studentIds = await getPortalStudentIds(req);
+        if (studentIds) filters.studentId = { [Op.in]: studentIds };
+      }
 
       const achievements = await ECAAchievement.findAll({
         where: filters,

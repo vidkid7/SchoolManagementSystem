@@ -37,24 +37,24 @@ export class Certificate
   extends Model<CertificateAttributes, CertificateCreationAttributes>
   implements CertificateAttributes
 {
-  public certificateId!: number;
-  public certificateNumber!: string;
-  public templateId!: number;
-  public studentId!: number;
-  public type!: 'character' | 'transfer' | 'academic_excellence' | 'eca' | 'sports' | 'course_completion' | 'bonafide' | 'conduct' | 'participation';
-  public issuedDate!: Date;
-  public issuedDateBS!: string;
-  public data!: Record<string, any>;
-  public pdfUrl!: string;
-  public qrCode!: string;
-  public issuedBy!: number;
-  public verificationUrl!: string;
-  public status!: 'active' | 'revoked';
-  public revokedAt?: Date;
-  public revokedBy?: number;
-  public revokedReason?: string;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public certificateId: number;
+  declare public certificateNumber: string;
+  declare public templateId: number;
+  declare public studentId: number;
+  declare public type: 'character' | 'transfer' | 'academic_excellence' | 'eca' | 'sports' | 'course_completion' | 'bonafide' | 'conduct' | 'participation';
+  declare public issuedDate: Date;
+  declare public issuedDateBS: string;
+  declare public data: Record<string, any>;
+  declare public pdfUrl: string;
+  declare public qrCode: string;
+  declare public issuedBy: number;
+  declare public verificationUrl: string;
+  declare public status: 'active' | 'revoked';
+  declare public revokedAt?: Date;
+  declare public revokedBy?: number;
+  declare public revokedReason?: string;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   /**
    * Check if certificate is active

@@ -8,9 +8,11 @@ const { Sequelize } = require('sequelize');
 const bcrypt = require('bcryptjs');
 
 const DATABASE_URL = process.env.DATABASE_URL;
+const username = process.env.ADMIN_USERNAME?.trim();
+const newPassword = process.env.ADMIN_RESET_PASSWORD;
 
-if (!DATABASE_URL) {
-  console.error('❌ DATABASE_URL not found');
+if (!DATABASE_URL || process.env.CONFIRM_ADMIN_PASSWORD_RESET !== 'true' || !username || !newPassword || newPassword.length < 14) {
+  console.error('Set DATABASE_URL, CONFIRM_ADMIN_PASSWORD_RESET=true, ADMIN_USERNAME, and a 14+ character ADMIN_RESET_PASSWORD.');
   process.exit(1);
 }
 
@@ -41,44 +43,42 @@ async function checkAndFixAdmin() {
     console.table(users);
 
     // Check for admin user
-    const [admins] = await sequelize.query("SELECT * FROM users WHERE username = 'admin'");
+    const [admins] = await sequelize.query('SELECT * FROM users WHERE username = :username', { replacements: { username } });
     
     if (admins.length === 0) {
       console.log('\n❌ No admin user found!');
       console.log('Creating admin user...\n');
       
-      const hashedPassword = await bcrypt.hash('Admin@123', 10);
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
       
       await sequelize.query(`
         INSERT INTO users (username, email, password, role, status, created_at, updated_at)
-        VALUES ('admin', 'admin@school.com', ?, 'school_admin', 'active', NOW(), NOW())
+        VALUES (:username, :email, :password, 'school_admin', 'active', NOW(), NOW())
       `, {
-        replacements: [hashedPassword]
+        replacements: { username, email: `${username}@school.com`, password: hashedPassword }
       });
       
       console.log('✅ Admin user created!');
-      console.log('Username: admin');
-      console.log('Password: Admin@123');
+      console.log(`Administrator account created for ${username}.`);
     } else {
       console.log('\n✅ Admin user exists!');
-      console.log('Resetting password to: Admin@123\n');
+      console.log('Resetting password for the selected administrator.\n');
       
-      const hashedPassword = await bcrypt.hash('Admin@123', 10);
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
       
       await sequelize.query(`
         UPDATE users 
-        SET password = ?, 
+        SET password = :password,
             status = 'active',
             failed_login_attempts = 0,
             account_locked_until = NULL
-        WHERE username = 'admin'
+        WHERE username = :username
       `, {
-        replacements: [hashedPassword]
+        replacements: { password: hashedPassword, username }
       });
       
       console.log('✅ Admin password reset!');
-      console.log('Username: admin');
-      console.log('Password: Admin@123');
+      console.log(`Administrator password updated for ${username}.`);
     }
 
     console.log('\n🎉 All done! Try logging in now.');

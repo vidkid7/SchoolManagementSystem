@@ -8,6 +8,7 @@ import { studentImportFileFilter } from './studentImportUpload';
 import multer from 'multer';
 import {
   createStudentSchema,
+  bulkCreateStudentsSchema,
   updateStudentSchema,
   listStudentsQuerySchema,
   studentIdParamSchema,
@@ -145,6 +146,7 @@ router.post(
   '/bulk-create',
   authenticate,
   authorize(UserRole.SCHOOL_ADMIN),
+  validate(bulkCreateStudentsSchema, 'body'),
   studentController.bulkCreate
 );
 
@@ -309,6 +311,19 @@ router.post(
 );
 
 /**
+ * @route   GET /api/v1/students/:id/transfer-history
+ * @desc    Get a student's recorded class transfers
+ * @access  Private (School_Admin)
+ */
+router.get(
+  '/:id/transfer-history',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN),
+  validate(studentIdParamSchema, 'params'),
+  studentController.getTransferHistory
+);
+
+/**
  * @route   POST /api/v1/students/:id/photo
  * @desc    Upload student photo
  * @access  Private (School_Admin)
@@ -394,6 +409,14 @@ router.post(
   validate(studentIdParamSchema, 'params'),
   documentUpload.array('documents', 10),
   studentController.uploadDocumentsBulk
+);
+
+router.get(
+  '/:id/documents/files/:category/:filename',
+  authenticate,
+  authorize(UserRole.SCHOOL_ADMIN, UserRole.CLASS_TEACHER),
+  validate(studentIdParamSchema, 'params'),
+  studentController.getStudentDocumentContent
 );
 
 /**

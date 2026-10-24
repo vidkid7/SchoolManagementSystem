@@ -29,14 +29,14 @@ export class GroupMessage
   extends Model<GroupMessageAttributes, GroupMessageCreationAttributes>
   implements GroupMessageAttributes
 {
-  public groupMessageId!: number;
-  public groupConversationId!: number;
-  public senderId!: number;
-  public content!: string;
-  public attachments?: object[];
-  public sentAt!: Date;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public groupMessageId: number;
+  declare public groupConversationId: number;
+  declare public senderId: number;
+  declare public content: string;
+  declare public attachments?: object[];
+  declare public sentAt: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   public toJSON(): object {
     return {

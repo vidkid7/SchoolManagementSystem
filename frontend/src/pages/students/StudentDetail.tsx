@@ -740,7 +740,7 @@ export const StudentDetail = () => {
                 <StatCard value={grades.summary?.averageMarks || 0} label={t('reports.averageMarks')} color="#10b981" />
               </Grid>
               <Grid item xs={6} md={4}>
-                <StatCard value={formatNumber(grades.summary?.totalMarks || 0)} label={t('reports.totalCollected')} color={theme.palette.info.main} />
+                <StatCard value={formatNumber(grades.summary?.totalMarks || 0)} label={t('reports.totalMarks')} color={theme.palette.info.main} />
               </Grid>
               <Grid item xs={12}>
                 <Typography variant="h6" component="h5" sx={{ fontWeight: 700, mb: 2 }}>

@@ -18,6 +18,17 @@ interface BSYearData {
   months: number[]; // Array of 12 numbers representing days in each month
 }
 
+interface BSCalendarMonthRecord {
+  [key: string]: unknown;
+  yearBs: number;
+  monthBs: number;
+  daysInMonth: number;
+  startDateAd: Date;
+  endDateAd: Date;
+  monthNameEn: string;
+  monthNameNp: string;
+}
+
 /**
  * Accurate BS calendar data for years 2000-2100 BS
  * This data is based on the official Nepal calendar
@@ -192,8 +203,8 @@ export class BSCalendarService {
         return;
       }
 
-      const records: any[] = [];
-      let currentADDate = new Date(AD_EPOCH_DATE);
+      const records: BSCalendarMonthRecord[] = [];
+      const currentADDate = new Date(AD_EPOCH_DATE);
 
       // Process each year
       for (const yearData of BS_CALENDAR_DATA) {
@@ -207,25 +218,25 @@ export class BSCalendarService {
           
           // Calculate end date by adding days
           const endDateAD = new Date(currentADDate);
-          endDateAD.setDate(endDateAD.getDate() + daysInMonth - 1);
+          endDateAD.setUTCDate(endDateAD.getUTCDate() + daysInMonth - 1);
           
           records.push({
-            yearBS: yearData.year,
-            monthBS: monthBS,
+            yearBs: yearData.year,
+            monthBs: monthBS,
             daysInMonth: daysInMonth,
-            startDateAD: startDateAD,
-            endDateAD: endDateAD,
+            startDateAd: startDateAD,
+            endDateAd: endDateAD,
             monthNameEn: BSCalendar.getMonthNameEn(monthBS),
             monthNameNp: BSCalendar.getMonthNameNp(monthBS)
           });
           
           // Move to next month
-          currentADDate.setDate(currentADDate.getDate() + daysInMonth);
+          currentADDate.setUTCDate(currentADDate.getUTCDate() + daysInMonth);
         }
       }
 
       // Bulk insert all records
-      await BSCalendar.bulkCreate(records, { ignoreDuplicates: true });
+      await BSCalendar.bulkCreate(records as any[], { ignoreDuplicates: true });
       
       logger.info(`Successfully populated BS calendar with ${records.length} records (${BS_CALENDAR_DATA.length} years)`);
     } catch (error) {
@@ -237,19 +248,19 @@ export class BSCalendarService {
   /**
    * Get calendar data for a specific BS year
    */
-  public static async getYearData(yearBS: number): Promise<BSCalendar[]> {
-    return await BSCalendar.findAll({
-      where: { yearBS },
-      order: [['monthBS', 'ASC']]
+  public static getYearData(yearBS: number): Promise<BSCalendar[]> {
+    return BSCalendar.findAll({
+      where: { yearBs: yearBS },
+      order: [['monthBs', 'ASC']]
     });
   }
 
   /**
    * Get calendar data for a specific BS month
    */
-  public static async getMonthData(yearBS: number, monthBS: number): Promise<BSCalendar | null> {
-    return await BSCalendar.findOne({
-      where: { yearBS, monthBS }
+  public static getMonthData(yearBS: number, monthBS: number): Promise<BSCalendar | null> {
+    return BSCalendar.findOne({
+      where: { yearBs: yearBS, monthBs: monthBS }
     });
   }
 
@@ -278,9 +289,9 @@ export class BSCalendarService {
   /**
    * Get all calendar data (for testing/debugging)
    */
-  public static async getAllData(): Promise<BSCalendar[]> {
-    return await BSCalendar.findAll({
-      order: [['yearBS', 'ASC'], ['monthBS', 'ASC']]
+  public static getAllData(): Promise<BSCalendar[]> {
+    return BSCalendar.findAll({
+      order: [['yearBs', 'ASC'], ['monthBs', 'ASC']]
     });
   }
 }

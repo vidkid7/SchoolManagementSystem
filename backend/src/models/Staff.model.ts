@@ -36,6 +36,7 @@ export enum EmploymentType {
  */
 export interface StaffAttributes {
   staffId: number;
+  schoolConfigId?: string;
   userId?: number;
   staffCode: string;
   
@@ -91,13 +92,13 @@ export interface StaffAttributes {
 /**
  * Staff Creation Attributes
  */
-export interface StaffCreationAttributes extends Optional<StaffAttributes,
+export type StaffCreationAttributes = Optional<StaffAttributes,
   'staffId' | 'userId' | 'staffCode' | 'middleNameEn' | 'firstNameNp' | 'middleNameNp' | 'lastNameNp' |
   'dateOfBirthBS' | 'dateOfBirthAD' | 'gender' | 'bloodGroup' | 'photoUrl' |
   'addressEn' | 'addressNp' | 'phone' | 'email' | 'emergencyContact' |
   'employeeId' | 'position' | 'department' | 'terminationDate' | 'salary' |
   'salaryGrade' | 'highestQualification' | 'specialization' | 'teachingLicense' |
-  'citizenshipNumber' | 'panNumber' | 'status' | 'createdAt' | 'updatedAt' | 'deletedAt'> {}
+  'citizenshipNumber' | 'panNumber' | 'status' | 'createdAt' | 'updatedAt' | 'deletedAt'>;
 
 /**
  * Staff Model Class
@@ -105,6 +106,7 @@ export interface StaffCreationAttributes extends Optional<StaffAttributes,
 class Staff extends Model<StaffAttributes, StaffCreationAttributes>
   implements StaffAttributes {
   declare staffId: number;
+  declare schoolConfigId?: string;
   declare userId?: number;
   declare staffCode: string;
   
@@ -259,7 +261,8 @@ Staff.init(
     },
     email: {
       type: DataTypes.STRING(100),
-      allowNull: true
+      allowNull: true,
+      unique: true
     },
     emergencyContact: {
       type: DataTypes.STRING(100),

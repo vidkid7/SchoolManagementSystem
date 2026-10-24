@@ -16,6 +16,13 @@ jest.mock('../../../models/AuditLog.model', () => ({
   },
 }));
 
+const createMockArchiveMetadata = (values: Record<string, unknown>) => ({
+  ...values,
+  getDataValue: jest.fn((key: string) => values[key]),
+  get: jest.fn((key: string) => values[key]),
+  update: jest.fn().mockResolvedValue(true),
+});
+
 describe('Archive Service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -34,7 +41,7 @@ describe('Archive Service', () => {
       (ArchiveMetadata.findOne as jest.Mock).mockResolvedValue(null);
 
       // Mock ArchiveMetadata.create
-      const mockArchive = {
+      const mockArchive = createMockArchiveMetadata({
         id: 1,
         academic_year_id: 1,
         academic_year_name: '2081-2082 BS',
@@ -42,8 +49,7 @@ describe('Archive Service', () => {
         archived_by: 1,
         status: 'in_progress',
         retention_until: new Date(),
-        update: jest.fn().mockResolvedValue(true),
-      };
+      });
       (ArchiveMetadata.create as jest.Mock).mockResolvedValue(mockArchive);
 
       // Mock sequelize.query for archiving operations
@@ -88,7 +94,7 @@ describe('Archive Service', () => {
       (ArchiveMetadata.findOne as jest.Mock).mockResolvedValue(null);
 
       // Mock ArchiveMetadata.create
-      const mockArchive = {
+      const mockArchive = createMockArchiveMetadata({
         id: 1,
         academic_year_id: 1,
         academic_year_name: '2081-2082 BS',
@@ -96,8 +102,7 @@ describe('Archive Service', () => {
         archived_by: 1,
         status: 'in_progress',
         retention_until: new Date(),
-        update: jest.fn().mockResolvedValue(true),
-      };
+      });
       (ArchiveMetadata.create as jest.Mock).mockResolvedValue(mockArchive);
 
       // Mock sequelize.query for each table
@@ -128,12 +133,12 @@ describe('Archive Service', () => {
         invoices: 100,
         payments: 150,
       });
-      expect(mockArchive.update).toHaveBeenCalledWith(
+      expect(ArchiveMetadata.update).toHaveBeenCalledWith(
         expect.objectContaining({
           status: 'completed',
           tables_archived: ['students', 'attendance', 'exams', 'grades', 'invoices', 'payments'],
         }),
-        { transaction: mockTransaction }
+        { where: { id: 1 }, transaction: mockTransaction }
       );
     });
 
@@ -149,7 +154,7 @@ describe('Archive Service', () => {
       (ArchiveMetadata.findOne as jest.Mock).mockResolvedValue(null);
 
       // Mock ArchiveMetadata.create
-      const mockArchive = {
+      const mockArchive = createMockArchiveMetadata({
         id: 1,
         academic_year_id: 1,
         academic_year_name: '2081-2082 BS',
@@ -157,8 +162,7 @@ describe('Archive Service', () => {
         archived_by: 1,
         status: 'in_progress',
         retention_until: new Date(),
-        update: jest.fn().mockResolvedValue(true),
-      };
+      });
       (ArchiveMetadata.create as jest.Mock).mockResolvedValue(mockArchive);
 
       // Capture SQL queries
@@ -249,11 +253,10 @@ describe('Archive Service', () => {
       let createdArchive: any;
       (ArchiveMetadata.create as jest.Mock).mockImplementation((data) => {
         createdArchive = data;
-        return Promise.resolve({
+        return Promise.resolve(createMockArchiveMetadata({
           ...data,
           id: 1,
-          update: jest.fn().mockResolvedValue(true),
-        });
+        }));
       });
 
       // Mock sequelize.query
@@ -288,7 +291,7 @@ describe('Archive Service', () => {
       (ArchiveMetadata.findOne as jest.Mock).mockResolvedValue(null);
 
       // Mock ArchiveMetadata.create
-      const mockArchive = {
+      const mockArchive = createMockArchiveMetadata({
         id: 1,
         academic_year_id: 1,
         academic_year_name: '2081-2082 BS',
@@ -296,8 +299,7 @@ describe('Archive Service', () => {
         archived_by: 1,
         status: 'in_progress',
         retention_until: new Date(),
-        update: jest.fn().mockResolvedValue(true),
-      };
+      });
       (ArchiveMetadata.create as jest.Mock).mockResolvedValue(mockArchive);
 
       // Mock sequelize.query with zero affected rows
@@ -329,7 +331,7 @@ describe('Archive Service', () => {
       (ArchiveMetadata.findOne as jest.Mock).mockResolvedValue(null);
 
       // Mock ArchiveMetadata.create
-      const mockArchive = {
+      const mockArchive = createMockArchiveMetadata({
         id: 1,
         academic_year_id: 1,
         academic_year_name: '2081-2082 BS',
@@ -337,8 +339,7 @@ describe('Archive Service', () => {
         archived_by: 1,
         status: 'in_progress',
         retention_until: new Date(),
-        update: jest.fn().mockResolvedValue(true),
-      };
+      });
       (ArchiveMetadata.create as jest.Mock).mockResolvedValue(mockArchive);
 
       // Mock sequelize.query
@@ -379,13 +380,12 @@ describe('Archive Service', () => {
       (sequelize.transaction as jest.Mock).mockResolvedValue(mockTransaction);
 
       // Mock ArchiveMetadata.findByPk
-      const mockArchive = {
+      const mockArchive = createMockArchiveMetadata({
         id: 1,
         academic_year_id: 1,
         academic_year_name: '2081-2082 BS',
         status: 'completed',
-        update: jest.fn().mockResolvedValue(true),
-      };
+      });
       (ArchiveMetadata.findByPk as jest.Mock).mockResolvedValue(mockArchive);
 
       // Mock sequelize.query for restore operations
@@ -402,9 +402,9 @@ describe('Archive Service', () => {
       expect(result.status).toBe('restored');
       expect(result.archiveId).toBe(1);
       expect(mockTransaction.commit).toHaveBeenCalled();
-      expect(mockArchive.update).toHaveBeenCalledWith(
-        { status: 'restored' },
-        { transaction: mockTransaction }
+      expect(ArchiveMetadata.update).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'restored' }),
+        { where: { id: 1 }, transaction: mockTransaction }
       );
     });
 
@@ -417,13 +417,12 @@ describe('Archive Service', () => {
       (sequelize.transaction as jest.Mock).mockResolvedValue(mockTransaction);
 
       // Mock ArchiveMetadata.findByPk
-      const mockArchive = {
+      const mockArchive = createMockArchiveMetadata({
         id: 1,
         academic_year_id: 1,
         academic_year_name: '2081-2082 BS',
         status: 'completed',
-        update: jest.fn().mockResolvedValue(true),
-      };
+      });
       (ArchiveMetadata.findByPk as jest.Mock).mockResolvedValue(mockArchive);
 
       // Capture SQL queries
@@ -455,13 +454,12 @@ describe('Archive Service', () => {
       (sequelize.transaction as jest.Mock).mockResolvedValue(mockTransaction);
 
       // Mock ArchiveMetadata.findByPk
-      const mockArchive = {
+      const mockArchive = createMockArchiveMetadata({
         id: 1,
         academic_year_id: 1,
         academic_year_name: '2081-2082 BS',
         status: 'completed',
-        update: jest.fn().mockResolvedValue(true),
-      };
+      });
       (ArchiveMetadata.findByPk as jest.Mock).mockResolvedValue(mockArchive);
 
       // Mock sequelize.query
@@ -475,9 +473,9 @@ describe('Archive Service', () => {
         userId: 1,
       });
 
-      expect(mockArchive.update).toHaveBeenCalledWith(
-        { status: 'restored' },
-        { transaction: mockTransaction }
+      expect(ArchiveMetadata.update).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'restored' }),
+        { where: { id: 1 }, transaction: mockTransaction }
       );
     });
 
@@ -490,13 +488,12 @@ describe('Archive Service', () => {
       (sequelize.transaction as jest.Mock).mockResolvedValue(mockTransaction);
 
       // Mock ArchiveMetadata.findByPk
-      const mockArchive = {
+      const mockArchive = createMockArchiveMetadata({
         id: 1,
         academic_year_id: 1,
         academic_year_name: '2081-2082 BS',
         status: 'completed',
-        update: jest.fn().mockResolvedValue(true),
-      };
+      });
       (ArchiveMetadata.findByPk as jest.Mock).mockResolvedValue(mockArchive);
 
       // Mock sequelize.query
@@ -554,10 +551,10 @@ describe('Archive Service', () => {
       (sequelize.transaction as jest.Mock).mockResolvedValue(mockTransaction);
 
       // Mock ArchiveMetadata.findByPk with in_progress status
-      (ArchiveMetadata.findByPk as jest.Mock).mockResolvedValue({
+      (ArchiveMetadata.findByPk as jest.Mock).mockResolvedValue(createMockArchiveMetadata({
         id: 1,
         status: 'in_progress',
-      });
+      }));
 
       await expect(
         archiveService.restoreArchivedData({

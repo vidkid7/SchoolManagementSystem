@@ -10,13 +10,14 @@ import ecaEventRepository from '../ecaEvent.repository';
 import ECAEvent from '@models/ECAEvent.model';
 import ECA from '@models/ECA.model';
 import { sequelize } from '@config/database';
+import { setupEcaTestDatabase } from '../testSupport/ecaTestDatabase';
 
 describe('ECAEventRepository', () => {
   let testEcaId: number;
   let testEventId: number;
 
   beforeAll(async () => {
-    await sequelize.sync({ force: true });
+    await setupEcaTestDatabase();
 
     // Create test ECA
     const eca = await ECA.create({
@@ -36,7 +37,7 @@ describe('ECAEventRepository', () => {
 
   afterEach(async () => {
     // Clean up events after each test
-    await ECAEvent.destroy({ where: {}, force: true });
+    await ECAEvent.destroy({ where: { ecaId: testEcaId }, force: true });
   });
 
   describe('create', () => {

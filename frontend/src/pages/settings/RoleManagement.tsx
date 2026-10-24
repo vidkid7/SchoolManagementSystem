@@ -4,7 +4,7 @@
  * Allows admins to manage roles and permissions
  */
 
-import { Fragment, useState, useEffect } from 'react';
+import { Fragment, useCallback, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -12,8 +12,6 @@ import {
   Typography,
   Button,
   Grid,
-  Card,
-  CardContent,
   Table,
   TableBody,
   TableCell,
@@ -28,17 +26,11 @@ import {
   DialogActions,
   TextField,
   FormControlLabel,
-  Checkbox,
   Switch,
   useTheme,
   CircularProgress,
   Alert,
   Collapse,
-  Divider,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -52,10 +44,7 @@ import {
 } from '@mui/icons-material';
 import { apiClient } from '../../services/apiClient';
 import { getApiErrorMessage, isRoleCodeValid } from './roleFormValidation';
-import { motion, AnimatePresence } from 'framer-motion';
 import { C, useAdminStyles, R } from '../../theme/designTokens';
-
-const MotionCard = motion.create(Card);
 
 interface Permission {
   id: string;
@@ -98,7 +87,7 @@ const PERMISSION_CATEGORIES = [
 const PERMISSION_ACTIONS = ['create', 'read', 'update', 'delete', 'manage'];
 
 export const RoleManagement = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const theme = useTheme();
   const S = useAdminStyles(theme);
   
@@ -124,11 +113,17 @@ export const RoleManagement = () => {
     isActive: true,
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const resetRoleForm = () => setRoleForm({ name: '', code: '', description: '', isActive: true });
+  const openCreateRole = () => {
+    resetRoleForm();
+    setRoleDialog({ open: true, mode: 'create' });
+  };
+  const closeRoleDialog = () => {
+    resetRoleForm();
+    setRoleDialog({ open: false, mode: 'create' });
+  };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const [rolesRes, permissionsRes] = await Promise.all([
@@ -137,13 +132,17 @@ export const RoleManagement = () => {
       ]);
       setRoles(rolesRes.data.data || []);
       setPermissions(permissionsRes.data.data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch data:', err);
-      setError(err.response?.data?.message || 'Failed to load data');
+      setError(getApiErrorMessage(err, 'Failed to load data'));
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchData);
+  }, [fetchData]);
 
   const handleCreateRole = async () => {
     try {
@@ -153,7 +152,7 @@ export const RoleManagement = () => {
       setRoleDialog({ open: false, mode: 'create' });
       setRoleForm({ name: '', code: '', description: '', isActive: true });
       fetchData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(getApiErrorMessage(err, 'Failed to create role'));
     }
   };
@@ -167,7 +166,7 @@ export const RoleManagement = () => {
       setRoleDialog({ open: false, mode: 'create' });
       setRoleForm({ name: '', code: '', description: '', isActive: true });
       fetchData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(getApiErrorMessage(err, 'Failed to update role'));
     }
   };
@@ -179,8 +178,8 @@ export const RoleManagement = () => {
       await apiClient.delete(`/api/v1/config/roles/${roleId}`);
       setSuccess(t('roles.roleDeleted'));
       fetchData();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete role');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to delete role'));
     }
   };
 
@@ -188,7 +187,7 @@ export const RoleManagement = () => {
     try {
       await apiClient.put(`/api/v1/config/roles/${role.id}`, { isActive: !role.isActive });
       fetchData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(getApiErrorMessage(err, 'Failed to update role'));
     }
   };
@@ -200,8 +199,8 @@ export const RoleManagement = () => {
       setSuccess(t('roles.permissionsUpdated'));
       setPermissionDialog({ open: false });
       fetchData();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update permissions');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to update permissions'));
     }
   };
 
@@ -227,10 +226,6 @@ export const RoleManagement = () => {
       newExpanded.add(roleId);
     }
     setExpandedRoles(newExpanded);
-  };
-
-  const getPermissionsByCategory = (category: string) => {
-    return permissions.filter(p => p.category === category);
   };
 
   const roleCodeIsValid = isRoleCodeValid(roleForm.code);
@@ -261,7 +256,7 @@ export const RoleManagement = () => {
           </Box>
           <Button
             startIcon={<AddIcon />}
-            onClick={() => setRoleDialog({ open: true, mode: 'create' })}
+            onClick={openCreateRole}
             sx={{ ...S.BTN_PRIMARY, borderRadius: R.lg }}
           >
             {t('roles.addRole')}
@@ -361,6 +356,7 @@ export const RoleManagement = () => {
                         size="small"
                         onClick={() => openEditRole(role)}
                         disabled={role.isSystem}
+                        aria-label={t('staff.edit')}
                         title={t('staff.edit')}
                       >
                         <EditIcon fontSize="small" />
@@ -369,6 +365,7 @@ export const RoleManagement = () => {
                         size="small"
                         onClick={() => handleDeleteRole(role.id)}
                         disabled={role.isSystem}
+                        aria-label={t('common.delete')}
                         title={t('common.delete')}
                         sx={{ color: 'error.main' }}
                       >
@@ -406,7 +403,7 @@ export const RoleManagement = () => {
       </TableContainer>
 
       {/* Create/Edit Role Dialog */}
-      <Dialog open={roleDialog.open} onClose={() => setRoleDialog({ open: false, mode: 'create' })} maxWidth="sm" fullWidth>
+      <Dialog open={roleDialog.open} onClose={closeRoleDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
           {roleDialog.mode === 'create' ? t('roles.createRole') : t('roles.updateRole')}
         </DialogTitle>
@@ -416,6 +413,7 @@ export const RoleManagement = () => {
               <TextField
                 label={t('roles.roleName')}
                 fullWidth
+                required
                 value={roleForm.name}
                 onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })}
               />
@@ -424,6 +422,7 @@ export const RoleManagement = () => {
               <TextField
                 label={t('roles.roleCode')}
                 fullWidth
+                required={roleDialog.mode === 'create'}
                 value={roleForm.code}
                 onChange={(e) => setRoleForm({ ...roleForm, code: e.target.value.toUpperCase().replace(/\s/g, '_') })}
                 disabled={roleDialog.mode === 'edit'}
@@ -458,7 +457,7 @@ export const RoleManagement = () => {
           </Grid>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setRoleDialog({ open: false, mode: 'create' })}>
+          <Button onClick={closeRoleDialog}>
             {t('common.cancel')}
           </Button>
           <Button
@@ -488,7 +487,11 @@ export const RoleManagement = () => {
           <PermissionMatrix
             permissions={permissions}
             rolePermissions={permissionDialog.role?.permissions || []}
-            onSave={(permIds) => handleSavePermissions(permissionDialog.role?.id!, permIds)}
+            onSave={(permIds) => {
+              if (permissionDialog.role) {
+                void handleSavePermissions(permissionDialog.role.id, permIds);
+              }
+            }}
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -524,21 +527,6 @@ const PermissionMatrix = ({ permissions, rolePermissions, onSave }: PermissionMa
     } else {
       newSelected.add(permissionId);
     }
-    setSelectedPermissions(newSelected);
-  };
-
-  const handleCategoryToggle = (category: string, action: string) => {
-    const categoryPerms = permissions.filter(p => p.category === category && p.action === action);
-    const allSelected = categoryPerms.every(p => selectedPermissions.has(p.id));
-    
-    const newSelected = new Set(selectedPermissions);
-    categoryPerms.forEach(p => {
-      if (allSelected) {
-        newSelected.delete(p.id);
-      } else {
-        newSelected.add(p.id);
-      }
-    });
     setSelectedPermissions(newSelected);
   };
 

@@ -331,7 +331,10 @@ class AcademicController {
       throw new ValidationError('topicId and completedHours are required');
     }
 
-    await academicService.updateTopicProgress(Number(topicId), Number(completedHours));
+    const updated = await academicService.updateTopicProgress(Number(topicId), Number(completedHours));
+    if (!updated) {
+      throw new NotFoundError('Syllabus topic');
+    }
     sendSuccess(res, { topicId, completedHours }, 'Syllabus progress updated successfully');
   });
 

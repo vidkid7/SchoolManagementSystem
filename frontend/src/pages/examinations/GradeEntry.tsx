@@ -397,6 +397,7 @@ export const GradeEntry = () => {
               <Select
                 id="grade-entry-exam"
                 labelId="grade-entry-exam-label"
+                name="examId"
                 value={selectedExam}
                 label={t('examinations.exam')}
                 onChange={(e) => setSelectedExam(e.target.value)}
@@ -421,6 +422,7 @@ export const GradeEntry = () => {
               <Select
                 id="grade-entry-class"
                 labelId="grade-entry-class-label"
+                name="classId"
                 value={selectedClass}
                 label={t('common.class')}
                 onChange={(e) => setSelectedClass(e.target.value)}
@@ -449,6 +451,7 @@ export const GradeEntry = () => {
               <Select
                 id="grade-entry-section"
                 labelId="grade-entry-section-label"
+                name="section"
                 value={selectedSection}
                 label={t('common.section')}
                 onChange={(e) => setSelectedSection(e.target.value)}
@@ -467,6 +470,7 @@ export const GradeEntry = () => {
               <Select
                 id="grade-entry-subject"
                 labelId="grade-entry-subject-label"
+                name="subjectId"
                 value={selectedSubject}
                 label={t('common.subject')}
                 onChange={(e) => setSelectedSubject(e.target.value)}
@@ -524,6 +528,8 @@ export const GradeEntry = () => {
               </Button>
               <input
                 ref={importInputRef}
+                id="grade-entry-import-file"
+                name="gradeImportFile"
                 type="file"
                 accept=".csv,text/csv"
                 hidden

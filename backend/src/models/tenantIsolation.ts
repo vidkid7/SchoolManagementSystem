@@ -9,6 +9,9 @@ import Staff from './Staff.model';
 import StaffAssignment from './StaffAssignment.model';
 import StaffDocument from './StaffDocument.model';
 import StaffAttendance from './StaffAttendance.model';
+import StaffLeaveRequest from './StaffLeaveRequest.model';
+import StaffTask from './StaffTask.model';
+import StaffWorkSchedule from './StaffWorkSchedule.model';
 import AttendanceRecord from './AttendanceRecord.model';
 import LeaveApplication from './LeaveApplication.model';
 import Exam from './Exam.model';
@@ -36,6 +39,7 @@ import ECAAchievement from './ECAAchievement.model';
 import Event from './Event.model';
 import Certificate from './Certificate.model';
 import GradingScheme from './GradingScheme.model';
+import AttendanceRule from './AttendanceRule.model';
 import NotificationTemplate from './NotificationTemplate.model';
 import AuditLog from './AuditLog.model';
 import ArchiveMetadata from './ArchiveMetadata.model';
@@ -58,6 +62,7 @@ import HostelMessMenu from './HostelMessMenu.model';
 import HostelMealAttendance from './HostelMealAttendance.model';
 import HostelInventoryItem from './HostelInventoryItem.model';
 import BehaviorRecord from './BehaviorRecord.model';
+import StudentTransferHistory from './StudentTransferHistory.model';
 
 type TenantOptions = {
   where?: Record<string, unknown>;
@@ -77,10 +82,14 @@ const SCHOOL_CONFIG_SCOPED_TABLES = new Set([
   'subjects',
   'class_subjects',
   'students',
+  'student_transfer_history',
   'staff',
   'staff_assignments',
   'staff_documents',
   'staff_attendance',
+  'staff_leave_requests',
+  'staff_tasks',
+  'staff_work_schedules',
   'attendance',
   'leave_applications',
   'exams',
@@ -126,10 +135,14 @@ const TENANT_MODELS: Array<ModelStatic<Model>> = [
   Subject,
   ClassSubject,
   Student,
+  StudentTransferHistory,
   Staff,
   StaffAssignment,
   StaffDocument,
   StaffAttendance,
+  StaffLeaveRequest,
+  StaffTask,
+  StaffWorkSchedule,
   AttendanceRecord,
   LeaveApplication,
   Exam,
@@ -160,6 +173,7 @@ const TENANT_MODELS: Array<ModelStatic<Model>> = [
   Event,
   Certificate,
   GradingScheme,
+  AttendanceRule,
   NotificationTemplate,
   AuditLog,
   ArchiveMetadata,

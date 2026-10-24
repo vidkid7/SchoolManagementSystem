@@ -702,51 +702,15 @@ class ExamController {
         return;
       }
 
-      const schoolInfo: SchoolInfo = {
-        nameEn: process.env.SCHOOL_NAME || 'School Management System',
-        addressEn: process.env.SCHOOL_ADDRESS || 'Kathmandu, Nepal',
-        phone: process.env.SCHOOL_PHONE || '+977-1-1234567',
-        email: process.env.SCHOOL_EMAIL || 'info@school.edu.np'
-      };
-
-      const options: ReportCardOptions = {
-        language: 'bilingual',
-        format: 'ledger',
-        includeSchoolSeal: true,
-        includePrincipalSignature: true,
-        includeClassTeacherSignature: true
-      };
-
-      const results = [];
-      const errorsList = [];
-
-      for (const studentId of studentIds) {
-        try {
-          const pdfBuffer = await examService.generateReportCard(
-            studentId,
-            termId,
-            academicYearId,
-            schoolInfo,
-            options
-          );
-          results.push({ studentId, success: true });
-        } catch (error) {
-          errorsList.push({
-            studentId,
-            error: error instanceof Error ? error.message : 'Unknown error'
-          });
+      // Report card PDFs were generated and discarded here, yet the API
+      // reported success. Keep the workflow fail-closed until an email
+      // transport is configured so the UI never claims that messages were sent.
+      res.status(501).json({
+        success: false,
+        error: {
+          code: 'DELIVERY_UNAVAILABLE',
+          message: 'Email delivery is not configured. No report cards were sent.'
         }
-      }
-
-      res.status(200).json({
-        success: true,
-        data: {
-          successCount: results.length,
-          failureCount: errorsList.length,
-          results,
-          errors: errorsList
-        },
-        message: `Report cards processed: ${results.length} successful, ${errorsList.length} failed`
       });
     } catch (error) {
       next(error);

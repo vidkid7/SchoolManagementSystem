@@ -37,9 +37,7 @@ async function checkLocalDatabase() {
         console.log('     ---');
       });
       
-      console.log('\n🔐 Default passwords (if users were created by seeding):');
-      console.log('  - admin: Admin@123');
-      console.log('  - municipalityadmin: Municipality@123');
+      console.log('\nDemo account passwords are supplied through the local seed environment.');
     }
 
     await sequelize.close();

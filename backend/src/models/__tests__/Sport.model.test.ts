@@ -39,12 +39,14 @@ describe('Sport Model', () => {
 
     it('should have correct category enum values', () => {
       const categoryAttr = Sport.getAttributes().category;
-      expect(categoryAttr.type.toString({})).toContain('ENUM');
+      expect(categoryAttr.type).toHaveProperty('key', 'ENUM');
+      expect(categoryAttr.type).toHaveProperty('values', ['individual', 'team', 'traditional']);
     });
 
     it('should have correct status enum values', () => {
       const statusAttr = Sport.getAttributes().status;
-      expect(statusAttr.type.toString({})).toContain('ENUM');
+      expect(statusAttr.type).toHaveProperty('key', 'ENUM');
+      expect(statusAttr.type).toHaveProperty('values', ['active', 'inactive']);
     });
   });
 

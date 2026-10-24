@@ -35,24 +35,24 @@ export class ECAAchievement
   extends Model<ECAAchievementAttributes, ECAAchievementCreationAttributes>
   implements ECAAchievementAttributes
 {
-  public achievementId!: number;
-  public ecaId!: number;
-  public studentId!: number;
-  public eventId?: number;
-  public title!: string;
-  public titleNp?: string;
-  public type!: 'award' | 'medal' | 'certificate' | 'recognition' | 'position';
-  public level!: 'school' | 'district' | 'regional' | 'national' | 'international';
-  public position?: string;
-  public description?: string;
-  public descriptionNp?: string;
-  public achievementDate!: Date;
-  public achievementDateBS?: string;
-  public certificateUrl?: string;
-  public photoUrl?: string;
-  public remarks?: string;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public achievementId: number;
+  declare public ecaId: number;
+  declare public studentId: number;
+  declare public eventId?: number;
+  declare public title: string;
+  declare public titleNp?: string;
+  declare public type: 'award' | 'medal' | 'certificate' | 'recognition' | 'position';
+  declare public level: 'school' | 'district' | 'regional' | 'national' | 'international';
+  declare public position?: string;
+  declare public description?: string;
+  declare public descriptionNp?: string;
+  declare public achievementDate: Date;
+  declare public achievementDateBS?: string;
+  declare public certificateUrl?: string;
+  declare public photoUrl?: string;
+  declare public remarks?: string;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   public isHighLevel(): boolean {
     return ['national', 'international'].includes(this.level);

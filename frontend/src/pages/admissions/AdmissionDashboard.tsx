@@ -3,7 +3,7 @@
  * Overview of admission statistics and quick actions
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Grid,
@@ -12,6 +12,7 @@ import {
   Card,
   CardContent,
   Button,
+  Alert,
   CircularProgress,
   useTheme,
 } from '@mui/material';
@@ -44,22 +45,24 @@ export function AdmissionDashboard() {
     pendingTests: 0,
     pendingInterviews: 0,
   });
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setLoading(true);
+      setError(false);
       const response = await api.get('/admissions/reports');
       setStats(mapAdmissionReportStats(response.data?.data));
-    } catch (error) {
-      console.error('Failed to fetch admission stats:', error);
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchStats);
+  }, [fetchStats]);
 
   const statCards = [
     {
@@ -103,6 +106,15 @@ export function AdmissionDashboard() {
   return (
     <Box>
       <Paper sx={{ ...S.GLASS, p: 3, mb: 3 }}>
+        {error && (
+          <Alert
+            severity="error"
+            action={<Button color="inherit" size="small" onClick={() => void fetchStats()}>{t('common.retry')}</Button>}
+            sx={{ mb: 2 }}
+          >
+            {t('admissions.failedToLoadStats')}
+          </Alert>
+        )}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <TrendIcon sx={{ fontSize: 32, color: 'primary.main' }} />

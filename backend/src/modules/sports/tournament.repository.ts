@@ -247,13 +247,12 @@ class TournamentRepository {
 
       const offset = (page - 1) * limit;
 
-      const rows = await Tournament.findAll({
+      const { rows, count } = await Tournament.findAndCountAll({
         where,
         order: [['startDate', 'DESC']],
         limit,
         offset
       });
-      const count = rows.length;
 
       return {
         tournaments: rows,

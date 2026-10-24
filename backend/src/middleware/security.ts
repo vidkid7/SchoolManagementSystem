@@ -4,6 +4,7 @@ import cors from 'cors';
 import hpp from 'hpp';
 import compression from 'compression';
 import { env } from '@config/env';
+import { AuthorizationError } from './errorHandler';
 
 /**
  * Security Middleware Configuration
@@ -60,7 +61,7 @@ export const corsMiddleware = cors({
       // Allow all Railway-deployed frontends
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new AuthorizationError('Origin not allowed by CORS'));
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],

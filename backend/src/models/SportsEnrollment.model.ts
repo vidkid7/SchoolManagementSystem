@@ -29,17 +29,17 @@ export class SportsEnrollment
   extends Model<SportsEnrollmentAttributes, SportsEnrollmentCreationAttributes>
   implements SportsEnrollmentAttributes
 {
-  public enrollmentId!: number;
-  public sportId!: number;
-  public studentId!: number;
-  public teamId?: number;
-  public enrollmentDate!: Date;
-  public status!: 'active' | 'withdrawn' | 'completed';
-  public attendanceCount!: number;
-  public totalSessions!: number;
-  public remarks?: string;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public enrollmentId: number;
+  declare public sportId: number;
+  declare public studentId: number;
+  declare public teamId?: number;
+  declare public enrollmentDate: Date;
+  declare public status: 'active' | 'withdrawn' | 'completed';
+  declare public attendanceCount: number;
+  declare public totalSessions: number;
+  declare public remarks?: string;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   /**
    * Mark attendance for a practice session

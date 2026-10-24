@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { refreshAuthTokens } from './tokenRefresh';
+import { isRefreshTokenRejected, refreshAuthTokens } from './tokenRefresh';
 
 jest.mock('axios', () => ({
   __esModule: true,
@@ -38,5 +38,17 @@ describe('refreshAuthTokens', () => {
     expect(second).toEqual(response.data.data);
     expect(localStorage.getItem('accessToken')).toBe('new-access-token');
     expect(localStorage.getItem('refreshToken')).toBe('new-refresh-token');
+  });
+});
+
+describe('isRefreshTokenRejected', () => {
+  it('identifies an explicit invalid or expired refresh-token response', () => {
+    expect(isRefreshTokenRejected({ response: { status: 401 } })).toBe(true);
+  });
+
+  it('keeps sessions for backend outages and network timeouts', () => {
+    expect(isRefreshTokenRejected({ response: { status: 503 } })).toBe(false);
+    expect(isRefreshTokenRejected({ code: 'ECONNABORTED' })).toBe(false);
+    expect(isRefreshTokenRejected(new Error('network unavailable'))).toBe(false);
   });
 });

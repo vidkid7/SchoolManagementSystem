@@ -493,7 +493,9 @@ describe('Property 7: JWT Token Contains Role Information', () => {
           const verifiedPayload = jwtService.verifyAccessToken(token);
 
           // Verify we can make authorization decisions based on role
-          const isAdmin = verifiedPayload.role === UserRole.SCHOOL_ADMIN;
+          const isAdmin =
+            verifiedPayload.role === UserRole.SCHOOL_ADMIN ||
+            verifiedPayload.role === UserRole.MUNICIPALITY_ADMIN;
           const isTeacher = 
             verifiedPayload.role === UserRole.SUBJECT_TEACHER ||
             verifiedPayload.role === UserRole.CLASS_TEACHER ||

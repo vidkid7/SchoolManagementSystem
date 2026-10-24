@@ -4,8 +4,9 @@ import { YearSelectableDateField } from '../../components/YearSelectableDatePick
  * Create single or bulk invoices
  */
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
+import { isAxiosError } from 'axios';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import { useTranslation } from 'react-i18next';
 import {
@@ -37,7 +38,7 @@ import {
   Person as PersonIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useAdminStyles } from '../../theme/designTokens';
 
 interface FeeStructure {
   feeStructureId: number;
@@ -67,12 +68,21 @@ interface Class {
   section: string;
 }
 
+const getApiErrorMessage = (error: unknown, fallback: string) => {
+  if (isAxiosError<{ message?: string }>(error)) return error.response?.data?.message || fallback;
+  return error instanceof Error ? error.message : fallback;
+};
+
 export function InvoiceGeneration() {
   const { t } = useTranslation();
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const navigate = useSlugNavigate();
-  const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
+  const location = useLocation();
+  const requestedFeeStructureId = (location.state as { feeStructureId?: unknown } | null)?.feeStructureId;
+  const preselectedFeeStructureId = typeof requestedFeeStructureId === 'number' || typeof requestedFeeStructureId === 'string'
+    ? String(requestedFeeStructureId)
+    : '';
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -84,28 +94,24 @@ export function InvoiceGeneration() {
   const [classes, setClasses] = useState<Class[]>([]);
 
   // Single invoice form
-  const [singleForm, setSingleForm] = useState({
+  const [singleForm, setSingleForm] = useState(() => ({
     studentId: '',
-    feeStructureId: '',
+    feeStructureId: preselectedFeeStructureId,
     dueDate: '',
     discount: 0,
     discountReason: '',
     remarks: '',
-  });
+  }));
 
   // Bulk invoice form
-  const [bulkForm, setBulkForm] = useState({
+  const [bulkForm, setBulkForm] = useState(() => ({
     classId: '',
-    feeStructureId: '',
+    feeStructureId: preselectedFeeStructureId,
     dueDate: '',
     studentIds: [] as number[],
-  });
+  }));
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [feeRes, studentsRes, classesRes] = await Promise.all([
         apiClient.get('/finance/fee-structures'),
@@ -119,7 +125,13 @@ export function InvoiceGeneration() {
     } catch (err) {
       console.error('Failed to fetch data:', err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Invoice generation synchronizes its lookup data with the API on mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchData();
+  }, [fetchData]);
 
   const handleGenerateSingle = async () => {
     try {
@@ -140,8 +152,8 @@ export function InvoiceGeneration() {
       setTimeout(() => {
         navigate(`/finance/invoices`);
       }, 2000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('finance.failedToGenerateInvoice'));
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, t('finance.failedToGenerateInvoice')));
     } finally {
       setLoading(false);
     }
@@ -170,8 +182,8 @@ export function InvoiceGeneration() {
       setTimeout(() => {
         navigate(`/finance/invoices`);
       }, 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('finance.failedToLoad'));
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, t('finance.failedToLoad')));
     } finally {
       setLoading(false);
     }

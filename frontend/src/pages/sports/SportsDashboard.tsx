@@ -12,6 +12,19 @@ import apiClient from '../../services/apiClient';
 
 import { useTranslation } from 'react-i18next';
 
+interface RecentMatch {
+  id: number | string;
+  team1?: string;
+  team2?: string;
+  homeTeam?: string;
+  home_team?: string;
+  awayTeam?: string;
+  away_team?: string;
+  sport?: string;
+  date: string;
+  result?: string;
+}
+
 export function SportsDashboard() {
   const navigate = useSlugNavigate();
   const goToManagement = (tab: number) => navigate(`/sports/management?tab=${tab}`);
@@ -19,7 +32,7 @@ export function SportsDashboard() {
   const S = useAdminStyles(theme);
   const { t } = useTranslation();
   const [stats, setStats] = useState({ totalSports: 0, activeSports: 0, totalTeams: 0, upcomingMatches: 0, totalPlayers: 0 });
-  const [recentMatches, setRecentMatches] = useState<any[]>([]);
+  const [recentMatches, setRecentMatches] = useState<RecentMatch[]>([]);
 
   useEffect(() => {
     Promise.all([
@@ -33,7 +46,7 @@ export function SportsDashboard() {
 
   const statCards = [
     { title: t('sports.totalSports'), value: stats.totalSports, icon: <MatchIcon sx={{ fontSize: 32 }} />, color: C.primary, bgColor: C.primaryBg, action: () => goToManagement(0) },
-    { title: t('sports.activeTeams'), value: stats.totalTeams, icon: <TeamIcon sx={{ fontSize: 32 }} />, color: C.success, bgColor: C.successBg, action: () => goToManagement(1) },
+    { title: t('sports.totalTeams'), value: stats.totalTeams, icon: <TeamIcon sx={{ fontSize: 32 }} />, color: C.success, bgColor: C.successBg, action: () => goToManagement(1) },
     { title: t('sports.totalPlayers'), value: stats.totalPlayers, icon: <TeamIcon sx={{ fontSize: 32 }} />, color: C.info, bgColor: C.infoBg, action: () => goToManagement(4) },
     { title: t('sports.upcomingMatches'), value: stats.upcomingMatches, icon: <TrophyIcon sx={{ fontSize: 32 }} />, color: C.warning, bgColor: C.warningBg, action: () => goToManagement(2) },
   ];
@@ -59,7 +72,13 @@ export function SportsDashboard() {
       <Grid container spacing={3}>
         {statCards.map((card, i) => (
           <Grid item xs={12} sm={6} md={3} key={i}>
-            <Card sx={{ ...S.GLASS, cursor: 'pointer', '&:hover': { transform: 'translateY(-4px)' }, transition: 'transform 0.2s' }} onClick={card.action}>
+            <Card
+              component="button"
+              type="button"
+              aria-label={`${card.title}: ${card.value}`}
+              sx={{ ...S.GLASS, cursor: 'pointer', width: '100%', textAlign: 'left', font: 'inherit', color: 'inherit', border: 0, p: 0, '&:hover': { transform: 'translateY(-4px)' }, transition: 'transform 0.2s' }}
+              onClick={card.action}
+            >
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <Box>
@@ -84,7 +103,7 @@ export function SportsDashboard() {
               <Typography color="text.secondary" align="center" py={4}>{t('sports.noRecentMatches')}</Typography>
             ) : (
               <List>
-                {recentMatches.map((match: any) => (
+                {recentMatches.map((match) => (
                   <ListItem key={match.id}>
                     <ListItemText primary={`${match.team1 || match.homeTeam || match.home_team || t('sports.homeTeam')} vs ${match.team2 || match.awayTeam || match.away_team || t('sports.awayTeam')}`} secondary={`${match.sport} • ${new Date(match.date).toLocaleDateString()}`} />
                     <Chip label={match.result || 'Upcoming'} size="small" />

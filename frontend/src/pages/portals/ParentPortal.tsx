@@ -68,6 +68,23 @@ interface ChildInfo {
   rollNo: number;
 }
 
+interface ChildRecord {
+  studentId?: number;
+  id?: number;
+  name?: string;
+  class?: string;
+  section?: string;
+  rollNo?: number;
+}
+
+interface ParentAssignment { id: number; title: string; status: string; subject?: string; dueDate?: string; submittedAt?: string; grade?: string; }
+interface ParentBook { title?: string; bookTitle?: string; borrowDate?: string; issuedDate?: string; dueDate?: string; returnDate?: string; fine?: number; status?: string; }
+interface ParentActivity { name: string; category: string; enrolledDate: string; status: string; }
+interface ParentBehavior { id?: number; type?: string; title?: string; description?: string; date?: string; teacher?: string; }
+interface ParentCalendarEvent { id: number; title: string; date: string; type: string; description?: string; }
+interface ParentCertificate { id: number; title: string; type: string; issueDate: string; downloadUrl?: string | null; }
+interface ParentAnnouncement { id?: number; title?: string; date?: string; createdAt?: string; content?: string; message?: string; }
+
 const ParentPortal: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useSlugNavigate();
@@ -85,29 +102,49 @@ const ParentPortal: React.FC = () => {
   } | null>(null);
   const [notifications, setNotifications] = useState<Array<{ id: number; title: string; type: string; date: string }>>([]);
   const [grades, setGrades] = useState<Array<{ subject: string; midterm?: string; final?: string; gpa?: number }>>([]);
-  const [libraryData, setLibraryData] = useState<any[]>([]);
-  const [announcements, setAnnouncements] = useState<any[]>([]);
-  const [assignments, setAssignments] = useState<any[]>([]);
-  const [activities, setActivities] = useState<{ eca: any[]; sports: any[] }>({ eca: [], sports: [] });
-  const [behavior, setBehavior] = useState<any[]>([]);
-  const [calendar, setCalendar] = useState<any[]>([]);
-  const [certificates, setCertificates] = useState<any[]>([]);
+  const [libraryData, setLibraryData] = useState<ParentBook[]>([]);
+  const [announcements, setAnnouncements] = useState<ParentAnnouncement[]>([]);
+  const [assignments, setAssignments] = useState<ParentAssignment[]>([]);
+  const [activities, setActivities] = useState<{ eca: ParentActivity[]; sports: ParentActivity[] }>({ eca: [], sports: [] });
+  const [behavior, setBehavior] = useState<ParentBehavior[]>([]);
+  const [calendar, setCalendar] = useState<ParentCalendarEvent[]>([]);
+  const [certificates, setCertificates] = useState<ParentCertificate[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    apiClient.get('/api/v1/parents/children').then((res) => {
-      const list = res.data?.data || [];
-      setChildren(list.map((c: any) => ({ id: c.studentId ?? c.id, name: c.name, class: c.class ?? '', section: c.section ?? '', rollNo: c.rollNo ?? 0 })));
-    }).catch(() => { setChildren([]); setError(t('portal.failedToLoadData')); }).finally(() => setLoading(false));
-  }, []);
+    let isCurrent = true;
+    void Promise.resolve().then(async () => {
+      if (!isCurrent) return;
+      setLoading(true);
+      try {
+        const res = await apiClient.get('/api/v1/parents/children');
+        if (!isCurrent) return;
+        const rawChildren: unknown = res.data?.data;
+        const list = Array.isArray(rawChildren) ? rawChildren as ChildRecord[] : [];
+        setChildren(list.flatMap((child) => {
+          const id = child.studentId ?? child.id;
+          return typeof id === 'number' && child.name ? [{ id, name: child.name, class: child.class ?? '', section: child.section ?? '', rollNo: child.rollNo ?? 0 }] : [];
+        }));
+      } catch {
+        if (isCurrent) {
+          setChildren([]);
+          setError(t('portal.failedToLoadData'));
+        }
+      } finally {
+        if (isCurrent) setLoading(false);
+      }
+    });
+    return () => { isCurrent = false; };
+  }, [t]);
 
   const selectedChild = children[selectedChildIndex];
   useEffect(() => {
     if (!selectedChild?.id) return;
-    setLoading(true);
-
+    let isCurrent = true;
     const fetchChildData = async () => {
+      await Promise.resolve();
+      if (!isCurrent) return;
+      setLoading(true);
       const [summaryRes, assignRes, actRes, behRes, certRes] = await Promise.allSettled([
         apiClient.get(`/api/v1/parents/children/${selectedChild.id}/summary`),
         apiClient.get(`/api/v1/parents/children/${selectedChild.id}/assignments`),
@@ -115,6 +152,7 @@ const ParentPortal: React.FC = () => {
         apiClient.get(`/api/v1/parents/children/${selectedChild.id}/behavior`),
         apiClient.get(`/api/v1/parents/children/${selectedChild.id}/certificates`),
       ]);
+      if (!isCurrent) return;
 
       if (summaryRes.status === 'fulfilled') {
         const d = summaryRes.value.data?.data || {};
@@ -131,24 +169,32 @@ const ParentPortal: React.FC = () => {
         setLibraryData([]);
       }
 
-      setAssignments(assignRes.status === 'fulfilled' ? (assignRes.value.data?.data || []) : []);
-      setActivities(actRes.status === 'fulfilled' ? (actRes.value.data?.data || { eca: [], sports: [] }) : { eca: [], sports: [] });
-      setBehavior(behRes.status === 'fulfilled' ? (behRes.value.data?.data || []) : []);
-      setCertificates(certRes.status === 'fulfilled' ? (certRes.value.data?.data || []) : []);
+      setAssignments(assignRes.status === 'fulfilled' && Array.isArray(assignRes.value.data?.data) ? assignRes.value.data.data : []);
+      const activityData = actRes.status === 'fulfilled' ? actRes.value.data?.data : null;
+      setActivities({
+        eca: Array.isArray(activityData?.eca) ? activityData.eca : [],
+        sports: Array.isArray(activityData?.sports) ? activityData.sports : [],
+      });
+      setBehavior(behRes.status === 'fulfilled' && Array.isArray(behRes.value.data?.data) ? behRes.value.data.data : []);
+      setCertificates(certRes.status === 'fulfilled' && Array.isArray(certRes.value.data?.data) ? certRes.value.data.data : []);
       setLoading(false);
     };
 
-    fetchChildData();
+    void fetchChildData();
+    return () => { isCurrent = false; };
   }, [selectedChild?.id]);
 
   useEffect(() => {
-    Promise.allSettled([
+    let isCurrent = true;
+    void Promise.allSettled([
       apiClient.get('/api/v1/communication/announcements', { params: { limit: 20 } }),
       apiClient.get('/api/v1/parents/calendar'),
     ]).then(([annRes, calRes]) => {
-      setAnnouncements(annRes.status === 'fulfilled' ? (annRes.value.data?.data || []) : []);
-      setCalendar(calRes.status === 'fulfilled' ? (calRes.value.data?.data || []) : []);
+      if (!isCurrent) return;
+      setAnnouncements(annRes.status === 'fulfilled' && Array.isArray(annRes.value.data?.data) ? annRes.value.data.data : []);
+      setCalendar(calRes.status === 'fulfilled' && Array.isArray(calRes.value.data?.data) ? calRes.value.data.data : []);
     });
+    return () => { isCurrent = false; };
   }, []);
 
   const attendancePct = attendanceData?.percentage ?? 0;
@@ -177,8 +223,9 @@ const ParentPortal: React.FC = () => {
           </Box>
         </Box>
         <FormControl sx={{ minWidth: 220 }}>
-          <InputLabel>{t('portal.selectChild')}</InputLabel>
+          <InputLabel id="parent-select-child-label">{t('portal.selectChild')}</InputLabel>
           <Select
+            labelId="parent-select-child-label"
             value={children.length > 0 ? selectedChildIndex : ''}
             onChange={(e) => setSelectedChildIndex(Number(e.target.value))}
             label={t('portal.selectChild')}
@@ -370,7 +417,7 @@ const ParentPortal: React.FC = () => {
           <TabPanel value={tabValue} index={2}>
             {assignments.length > 0 ? (
               <List>
-                {assignments.map((assign: any) => (
+                {assignments.map((assign) => (
                   <ListItem key={assign.id} divider sx={S.TR_HOVER}>
                     <ListItemIcon>
                       <AssignmentIcon sx={{ color: assign.status === 'submitted' ? C.success : C.warning }} />
@@ -400,7 +447,7 @@ const ParentPortal: React.FC = () => {
           <TabPanel value={tabValue} index={3}>
             {libraryData.length > 0 ? (
               <List>
-                {libraryData.map((book: any, idx: number) => (
+                {libraryData.map((book, idx) => (
                   <ListItem key={idx} divider sx={S.TR_HOVER}>
                     <ListItemIcon>
                       <LibraryIcon sx={{ color: C.primary }} />
@@ -428,7 +475,7 @@ const ParentPortal: React.FC = () => {
             <Typography variant="h6" fontWeight={600} gutterBottom>{t('portal.ecaActivities')}</Typography>
             {activities.eca.length > 0 ? (
               <List>
-                {activities.eca.map((eca: any, idx: number) => (
+                {activities.eca.map((eca, idx) => (
                   <ListItem key={idx} divider sx={S.TR_HOVER}>
                     <ListItemIcon>
                       <SportsIcon sx={{ color: C.primary }} />
@@ -448,7 +495,7 @@ const ParentPortal: React.FC = () => {
             <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mt: 3 }}>{t('portal.sportsActivitiesLabel')}</Typography>
             {activities.sports.length > 0 ? (
               <List>
-                {activities.sports.map((sport: any, idx: number) => (
+                {activities.sports.map((sport, idx) => (
                   <ListItem key={idx} divider sx={S.TR_HOVER}>
                     <ListItemIcon>
                       <SportsIcon sx={{ color: C.purple }} />
@@ -470,7 +517,7 @@ const ParentPortal: React.FC = () => {
           <TabPanel value={tabValue} index={5}>
             {behavior.length > 0 ? (
               <List>
-                {behavior.map((record: any, idx: number) => (
+                {behavior.map((record, idx) => (
                   <ListItem key={idx} divider sx={S.TR_HOVER}>
                     <ListItemIcon>
                       <BehaviorIcon sx={{ color: record.type === 'positive' ? C.success : C.warning }} />
@@ -497,7 +544,7 @@ const ParentPortal: React.FC = () => {
           <TabPanel value={tabValue} index={6}>
             {calendar.length > 0 ? (
               <List>
-                {calendar.map((event: any) => (
+                {calendar.map((event) => (
                   <ListItem key={event.id} divider sx={S.TR_HOVER}>
                     <ListItemIcon>
                       <CalendarIcon sx={{ color: C.primary }} />
@@ -529,7 +576,7 @@ const ParentPortal: React.FC = () => {
           <TabPanel value={tabValue} index={7}>
             {certificates.length > 0 ? (
               <List>
-                {certificates.map((cert: any) => (
+                {certificates.map((cert) => (
                   <ListItem key={cert.id} divider sx={S.TR_HOVER}>
                     <ListItemIcon>
                       <CertificateIcon sx={{ color: C.primary }} />
@@ -576,28 +623,32 @@ const ParentPortal: React.FC = () => {
           <TabPanel value={tabValue} index={9}>
             {announcements.length > 0 ? (
               <List>
-                {announcements.map((ann: any, idx: number) => (
-                  <ListItem key={ann.id || idx} divider sx={S.TR_HOVER}>
-                    <ListItemIcon>
-                      <AnnouncementIcon sx={{ color: C.info }} />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={ann.title || t('portal.announcements')}
-                      secondary={
-                        <>
-                          <Typography variant="caption" color="text.secondary" component="span">
-                            {ann.date || ann.createdAt ? new Date(ann.date || ann.createdAt).toLocaleDateString() : ''}
-                          </Typography>
-                          {(ann.content || ann.message) && (
-                            <Typography variant="body2" color="text.secondary" component="p" sx={{ mt: 0.5 }}>
-                              {(ann.content || ann.message).substring(0, 150)}{(ann.content || ann.message).length > 150 ? '...' : ''}
+                {announcements.map((ann, idx) => {
+                  const announcementDate = ann.date ?? ann.createdAt;
+                  const announcementText = ann.content ?? ann.message;
+                  return (
+                    <ListItem key={ann.id || idx} divider sx={S.TR_HOVER}>
+                      <ListItemIcon>
+                        <AnnouncementIcon sx={{ color: C.info }} />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={ann.title || t('portal.announcements')}
+                        secondary={
+                          <>
+                            <Typography variant="caption" color="text.secondary" component="span">
+                              {announcementDate ? new Date(announcementDate).toLocaleDateString() : ''}
                             </Typography>
-                          )}
-                        </>
-                      }
-                    />
-                  </ListItem>
-                ))}
+                            {announcementText && (
+                              <Typography variant="body2" color="text.secondary" component="p" sx={{ mt: 0.5 }}>
+                                {announcementText.substring(0, 150)}{announcementText.length > 150 ? '...' : ''}
+                              </Typography>
+                            )}
+                          </>
+                        }
+                      />
+                    </ListItem>
+                  );
+                })}
               </List>
             ) : (
               <Typography variant="body2" color="text.secondary" sx={S.EMPTY_STATE}>{t('portal.noAnnouncements')}</Typography>

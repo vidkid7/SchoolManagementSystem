@@ -33,18 +33,18 @@ export class GroupConversation
   extends Model<GroupConversationAttributes, GroupConversationCreationAttributes>
   implements GroupConversationAttributes
 {
-  public groupConversationId!: number;
-  public name!: string;
-  public type!: 'class' | 'announcement' | 'custom';
-  public description?: string;
-  public classId?: number;
-  public createdBy!: number;
-  public isAnnouncementOnly!: boolean;
-  public lastMessageId?: number;
-  public lastMessageAt?: Date;
-  public isActive!: boolean;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public groupConversationId: number;
+  declare public name: string;
+  declare public type: 'class' | 'announcement' | 'custom';
+  declare public description?: string;
+  declare public classId?: number;
+  declare public createdBy: number;
+  declare public isAnnouncementOnly: boolean;
+  declare public lastMessageId?: number;
+  declare public lastMessageAt?: Date;
+  declare public isActive: boolean;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   // Instance methods
   public async updateLastMessage(messageId: number, messageDate: Date): Promise<void> {

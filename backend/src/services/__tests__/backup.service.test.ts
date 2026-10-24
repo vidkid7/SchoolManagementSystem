@@ -40,6 +40,10 @@ describe('BackupService', () => {
     // Clear all mocks
     jest.clearAllMocks();
     (pipeline as jest.Mock).mockResolvedValue(undefined);
+    (fs.lstat as jest.Mock).mockResolvedValue({
+      isFile: () => true,
+      isSymbolicLink: () => false,
+    });
   });
 
   afterEach(() => {
@@ -296,11 +300,33 @@ describe('BackupService', () => {
     it('should handle missing backup files', async () => {
       const filename = 'nonexistent.sql.gz';
 
-      (fs.access as jest.Mock).mockRejectedValue(new Error('File not found'));
+      (fs.lstat as jest.Mock).mockRejectedValue(new Error('File not found'));
 
       const isValid = await backupService.verifyBackup(filename);
 
       expect(isValid).toBe(false);
+    });
+
+    it.each([
+      '../outside.sql',
+      'backup_../../outside.sql.gz',
+      'backup_..\\..\\outside.sql.gz',
+      'C:\\private\\backup.sql',
+      '/etc/passwd',
+    ])('rejects a path outside the backup directory: %s', async (filename) => {
+      await expect(backupService.verifyBackup(filename)).resolves.toBe(false);
+      expect(fs.lstat).not.toHaveBeenCalled();
+      expect(fs.access).not.toHaveBeenCalled();
+    });
+
+    it('rejects a backup symlink that points outside the backup directory', async () => {
+      (fs.lstat as jest.Mock).mockResolvedValue({
+        isFile: () => true,
+        isSymbolicLink: () => true,
+      });
+
+      await expect(backupService.verifyBackup('backup_outside.sql')).resolves.toBe(false);
+      expect(fs.access).not.toHaveBeenCalled();
     });
   });
 
@@ -356,12 +382,25 @@ describe('BackupService', () => {
     it('should handle missing backup file', async () => {
       const filename = 'nonexistent.sql.gz';
 
-      (fs.access as jest.Mock).mockRejectedValue(new Error('File not found'));
+      (fs.lstat as jest.Mock).mockRejectedValue(new Error('File not found'));
 
       const result = await backupService.restoreBackup(filename);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('not found');
+    });
+
+    it.each([
+      '../outside.sql',
+      'backup_../../outside.sql.gz',
+      'backup_..\\..\\outside.sql.gz',
+      'C:\\private\\backup.sql',
+    ])('refuses to execute a restore command for a traversal path: %s', async (filename) => {
+      const result = await backupService.restoreBackup(filename);
+
+      expect(result.success).toBe(false);
+      expect(fs.lstat).not.toHaveBeenCalled();
+      expect(exec).not.toHaveBeenCalled();
     });
   });
 });

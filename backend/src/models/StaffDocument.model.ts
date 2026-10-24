@@ -50,23 +50,23 @@ export interface StaffDocumentCreationAttributes extends Optional<StaffDocumentA
  */
 class StaffDocument extends Model<StaffDocumentAttributes, StaffDocumentCreationAttributes>
   implements StaffDocumentAttributes {
-  public documentId!: number;
-  public staffId!: number;
-  public category!: StaffDocumentCategory;
-  public documentName!: string;
-  public originalFileName!: string;
-  public documentUrl!: string;
-  public fileSize!: number;
-  public mimeType!: string;
-  public version!: number;
-  public isLatest!: boolean;
-  public uploadedBy?: number;
-  public description?: string;
-  public expiryDate?: Date;
+  declare public documentId: number;
+  declare public staffId: number;
+  declare public category: StaffDocumentCategory;
+  declare public documentName: string;
+  declare public originalFileName: string;
+  declare public documentUrl: string;
+  declare public fileSize: number;
+  declare public mimeType: string;
+  declare public version: number;
+  declare public isLatest: boolean;
+  declare public uploadedBy?: number;
+  declare public description?: string;
+  declare public expiryDate?: Date;
   
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
-  public readonly deletedAt?: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
+  declare public readonly deletedAt?: Date;
 
   /**
    * Check if document is expired

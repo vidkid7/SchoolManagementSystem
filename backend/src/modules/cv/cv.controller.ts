@@ -68,6 +68,7 @@ class CVController {
     const customization = {
       templateId: req.query.template as string,
       schoolBrandingEnabled: req.query.branding === 'true',
+      includePersonalInfo: req.query.personalInfo !== 'false',
       includePhoto: req.query.photo !== 'false',
       includeAttendance: req.query.attendance !== 'false',
       includeGrades: req.query.grades !== 'false',
@@ -96,7 +97,13 @@ class CVController {
     const studentId = Number(req.params.id);
     const customization = {
       templateId: req.query.template as string,
-      schoolBrandingEnabled: req.query.branding === 'true'
+      schoolBrandingEnabled: req.query.branding === 'true',
+      includePersonalInfo: req.query.personalInfo !== 'false',
+      includeAttendance: req.query.attendance !== 'false',
+      includeGrades: req.query.grades !== 'false',
+      includeECA: req.query.eca !== 'false',
+      includeSports: req.query.sports !== 'false',
+      includeCertificates: req.query.certificates !== 'false'
     };
 
     const pdfBuffer = await CVService.generatePDF(studentId, customization);

@@ -761,12 +761,13 @@ class FinanceController {
    * GET /api/v1/finance/statistics
    */
   getStatistics = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const [collectionReport, pendingReport, totalInvoices, paidInvoices, overdueInvoices, paidPayments] = await Promise.all([
+    const [collectionReport, pendingReport, totalInvoices, paidInvoices, overdueInvoices, partialInvoices, paidPayments] = await Promise.all([
       paymentRepository.getCollectionSummary(),
       invoiceRepository.getPendingFeesReport(),
       Invoice.count(),
       Invoice.count({ where: { status: InvoiceStatus.PAID } }),
       Invoice.count({ where: { status: InvoiceStatus.OVERDUE } }),
+      Invoice.count({ where: { status: InvoiceStatus.PARTIAL } }),
       Payment.findAll({
         where: { status: PaymentStatus.COMPLETED },
         attributes: ['paymentDate', 'amount']
@@ -797,6 +798,7 @@ class FinanceController {
       totalInvoices,
       paidInvoices,
       overdueInvoices,
+      partialInvoices,
       collectionRate: totalInvoices > 0 ? Number(((paidInvoices / totalInvoices) * 100).toFixed(2)) : 0,
       monthlyCollection: Array.from(monthlyBuckets.entries()).map(([month, amount]) => ({ month, amount })),
       feeBreakdown: paymentMethodBreakdown,
@@ -833,7 +835,7 @@ class FinanceController {
         status: 'completed',
         };
       });
-    } catch (error) {
+    } catch {
       logger.warn('Could not fetch recent transactions from database');
       transactions = [];
     }
@@ -853,8 +855,15 @@ class FinanceController {
   /**
    * GET /api/v1/finance/payment-gateways/config
    */
+  // asyncHandler expects a Promise and catches synchronous validation errors consistently.
+  // eslint-disable-next-line require-await
   getPaymentGatewayConfigs = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const config = { ...FinanceController.gatewayConfigStore };
+    const config = Object.fromEntries(
+      Object.entries(FinanceController.gatewayConfigStore).map(([key, gateway]) => {
+        const { secretKey, ...publicConfig } = gateway;
+        return [key, { ...publicConfig, secretKey: '', secretKeyConfigured: Boolean(secretKey) }];
+      })
+    );
     sendSuccess(res, config, 'Payment gateway config retrieved');
   });
 
@@ -884,6 +893,8 @@ class FinanceController {
   /**
    * PUT /api/v1/finance/payment-gateways/:gatewayKey
    */
+  // asyncHandler expects a Promise and catches synchronous validation errors consistently.
+  // eslint-disable-next-line require-await
   updatePaymentGatewayConfig = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const gatewayKey = (req.params.gatewayKey || '').toLowerCase().replace(/-/g, '_');
     const allowed = ['esewa', 'khalti', 'ime_pay'];
@@ -905,19 +916,32 @@ class FinanceController {
       secretKey: secretKey ?? current.secretKey,
       testMode: testMode ?? current.testMode,
     };
-    sendSuccess(res, FinanceController.gatewayConfigStore[gatewayKey], 'Payment gateway config updated');
+    const { secretKey: savedSecretKey, ...publicConfig } = FinanceController.gatewayConfigStore[gatewayKey];
+    sendSuccess(
+      res,
+      { ...publicConfig, secretKey: '', secretKeyConfigured: Boolean(savedSecretKey) },
+      'Payment gateway config updated'
+    );
   });
 
   /**
    * POST /api/v1/finance/payment-gateways/:gatewayKey/test
    */
+  // asyncHandler expects a Promise and catches synchronous validation errors consistently.
+  // eslint-disable-next-line require-await
   testPaymentGatewayConnection = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const gatewayKey = (req.params.gatewayKey || '').toLowerCase().replace(/-/g, '_');
     const allowed = ['esewa', 'khalti', 'ime_pay'];
     if (!allowed.includes(gatewayKey)) {
       throw new ValidationError(`Unknown gateway: ${req.params.gatewayKey}`);
     }
-    sendSuccess(res, { success: true }, 'Connection test successful');
+    res.status(501).json({
+      success: false,
+      error: {
+        code: 'GATEWAY_TEST_UNAVAILABLE',
+        message: 'Payment provider connectivity checks are not configured',
+      },
+    });
   });
 }
 

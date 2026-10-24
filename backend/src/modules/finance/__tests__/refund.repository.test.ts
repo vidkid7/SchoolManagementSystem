@@ -1,5 +1,6 @@
 import refundRepository from '../refund.repository';
 import Refund, { RefundStatus } from '@models/Refund.model';
+import { Op } from 'sequelize';
 
 /**
  * Refund Repository Unit Tests
@@ -385,8 +386,8 @@ describe('RefundRepository', () => {
       expect(Refund.findAll).toHaveBeenCalledWith({
         where: {
           requestedAt: {
-            $gte: startDate,
-            $lte: endDate
+            [Op.gte]: startDate,
+            [Op.lte]: endDate
           }
         }
       });

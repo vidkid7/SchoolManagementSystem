@@ -143,6 +143,17 @@ describe('Attachment Integration Tests', () => {
       expect(response.body.data.attachments[1].type).toBe('image');
     });
 
+    it('rejects attachment deletion URLs that only contain the caller folder as a traversal segment', async () => {
+      const response = await request(app)
+        .delete('/api/v1/communication/attachments')
+        .send({ attachmentUrl: '/uploads/attachments/messages/1/../../2/secret.txt' });
+
+      expect(response.status).toBe(403);
+      expect(response.body.error.code).toBe('FORBIDDEN');
+      const { attachmentService } = jest.requireMock('../attachment.service');
+      expect(attachmentService.deleteAttachment).not.toHaveBeenCalled();
+    });
+
     it('should return 400 when no files are provided', async () => {
       const response = await request(app)
         .post('/api/v1/communication/attachments')

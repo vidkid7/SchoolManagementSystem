@@ -12,6 +12,16 @@ import { CertificateTemplateRepository } from '../certificateTemplate.repository
 // Mock the repository
 jest.mock('../certificateTemplate.repository');
 
+const asTemplateModel = (data: Record<string, unknown>) => {
+  const model = { ...data } as Record<string, unknown> & {
+    getDataValue: (key: string) => unknown;
+    setDataValue: (key: string, value: unknown) => void;
+  };
+  model.getDataValue = key => model[key];
+  model.setDataValue = (key, value) => { model[key] = value; };
+  return model;
+};
+
 describe('CertificateTemplateService', () => {
   let service: CertificateTemplateService;
   let mockRepository: jest.Mocked<CertificateTemplateRepository>;
@@ -151,7 +161,7 @@ describe('CertificateTemplateService', () => {
         variables: ['name'],
         isActive: true,
       };
-      mockRepository.findById.mockResolvedValue(mockTemplate as any);
+      mockRepository.findById.mockResolvedValue(asTemplateModel(mockTemplate) as any);
 
       const found = await service.getTemplateById(1);
 
@@ -174,7 +184,7 @@ describe('CertificateTemplateService', () => {
         { templateId: 1, name: 'Character Certificate', type: 'character' as const, isActive: true },
         { templateId: 2, name: 'Transfer Certificate', type: 'transfer' as const, isActive: true },
       ];
-      mockRepository.findAll.mockResolvedValue(mockTemplates as any);
+      mockRepository.findAll.mockResolvedValue(mockTemplates.map(template => asTemplateModel(template)) as any);
 
       const templates = await service.getAllTemplates();
 
@@ -185,7 +195,7 @@ describe('CertificateTemplateService', () => {
       const mockTemplates = [
         { templateId: 1, name: 'Character Certificate', type: 'character' as const, isActive: true },
       ];
-      mockRepository.findAll.mockResolvedValue(mockTemplates as any);
+      mockRepository.findAll.mockResolvedValue(mockTemplates.map(template => asTemplateModel(template)) as any);
 
       const templates = await service.getAllTemplates({ type: 'character' });
 
@@ -206,9 +216,9 @@ describe('CertificateTemplateService', () => {
       };
       const updatedTemplate = { ...mockTemplate, name: 'Updated Name' };
       
-      mockRepository.findById.mockResolvedValue(mockTemplate as any);
+      mockRepository.findById.mockResolvedValue(asTemplateModel(mockTemplate) as any);
       mockRepository.existsByName.mockResolvedValue(false);
-      mockRepository.update.mockResolvedValue(updatedTemplate as any);
+      mockRepository.update.mockResolvedValue(asTemplateModel(updatedTemplate) as any);
 
       const updated = await service.updateTemplate(1, {
         name: 'Updated Name',
@@ -227,7 +237,7 @@ describe('CertificateTemplateService', () => {
         isActive: true,
       };
       
-      mockRepository.findById.mockResolvedValue(mockTemplate as any);
+      mockRepository.findById.mockResolvedValue(asTemplateModel(mockTemplate) as any);
       mockRepository.existsByName.mockResolvedValue(true);
 
       await expect(
@@ -247,7 +257,7 @@ describe('CertificateTemplateService', () => {
         isActive: true,
       };
       
-      mockRepository.findById.mockResolvedValue(mockTemplate as any);
+      mockRepository.findById.mockResolvedValue(asTemplateModel(mockTemplate) as any);
 
       await expect(
         service.updateTemplate(1, {
@@ -266,7 +276,7 @@ describe('CertificateTemplateService', () => {
         isActive: true,
       };
       
-      mockRepository.findById.mockResolvedValue(mockTemplate as any);
+      mockRepository.findById.mockResolvedValue(asTemplateModel(mockTemplate) as any);
 
       await expect(
         service.updateTemplate(1, {
@@ -287,7 +297,7 @@ describe('CertificateTemplateService', () => {
         isActive: true,
       };
       
-      mockRepository.findById.mockResolvedValue(mockTemplate as any);
+      mockRepository.findById.mockResolvedValue(asTemplateModel(mockTemplate) as any);
       mockRepository.delete.mockResolvedValue(true);
 
       await service.deleteTemplate(1);
@@ -316,7 +326,7 @@ describe('CertificateTemplateService', () => {
         renderTemplate: jest.fn().mockReturnValue('<div>John Doe from Class 10</div>'),
       };
       
-      mockRepository.findById.mockResolvedValue(mockTemplate as any);
+      mockRepository.findById.mockResolvedValue(asTemplateModel(mockTemplate) as any);
 
       const rendered = await service.renderTemplate(1, {
         student_name: 'John Doe',
@@ -336,7 +346,7 @@ describe('CertificateTemplateService', () => {
         isActive: false,
       };
       
-      mockRepository.findById.mockResolvedValue(mockTemplate as any);
+      mockRepository.findById.mockResolvedValue(asTemplateModel(mockTemplate) as any);
 
       await expect(
         service.renderTemplate(1, { name: 'John' })
@@ -354,7 +364,7 @@ describe('CertificateTemplateService', () => {
         renderTemplate: jest.fn(),
       };
       
-      mockRepository.findById.mockResolvedValue(mockTemplate as any);
+      mockRepository.findById.mockResolvedValue(asTemplateModel(mockTemplate) as any);
 
       await expect(
         service.renderTemplate(1, {
@@ -371,7 +381,7 @@ describe('CertificateTemplateService', () => {
         { templateId: 2, name: 'Character 2', type: 'character' as const, isActive: false },
         { templateId: 3, name: 'Transfer 1', type: 'transfer' as const, isActive: true },
       ];
-      mockRepository.findAll.mockResolvedValue(mockTemplates as any);
+      mockRepository.findAll.mockResolvedValue(mockTemplates.map(template => asTemplateModel(template)) as any);
 
       const stats = await service.getTemplateStats();
 

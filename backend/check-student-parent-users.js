@@ -80,11 +80,7 @@ async function checkStudentParentUsers() {
       console.log(`  ${stat.role}: ${stat.count} accounts`);
     });
 
-    console.log('\n🔐 DEFAULT PASSWORDS (if created by seeding):');
-    console.log('  - Students: Usually Student@123 or generated passwords');
-    console.log('  - Parents: Usually Parent@123 or generated passwords');
-    console.log('  - Teachers: Usually Teacher@123 or generated passwords');
-    console.log('\n💡 Note: Check the seeding scripts for exact password patterns');
+    console.log('\nUse operator-provided test credentials; seeded passwords are not printed.');
 
     await sequelize.close();
   } catch (error) {

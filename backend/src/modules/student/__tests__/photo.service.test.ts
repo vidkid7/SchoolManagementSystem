@@ -247,8 +247,52 @@ describe('PhotoService', () => {
       expect(result.mimeType).toBe('application/pdf');
 
       // Clean up
-      const docPath = path.join(process.cwd(), result.documentUrl);
-      if (fs.existsSync(docPath)) fs.unlinkSync(docPath);
+      await photoService.deleteStudentDocument(result.documentUrl);
+    });
+
+    it('persists display name and expiry metadata and serves document bytes', async () => {
+      const docBuffer = Buffer.from('Student document QA content');
+      const mockFile = createMockFile({
+        originalname: 'identity-card.pdf',
+        mimetype: 'application/pdf',
+        size: docBuffer.length,
+        buffer: docBuffer,
+      });
+
+      const uploaded = await photoService.saveStudentDocument(mockFile, TEST_STUDENT_ID, 'id_card', {
+        name: 'Student identity card',
+        expiryDate: '2099-05-31',
+      });
+      const listed = await photoService.listStudentDocuments(TEST_STUDENT_ID, 'id_card');
+      const document = listed.find((item) => item.filename === path.basename(uploaded.documentUrl));
+
+      expect(document).toMatchObject({
+        name: 'Student identity card',
+        originalName: 'identity-card.pdf',
+        expiryDate: '2099-05-31',
+        size: docBuffer.length,
+        mimeType: 'application/pdf',
+      });
+      const content = await photoService.readStudentDocumentFile(TEST_STUDENT_ID, 'id_card', path.basename(uploaded.documentUrl));
+      expect(content).toEqual({ buffer: docBuffer, mimeType: 'application/pdf' });
+
+      await photoService.deleteStudentDocument(uploaded.documentUrl);
+      expect(fs.existsSync(path.join(process.cwd(), uploaded.documentUrl))).toBe(false);
+      expect(fs.existsSync(`${path.join(process.cwd(), uploaded.documentUrl)}.meta.json`)).toBe(false);
+    });
+
+    it('rejects invalid expiry dates before writing a student document', async () => {
+      const docBuffer = Buffer.from('Student document QA content');
+      const mockFile = createMockFile({
+        originalname: 'invalid-expiry.pdf',
+        mimetype: 'application/pdf',
+        size: docBuffer.length,
+        buffer: docBuffer,
+      });
+
+      await expect(photoService.saveStudentDocument(mockFile, TEST_STUDENT_ID, 'id_card', { expiryDate: '2099-02-31' }))
+        .rejects.toThrow('Failed to save student document');
+      expect(await photoService.listStudentDocuments(TEST_STUDENT_ID, 'id_card')).toHaveLength(0);
     });
 
     it('should reject path traversal in the document category', async () => {

@@ -32,13 +32,22 @@ import {
   Settings as SettingsIcon,
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { useAdminStyles } from '../../theme/designTokens';
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (typeof error === 'object' && error !== null && 'response' in error) {
+    const response = (error as { response?: { data?: { message?: unknown } } }).response;
+    if (typeof response?.data?.message === 'string') return response.data.message;
+  }
+  return fallback;
+};
 
 interface GatewayConfig {
   name: string;
   enabled: boolean;
   merchantId: string;
   secretKey: string;
+  secretKeyConfigured?: boolean;
   testMode: boolean;
 }
 
@@ -85,30 +94,21 @@ export function PaymentGateways() {
   });
 
   useEffect(() => {
-    fetchGatewayConfigs();
-    fetchTransactions();
-  }, []);
-
-  const fetchGatewayConfigs = async () => {
-    try {
-      const response = await apiClient.get('/finance/payment-gateways/config');
-      if (response.data?.data) {
-        setGateways(response.data.data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch gateway configs:', err);
-    }
-  };
-
-  const fetchTransactions = async () => {
-    try {
-      const response = await apiClient.get('/finance/payment-gateways/transactions?limit=10');
-      setTransactions(response.data?.data || []);
-    } catch (err) {
-      console.error('Failed to fetch transactions:', err);
+    let active = true;
+    Promise.all([
+      apiClient.get('/finance/payment-gateways/config'),
+      apiClient.get('/finance/payment-gateways/transactions?limit=10'),
+    ]).then(([configResponse, transactionResponse]) => {
+      if (!active) return;
+      if (configResponse.data?.data) setGateways(configResponse.data.data);
+      setTransactions(transactionResponse.data?.data || []);
+    }).catch((err: unknown) => {
+      if (!active) return;
+      console.error('Failed to fetch payment gateway data:', err);
       setTransactions([]);
-    }
-  };
+    });
+    return () => { active = false; };
+  }, []);
 
   const handleToggleGateway = (gatewayKey: string) => {
     setGateways({
@@ -132,11 +132,16 @@ export function PaymentGateways() {
 
   const handleSaveConfig = async (gatewayKey: string) => {
     try {
-      await apiClient.put(`/finance/payment-gateways/${gatewayKey}`, gateways[gatewayKey]);
+      const gateway = gateways[gatewayKey];
+      const { secretKeyConfigured, secretKey, ...config } = gateway;
+      await apiClient.put(`/finance/payment-gateways/${gatewayKey}`, {
+        ...config,
+        ...(secretKey || !secretKeyConfigured ? { secretKey } : {}),
+      });
       setSuccess(t('finance.configSavedSuccess', { name: gateways[gatewayKey].name }));
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('finance.failedToSaveConfig'));
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, t('finance.failedToSaveConfig')));
     }
   };
 
@@ -152,8 +157,8 @@ export function PaymentGateways() {
         setSuccess('');
         setError('');
       }, 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('finance.connectionTestFailed', { name: '' }));
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, t('finance.connectionTestFailed', { name: gateways[gatewayKey].name })));
     }
   };
 
@@ -206,6 +211,7 @@ export function PaymentGateways() {
                     label={t('finance.secretKey')}
                     type="password"
                     value={gateway.secretKey}
+                    placeholder={gateway.secretKeyConfigured ? t('finance.secretKeyConfigured') : ''}
                     onChange={(e) => handleUpdateConfig(key, 'secretKey', e.target.value)}
                     disabled={!gateway.enabled}
                     fullWidth

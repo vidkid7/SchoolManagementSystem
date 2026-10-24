@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import { authenticate, authorize } from '@middleware/auth';
 import { UserRole } from '@models/User.model';
+import { validate } from '@middleware/validation';
 import * as teacherController from './teacher.controller';
+import { behaviorRecordCreateSchema } from './teacher.validation';
 
 const router = Router();
 
@@ -65,6 +67,7 @@ router.get(
 router.post(
   '/behavior-records',
   authorize(UserRole.SCHOOL_ADMIN, UserRole.CLASS_TEACHER),
+  validate(behaviorRecordCreateSchema),
   teacherController.createBehaviorRecord
 );
 

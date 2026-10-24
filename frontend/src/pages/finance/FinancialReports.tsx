@@ -114,7 +114,7 @@ export function FinancialReports() {
       } catch (summaryError: any) {
         // Silently handle 404 - endpoint doesn't exist, use fallback
         if (summaryError.response?.status !== 404) {
-          console.error('Error fetching summary:', summaryError);
+          console.error('Financial summary request failed; attempting invoice fallback.');
         }
         
         // Fallback: Calculate from invoices
@@ -139,7 +139,7 @@ export function FinancialReports() {
         });
       }
     } catch (error) {
-      console.error('Failed to fetch financial summary:', error);
+      console.error('Unable to load financial summary.');
     }
   };
 
@@ -162,16 +162,12 @@ export function FinancialReports() {
         params.endDate = effectiveEndDate;
       }
 
-      console.log('Fetching financial report with params:', params);
-
       const response = await apiClient.get('/finance/reports', { params });
       const data = response.data?.data || response.data;
-      
-      console.log('Financial report data:', data);
       setReportData(data);
 
     } catch (error: any) {
-      console.error('Failed to generate report:', error);
+      console.error('Unable to generate financial report.');
       const errorMsg = error.response?.data?.message || error.message || 'Failed to generate report';
       setError(errorMsg);
       setReportData(null);

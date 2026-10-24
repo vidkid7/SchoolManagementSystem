@@ -76,8 +76,25 @@ const toArray = (value: any): any[] => {
   if (Array.isArray(value?.lessonPlans)) return value.lessonPlans;
   if (Array.isArray(value?.syllabusProgress)) return value.syllabusProgress;
   if (Array.isArray(value?.progress)) return value.progress;
+  if (Array.isArray(value?.classes)) return value.classes;
+  if (Array.isArray(value?.subjects)) return value.subjects;
   if (Array.isArray(value?.items)) return value.items;
   return [];
+};
+
+const getSubjectName = (subject: any): string => {
+  if (typeof subject === 'string') return subject.trim();
+  return String(subject?.nameEn ?? subject?.name_en ?? subject?.name ?? subject?.code ?? '').trim();
+};
+
+const getClassName = (schoolClass: any): string => {
+  if (typeof schoolClass === 'string') return schoolClass.trim();
+  const explicitName = schoolClass?.className ?? schoolClass?.class_name ?? schoolClass?.name;
+  if (explicitName) return String(explicitName).trim();
+  const gradeLevel = schoolClass?.gradeLevel ?? schoolClass?.grade_level;
+  const section = String(schoolClass?.section ?? '').trim();
+  if (gradeLevel === undefined || gradeLevel === null || gradeLevel === '') return '';
+  return `Class ${gradeLevel}${section ? ` - Section ${section}` : ''}`;
 };
 
 type LessonPlanFormState = {
@@ -108,8 +125,10 @@ export const LessonPlanning = () => {
   const { accessToken } = useSelector((state: RootState) => state.auth);
   const [tabValue, setTabValue] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
-  const [selectedSubject, setSelectedSubject] = useState('Mathematics');
-  const [selectedClass, setSelectedClass] = useState('Class 10 A');
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const [selectedClass, setSelectedClass] = useState('');
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [classes, setClasses] = useState<any[]>([]);
   const [lessonPlans, setLessonPlans] = useState<any[]>([]);
   const [syllabusTopics, setSyllabusTopics] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -137,7 +156,7 @@ export const LessonPlanning = () => {
     try {
       setLoading(true);
       setError(null);
-      const [plansRes, progressRes] = await Promise.all([
+      const [plansRes, progressRes, subjectsRes, classesRes] = await Promise.all([
         apiClient.get('/api/v1/lesson-plans', { ...authHdr(accessToken), params: { limit: 50 } })
           .catch(() => {
             setError(t('portal.failedToLoadData'));
@@ -148,9 +167,21 @@ export const LessonPlanning = () => {
             setError(t('portal.failedToLoadData'));
             return { data: { data: { progress: [] } } };
           }),
+        apiClient.get('/api/v1/academic/subjects', authHdr(accessToken))
+          .catch(() => {
+            setError(t('portal.failedToLoadData'));
+            return { data: { data: { subjects: [] } } };
+          }),
+        apiClient.get('/api/v1/academic/classes', authHdr(accessToken))
+          .catch(() => {
+            setError(t('portal.failedToLoadData'));
+            return { data: { data: { classes: [] } } };
+          }),
       ]);
       setLessonPlans(toArray(plansRes.data?.data));
       setSyllabusTopics(toArray(progressRes.data?.data));
+      setSubjects(toArray(subjectsRes.data?.data));
+      setClasses(toArray(classesRes.data?.data));
     } catch {
       setError(t('portal.failedToLoadData'));
     } finally {
@@ -159,6 +190,15 @@ export const LessonPlanning = () => {
   }, [accessToken, t]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  const availableSubjects = subjects.map(getSubjectName).filter(Boolean);
+  const availableClasses = classes.map(getClassName).filter(Boolean);
+  const filteredLessonPlans = lessonPlans.filter((plan) => {
+    const planSubject = getSubjectName(plan.subject ?? plan.subjectName ?? plan.subject_name);
+    const planClass = getClassName(plan.className ?? plan.class_name ?? plan.class);
+    return (!selectedSubject || planSubject === selectedSubject)
+      && (!selectedClass || planClass === selectedClass);
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -292,9 +332,8 @@ export const LessonPlanning = () => {
                 label={t('common.subject')}
                 onChange={(e) => setSelectedSubject(e.target.value)}
               >
-                <MenuItem value="Mathematics">Mathematics</MenuItem>
-                <MenuItem value="Physics">Physics</MenuItem>
-                <MenuItem value="Chemistry">Chemistry</MenuItem>
+                <MenuItem value="">{t('common.all')} {t('common.subject')}</MenuItem>
+                {availableSubjects.map((subject) => <MenuItem key={subject} value={subject}>{subject}</MenuItem>)}
               </Select>
             </FormControl>
           </Grid>
@@ -310,10 +349,8 @@ export const LessonPlanning = () => {
                 label={t('common.class')}
                 onChange={(e) => setSelectedClass(e.target.value)}
               >
-                <MenuItem value="Class 10 A">Class 10 A</MenuItem>
-                <MenuItem value="Class 10 B">Class 10 B</MenuItem>
-                <MenuItem value="Class 11 Science">Class 11 Science</MenuItem>
-                <MenuItem value="Class 12 Science">Class 12 Science</MenuItem>
+                <MenuItem value="">{t('common.allClasses')}</MenuItem>
+                {availableClasses.map((schoolClass) => <MenuItem key={schoolClass} value={schoolClass}>{schoolClass}</MenuItem>)}
               </Select>
             </FormControl>
           </Grid>
@@ -342,11 +379,11 @@ export const LessonPlanning = () => {
         {/* Lesson Plans Tab */}
         <TabPanel value={tabValue} index={0}>
           <Grid container spacing={3}>
-            {lessonPlans.length === 0 ? (
+            {filteredLessonPlans.length === 0 ? (
               <Grid item xs={12}>
                 <Alert severity="info">{t('portal.noData')}</Alert>
               </Grid>
-            ) : lessonPlans.map((plan) => (
+            ) : filteredLessonPlans.map((plan) => (
               <Grid item xs={12} md={6} lg={4} key={plan.id}>
                 <Card>
                   <CardContent>
@@ -502,9 +539,7 @@ export const LessonPlanning = () => {
                   error={Boolean(formErrors.subject)}
                   onChange={(event) => updateLessonPlanForm('subject', event.target.value)}
                 >
-                  <MenuItem value="Mathematics">Mathematics</MenuItem>
-                  <MenuItem value="Physics">Physics</MenuItem>
-                  <MenuItem value="Chemistry">Chemistry</MenuItem>
+                  {availableSubjects.map((subject) => <MenuItem key={subject} value={subject}>{subject}</MenuItem>)}
                 </Select>
                 {formErrors.subject && <Typography variant="caption" color="error">{formErrors.subject}</Typography>}
               </FormControl>
@@ -521,9 +556,7 @@ export const LessonPlanning = () => {
                   value={lessonPlanForm.className}
                   onChange={(event) => updateLessonPlanForm('className', event.target.value)}
                 >
-                  <MenuItem value="Class 10 A">Class 10 A</MenuItem>
-                  <MenuItem value="Class 10 B">Class 10 B</MenuItem>
-                  <MenuItem value="Class 11 Science">Class 11 Science</MenuItem>
+                  {availableClasses.map((schoolClass) => <MenuItem key={schoolClass} value={schoolClass}>{schoolClass}</MenuItem>)}
                 </Select>
               </FormControl>
             </Grid>

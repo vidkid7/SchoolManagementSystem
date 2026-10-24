@@ -58,6 +58,47 @@ const twinkle = keyframes`
   50% { opacity: 1; transform: scale(1.2); }
 `;
 
+const stars = Array.from({ length: 12 }, (_, index) => ({
+  size: 2 + ((index * 37) % 4),
+  duration: 2 + ((index * 17) % 3),
+  delay: (index * 13) % 2,
+  left: 10 + ((index * 29) % 80),
+  top: 10 + ((index * 43) % 80),
+}));
+
+const getRedirectPath = (role?: string): string => {
+  switch (role) {
+    case 'Student':
+      return '/portal/student';
+    case 'Parent':
+      return '/portal/parent';
+    case 'Subject_Teacher':
+      return '/portal/teacher';
+    case 'Class_Teacher':
+      return '/portal/class-teacher';
+    case 'Department_Head':
+      return '/portal/department-head';
+    case 'Accountant':
+      return '/portal/accountant';
+    case 'Librarian':
+      return '/portal/librarian';
+    case 'Municipality_Admin':
+      return '/municipality';
+    case 'Transport_Manager':
+      return '/portal/transport';
+    case 'Hostel_Warden':
+      return '/portal/hostel';
+    case 'Non_Teaching_Staff':
+      return '/portal/non-teaching-staff';
+    case 'ECA_Coordinator':
+      return '/portal/eca-coordinator';
+    case 'Sports_Coordinator':
+      return '/portal/sports-coordinator';
+    default:
+      return '/dashboard';
+  }
+};
+
 export const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
@@ -76,39 +117,6 @@ export const Login = () => {
       navigate(`/${authUser.municipalityCode}${basePath}`);
     }
   }, [isAuthenticated, authUser, navigate]);
-
-  const getRedirectPath = (role: string): string => {
-    switch (role) {
-      case 'Student':
-        return '/portal/student';
-      case 'Parent':
-        return '/portal/parent';
-      case 'Subject_Teacher':
-        return '/portal/teacher';
-      case 'Class_Teacher':
-        return '/portal/class-teacher';
-      case 'Department_Head':
-        return '/portal/department-head';
-      case 'Accountant':
-        return '/portal/accountant';
-      case 'Librarian':
-        return '/portal/librarian';
-      case 'Municipality_Admin':
-        return '/municipality';
-      case 'Transport_Manager':
-        return '/portal/transport';
-      case 'Hostel_Warden':
-        return '/portal/hostel';
-      case 'Non_Teaching_Staff':
-        return '/portal/non-teaching-staff';
-      case 'ECA_Coordinator':
-        return '/portal/eca-coordinator';
-      case 'Sports_Coordinator':
-        return '/portal/sports-coordinator';
-      default:
-        return '/dashboard';
-    }
-  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -174,19 +182,19 @@ export const Login = () => {
           }}
         >
           {/* Animated Stars */}
-          {[...Array(12)].map((_, i) => (
+          {stars.map((star, i) => (
             <Box
               key={i}
               sx={{
                 position: 'absolute',
-                width: Math.random() * 4 + 2,
-                height: Math.random() * 4 + 2,
+                width: star.size,
+                height: star.size,
                 borderRadius: '50%',
                 background: 'white',
-                animation: `${twinkle} ${2 + Math.random() * 2}s ease-in-out infinite`,
-                animationDelay: `${Math.random() * 2}s`,
-                left: `${10 + Math.random() * 80}%`,
-                top: `${10 + Math.random() * 80}%`,
+                animation: `${twinkle} ${star.duration}s ease-in-out infinite`,
+                animationDelay: `${star.delay}s`,
+                left: `${star.left}%`,
+                top: `${star.top}%`,
               }}
             />
           ))}
@@ -229,6 +237,7 @@ export const Login = () => {
             
             <Typography
               variant="h3"
+              component="h1"
               fontWeight={800}
               gutterBottom
               sx={{
@@ -262,6 +271,7 @@ export const Login = () => {
 
             {isNepali && (
               <Typography
+                component="p"
                 variant="h5"
                 sx={{
                   opacity: 0.85,
@@ -386,7 +396,7 @@ export const Login = () => {
               >
                 <School sx={{ fontSize: 48, color: 'white' }} />
               </Box>
-              <Typography variant="h4" fontWeight={700} gutterBottom>
+              <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
                 {t('app.title')}
               </Typography>
               {isNepali && (
@@ -430,7 +440,7 @@ export const Login = () => {
           >
             {!isMobile && (
               <Box sx={{ textAlign: 'center', mb: 4 }}>
-                <Typography variant="h4" fontWeight={700} gutterBottom>
+                <Typography variant="h4" component="h2" fontWeight={700} gutterBottom>
                   {t('auth.welcomeBack')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -449,7 +459,7 @@ export const Login = () => {
                   '& .MuiAlert-icon': { fontSize: 22 },
                 }}
               >
-                {error}
+                {t(error)}
               </Alert>
             )}
 
@@ -602,7 +612,7 @@ export const Login = () => {
 
               <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
                 <Button component={Link} to="/forgot-password" size="small" sx={{ textTransform: 'none' }}>
-                  Forgot password?
+                  {t('auth.forgotPassword')}
                 </Button>
               </Box>
             </Box>

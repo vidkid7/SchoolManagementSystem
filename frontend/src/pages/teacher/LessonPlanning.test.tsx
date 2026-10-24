@@ -61,9 +61,45 @@ describe('LessonPlanning', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     store.dispatch(setCredentials({ accessToken: 'qa-token', refreshToken: 'qa-refresh' }));
-    mockedApiClient.get.mockImplementation((url: string) => Promise.resolve({
-      data: { data: url.endsWith('/syllabus-progress') ? { syllabusProgress: [] } : { lessonPlans: [] } },
-    } as any));
+    mockedApiClient.get.mockImplementation((url: string) => {
+      if (url.endsWith('/academic/subjects')) {
+        return Promise.resolve({ data: { data: [{ subjectId: 1, code: 'QA-101', nameEn: 'QA Subject' }] } } as any);
+      }
+      if (url.endsWith('/academic/classes')) {
+        return Promise.resolve({ data: { data: [{ classId: 1, gradeLevel: 1, section: 'K' }] } } as any);
+      }
+      if (url.endsWith('/syllabus-progress')) {
+        return Promise.resolve({ data: { data: { syllabusProgress: [] } } } as any);
+      }
+      return Promise.resolve({ data: { data: { lessonPlans: [] } } } as any);
+    });
+  });
+
+  it('uses live academic options and filters lesson plans with the selected subject', async () => {
+    mockedApiClient.get.mockImplementation((url: string) => {
+      if (url.endsWith('/academic/subjects')) {
+        return Promise.resolve({ data: { data: [{ subjectId: 1, code: 'QA-101', nameEn: 'QA Subject' }] } } as any);
+      }
+      if (url.endsWith('/academic/classes')) {
+        return Promise.resolve({ data: { data: [{ classId: 1, gradeLevel: 1, section: 'K' }] } } as any);
+      }
+      if (url.endsWith('/syllabus-progress')) {
+        return Promise.resolve({ data: { data: { syllabusProgress: [] } } } as any);
+      }
+      return Promise.resolve({ data: { data: { lessonPlans: [
+        { id: 1, topic: 'QA subject plan', subject: 'QA Subject', className: 'Class 1 - Section K', status: 'draft', objectives: [] },
+        { id: 2, topic: 'Other subject plan', subject: 'Other Subject', className: 'Class 1 - Section K', status: 'draft', objectives: [] },
+      ] } } } as any);
+    });
+    renderPage();
+
+    expect(await screen.findByText('Other subject plan')).toBeInTheDocument();
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Subject' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'QA Subject' }));
+
+    expect(screen.getByText('QA subject plan')).toBeInTheDocument();
+    expect(screen.queryByText('Other subject plan')).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Mathematics' })).not.toBeInTheDocument();
   });
 
   it('keeps the form open and shows required errors without sending an empty plan', async () => {

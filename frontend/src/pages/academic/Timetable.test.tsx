@@ -76,4 +76,24 @@ describe('Timetable', () => {
     expect(screen.getByLabelText('End Time')).toHaveValue('08:45');
     await waitFor(() => expect(mockedApi.get).toHaveBeenCalledWith('/academic/timetable/1'));
   });
+
+  it('does not log timetable payloads or response data when saving a period', async () => {
+    const user = userEvent.setup();
+    const consoleLog = jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    mockedApi.post.mockResolvedValue({ data: { data: { timetableId: 99 } } } as never);
+    render(<Timetable />);
+
+    const classSelector = await screen.findByRole('combobox', { name: /Select Class/ });
+    await user.click(classSelector);
+    await user.click(await screen.findByRole('option', { name: 'Class 1 - Section K' }));
+    await user.click(await screen.findByRole('button', { name: 'Add Period - Monday Period 1' }));
+    const subject = await screen.findByRole('combobox', { name: 'Subject' });
+    await user.click(subject);
+    await user.click(await screen.findByRole('option', { name: 'TEST-101 - Test Subject' }));
+    await user.click(screen.getByRole('button', { name: 'Save Period' }));
+
+    await waitFor(() => expect(mockedApi.post).toHaveBeenCalledTimes(2));
+    expect(consoleLog).not.toHaveBeenCalled();
+    consoleLog.mockRestore();
+  });
 });

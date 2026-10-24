@@ -39,3 +39,10 @@ export function refreshAuthTokens(apiBaseUrl: string): Promise<RefreshedTokens> 
 
   return refreshPromise;
 }
+
+/** Only an explicit refresh-token rejection proves this session must be discarded. */
+export function isRefreshTokenRejected(error: unknown): boolean {
+  if (!error || typeof error !== 'object' || !('response' in error)) return false;
+  const response = (error as { response?: { status?: number } }).response;
+  return response?.status === 401;
+}

@@ -4,9 +4,8 @@
  * Displays list of staff with filters and actions
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams } from 'react-router-dom';
 import { useSlugNavigate } from '../../hooks/useSlugNavigate';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import {
@@ -48,7 +47,7 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { motion } from 'framer-motion';
-import { C, useAdminStyles, R } from '../../theme/designTokens';
+import { C, useAdminStyles } from '../../theme/designTokens';
 
 const MotionCard = motion.create(Paper);
 const MotionBox = motion.create(Box);
@@ -76,7 +75,6 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; labelKey: strin
 
 const StatCard = ({ icon, label, value, color, delay }: { icon: React.ReactNode; label: string; value: number | string; color: string; delay: number }) => {
   const theme = useTheme();
-  const S = useAdminStyles(theme);
   return (
     <MotionCard
       initial={{ opacity: 0, y: 20 }}
@@ -135,7 +133,6 @@ const toTranslationKey = (value: string): string => {
 export const StaffList = () => {
   const { t } = useTranslation();
   const navigate = useSlugNavigate();
-  const { municipalitySlug } = useParams<{ municipalitySlug: string }>();
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const [staff, setStaff] = useState<Staff[]>([]);
@@ -143,6 +140,8 @@ export const StaffList = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [total, setTotal] = useState(0);
+  const [statusTotals, setStatusTotals] = useState({ active: 0, inactive: 0, onLeave: 0 });
+  const hasLoadedStatistics = useRef(false);
   
   // Filters
   const [search, setSearch] = useState('');
@@ -151,11 +150,23 @@ export const StaffList = () => {
   const [positionFilter, setPositionFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
-  useEffect(() => {
-    fetchStaff();
-  }, [page, rowsPerPage, debouncedSearch, departmentFilter, positionFilter, statusFilter]);
+  const fetchStatistics = useCallback(async () => {
+    try {
+      const response = await apiClient.get('/api/v1/staff/statistics');
+      const byStatus = response.data.data?.byStatus || {};
+      setStatusTotals({
+        active: byStatus.active || 0,
+        inactive: byStatus.inactive || 0,
+        onLeave: byStatus.on_leave || 0,
+      });
+      hasLoadedStatistics.current = true;
+    } catch (error) {
+      hasLoadedStatistics.current = false;
+      console.error('Failed to fetch staff statistics:', error);
+    }
+  }, []);
 
-  const fetchStaff = async () => {
+  const fetchStaff = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -171,12 +182,22 @@ export const StaffList = () => {
       const response = await apiClient.get(`/api/v1/staff?${params}`);
       setStaff(response.data.data || []);
       setTotal(response.data.meta?.total ?? response.data.total ?? 0);
+      if (!hasLoadedStatistics.current) {
+        void fetchStatistics();
+      }
     } catch (error) {
       console.error('Failed to fetch staff:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, rowsPerPage, debouncedSearch, departmentFilter, positionFilter, statusFilter, fetchStatistics]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void fetchStaff();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [fetchStaff]);
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
@@ -200,6 +221,7 @@ export const StaffList = () => {
     setDepartmentFilter('');
     setPositionFilter('');
     setStatusFilter('');
+    setPage(0);
   };
 
   const hasFilters = search || departmentFilter || positionFilter || statusFilter;
@@ -211,6 +233,7 @@ export const StaffList = () => {
     try {
       await apiClient.delete(`/api/v1/staff/${staffId}`);
       fetchStaff();
+      fetchStatistics();
     } catch (error) {
       console.error('Failed to delete staff:', error);
     }
@@ -285,7 +308,7 @@ export const StaffList = () => {
           <StatCard 
             icon={<PeopleIcon sx={{ color: C.success, fontSize: 24 }} />}
             label={t('staff.active')}
-            value={staff.filter(s => s.status === 'active').length}
+            value={statusTotals.active}
             color={C.success}
             delay={0}
           />
@@ -294,7 +317,7 @@ export const StaffList = () => {
           <StatCard 
             icon={<PeopleIcon sx={{ color: C.neutral, fontSize: 24 }} />}
             label={t('staff.inactive')}
-            value={staff.filter(s => s.status === 'inactive').length}
+            value={statusTotals.inactive}
             color={C.neutral}
             delay={0.1}
           />
@@ -303,7 +326,7 @@ export const StaffList = () => {
           <StatCard 
             icon={<SchoolIcon sx={{ color: C.warning, fontSize: 24 }} />}
             label={t('staff.onLeave')}
-            value={staff.filter(s => s.status === 'on_leave').length}
+            value={statusTotals.onLeave}
             color={C.warning}
             delay={0.2}
           />
@@ -338,7 +361,10 @@ export const StaffList = () => {
             variant="outlined"
             size="small"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
             sx={{ 
               minWidth: 280,
               '& .MuiOutlinedInput-root': {
@@ -367,7 +393,10 @@ export const StaffList = () => {
               value={departmentFilter}
               labelId="staff-department-filter-label"
               label={t('staff.department')}
-              onChange={(e) => setDepartmentFilter(e.target.value)}
+              onChange={(e) => {
+                setDepartmentFilter(e.target.value);
+                setPage(0);
+              }}
               sx={{ borderRadius: 2.5 }}
             >
               <MenuItem value="">{t('staff.all')}</MenuItem>
@@ -383,7 +412,10 @@ export const StaffList = () => {
               value={positionFilter}
               labelId="staff-position-filter-label"
               label={t('staff.position')}
-              onChange={(e) => setPositionFilter(e.target.value)}
+              onChange={(e) => {
+                setPositionFilter(e.target.value);
+                setPage(0);
+              }}
               sx={{ borderRadius: 2.5 }}
             >
               <MenuItem value="">{t('staff.all')}</MenuItem>
@@ -393,6 +425,15 @@ export const StaffList = () => {
               <MenuItem value="accountant">{t('staff.positions.accountant')}</MenuItem>
               <MenuItem value="librarian">{t('staff.positions.librarian')}</MenuItem>
               <MenuItem value="support_staff">{t('staff.positions.supportStaff')}</MenuItem>
+              <MenuItem value="office_staff">{t('staff.positions.officeStaff')}</MenuItem>
+              <MenuItem value="sports_coordinator">{t('staff.positions.sportsCoordinator')}</MenuItem>
+              <MenuItem value="class_teacher">{t('staff.positions.classTeacher')}</MenuItem>
+              <MenuItem value="subject_teacher">{t('staff.positions.subjectTeacher')}</MenuItem>
+              <MenuItem value="department_head">{t('staff.positions.departmentHead')}</MenuItem>
+              <MenuItem value="eca_coordinator">{t('staff.positions.ecaCoordinator')}</MenuItem>
+              <MenuItem value="transport_manager">{t('staff.positions.transportManager')}</MenuItem>
+              <MenuItem value="hostel_warden">{t('staff.positions.hostelWarden')}</MenuItem>
+              <MenuItem value="school_administrator">{t('staff.positions.schoolAdministrator')}</MenuItem>
             </Select>
           </FormControl>
 
@@ -402,7 +443,10 @@ export const StaffList = () => {
               value={statusFilter}
               labelId="staff-status-filter-label"
               label={t('staff.status')}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(0);
+              }}
               sx={{ borderRadius: 2.5 }}
             >
               <MenuItem value="">{t('staff.all')}</MenuItem>

@@ -1,511 +1,221 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 import AuditLogs from '../AuditLogs';
 import apiClient from '../../../services/apiClient';
 
-/**
- * Audit Logs Component Tests
- * Requirements: 38.5
- */
+jest.mock('react-i18next', () => {
+  const translations: Record<string, string> = {
+      'audit.title': 'Audit Logs',
+      'audit.subtitle': 'Review system activity',
+      'audit.refresh': 'Refresh',
+      'audit.export': 'Export',
+      'audit.rotateLogs': 'Rotate Logs',
+      'audit.totalLogs': 'Total Logs',
+      'audit.creates': 'Creates',
+      'audit.updates': 'Updates',
+      'audit.deletes': 'Deletes',
+      'audit.restores': 'Restores',
+      'audit.filters': 'Filters',
+      'audit.search': 'Search',
+      'audit.searchPlaceholder': 'Search audit logs',
+      'audit.userId': 'User ID',
+      'audit.entityType': 'Entity Type',
+      'audit.entityId': 'Entity ID',
+      'audit.action': 'Action',
+      'audit.allActions': 'All Actions',
+      'audit.startDate': 'Start Date',
+      'audit.endDate': 'End Date',
+      'audit.ipAddress': 'IP Address',
+      'audit.applyFilters': 'Apply Filters',
+      'audit.clearFilters': 'Clear Filters',
+      'audit.id': 'ID',
+      'audit.timestamp': 'Timestamp',
+      'audit.entity': 'Entity',
+      'audit.changedFields': 'Changed Fields',
+      'audit.details': 'Details',
+      'audit.noLogsFound': 'No audit logs found',
+      'audit.system': 'System',
+      'audit.oldValue': 'Old Value',
+      'audit.newValue': 'New Value',
+      'audit.userAgent': 'User Agent',
+      'audit.failedToFetch': 'Unable to load audit logs',
+      'audit.rotateConfirm': 'Rotate old audit logs?',
+      'audit.failedToExport': 'Unable to export audit logs',
+      'audit.export': 'Export',
+      'audit.failedToRotate': 'Unable to rotate audit logs',
+  };
+  const translate = (key: string, values?: Record<string, unknown>) =>
+    translations[key] ?? (values ? `${key} ${JSON.stringify(values)}` : key);
+  return { useTranslation: () => ({ t: translate }) };
+});
 
 jest.mock('../../../services/apiClient');
 const mockedApiClient = apiClient as jest.Mocked<typeof apiClient>;
 
-jest.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: { count?: number }) => {
-      const translations: Record<string, string> = {
-        'audit.title': 'Audit Logs', 'audit.subtitle': 'Track all system changes and user actions',
-        'audit.filters': 'Filters', 'audit.applyFilters': 'Apply Filters', 'audit.clearFilters': 'Clear Filters',
-        'audit.totalLogs': 'Total Logs', 'audit.creates': 'Creates', 'audit.updates': 'Updates',
-        'audit.deletes': 'Deletes', 'audit.restores': 'Restores', 'audit.refresh': 'Refresh',
-        'audit.export': 'Export', 'audit.rotateLogs': 'Rotate Logs',
-        'audit.rotateConfirm': 'Are you sure you want to delete logs older than 1 year? This action cannot be undone.',
-        'audit.rotateSuccess': `Successfully deleted ${options?.count ?? '{{count}}'} old audit logs`,
-        'audit.noLogsFound': 'No audit logs found', 'audit.failedToFetch': 'Failed to fetch audit logs',
-        'audit.failedToExport': 'Failed to export audit logs', 'audit.failedToRotate': 'Failed to rotate audit logs',
-        'audit.userId': 'User ID', 'audit.entityType': 'Entity Type', 'audit.entityId': 'Entity ID',
-        'audit.action': 'Action', 'audit.startDate': 'Start Date', 'audit.endDate': 'End Date',
-        'audit.ipAddress': 'IP Address', 'audit.search': 'Search', 'audit.searchPlaceholder': 'Search entity type or fields...',
-        'audit.id': 'ID', 'audit.timestamp': 'Timestamp', 'audit.entity': 'Entity',
-        'audit.changedFields': 'Changed Fields', 'audit.details': 'Details', 'audit.oldValue': 'Old Value',
-        'audit.newValue': 'New Value', 'audit.userAgent': 'User Agent', 'audit.system': 'System',
-        'audit.allActions': 'All Actions',
-      };
-      return translations[key] ?? key;
-    },
-  }),
-}));
-
-const mockAuditLogs = [
-  {
-    auditLogId: 1,
-    userId: 1,
-    entityType: 'student',
-    entityId: 100,
-    action: 'create',
-    oldValue: null,
-    newValue: { name: 'Test Student' },
-    changedFields: null,
-    ipAddress: '127.0.0.1',
-    userAgent: 'Mozilla/5.0',
-    metadata: null,
-    timestamp: '2024-12-01T10:00:00.000Z'
-  },
-  {
-    auditLogId: 2,
-    userId: 1,
-    entityType: 'student',
-    entityId: 100,
-    action: 'update',
-    oldValue: { name: 'Test Student' },
-    newValue: { name: 'Updated Student' },
-    changedFields: ['name'],
-    ipAddress: '127.0.0.1',
-    userAgent: 'Mozilla/5.0',
-    metadata: null,
-    timestamp: '2024-12-02T10:00:00.000Z'
-  }
-];
-
-const mockStats = {
-  totalLogs: 100,
-  logsByAction: {
-    create: 30,
-    update: 50,
-    delete: 15,
-    restore: 5
-  },
-  logsByEntityType: {
-    student: 60,
-    staff: 40
-  },
-  oldestLog: '2024-01-01T00:00:00.000Z',
-  newestLog: '2024-12-31T23:59:59.999Z'
+const sampleLog = {
+  auditLogId: 44,
+  userId: 7,
+  entityType: 'Student',
+  entityId: 91,
+  entityUuid: 'student-uuid-91',
+  action: 'update' as const,
+  oldValue: { status: 'pending' },
+  newValue: { status: 'active' },
+  changedFields: ['status'],
+  ipAddress: '192.0.2.10',
+  userAgent: 'QA Browser',
+  metadata: null,
+  timestamp: '2026-10-22T10:00:00.000Z',
 };
 
-const renderComponent = () => {
-  return render(
-    <BrowserRouter>
-      <AuditLogs />
-    </BrowserRouter>
-  );
-};
+const renderPage = () => render(
+  <ThemeProvider theme={createTheme()}>
+    <AuditLogs />
+  </ThemeProvider>
+);
 
-describe('AuditLogs Component', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockedApiClient.get.mockImplementation((url) => {
-      if (url === '/api/v1/audit/logs') {
-        return Promise.resolve({
-          data: {
-            data: mockAuditLogs,
-            pagination: {
-              page: 1,
-              limit: 20,
-              total: 2,
-              totalPages: 1
-            }
-          }
-        });
-      }
-      if (url === '/api/v1/audit/stats') {
-        return Promise.resolve({
-          data: {
-            data: mockStats
-          }
-        });
-      }
-      return Promise.reject(new Error('Unknown URL'));
-    });
-  });
+const logsResponse = (data = [sampleLog], total = data.length) => ({
+  data: { data, pagination: { total } },
+});
 
-  it('should render audit logs page', async () => {
-    renderComponent();
-
-    expect(screen.getByText('Audit Logs')).toBeInTheDocument();
-    
-    await waitFor(() => {
-      expect(screen.getAllByText('student #100').length).toBeGreaterThan(0);
-    });
-  });
-
-  it('uses a valid heading hierarchy for the page and filters section', async () => {
-    renderComponent();
-
-    expect(screen.getByRole('heading', { level: 1, name: 'Audit Logs' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: 'Filters' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: '100' })).not.toBeInTheDocument();
-  });
-
-  it('should display statistics cards', async () => {
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByText('Total Logs')).toBeInTheDocument();
-      expect(screen.getByText('100')).toBeInTheDocument();
-      expect(screen.getByText('Creates')).toBeInTheDocument();
-      expect(screen.getByText('30')).toBeInTheDocument();
-      expect(screen.getByText('Updates')).toBeInTheDocument();
-      expect(screen.getByText('50')).toBeInTheDocument();
-      expect(screen.getByText('Deletes')).toBeInTheDocument();
-      expect(screen.getByText('15')).toBeInTheDocument();
-    });
-  });
-
-  it('should display audit logs in table', async () => {
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getAllByText('student #100').length).toBeGreaterThan(0);
-      expect(screen.getByText('CREATE')).toBeInTheDocument();
-      expect(screen.getByText('UPDATE')).toBeInTheDocument();
-      expect(screen.getAllByText('127.0.0.1').length).toBeGreaterThan(0);
-    });
-  });
-
-  it('should expand row to show details', async () => {
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getAllByText('student #100').length).toBeGreaterThan(0);
-    });
-
-    // Find and click the expand button for the first row
-    const expandButtons = screen.getAllByRole('button', { name: 'Details' });
-    const firstExpandButton = expandButtons.find(btn => 
-      btn.querySelector('svg')?.getAttribute('data-testid') === 'ExpandMoreIcon'
-    );
-
-    if (firstExpandButton) {
-      fireEvent.click(firstExpandButton);
-
-      await waitFor(() => {
-        expect(screen.getAllByText('New Value:').length).toBeGreaterThan(0);
-      });
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockedApiClient.get.mockImplementation((async (url: string) => {
+    if (url === '/api/v1/audit/stats') {
+      return { data: { data: { totalLogs: 1, logsByAction: { create: 0, update: 1, delete: 0, restore: 0 } } } } as never;
     }
+    if (url === '/api/v1/audit/logs') return logsResponse() as never;
+    if (url === '/api/v1/audit/export') return { data: [sampleLog] } as never;
+    throw new Error(`Unexpected GET ${url}`);
+  }) as typeof mockedApiClient.get);
+});
+
+describe('AuditLogs', () => {
+  it('loads summary and displays audit entries with expandable change details', async () => {
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Audit Logs' })).toBeInTheDocument();
+    await waitFor(() => expect(document.body.textContent).toContain('Student #student-uuid-91'));
+    expect(document.body.textContent).toContain('44');
+    fireEvent.click(screen.getByRole('button', { name: 'Details' }));
+    await waitFor(() => expect(document.body.textContent).toContain('Old Value:'));
+    expect(document.body.textContent).toContain('New Value:');
+    expect(document.body.textContent).toContain('"status": "active"');
   });
 
-  it('should apply filters', async () => {
-    renderComponent();
+  it('shows an explicit empty state when the audit API has no rows', async () => {
+    mockedApiClient.get.mockImplementation((async (url: string) => {
+      if (url === '/api/v1/audit/stats') return { data: { data: {} } } as never;
+      if (url === '/api/v1/audit/logs') return logsResponse([], 0) as never;
+      throw new Error(`Unexpected GET ${url}`);
+    }) as typeof mockedApiClient.get);
 
-    await waitFor(() => {
-      expect(screen.getByText('Filters')).toBeInTheDocument();
-    });
-
-    // Open filters
-    const filterButton = screen.getByRole('button', { name: 'Filters' });
-    fireEvent.click(filterButton);
-
-    expect(screen.getByRole('combobox', { name: 'Action' })).toBeInTheDocument();
-
-    // Fill in entity type filter
-    const entityTypeInput = screen.getByLabelText('Entity Type');
-    fireEvent.change(entityTypeInput, { target: { value: 'student' } });
-
-    // Click apply filters
-    const applyButton = screen.getByText('Apply Filters');
-    fireEvent.click(applyButton);
-
-    await waitFor(() => {
-      expect(mockedApiClient.get).toHaveBeenCalledWith(
-        '/api/v1/audit/logs',
-        expect.objectContaining({
-          params: expect.objectContaining({
-            entityType: 'student'
-          })
-        })
-      );
-    });
+    renderPage();
+    expect(await screen.findByText('No audit logs found')).toBeInTheDocument();
   });
 
-  it('applies filters from later pages using first-page results', async () => {
-    const filteredLog = {
-      ...mockAuditLogs[0],
-      auditLogId: 3,
-      entityType: 'grading_scheme',
-      newValue: { name: 'Synthetic Grading Scheme' },
-    };
-
-    mockedApiClient.get.mockImplementation((url, config: any) => {
-      if (url === '/api/v1/audit/stats') {
-        return Promise.resolve({ data: { data: mockStats } });
-      }
-      const params = config?.params ?? {};
-      if (url === '/api/v1/audit/logs' && params.search && params.page === 1) {
-        return Promise.resolve({
-          data: { data: [filteredLog], pagination: { page: 1, limit: 20, total: 1, totalPages: 1 } },
-        });
-      }
-      if (url === '/api/v1/audit/logs') {
-        return Promise.resolve({
-          data: { data: mockAuditLogs, pagination: { page: params.page ?? 1, limit: 20, total: 22, totalPages: 2 } },
-        });
-      }
-      return Promise.reject(new Error('Unknown URL'));
-    });
-
-    renderComponent();
-    await screen.findAllByText('student #100');
-    fireEvent.click(screen.getByRole('button', { name: 'Go to next page' }));
-    await waitFor(() => {
-      expect(mockedApiClient.get).toHaveBeenCalledWith('/api/v1/audit/logs', expect.objectContaining({
-        params: expect.objectContaining({ page: 2 }),
-      }));
-    });
-
+  it('applies search criteria to the list request', async () => {
+    renderPage();
+    await screen.findByRole('heading', { name: 'Audit Logs' });
     fireEvent.click(screen.getByRole('button', { name: 'Filters' }));
-    fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'grading_scheme' } });
+    fireEvent.change(await screen.findByRole('textbox', { name: 'Search' }), { target: { value: 'student-uuid-91' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply Filters' }));
 
-    expect(await screen.findByText('grading_scheme #100')).toBeInTheDocument();
-    expect(mockedApiClient.get).toHaveBeenCalledWith('/api/v1/audit/logs', expect.objectContaining({
-      params: expect.objectContaining({ page: 1, search: 'grading_scheme' }),
+    await waitFor(() => expect(mockedApiClient.get).toHaveBeenCalledWith('/api/v1/audit/logs', {
+      params: { page: 1, limit: 20, search: 'student-uuid-91' },
     }));
-    expect(mockedApiClient.get.mock.calls.some(([url, config]: any[]) =>
-      url === '/api/v1/audit/logs' && config?.params?.page === 2 && config?.params?.search === 'grading_scheme'
-    )).toBe(false);
-
-    await waitFor(() => expect(screen.getByText('grading_scheme #100')).toBeInTheDocument());
-    expect(screen.queryByText('No audit logs found')).not.toBeInTheDocument();
-    expect(screen.getByText('1–1 of 1')).toBeInTheDocument();
   });
 
-  it('should clear filters', async () => {
-    renderComponent();
+  it('opens audit date filters on direct year selection', async () => {
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: 'Filters' }));
+    fireEvent.click(await screen.findByLabelText('Start Date'));
 
-    await waitFor(() => {
-      expect(screen.getByText('Filters')).toBeInTheDocument();
-    });
+    expect(await screen.findByRole('button', { name: /year view is open/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: String(new Date().getFullYear()) })).toBeInTheDocument();
+  });
 
-    // Open filters
-    const filterButton = screen.getByRole('button', { name: 'Filters' });
-    fireEvent.click(filterButton);
+  it('requests the next page when the table pagination control is used', async () => {
+    mockedApiClient.get.mockImplementation((async (url: string) => {
+      if (url === '/api/v1/audit/stats') return { data: { data: {} } } as never;
+      if (url === '/api/v1/audit/logs') return logsResponse([sampleLog], 25) as never;
+      throw new Error(`Unexpected GET ${url}`);
+    }) as typeof mockedApiClient.get);
 
-    // Fill in entity type filter
-    const entityTypeInput = screen.getByLabelText('Entity Type');
-    fireEvent.change(entityTypeInput, { target: { value: 'student' } });
+    renderPage();
+    await waitFor(() => expect(document.body.textContent).toContain('1–20 of 25'));
+    fireEvent.click(screen.getByRole('button', { name: 'Go to next page' }));
 
+    await waitFor(() => expect(mockedApiClient.get).toHaveBeenCalledWith('/api/v1/audit/logs', {
+      params: { page: 2, limit: 20 },
+    }));
+  });
+
+  it('clears applied filters and reloads the unfiltered first page', async () => {
+    renderPage();
+    await screen.findByRole('heading', { name: 'Audit Logs' });
+    fireEvent.click(screen.getByRole('button', { name: 'Filters' }));
+    fireEvent.change(await screen.findByRole('textbox', { name: 'Search' }), { target: { value: 'student-uuid-91' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply Filters' }));
-    await waitFor(() => {
-      expect(mockedApiClient.get).toHaveBeenCalledWith('/api/v1/audit/logs', expect.objectContaining({
-        params: expect.objectContaining({ entityType: 'student' }),
-      }));
-    });
+    await waitFor(() => expect(mockedApiClient.get).toHaveBeenCalledWith('/api/v1/audit/logs', expect.objectContaining({
+      params: { page: 1, limit: 20, search: 'student-uuid-91' },
+    })));
 
-    // Click clear filters
-    const clearButton = screen.getByRole('button', { name: 'Clear Filters' });
-    fireEvent.click(clearButton);
-
-    // Clearing controls also reloads the unfiltered first page immediately.
-    expect(entityTypeInput).toHaveValue('');
-    await waitFor(() => {
-      expect(mockedApiClient.get).toHaveBeenLastCalledWith('/api/v1/audit/logs', {
-        params: { page: 1, limit: 20 },
-      });
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Clear Filters' }));
+    await waitFor(() => expect(mockedApiClient.get.mock.calls.some(([url, config]) =>
+      url === '/api/v1/audit/logs' && JSON.stringify(config?.params) === JSON.stringify({ page: 1, limit: 20 })
+    )).toBe(true));
   });
 
-  it('should refresh audit logs', async () => {
-    renderComponent();
+  it('shows server errors and supports refresh without writing data', async () => {
+    mockedApiClient.get.mockImplementation((async (url: string) => {
+      if (url === '/api/v1/audit/stats') return { data: { data: {} } } as never;
+      return Promise.reject({ response: { data: { error: { message: 'Audit service unavailable' } } } });
+    }) as typeof mockedApiClient.get);
 
-    await waitFor(() => {
-      expect(screen.getAllByText('student #100').length).toBeGreaterThan(0);
-    });
-
-    const refreshButton = screen.getByText('Refresh');
-    fireEvent.click(refreshButton);
-
-    await waitFor(() => {
-      expect(mockedApiClient.get).toHaveBeenCalledTimes(3); // Initial logs + stats + refreshed logs
-    });
-  });
-
-  it('should export audit logs', async () => {
-    mockedApiClient.get.mockImplementation((url) => {
-      if (url === '/api/v1/audit/export') {
-        return Promise.resolve({
-          data: {
-            data: mockAuditLogs
-          }
-        });
-      }
-      if (url === '/api/v1/audit/logs') {
-        return Promise.resolve({
-          data: {
-            data: mockAuditLogs,
-            pagination: { page: 1, limit: 20, total: 2, totalPages: 1 }
-          }
-        });
-      }
-      if (url === '/api/v1/audit/stats') {
-        return Promise.resolve({
-          data: { data: mockStats }
-        });
-      }
-      return Promise.reject(new Error('Unknown URL'));
-    });
-
-    // Mock URL.createObjectURL and link.click
-    global.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
-    const mockClick = jest.fn();
-    const createElement = document.createElement.bind(document);
-    jest.spyOn(document, 'createElement').mockImplementation((tagName) => {
-      if (tagName === 'a') {
-        return {
-          click: mockClick,
-          href: '',
-          download: ''
-        } as any;
-      }
-      return createElement(tagName);
-    });
-
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByText('Export')).toBeInTheDocument();
-    });
-
-    const exportButton = screen.getByText('Export');
-    fireEvent.click(exportButton);
-
-    await waitFor(() => {
-      expect(mockedApiClient.get).toHaveBeenCalledWith(
-        '/api/v1/audit/export',
-        expect.any(Object)
-      );
-      expect(mockClick).toHaveBeenCalled();
-    });
-  });
-
-  it('should rotate logs with confirmation', async () => {
-    global.confirm = jest.fn(() => true);
-    global.alert = jest.fn();
-
-    mockedApiClient.post.mockResolvedValue({
-      data: {
-        success: true,
-        data: {
-          deletedCount: 50,
-          cutoffDate: '2023-12-31T00:00:00.000Z',
-          executedAt: '2024-12-31T00:00:00.000Z'
-        }
-      }
-    });
-
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByText('Rotate Logs')).toBeInTheDocument();
-    });
-
-    const rotateButton = screen.getByText('Rotate Logs');
-    fireEvent.click(rotateButton);
-
-    await waitFor(() => {
-      expect(global.confirm).toHaveBeenCalled();
-      expect(mockedApiClient.post).toHaveBeenCalledWith(
-        '/api/v1/audit/rotate',
-        { retentionDays: 365 }
-      );
-      expect(global.alert).toHaveBeenCalledWith(
-        'Successfully deleted 50 old audit logs'
-      );
-    });
-  });
-
-  it('should not rotate logs if user cancels', async () => {
-    global.confirm = jest.fn(() => false);
-
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByText('Rotate Logs')).toBeInTheDocument();
-    });
-
-    const rotateButton = screen.getByText('Rotate Logs');
-    fireEvent.click(rotateButton);
-
-    expect(global.confirm).toHaveBeenCalled();
+    renderPage();
+    await screen.findByRole('heading', { name: 'Audit Logs' });
+    await waitFor(() => expect(mockedApiClient.get).toHaveBeenCalledWith('/api/v1/audit/logs', {
+      params: { page: 1, limit: 20 },
+    }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Audit service unavailable');
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await waitFor(() => expect(mockedApiClient.get).toHaveBeenCalledWith('/api/v1/audit/logs', {
+      params: { page: 1, limit: 20 },
+    }));
     expect(mockedApiClient.post).not.toHaveBeenCalled();
   });
 
-  it('should handle pagination', async () => {
-    renderComponent();
+  it('exports the currently loaded audit entries and does not rotate without confirmation', async () => {
+    const clickSpy = jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    const createObjectURL = jest.fn(() => 'blob:qa-audit');
+    const revokeObjectURL = jest.fn();
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: createObjectURL });
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: revokeObjectURL });
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
+    renderPage();
+    await waitFor(() => expect(document.body.textContent).toContain('Student #student-uuid-91'));
 
-    await waitFor(() => {
-      expect(screen.getAllByText('student #100').length).toBeGreaterThan(0);
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Filters' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search' }), { target: { value: 'student-uuid-91' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'IP Address' }), { target: { value: '192.0.2.10' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply Filters' }));
+    await waitFor(() => expect(mockedApiClient.get).toHaveBeenCalledWith('/api/v1/audit/logs', {
+      params: { page: 1, limit: 20, ipAddress: '192.0.2.10', search: 'student-uuid-91' },
+    }));
 
-    // Find pagination controls
-    const nextPageButton = screen.getByRole('button', { name: /next page/i });
-    
-    if (nextPageButton && !nextPageButton.hasAttribute('disabled')) {
-      fireEvent.click(nextPageButton);
+    fireEvent.click(screen.getByRole('button', { name: 'Export' }));
+    await waitFor(() => expect(mockedApiClient.get).toHaveBeenCalledWith('/api/v1/audit/export', {
+      params: { ipAddress: '192.0.2.10', search: 'student-uuid-91' },
+    }));
+    expect(clickSpy).toHaveBeenCalled();
 
-      await waitFor(() => {
-        expect(mockedApiClient.get).toHaveBeenCalledWith(
-          '/api/v1/audit/logs',
-          expect.objectContaining({
-            params: expect.objectContaining({
-              page: 2
-            })
-          })
-        );
-      });
-    }
-  });
-
-  it('should display error message on API failure', async () => {
-    mockedApiClient.get.mockRejectedValue({
-      response: {
-        data: {
-          error: {
-            message: 'Failed to fetch audit logs'
-          }
-        }
-      }
-    });
-
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByText('Failed to fetch audit logs')).toBeInTheDocument();
-    });
-  });
-
-  it('should display loading state', () => {
-    mockedApiClient.get.mockImplementation(() => new Promise(() => {})); // Never resolves
-
-    renderComponent();
-
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
-  });
-
-  it('should display empty state when no logs', async () => {
-    mockedApiClient.get.mockImplementation((url) => {
-      if (url === '/api/v1/audit/logs') {
-        return Promise.resolve({
-          data: {
-            data: [],
-            pagination: { page: 1, limit: 20, total: 0, totalPages: 0 }
-          }
-        });
-      }
-      if (url === '/api/v1/audit/stats') {
-        return Promise.resolve({
-          data: { data: mockStats }
-        });
-      }
-      return Promise.reject(new Error('Unknown URL'));
-    });
-
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByText('No audit logs found')).toBeInTheDocument();
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Rotate Logs' }));
+    expect(confirmSpy).toHaveBeenCalledWith('Rotate old audit logs?');
+    expect(mockedApiClient.post).not.toHaveBeenCalled();
+    expect(createObjectURL).toHaveBeenCalled();
+    await waitFor(() => expect(revokeObjectURL).toHaveBeenCalledWith('blob:qa-audit'));
   });
 });

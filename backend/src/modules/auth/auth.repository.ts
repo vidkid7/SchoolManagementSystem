@@ -284,7 +284,7 @@ class UserRepository {
       }
 
       user.failedLoginAttempts = 0;
-      user.accountLockedUntil = undefined;
+      user.accountLockedUntil = null;
       await user.save();
       
       logger.info('Failed login attempts reset', { userId });
@@ -336,7 +336,7 @@ class UserRepository {
         return null;
       }
 
-      user.accountLockedUntil = undefined;
+      user.accountLockedUntil = null;
       user.failedLoginAttempts = 0;
       user.status = UserStatus.ACTIVE;
       await user.save();
@@ -392,8 +392,8 @@ class UserRepository {
         return null;
       }
 
-      user.refreshToken = refreshToken;
-      user.refreshTokenExpiresAt = expiresAt;
+      user.refreshToken = refreshToken ?? null;
+      user.refreshTokenExpiresAt = expiresAt ?? null;
       await user.save();
       
       return user;

@@ -99,7 +99,8 @@ describe('ECA Controller', () => {
         coordinatorId: 1,
         academicYearId: 1,
         currentEnrollment: 0,
-        status: 'active'
+        status: 'active',
+        getDataValue: jest.fn().mockReturnValue(1)
       };
 
       (ECA.create as jest.Mock).mockResolvedValue(newECA);

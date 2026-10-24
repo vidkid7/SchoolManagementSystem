@@ -1,9 +1,20 @@
+// This suite covers admissions only; app.ts also loads certificate sanitization,
+// whose ESM-only parser dependency is incompatible with this Jest CJS runtime.
+jest.mock('sanitize-html', () => (html: string) => html);
+// Student ID sequencing uses MySQL advisory locks; keep this API suite portable
+// to its isolated SQLite database and cover sequencing in studentId.service tests.
+jest.mock('../../student/studentId.service', () => ({
+  __esModule: true,
+  default: { generateStudentId: jest.fn().mockResolvedValue('SCH001-2024-0001') }
+}));
+
 import request from 'supertest';
 import app from '../../../app';
 import sequelize from '@config/database';
 import User, { UserRole } from '@models/User.model';
 import Admission, { AdmissionStatus } from '@models/Admission.model';
 import Student from '@models/Student.model';
+import SchoolConfig from '@models/SchoolConfig.model';
 import jwtService from '@modules/auth/jwt.service';
 
 /**
@@ -15,17 +26,27 @@ describe('Admission API Integration Tests', () => {
   let authToken: string;
   let adminUser: User;
   let testAdmission: Admission;
+  let schoolConfigId: string;
 
   beforeAll(async () => {
     // Sync database
     await sequelize.sync({ force: true });
 
+    // Auth resolves active tenant ownership from the database, so seed an
+    // isolated school config before creating the authenticated test user.
+    const schoolConfig = await SchoolConfig.create({
+      schoolNameEn: 'Admissions API QA School',
+      schoolCode: 'ADMISSIONQA'
+    });
+    schoolConfigId = schoolConfig.id;
+
     // Create admin user for authentication
     adminUser = await User.create({
-      username: 'admin_test',
+      username: 'adminTest',
       email: 'admin@test.com',
       password: 'Admin@1234',
-      role: UserRole.SCHOOL_ADMIN
+      role: UserRole.SCHOOL_ADMIN,
+      schoolConfigId
     });
 
     // Generate auth token
@@ -132,7 +153,11 @@ describe('Admission API Integration Tests', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBeDefined();
+      expect(response.body.message).toBe('Validation failed');
+      expect(response.body.errors).toEqual(expect.arrayContaining([
+        expect.objectContaining({ field: 'lastNameEn' }),
+        expect.objectContaining({ field: 'applyingForClass' })
+      ]));
     });
 
     it('should reject inquiry with invalid class number', async () => {
@@ -169,6 +194,7 @@ describe('Admission API Integration Tests', () => {
     beforeEach(async () => {
       // Create an inquiry for testing
       testAdmission = await Admission.create({
+        schoolConfigId,
         temporaryId: 'TEST-INQ-2024-0001',
         firstNameEn: 'John',
         lastNameEn: 'Doe',
@@ -236,6 +262,7 @@ describe('Admission API Integration Tests', () => {
   describe('POST /api/v1/admissions/:id/schedule-test', () => {
     beforeEach(async () => {
       testAdmission = await Admission.create({
+        schoolConfigId,
         temporaryId: 'TEST-INQ-2024-0002',
         firstNameEn: 'Jane',
         lastNameEn: 'Smith',
@@ -276,6 +303,7 @@ describe('Admission API Integration Tests', () => {
   describe('POST /api/v1/admissions/:id/record-test-score', () => {
     beforeEach(async () => {
       testAdmission = await Admission.create({
+        schoolConfigId,
         temporaryId: 'TEST-INQ-2024-0003',
         firstNameEn: 'Bob',
         lastNameEn: 'Johnson',
@@ -342,6 +370,7 @@ describe('Admission API Integration Tests', () => {
   describe('POST /api/v1/admissions/:id/schedule-interview', () => {
     beforeEach(async () => {
       testAdmission = await Admission.create({
+        schoolConfigId,
         temporaryId: 'TEST-INQ-2024-0004',
         firstNameEn: 'Alice',
         lastNameEn: 'Williams',
@@ -389,6 +418,7 @@ describe('Admission API Integration Tests', () => {
   describe('POST /api/v1/admissions/:id/record-interview', () => {
     beforeEach(async () => {
       testAdmission = await Admission.create({
+        schoolConfigId,
         temporaryId: 'TEST-INQ-2024-0005',
         firstNameEn: 'Charlie',
         lastNameEn: 'Brown',
@@ -452,6 +482,7 @@ describe('Admission API Integration Tests', () => {
   describe('POST /api/v1/admissions/:id/admit', () => {
     beforeEach(async () => {
       testAdmission = await Admission.create({
+        schoolConfigId,
         temporaryId: 'TEST-INQ-2024-0006',
         firstNameEn: 'David',
         lastNameEn: 'Miller',
@@ -495,6 +526,7 @@ describe('Admission API Integration Tests', () => {
   describe('POST /api/v1/admissions/:id/enroll', () => {
     beforeEach(async () => {
       testAdmission = await Admission.create({
+        schoolConfigId,
         temporaryId: 'TEST-INQ-2024-0007',
         firstNameEn: 'Emma',
         lastNameEn: 'Davis',
@@ -553,6 +585,7 @@ describe('Admission API Integration Tests', () => {
   describe('POST /api/v1/admissions/:id/reject', () => {
     beforeEach(async () => {
       testAdmission = await Admission.create({
+        schoolConfigId,
         temporaryId: 'TEST-INQ-2024-0008',
         firstNameEn: 'Frank',
         lastNameEn: 'Wilson',
@@ -601,6 +634,7 @@ describe('Admission API Integration Tests', () => {
   describe('GET /api/v1/admissions/:id', () => {
     beforeEach(async () => {
       testAdmission = await Admission.create({
+        schoolConfigId,
         temporaryId: 'TEST-INQ-2024-0009',
         firstNameEn: 'Grace',
         lastNameEn: 'Taylor',
@@ -648,6 +682,7 @@ describe('Admission API Integration Tests', () => {
       // Create multiple admissions for testing
       await Admission.bulkCreate([
         {
+          schoolConfigId,
           temporaryId: 'TEST-INQ-2024-0010',
           firstNameEn: 'Henry',
           lastNameEn: 'Anderson',
@@ -658,6 +693,7 @@ describe('Admission API Integration Tests', () => {
           documentsVerified: false
         },
         {
+          schoolConfigId,
           temporaryId: 'TEST-INQ-2024-0011',
           firstNameEn: 'Ivy',
           lastNameEn: 'Thomas',
@@ -669,6 +705,7 @@ describe('Admission API Integration Tests', () => {
           documentsVerified: false
         },
         {
+          schoolConfigId,
           temporaryId: 'TEST-INQ-2024-0012',
           firstNameEn: 'Jack',
           lastNameEn: 'Jackson',
@@ -758,6 +795,7 @@ describe('Admission API Integration Tests', () => {
       // Create admissions with different statuses
       await Admission.bulkCreate([
         {
+          schoolConfigId,
           temporaryId: 'TEST-INQ-2024-0013',
           firstNameEn: 'Kate',
           lastNameEn: 'White',
@@ -768,6 +806,7 @@ describe('Admission API Integration Tests', () => {
           documentsVerified: false
         },
         {
+          schoolConfigId,
           temporaryId: 'TEST-INQ-2024-0014',
           firstNameEn: 'Leo',
           lastNameEn: 'Harris',
@@ -779,6 +818,7 @@ describe('Admission API Integration Tests', () => {
           documentsVerified: false
         },
         {
+          schoolConfigId,
           temporaryId: 'TEST-INQ-2024-0015',
           firstNameEn: 'Mia',
           lastNameEn: 'Martin',

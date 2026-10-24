@@ -237,6 +237,14 @@ class AuditController {
         filters.endDate = new Date(params.endDate);
       }
 
+      if (params.ipAddress) {
+        filters.ipAddress = params.ipAddress;
+      }
+
+      if (params.search) {
+        filters.search = params.search;
+      }
+
       const logs = await auditService.exportAuditLogs(filters);
 
       res.status(200).json({

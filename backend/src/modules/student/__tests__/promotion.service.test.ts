@@ -3,6 +3,8 @@ import Student, { StudentStatus, Gender } from '@models/Student.model';
 import AcademicHistory, { CompletionStatus } from '@models/AcademicHistory.model';
 import sequelize from '@config/database';
 import fc from 'fast-check';
+import { AcademicYear } from '@models/AcademicYear.model';
+import Class, { Shift } from '@models/Class.model';
 
 /**
  * Promotion Service Tests
@@ -39,25 +41,30 @@ const createTestStudentData = (overrides: Partial<any> = {}) => ({
 
 describe('PromotionService', () => {
   beforeAll(async () => {
-    // Sync database schema (create tables if they don't exist)
-    try {
-      // Disable foreign key checks before syncing
-      await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
-      
-      // Use force: true to drop and recreate tables for clean test environment
-      await sequelize.sync({ force: true, logging: false });
-    } catch (error) {
-      throw error;
+    if (sequelize.getDialect() !== 'sqlite') {
+      throw new Error('Promotion service tests require TEST_DB_DIALECT=sqlite');
+    }
+    await sequelize.sync({ force: true, logging: false });
+    await AcademicYear.create({
+      academicYearId: 1,
+      name: '2081-2082 BS',
+      startDateBS: '2081-01-01',
+      endDateBS: '2081-12-30',
+      startDateAD: new Date('2024-04-13'),
+      endDateAD: new Date('2025-04-13'),
+    });
+    for (let classId = 1; classId <= 13; classId += 1) {
+      await Class.create({
+        classId,
+        academicYearId: 1,
+        gradeLevel: Math.min(classId, 12),
+        section: classId === 13 ? 'B' : 'A',
+        shift: Shift.MORNING,
+      });
     }
   });
 
   afterAll(async () => {
-    // Re-enable foreign key checks
-    try {
-      await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-    } catch (error) {
-      // Ignore errors during cleanup
-    }
     await sequelize.close();
   });
 

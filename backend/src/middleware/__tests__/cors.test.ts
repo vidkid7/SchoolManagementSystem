@@ -1,6 +1,7 @@
 import request from 'supertest';
 import express, { Application } from 'express';
 import { corsMiddleware } from '../security';
+import { errorHandler } from '../errorHandler';
 import { env } from '@config/env';
 
 /**
@@ -25,6 +26,7 @@ describe('CORS Middleware', () => {
     app.get('/test', (_req, res) => {
       res.json({ success: true, message: 'Test endpoint' });
     });
+    app.use(errorHandler);
   });
 
   describe('Allowed Origins Configuration', () => {
@@ -43,9 +45,10 @@ describe('CORS Middleware', () => {
       const response = await request(app)
         .get('/test')
         .set('Origin', 'https://malicious-site.com')
-        .expect(500); // CORS error results in 500
+        .expect(403);
 
-      expect(response.text).toContain('Not allowed by CORS');
+      expect(response.body.message).toBe('Origin not allowed by CORS');
+      expect(response.headers['access-control-allow-origin']).toBeUndefined();
     });
 
     it('should allow requests with no origin (mobile apps, Postman)', async () => {
@@ -170,9 +173,10 @@ describe('CORS Middleware', () => {
       const response = await request(app)
         .get('/test')
         .set('Origin', maliciousOrigin)
-        .expect(500);
+        .expect(403);
 
       expect(response.headers['access-control-allow-origin']).not.toBe(maliciousOrigin);
+      expect(response.body.message).toBe('Origin not allowed by CORS');
     });
 
     it('should not allow wildcard origin with credentials', async () => {
@@ -204,10 +208,23 @@ describe('CORS Middleware', () => {
             .get('/test')
             .set('Origin', origin);
 
-          expect(response.status).toBe(500);
-          expect(response.text).toContain('Not allowed by CORS');
+          expect(response.status).toBe(403);
+          expect(response.body.message).toBe('Origin not allowed by CORS');
+          expect(response.headers['access-control-allow-origin']).toBeUndefined();
         }
       }
+    });
+
+    it('rejects preflight from a non-allowed origin without exposing CORS headers', async () => {
+      const response = await request(app)
+        .options('/test')
+        .set('Origin', 'https://malicious-site.com')
+        .set('Access-Control-Request-Method', 'POST')
+        .set('Access-Control-Request-Headers', 'authorization,content-type');
+
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe('Origin not allowed by CORS');
+      expect(response.headers['access-control-allow-origin']).toBeUndefined();
     });
   });
 

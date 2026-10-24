@@ -324,8 +324,9 @@ class StaffDocumentService {
     documentId: number,
     updates: {
       documentName?: string;
+      category?: StaffDocumentCategory;
       description?: string;
-      expiryDate?: Date;
+      expiryDate?: Date | null;
     }
   ): Promise<StaffDocument | null> {
     try {
@@ -335,7 +336,8 @@ class StaffDocumentService {
         return null;
       }
 
-      await document.update(updates);
+      // Sequelize's model type excludes null for DATE even though the column is nullable.
+      await document.update(updates as Parameters<typeof document.update>[0]);
 
       logger.info('Staff document updated', { documentId, updates });
 

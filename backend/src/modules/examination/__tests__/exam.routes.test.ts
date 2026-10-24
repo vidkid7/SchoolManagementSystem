@@ -16,6 +16,10 @@ import { ExamType, ExamStatus } from '@models/Exam.model';
 jest.mock('../exam.service');
 jest.mock('../examSchedule.service');
 jest.mock('../gradeEntry.service');
+jest.mock('@middleware/auth', () => ({
+  authenticate: (_req: any, _res: any, next: any) => next(),
+  authorize: (..._roles: any[]) => (_req: any, _res: any, next: any) => next()
+}));
 
 describe('Exam Routes', () => {
   let app: Express;
@@ -255,7 +259,7 @@ describe('Exam Routes', () => {
       const mockSchedule = {
         examScheduleId: 1,
         examId: 1,
-        date: new Date('2024-01-15'),
+        date: '2024-01-15T00:00:00.000Z',
         startTime: '10:00',
         endTime: '13:00'
       };
@@ -314,7 +318,7 @@ describe('Exam Routes', () => {
         {
           examScheduleId: 1,
           examId: 1,
-          date: new Date('2024-01-15'),
+          date: '2024-01-15T00:00:00.000Z',
           startTime: '10:00',
           endTime: '13:00'
         }
@@ -345,6 +349,7 @@ describe('Exam Routes', () => {
       (gradeEntryService.createGradeEntry as jest.Mock).mockResolvedValue(mockGrade);
 
       const gradeData = {
+        examId: 1,
         studentId: 1,
         theoryMarks: 60,
         practicalMarks: 25,
@@ -373,6 +378,7 @@ describe('Exam Routes', () => {
       (gradeEntryService.createGradeEntry as jest.Mock).mockResolvedValue(mockGrade);
 
       const bulkData = {
+        examId: 1,
         grades: [
           { studentId: 1, theoryMarks: 60, practicalMarks: 25, totalMarks: 85 },
           { studentId: 2, theoryMarks: 70, practicalMarks: 20, totalMarks: 90 }
@@ -442,6 +448,24 @@ describe('Exam Routes', () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    });
+  });
+
+  describe('POST /api/v1/exams/reports/email', () => {
+    it('reports email delivery as unavailable instead of claiming generated PDFs were sent', async () => {
+      const response = await request(app)
+        .post('/api/v1/exams/reports/email')
+        .send({ studentIds: [1], termId: 1, academicYearId: 1 })
+        .expect(501);
+
+      expect(response.body).toEqual({
+        success: false,
+        error: {
+          code: 'DELIVERY_UNAVAILABLE',
+          message: 'Email delivery is not configured. No report cards were sent.'
+        }
+      });
+      expect(examService.generateReportCard).not.toHaveBeenCalled();
     });
   });
 

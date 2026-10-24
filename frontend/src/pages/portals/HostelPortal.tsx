@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box, Grid, Card, CardContent, Typography, Button, Divider, List, ListItem,
+  Box, Grid, Typography, Button, Divider, List, ListItem,
   ListItemIcon, ListItemText, Chip, CircularProgress, Alert, Tabs, Tab, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog,
   DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select,
@@ -75,6 +75,7 @@ const HostelPortal: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [roomDialog, setRoomDialog] = useState(false);
+  const [roomError, setRoomError] = useState('');
   const [disciplineDialog, setDisciplineDialog] = useState(false);
   const [visitorDialog, setVisitorDialog] = useState(false);
   const [incidentDialog, setIncidentDialog] = useState(false);
@@ -83,7 +84,7 @@ const HostelPortal: React.FC = () => {
   const [editRoom, setEditRoom] = useState<Room | null>(null);
   const [editMenu, setEditMenu] = useState<MessMenu | null>(null);
   const [editInventory, setEditInventory] = useState<InventoryItem | null>(null);
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<Record<string, string | number>>({});
 
   const { user, accessToken } = useSelector((state: RootState) => state.auth);
   const navigate = useSlugNavigate();
@@ -123,16 +124,22 @@ const HostelPortal: React.FC = () => {
     }
   }, [accessToken, t]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { void Promise.resolve().then(loadData); }, [loadData]);
 
   const handleSaveRoom = async () => {
+    const roomNumber = String(formData.roomNumber ?? '').trim();
+    if (!roomNumber) {
+      setRoomError(t('hostel.roomNumberRequired'));
+      return;
+    }
+    const roomData = { ...formData, roomNumber };
     try {
       if (editRoom) {
-        await apiClient.put(`/api/v1/hostel/rooms/${editRoom.id}`, formData, authHdr(accessToken!));
+        await apiClient.put(`/api/v1/hostel/rooms/${editRoom.id}`, roomData, authHdr(accessToken!));
       } else {
-        await apiClient.post('/api/v1/hostel/rooms', formData, authHdr(accessToken!));
+        await apiClient.post('/api/v1/hostel/rooms', roomData, authHdr(accessToken!));
       }
-      setRoomDialog(false); setEditRoom(null); setFormData({});
+      setRoomDialog(false); setEditRoom(null); setFormData({}); setRoomError('');
       loadData();
     } catch { setError(t('portal.failedToLoadData')); }
   };
@@ -275,7 +282,7 @@ const HostelPortal: React.FC = () => {
       <TabPanel value={tab} index={0}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="h6" fontWeight={600}>{t('hostel.roomManagement')}</Typography>
-          <Button sx={S.BTN_PRIMARY} startIcon={<AddIcon />} onClick={() => { setEditRoom(null); setFormData({}); setRoomDialog(true); }}>{t('hostel.addRoom')}</Button>
+          <Button sx={S.BTN_PRIMARY} startIcon={<AddIcon />} onClick={() => { setEditRoom(null); setFormData({}); setRoomError(''); setRoomDialog(true); }}>{t('hostel.addRoom')}</Button>
         </Box>
         <TableContainer component={Paper} sx={S.GLASS}>
           <Table size="small">
@@ -295,7 +302,7 @@ const HostelPortal: React.FC = () => {
                   <TableCell>{r.occupied}</TableCell>
                   <TableCell><Chip label={r.status} size="small" color={r.status === 'available' ? 'success' : r.status === 'occupied' ? 'error' : 'default'} /></TableCell>
                   <TableCell>
-                    <Tooltip title={t('common.edit')}><IconButton size="small" onClick={() => { setEditRoom(r); setFormData({ ...r }); setRoomDialog(true); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title={t('common.edit')}><IconButton size="small" onClick={() => { setEditRoom(r); setFormData({ ...r }); setRoomError(''); setRoomDialog(true); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
                     <Tooltip title={t('common.delete')}><IconButton size="small" color="error" onClick={() => handleDeleteRoom(r.id)}><CancelIcon fontSize="small" /></IconButton></Tooltip>
                   </TableCell>
                 </TableRow>
@@ -565,7 +572,7 @@ const HostelPortal: React.FC = () => {
       </TabPanel>
 
       {/* Room Dialog */}
-      <Dialog open={roomDialog} onClose={() => { setRoomDialog(false); setEditRoom(null); setFormData({}); }} maxWidth="sm" fullWidth>
+      <Dialog open={roomDialog} onClose={() => { setRoomDialog(false); setEditRoom(null); setFormData({}); setRoomError(''); }} maxWidth="sm" fullWidth>
         <DialogTitle>{editRoom ? t('hostel.editRoom') : t('hostel.addNewRoom')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
           <TextField label={t('hostel.roomNumber')} value={formData.roomNumber ?? ''} onChange={e => setFormData({ ...formData, roomNumber: e.target.value })} fullWidth required />
@@ -582,9 +589,10 @@ const HostelPortal: React.FC = () => {
           </FormControl>
           <TextField label={t('hostel.capacity')} type="number" value={formData.capacity ?? 2} onChange={e => setFormData({ ...formData, capacity: Number(e.target.value) })} fullWidth />
           <TextField label={t('hostel.description')} value={formData.description ?? ''} onChange={e => setFormData({ ...formData, description: e.target.value })} fullWidth multiline rows={2} />
+          {roomError && <Alert severity="error">{roomError}</Alert>}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setRoomDialog(false);setEditRoom(null); setFormData({}); }}>{t('common.cancel')}</Button>
+          <Button onClick={() => { setRoomDialog(false);setEditRoom(null); setFormData({}); setRoomError(''); }}>{t('common.cancel')}</Button>
           <Button sx={S.BTN_PRIMARY} onClick={handleSaveRoom}>{editRoom ? t('common.update') : t('common.create')}</Button>
         </DialogActions>
       </Dialog>

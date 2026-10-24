@@ -18,8 +18,8 @@ describe('GradeEntry', () => {
     (apiClient.get as jest.Mock).mockResolvedValue({ data: { data: [] } });
   });
 
-  it('gives each grade filter an accessible name', async () => {
-    render(
+  it('gives each grade filter an accessible name and stable form field name', async () => {
+    const { container } = render(
       <ThemeProvider theme={createTheme()}>
         <GradeEntry />
       </ThemeProvider>,
@@ -29,5 +29,10 @@ describe('GradeEntry', () => {
     expect(screen.getByRole('combobox', { name: 'common.class' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'common.section' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'common.subject' })).toBeInTheDocument();
+    expect(container.querySelector('input[name="examId"]')).toBeInTheDocument();
+    expect(container.querySelector('input[name="classId"]')).toBeInTheDocument();
+    expect(container.querySelector('input[name="section"]')).toBeInTheDocument();
+    expect(container.querySelector('input[name="subjectId"]')).toBeInTheDocument();
+    expect(container.querySelector('input[name="gradeImportFile"]')).toHaveAttribute('id', 'grade-entry-import-file');
   });
 });
