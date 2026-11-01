@@ -132,6 +132,25 @@ npm run dev
 
 ## Development
 
+### Protected system operator bootstrap
+
+Run migrations first, then configure the backend deployment with
+INITIAL_ADMIN_EMAIL, a unique INITIAL_ADMIN_PASSWORD of at least 14 characters
+containing uppercase and lowercase letters and a number, plus the municipality
+values from backend/.env.example. The account name is fixed to devuser; the
+password is never defaulted or stored in source code.
+
+After deploying the backend build, run npm run bootstrap:devuser once from the
+backend directory (or configured backend root). The command seeds system roles
+and permissions, creates the configured municipality, and creates devuser as a
+protected Municipality_Admin. From its municipality portal, devuser can create
+schools and the first School_Admin for each school; school creation also seeds
+the current Bikram Sambat year, three terms, Grades 1–12 (Section A), and six
+core subjects with class-subject links. It creates no sample people or payments.
+Remove the bootstrap password secret from the deployment environment after
+success. devuser is recoverable by password reset but cannot be deleted through
+school user management.
+
 ### Backend Commands
 
 ```bash

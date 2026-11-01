@@ -22,6 +22,7 @@ const loadCurrentUser = async (userId: number) => {
       'email',
       'role',
       'status',
+      'isSystemAccount',
       'municipalityId',
       'schoolConfigId',
       'accountLockedUntil',
@@ -49,6 +50,7 @@ const loadCurrentUser = async (userId: number) => {
     username: user.username,
     email: user.email,
     role: user.role,
+    isSystemAccount: user.isSystemAccount,
     municipalityId: user.municipalityId,
     schoolConfigId: user.schoolConfigId,
   };

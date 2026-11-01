@@ -186,6 +186,10 @@ class UserRepository {
         return false;
       }
 
+      if (user.isSystemAccount) {
+        throw new Error('Protected system accounts cannot be deleted');
+      }
+
       await user.destroy(); // Soft delete due to paranoid mode
       logger.info('User soft deleted', { userId });
       
@@ -207,6 +211,10 @@ class UserRepository {
       
       if (!user) {
         return false;
+      }
+
+      if (user.isSystemAccount) {
+        throw new Error('Protected system accounts cannot be deleted');
       }
 
       await user.destroy({ force: true });

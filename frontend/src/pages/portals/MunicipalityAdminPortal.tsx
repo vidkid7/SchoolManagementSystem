@@ -1,4 +1,6 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import {
   Alert,
   Box,
@@ -27,6 +29,7 @@ import { C, useAdminStyles } from '../../theme/designTokens';
 import {
   Add as AddIcon,
   Assessment as AssessmentIcon,
+  Backup as BackupIcon,
   CheckCircle as CheckCircleIcon,
   LocationCity as LocationCityIcon,
   PersonAdd as PersonAddIcon,
@@ -35,6 +38,7 @@ import {
 } from '@mui/icons-material';
 import apiClient from '../../services/apiClient';
 import { useTranslation } from 'react-i18next';
+import { RootState } from '../../store';
 
 interface DashboardData {
   municipality: {
@@ -122,6 +126,15 @@ interface SchoolAdminForm {
   phoneNumber: string;
 }
 
+interface MunicipalityUser {
+  userId: number;
+  username: string;
+  email: string;
+  role: string;
+  status: string;
+  schoolConfigId?: string;
+}
+
 function getErrorMessage(error: unknown, fallback: string): string {
   if (typeof error === 'object' && error !== null && 'response' in error) {
     const response = (error as { response?: { data?: { message?: unknown } } }).response;
@@ -147,12 +160,16 @@ const initialSchoolAdminForm: SchoolAdminForm = {
 
 export default function MunicipalityAdminPortal() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const isSystemAccount = useSelector((state: RootState) => state.auth.user?.isSystemAccount === true);
+  const currentUserId = useSelector((state: RootState) => state.auth.user?.userId);
   const theme = useTheme();
   const S = useAdminStyles(theme);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [reports, setReports] = useState<ReportsData | null>(null);
   const [incidents, setIncidents] = useState<IncidentsData | null>(null);
   const [schools, setSchools] = useState<School[]>([]);
+  const [users, setUsers] = useState<MunicipalityUser[]>([]);
   const [schoolForm, setSchoolForm] = useState<SchoolForm>(initialSchoolForm);
   const [adminForm, setAdminForm] = useState<SchoolAdminForm>(initialSchoolAdminForm);
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
@@ -162,13 +179,14 @@ export default function MunicipalityAdminPortal() {
   const [savingAdmin, setSavingAdmin] = useState(false);
   const [message, setMessage] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [resetLink, setResetLink] = useState('');
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
 
-      const [dashboardResponse, schoolsResponse, reportsResponse, incidentsResponse] = await Promise.all([
+      const [dashboardResponse, schoolsResponse, reportsResponse, incidentsResponse, usersResponse] = await Promise.all([
         apiClient.get('/municipality-admin/dashboard'),
         apiClient.get('/municipality-admin/schools', {
           params: { includeInactive: true },
@@ -177,6 +195,7 @@ export default function MunicipalityAdminPortal() {
         apiClient.get('/municipality-admin/incidents', {
           params: { limit: 10 },
         }),
+        apiClient.get('/municipality-admin/users'),
       ]);
 
       setDashboard(dashboardResponse.data.data as DashboardData);
@@ -184,6 +203,7 @@ export default function MunicipalityAdminPortal() {
       setSchools(Array.isArray(schoolsData) ? schoolsData : schoolsData?.schools || schoolsData?.items || []);
       setReports(reportsResponse.data.data as ReportsData);
       setIncidents(incidentsResponse.data.data as IncidentsData);
+      setUsers(Array.isArray(usersResponse.data.data) ? usersResponse.data.data : []);
     } catch (err: unknown) {
       setError(getErrorMessage(err, t('portal.failedToLoadData')));
     } finally {
@@ -214,7 +234,7 @@ export default function MunicipalityAdminPortal() {
 
       await apiClient.post('/municipality-admin/schools', payload);
       setSchoolForm(initialSchoolForm);
-      setMessage(t('portal.schoolCreatedSuccess'));
+      setMessage(t('portal.schoolFoundationCreatedSuccess'));
       await loadData();
     } catch (err: unknown) {
       setError(getErrorMessage(err, t('portal.failedToLoadData')));
@@ -270,6 +290,18 @@ export default function MunicipalityAdminPortal() {
     }
   };
 
+  const issuePasswordResetLink = async (userId: number) => {
+    try {
+      setError('');
+      const response = await apiClient.post(
+        '/municipality-admin/users/' + userId + '/reset-password-link'
+      );
+      setResetLink(response.data.data.resetUrl);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, t('portal.failedToLoadData')));
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ py: 8, textAlign: 'center' }}>
@@ -290,6 +322,16 @@ export default function MunicipalityAdminPortal() {
               {dashboard ? `${dashboard.municipality?.nameEn ?? ''} (${dashboard.municipality?.code ?? ''}) - ${dashboard.municipality?.district ?? ''}` : t('portal.manageSchools')}
             </Typography>
           </Box>
+          {isSystemAccount && (
+            <Button
+              variant="outlined"
+              sx={S.BTN_OUTLINE}
+              startIcon={<BackupIcon />}
+              onClick={() => navigate('/' + (dashboard?.municipality.code || '') + '/system/backup')}
+            >
+              {t('portal.databaseBackups')}
+            </Button>
+          )}
         </Box>
       </Paper>
 
@@ -597,6 +639,54 @@ export default function MunicipalityAdminPortal() {
         </Grid>
       </Grid>
 
+      {isSystemAccount && (
+        <Card sx={{ mt: 3 }}>
+          <CardContent>
+            <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+              {t('portal.userPasswordRecovery')}
+            </Typography>
+            <Table size="small">
+              <TableHead sx={{ bgcolor: S.TH_BG }}>
+                <TableRow>
+                  <TableCell>{t('userManagement.username')}</TableCell>
+                  <TableCell>{t('common.email')}</TableCell>
+                  <TableCell>{t('userManagement.role')}</TableCell>
+                  <TableCell>{t('common.status')}</TableCell>
+                  <TableCell align="right">{t('common.actions')}</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {users.filter((user) => user.userId !== currentUserId).map((user) => (
+                  <TableRow key={user.userId} sx={S.TR_HOVER}>
+                    <TableCell sx={S.TD}>{user.username}</TableCell>
+                    <TableCell sx={S.TD}>{user.email}</TableCell>
+                    <TableCell sx={S.TD}>{user.role.replace(/_/g, ' ')}</TableCell>
+                    <TableCell sx={S.TD}>
+                      <Chip size="small" label={user.status} />
+                    </TableCell>
+                    <TableCell align="right" sx={S.TD}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        sx={S.BTN_OUTLINE}
+                        onClick={() => void issuePasswordResetLink(user.userId)}
+                      >
+                        {t('portal.createPasswordResetLink')}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {users.filter((user) => user.userId !== currentUserId).length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center">{t('portal.noUsersFound')}</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
       <Dialog open={adminDialogOpen} onClose={() => setAdminDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{t('portal.createSchoolAdmin')}</DialogTitle>
         <DialogContent>
@@ -675,6 +765,31 @@ export default function MunicipalityAdminPortal() {
             }
           >
             {savingAdmin ? t('portal.creating') : t('portal.createAdmin')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={Boolean(resetLink)} onClose={() => setResetLink('')} maxWidth="sm" fullWidth>
+        <DialogTitle>{t('portal.passwordResetLink')}</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>{t('portal.passwordResetLinkExpiry')}</Alert>
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            label={t('portal.passwordResetLink')}
+            value={resetLink}
+            InputProps={{ readOnly: true }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResetLink('')}>{t('common.close')}</Button>
+          <Button
+            variant="contained"
+            sx={S.BTN_PRIMARY}
+            onClick={() => void navigator.clipboard.writeText(resetLink)}
+          >
+            {t('common.copy')}
           </Button>
         </DialogActions>
       </Dialog>

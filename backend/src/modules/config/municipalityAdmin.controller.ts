@@ -80,6 +80,14 @@ class MunicipalityAdminController {
     );
     sendSuccess(res, user, 'School admin created successfully', 201);
   });
+
+  issuePasswordResetLink = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const resetLink = await municipalityAdminService.issuePasswordResetLink(
+      this.getContext(req),
+      Number(req.params.userId)
+    );
+    sendSuccess(res, resetLink, 'Password reset link generated');
+  });
 }
 
 export default new MunicipalityAdminController();

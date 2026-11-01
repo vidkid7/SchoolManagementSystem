@@ -12,6 +12,7 @@ export interface User {
   username: string;
   email: string;
   role: string;
+  isSystemAccount?: boolean;
   municipalityId?: string;
   municipalityCode?: string;
   municipalityName?: string;

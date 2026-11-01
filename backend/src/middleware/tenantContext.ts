@@ -40,11 +40,11 @@ export const getTenantContext = (): TenantContextStore | undefined => {
   return tenantStorage.getStore();
 };
 
-export const runWithTenantContext = (
+export const runWithTenantContext = <T>(
   context: TenantContextStore,
-  callback: () => void
-): void => {
-  tenantStorage.run(context, callback);
+  callback: () => T
+): T => {
+  return tenantStorage.run(context, callback);
 };
 
 export const resolveTenantContext = async (

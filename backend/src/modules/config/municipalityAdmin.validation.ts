@@ -5,6 +5,10 @@ export const schoolIdParamSchema = Joi.object({
   schoolId: Joi.string().uuid().required(),
 });
 
+export const municipalityUserIdParamSchema = Joi.object({
+  userId: Joi.number().integer().positive().required(),
+});
+
 export const createSchoolSchema = Joi.object({
   schoolNameEn: Joi.string().max(255).required(),
   schoolNameNp: Joi.string().max(255).optional().allow(''),

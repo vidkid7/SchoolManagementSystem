@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate, authorize } from '@middleware/auth';
 import { validate } from '@middleware/validation';
 import { UserRole } from '@models/User.model';
+import { requireSystemAccount } from '@middleware/systemAccount';
 import municipalityAdminController from './municipalityAdmin.controller';
 import {
   createSchoolAdminSchema,
@@ -9,6 +10,7 @@ import {
   listIncidentsQuerySchema,
   listSchoolsQuerySchema,
   listUsersQuerySchema,
+  municipalityUserIdParamSchema,
   schoolIdParamSchema,
   updateSchoolSchema,
 } from './municipalityAdmin.validation';
@@ -48,6 +50,12 @@ router.post(
   municipalityAdminController.activateSchool
 );
 router.get('/users', validate(listUsersQuerySchema, 'query'), municipalityAdminController.listUsers);
+router.post(
+  '/users/:userId/reset-password-link',
+  requireSystemAccount,
+  validate(municipalityUserIdParamSchema, 'params'),
+  municipalityAdminController.issuePasswordResetLink
+);
 router.post(
   '/schools/:schoolId/admins',
   validate(schoolIdParamSchema, 'params'),

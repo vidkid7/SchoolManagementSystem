@@ -149,7 +149,7 @@ const rolePermissionMap: Record<string, string[]> = {
   ],
 };
 
-async function seedRolesAndPermissions(): Promise<void> {
+export async function seedRolesAndPermissions(): Promise<void> {
   try {
     logger.info('Starting roles and permissions seeding...');
     await sequelize.authenticate();
@@ -188,11 +188,18 @@ async function seedRolesAndPermissions(): Promise<void> {
     }
 
     logger.info('Roles and permissions seeding completed successfully');
-    process.exit(0);
   } catch (error) {
     logger.error('Roles and permissions seeding failed:', error);
-    process.exit(1);
+    throw error;
   }
 }
 
-seedRolesAndPermissions();
+if (require.main === module) {
+  seedRolesAndPermissions()
+    .then(() => sequelize.close())
+    .catch(async (error: unknown) => {
+      logger.error('Roles and permissions seeding failed:', error);
+      await sequelize.close();
+      process.exitCode = 1;
+    });
+}

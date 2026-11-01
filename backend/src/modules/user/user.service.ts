@@ -156,6 +156,10 @@ export class UserService {
       throw new Error('User not found');
     }
 
+    if (user.isSystemAccount) {
+      throw new Error('Protected system accounts cannot be modified through school user management');
+    }
+
     if (data.email && data.email !== user.email) {
       const existingUser = await User.findOne({
         where: { email: data.email },
@@ -186,6 +190,10 @@ export class UserService {
 
     if (!user) {
       throw new Error('User not found');
+    }
+
+    if (user.isSystemAccount) {
+      throw new Error('Protected system accounts cannot be deleted');
     }
 
     await user.destroy();

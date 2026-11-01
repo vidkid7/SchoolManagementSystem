@@ -5,6 +5,9 @@ import User, { UserRole, UserStatus } from '@models/User.model';
 import auditLogger from '@utils/auditLogger';
 import { AuditAction } from '@models/AuditLog.model';
 import { NotFoundError, ValidationError } from '@middleware/errorHandler';
+import sequelize from '@config/database';
+import { runWithTenantContext } from '@middleware/tenantContext';
+import { seedSchoolFoundation } from './schoolFoundationSeeder';
 
 interface MunicipalityAdminContext {
   userId: number;
@@ -145,23 +148,41 @@ class MunicipalityAdminService {
       }
     }
 
-    const school = await SchoolConfig.create({
-      ...data,
-      municipalityId: municipality.id,
-      isActive: data.isActive ?? true,
-      academicYearStartMonth: data.academicYearStartMonth ?? 1,
-      academicYearDurationMonths: data.academicYearDurationMonths ?? 12,
-      termsPerYear: data.termsPerYear ?? 3,
-      defaultCalendarSystem: data.defaultCalendarSystem ?? 'BS',
-      defaultLanguage: data.defaultLanguage ?? 'nepali',
-      timezone: data.timezone ?? 'Asia/Kathmandu',
-      currency: data.currency ?? 'NPR',
-      dateFormat: data.dateFormat ?? 'YYYY-MM-DD',
-      timeFormat: data.timeFormat ?? 'HH:mm',
-      numberFormat: data.numberFormat ?? 'en-US',
+    const { school, foundation } = await sequelize.transaction(async (transaction) => {
+      const createdSchool = await SchoolConfig.create({
+        ...data,
+        municipalityId: municipality.id,
+        isActive: data.isActive ?? true,
+        academicYearStartMonth: data.academicYearStartMonth ?? 1,
+        academicYearDurationMonths: data.academicYearDurationMonths ?? 12,
+        termsPerYear: data.termsPerYear ?? 3,
+        defaultCalendarSystem: data.defaultCalendarSystem ?? 'BS',
+        defaultLanguage: data.defaultLanguage ?? 'nepali',
+        timezone: data.timezone ?? 'Asia/Kathmandu',
+        currency: data.currency ?? 'NPR',
+        dateFormat: data.dateFormat ?? 'YYYY-MM-DD',
+        timeFormat: data.timeFormat ?? 'HH:mm',
+        numberFormat: data.numberFormat ?? 'en-US',
+      }, { transaction });
+
+      const seededFoundation = await runWithTenantContext({
+        userId: context.userId,
+        role: UserRole.MUNICIPALITY_ADMIN,
+        municipalityId: municipality.id,
+        schoolConfigIds: [String(createdSchool.id)],
+        enforceIsolation: true,
+      }, () => seedSchoolFoundation(String(createdSchool.id), municipality.id, transaction));
+
+      return { school: createdSchool, foundation: seededFoundation };
     });
 
-    await auditLogger.log({
+    await runWithTenantContext({
+      userId: context.userId,
+      role: UserRole.MUNICIPALITY_ADMIN,
+      municipalityId: municipality.id,
+      schoolConfigIds: [String(school.id)],
+      enforceIsolation: true,
+    }, () => auditLogger.log({
       userId: context.userId,
       entityType: 'school_config',
       entityId: school.id as any,
@@ -170,8 +191,9 @@ class MunicipalityAdminService {
         schoolNameEn: school.schoolNameEn,
         schoolCode: school.schoolCode,
         municipalityId: school.municipalityId,
+        foundationSeeded: foundation,
       },
-    });
+    }));
 
     return school;
   }
@@ -469,7 +491,13 @@ class MunicipalityAdminService {
       failedLoginAttempts: 0,
     });
 
-    await auditLogger.log({
+    await runWithTenantContext({
+      userId: context.userId,
+      role: UserRole.MUNICIPALITY_ADMIN,
+      municipalityId: municipality.id,
+      schoolConfigIds: [String(school.id)],
+      enforceIsolation: true,
+    }, () => auditLogger.log({
       userId: context.userId,
       entityType: 'user',
       entityId: user.userId,
@@ -480,13 +508,56 @@ class MunicipalityAdminService {
         municipalityId: user.municipalityId,
         schoolConfigId: user.schoolConfigId,
       },
-    });
+    }));
 
     const userJson = user.toJSON() as unknown as Record<string, unknown>;
     delete userJson.password;
     delete userJson.refreshToken;
 
     return userJson;
+  }
+
+  async issuePasswordResetLink(
+    context: MunicipalityAdminContext,
+    userId: number
+  ): Promise<{ userId: number; username: string; resetUrl: string; expiresAt: Date }> {
+    const municipality = await this.resolveMunicipalityScope(context);
+    if (userId === context.userId) {
+      throw new ValidationError('Use your own account password-change or recovery flow for this account.');
+    }
+
+    const user = await User.findOne({
+      where: { userId, municipalityId: municipality.id },
+    });
+    if (!user) {
+      throw new NotFoundError('Municipality user');
+    }
+
+    const token = await user.generatePasswordResetToken();
+    const expiresAt = user.passwordResetExpires!;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const resetUrl = frontendUrl + '/reset-password?token=' + encodeURIComponent(token);
+
+    await runWithTenantContext({
+      userId: context.userId,
+      role: UserRole.MUNICIPALITY_ADMIN,
+      municipalityId: municipality.id,
+      schoolConfigIds: user.schoolConfigId ? [user.schoolConfigId] : [],
+      enforceIsolation: true,
+    }, () => auditLogger.log({
+      userId: context.userId,
+      entityType: 'user',
+      entityId: user.userId,
+      action: AuditAction.UPDATE,
+      newValue: { action: 'administrator_password_reset_link_issued' },
+    }));
+
+    return {
+      userId: user.userId,
+      username: user.username,
+      resetUrl,
+      expiresAt,
+    };
   }
 }
 

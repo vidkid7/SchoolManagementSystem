@@ -131,6 +131,7 @@ export const BackupManagement = () => {
         setConfig({
           ...raw,
           path: raw.path || raw.backupPath,
+          externalPath: raw.externalPath || raw.externalStoragePath,
           compression: raw.compression ?? raw.compressionEnabled,
           jobStatus: raw.jobStatus ? {
             isRunning: raw.jobStatus.isRunning ?? raw.jobStatus.running,
@@ -293,6 +294,12 @@ export const BackupManagement = () => {
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
           {error}
+        </Alert>
+      )}
+
+      {config && !config.externalPath && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Backups are stored on this service's local filesystem. On a free Render service, that storage is ephemeral and can be lost when the service restarts. Configure durable storage before relying on these backups for recovery.
         </Alert>
       )}
 

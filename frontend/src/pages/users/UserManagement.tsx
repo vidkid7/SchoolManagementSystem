@@ -255,8 +255,19 @@ export const UserManagement = () => {
       handleCloseDialog();
       fetchUsers();
       fetchStats();
-    } catch {
-      setSnackbar({ open: true, message: t('userManagement.operationFailed'), severity: 'error' });
+    } catch (error: unknown) {
+      // The API returns useful validation details (for example, invalid usernames
+      // or duplicate email addresses). Keep those visible instead of masking them
+      // behind the generic "operation failed" message.
+      const responseMessage = (error as {
+        response?: { data?: { error?: { message?: string }; message?: string } };
+      })?.response?.data?.error?.message
+        ?? (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setSnackbar({
+        open: true,
+        message: responseMessage || t('userManagement.operationFailed'),
+        severity: 'error',
+      });
     }
   };
 
@@ -637,6 +648,7 @@ export const UserManagement = () => {
               value={userForm.username}
               onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
               disabled={formMode === 'edit'}
+              helperText={formMode === 'create' ? 'Use letters and numbers only (no dots, spaces, or symbols).' : undefined}
             />
             <TextField
               label={t('common.email')}

@@ -68,6 +68,7 @@ import * as addSchoolConfigProfileFields from '../migrations/20261022000001-add-
 import * as createStaffLeaveRequests from '../migrations/20261022000002-create-staff-leave-requests';
 import * as createStaffTaskScheduleTables from '../migrations/20261022000003-create-staff-task-schedule-tables';
 import * as createStudentTransferHistory from '../migrations/20261023000001-create-student-transfer-history';
+import * as addSystemAccountFlag from '../migrations/20261101000001-add-system-account-flag';
 
 /**
  * Migration Runner
@@ -392,6 +393,11 @@ const migrations: Migration[] = [
     name: '20261023000001-create-student-transfer-history',
     up: createStudentTransferHistory.up,
     down: createStudentTransferHistory.down
+  },
+  {
+    name: '20261101000001-add-system-account-flag',
+    up: addSystemAccountFlag.up,
+    down: addSystemAccountFlag.down
   }
 ];
 

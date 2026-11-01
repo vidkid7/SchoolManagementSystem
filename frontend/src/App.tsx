@@ -340,6 +340,7 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
               <Route element={<DashboardLayout />}>
                 <Route path="municipality" element={<PortalDashboardStack configId="municipality-admin"><MunicipalityAdminPortal /></PortalDashboardStack>} />
                 <Route path="admin/municipality/dashboard" element={<PortalDashboardStack configId="municipality-admin"><MunicipalityAdminPortal /></PortalDashboardStack>} />
+                <Route path="system/backup" element={<BackupManagement />} />
               </Route>
             </Route>
 

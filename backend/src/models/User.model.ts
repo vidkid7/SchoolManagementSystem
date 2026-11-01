@@ -44,6 +44,7 @@ export interface UserAttributes {
   password: string;
   role: UserRole;
   status: UserStatus;
+  isSystemAccount?: boolean;
   municipalityId?: string;
   schoolConfigId?: string;
   phoneNumber?: string;
@@ -67,7 +68,7 @@ export interface UserAttributes {
 export interface UserCreationAttributes extends Optional<UserAttributes, 
   'userId' | 'status' | 'failedLoginAttempts' | 'lastLogin' | 'accountLockedUntil' | 
   'passwordChangedAt' | 'passwordResetToken' | 'passwordResetExpires' | 'refreshToken' | 
-  'refreshTokenExpiresAt' | 'phoneNumber' | 'profilePhoto' | 'municipalityId' | 'schoolConfigId' |
+  'refreshTokenExpiresAt' | 'phoneNumber' | 'profilePhoto' | 'municipalityId' | 'schoolConfigId' | 'isSystemAccount' |
   'createdAt' | 'updatedAt' | 'deletedAt'> {}
 
 /**
@@ -82,6 +83,7 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   declare password: string;
   declare role: UserRole;
   declare status: UserStatus;
+  declare isSystemAccount: boolean;
   declare municipalityId?: string;
   declare schoolConfigId?: string;
   declare phoneNumber?: string;
@@ -240,6 +242,12 @@ User.init(
       type: DataTypes.ENUM(...Object.values(UserStatus)),
       allowNull: false,
       defaultValue: UserStatus.ACTIVE
+    },
+    isSystemAccount: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: 'is_system_account',
     },
     municipalityId: {
       type: DataTypes.UUID,

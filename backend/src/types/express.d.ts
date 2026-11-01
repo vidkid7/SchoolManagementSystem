@@ -11,6 +11,7 @@ declare global {
         username: string;
         email: string;
         role: UserRole;
+        isSystemAccount?: boolean;
         municipalityId?: string;
         schoolConfigId?: string;
         allowedSchoolConfigIds?: string[];

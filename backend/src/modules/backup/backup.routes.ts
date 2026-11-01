@@ -1,20 +1,20 @@
 import { Router } from 'express';
 import { backupController } from './backup.controller';
-import { authenticate, authorize } from '../../middleware/auth';
-import { UserRole } from '../../models/User.model';
+import { authenticate } from '../../middleware/auth';
+import { authorizeBackupAccess } from '../../middleware/systemAccount';
 
 const router = Router();
 
 /**
  * Backup Routes
- * All routes require School_Admin role
+ * Routes require School_Admin or the protected system operator account.
  */
 
 // Create manual backup
 router.post(
   '/create',
   authenticate,
-  authorize(UserRole.SCHOOL_ADMIN),
+  authorizeBackupAccess,
   (req, res) => backupController.createBackup(req, res)
 );
 
@@ -22,7 +22,7 @@ router.post(
 router.get(
   '/list',
   authenticate,
-  authorize(UserRole.SCHOOL_ADMIN),
+  authorizeBackupAccess,
   (req, res) => backupController.listBackups(req, res)
 );
 
@@ -30,7 +30,7 @@ router.get(
 router.post(
   '/restore',
   authenticate,
-  authorize(UserRole.SCHOOL_ADMIN),
+  authorizeBackupAccess,
   (req, res) => backupController.restoreBackup(req, res)
 );
 
@@ -38,7 +38,7 @@ router.post(
 router.post(
   '/verify',
   authenticate,
-  authorize(UserRole.SCHOOL_ADMIN),
+  authorizeBackupAccess,
   (req, res) => backupController.verifyBackup(req, res)
 );
 
@@ -46,7 +46,7 @@ router.post(
 router.post(
   '/cleanup',
   authenticate,
-  authorize(UserRole.SCHOOL_ADMIN),
+  authorizeBackupAccess,
   (req, res) => backupController.cleanupBackups(req, res)
 );
 
@@ -54,7 +54,7 @@ router.post(
 router.get(
   '/config',
   authenticate,
-  authorize(UserRole.SCHOOL_ADMIN),
+  authorizeBackupAccess,
   (req, res) => backupController.getConfig(req, res)
 );
 
