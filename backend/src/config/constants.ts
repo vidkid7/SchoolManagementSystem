@@ -158,7 +158,7 @@ export const FILE_UPLOAD = {
 export const RATE_LIMITS = {
   LOGIN: {
     WINDOW_MS: 15 * 60 * 1000, // 15 minutes
-    MAX_REQUESTS: 5
+    MAX_REQUESTS: 30
   },
   API: {
     WINDOW_MS: 60 * 1000, // 1 minute

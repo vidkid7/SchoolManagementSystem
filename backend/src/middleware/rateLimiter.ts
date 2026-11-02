@@ -16,7 +16,7 @@ import { getRedisClient } from '@config/redis';
  * Get Redis store for rate limiting
  * Falls back to memory store if Redis is unavailable
  */
-const getRedisStore = (): RedisStore | undefined => {
+const getRedisStore = (prefix = 'rl:'): RedisStore | undefined => {
   try {
     const redisClient = getRedisClient();
     if (!redisClient) {
@@ -25,7 +25,7 @@ const getRedisStore = (): RedisStore | undefined => {
     }
     return new RedisStore({
       sendCommand: (...args: string[]) => redisClient.sendCommand(args),
-      prefix: 'rl:' // Rate limit prefix for Redis keys
+      prefix // Rate limit prefix for Redis keys
     });
   } catch (error) {
     logger.warn('Redis not available for rate limiting, using memory store', { error });
@@ -68,7 +68,7 @@ export const apiRateLimiter = rateLimit({
 
 /**
  * Strict Login Rate Limiter
- * 5 attempts per 15 minutes per IP
+ * 30 attempts per 15 minutes per IP
  * Uses Redis for distributed rate limiting
  * Requirements: 1.9, 35.4
  */
@@ -78,7 +78,8 @@ export const loginRateLimiter = rateLimit({
   message: 'Too many login attempts, please try again after 15 minutes',
   standardHeaders: true,
   legacyHeaders: false,
-  store: getRedisStore(),
+  // A new prefix clears existing shared-IP blocks without changing other limiters.
+  store: getRedisStore('rl:login:v2:'),
   skipSuccessfulRequests: true, // Don't count successful logins
   handler: (req: Request, _res: Response) => {
     logger.warn('Login rate limit exceeded', {
