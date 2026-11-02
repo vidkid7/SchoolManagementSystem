@@ -316,10 +316,16 @@ class AcademicController {
       throw new ValidationError('subjectId, classId, and academicYearId are required');
     }
 
+    // A client may still hold a cached current-year ID after school data was
+    // reset or repaired. Verify it exists in this tenant before inserting the
+    // syllabus, and recover using the current year if the cached ID is stale.
+    const requestedAcademicYear = await academicService.getAcademicYearById(Number(academicYearId));
+    const resolvedAcademicYear = requestedAcademicYear ?? await academicService.autoDetectCurrentAcademicYear();
+
     const syllabus = await academicService.createSyllabus({
       subjectId,
       classId,
-      academicYearId
+      academicYearId: resolvedAcademicYear.academicYearId
     });
 
     sendSuccess(res, syllabus, 'Syllabus created successfully', HTTP_STATUS.CREATED);

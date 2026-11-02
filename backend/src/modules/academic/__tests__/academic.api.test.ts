@@ -33,6 +33,8 @@ describe('Academic API Integration Tests', () => {
   let testTimetable: Timetable;
   let testPeriod: Period;
   let testSyllabus: Syllabus;
+  let fallbackSyllabus: Syllabus;
+  let recoveredAcademicYear: AcademicYear;
   let testSyllabusTopic: SyllabusTopic;
   let schoolConfigId: string;
 
@@ -101,6 +103,9 @@ describe('Academic API Integration Tests', () => {
     if (testSyllabus?.syllabusId) {
       await Syllabus.destroy({ where: { syllabusId: testSyllabus.syllabusId }, force: true });
     }
+    if (fallbackSyllabus?.syllabusId) {
+      await Syllabus.destroy({ where: { syllabusId: fallbackSyllabus.syllabusId }, force: true });
+    }
     if (testPeriod?.periodId) {
       await Period.destroy({ where: { periodId: testPeriod.periodId }, force: true });
     }
@@ -120,6 +125,9 @@ describe('Academic API Integration Tests', () => {
     }
     if (testAcademicYear?.academicYearId) {
       await AcademicYear.destroy({ where: { academicYearId: testAcademicYear.academicYearId }, force: true });
+    }
+    if (recoveredAcademicYear?.academicYearId) {
+      await AcademicYear.destroy({ where: { academicYearId: recoveredAcademicYear.academicYearId }, force: true });
     }
     if (testTeacher?.staffId) {
       await Staff.destroy({ where: { staffId: testTeacher.staffId }, force: true });
@@ -691,6 +699,24 @@ describe('Academic API Integration Tests', () => {
         expect(response.status).toBe(201);
         expect(response.body.success).toBe(true);
         expect(response.body.data.subjectId).toBe(testSubject.subjectId);
+      });
+
+      it('recovers from a stale academic-year ID by using the current persisted year', async () => {
+        const response = await request(app)
+          .post('/api/v1/academic/syllabus')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            subjectId: testOptionalSubject.subjectId,
+            classId: testClass.classId,
+            academicYearId: 99999999,
+          });
+
+        expect(response.status).toBe(201);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.academicYearId).not.toBe(99999999);
+        fallbackSyllabus = response.body.data;
+        recoveredAcademicYear = await AcademicYear.findByPk(response.body.data.academicYearId) as AcademicYear;
+        expect(recoveredAcademicYear).toBeTruthy();
       });
 
       it('should add a topic to syllabus', async () => {

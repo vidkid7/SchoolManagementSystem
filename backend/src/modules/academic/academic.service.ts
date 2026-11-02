@@ -32,6 +32,10 @@ class AcademicService {
     return academicRepository.findAllAcademicYears({ orderBy: 'startDateAD', orderDirection: 'DESC' });
   }
 
+  getAcademicYearById(academicYearId: number): Promise<AcademicYear | null> {
+    return academicRepository.findAcademicYearById(academicYearId);
+  }
+
   getCurrentAcademicYear(): Promise<AcademicYear | null> {
     return academicRepository.findCurrentAcademicYear();
   }
