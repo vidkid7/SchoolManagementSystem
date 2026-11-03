@@ -3,6 +3,7 @@ import { AuthenticationError, AuthorizationError } from './errorHandler';
 import authService from '@modules/auth/auth.service';
 import { logger } from '@utils/logger';
 import User, { UserRole, UserStatus } from '@models/User.model';
+import SchoolConfig from '@models/SchoolConfig.model';
 import {
   resolveTenantContext,
   runWithTenantContext,
@@ -43,6 +44,11 @@ const loadCurrentUser = async (userId: number) => {
     }
   } else if (!user.schoolConfigId) {
     throw new AuthenticationError('Account is missing a school assignment');
+  } else {
+    const school = await SchoolConfig.findByPk(user.schoolConfigId, { attributes: ['id', 'isActive'] });
+    if (!school || !school.isActive) {
+      throw new AuthenticationError('School is inactive');
+    }
   }
 
   return {

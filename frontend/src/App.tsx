@@ -160,7 +160,6 @@ const LibrarianPortal = React.lazy(() => import('./pages/portals/LibrarianPortal
 const RoleManagement = React.lazy(() => import('./pages/settings/RoleManagement').then(m => ({ default: m.RoleManagement })));
 const SystemSettings = React.lazy(() => import('./pages/settings/SystemSettings').then(m => ({ default: m.SystemSettings })));
 const SchoolConfiguration = React.lazy(() => import('./pages/settings/SchoolConfiguration').then(m => ({ default: m.SchoolConfiguration })));
-const BackupManagement = React.lazy(() => import('./pages/settings/BackupManagement').then(m => ({ default: m.BackupManagement })));
 const ArchiveManagement = React.lazy(() => import('./pages/settings/ArchiveManagement').then(m => ({ default: m.ArchiveManagement })));
 
 const ADMIN = 'School_Admin';
@@ -340,7 +339,7 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
               <Route element={<DashboardLayout />}>
                 <Route path="municipality" element={<PortalDashboardStack configId="municipality-admin"><MunicipalityAdminPortal /></PortalDashboardStack>} />
                 <Route path="admin/municipality/dashboard" element={<PortalDashboardStack configId="municipality-admin"><MunicipalityAdminPortal /></PortalDashboardStack>} />
-                <Route path="system/backup" element={<BackupManagement />} />
+                <Route path="system/backup" element={<Navigate to="../municipality" replace />} />
               </Route>
             </Route>
 
@@ -614,7 +613,7 @@ function ThemeProviderWithAccessibility({ disableAnimations }: { disableAnimatio
                 <Route path="settings/school" element={<SchoolConfiguration />} />
                 <Route path="settings/roles" element={<RoleManagement />} />
                 <Route path="settings/system" element={<SystemSettings />} />
-                <Route path="settings/backup" element={<BackupManagement />} />
+                <Route path="settings/backup" element={<Navigate to="../settings" replace />} />
                 <Route path="settings/archive" element={<ArchiveManagement />} />
               </Route>
             </Route>

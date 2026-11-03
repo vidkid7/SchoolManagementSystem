@@ -4,7 +4,7 @@ import SchoolConfig, { SchoolConfigCreationAttributes } from '@models/SchoolConf
 import User, { UserRole, UserStatus } from '@models/User.model';
 import auditLogger from '@utils/auditLogger';
 import { AuditAction } from '@models/AuditLog.model';
-import { NotFoundError, ValidationError } from '@middleware/errorHandler';
+import { AuthorizationError, NotFoundError, ValidationError } from '@middleware/errorHandler';
 import sequelize from '@config/database';
 import { runWithTenantContext } from '@middleware/tenantContext';
 import { seedSchoolFoundation } from './schoolFoundationSeeder';
@@ -12,6 +12,7 @@ import { seedSchoolFoundation } from './schoolFoundationSeeder';
 interface MunicipalityAdminContext {
   userId: number;
   municipalityId?: string;
+  isSystemAccount?: boolean;
 }
 
 interface CreateSchoolAdminData {
@@ -32,6 +33,33 @@ interface MunicipalityIncident {
 }
 
 class MunicipalityAdminService {
+  private assertSystemAccount(context: MunicipalityAdminContext): void {
+    if (!context.isSystemAccount) {
+      throw new AuthorizationError('This operation is reserved for the protected system account');
+    }
+  }
+
+  private runInSchoolScope<T>(school: SchoolConfig, userId: number, callback: () => Promise<T>): Promise<T> {
+    return runWithTenantContext({
+      userId,
+      role: UserRole.MUNICIPALITY_ADMIN,
+      municipalityId: school.municipalityId,
+      schoolConfigIds: [String(school.id)],
+      enforceIsolation: true,
+    }, callback);
+  }
+
+  async getPlatformMunicipalities(context: MunicipalityAdminContext): Promise<Array<Record<string, unknown>>> {
+    this.assertSystemAccount(context);
+    const rows = await Municipality.findAll({
+      where: { isActive: true },
+      attributes: ['id', 'nameEn', 'nameNp', 'code', 'district', 'province'],
+      order: [['nameEn', 'ASC']],
+      raw: true,
+    } as any);
+    return rows as unknown as Array<Record<string, unknown>>;
+  }
+
   private async resolveMunicipalityScope(context: MunicipalityAdminContext): Promise<Municipality> {
     if (!context.municipalityId) {
       throw new ValidationError(
@@ -52,11 +80,12 @@ class MunicipalityAdminService {
 
   private async findMunicipalitySchoolOrThrow(
     schoolId: string,
-    municipalityId: string
+    municipalityId: string,
+    isSystemAccount = false
   ): Promise<SchoolConfig> {
-    const school = await SchoolConfig.findOne({
-      where: { id: schoolId, municipalityId },
-    });
+    const school = await SchoolConfig.findOne(isSystemAccount
+      ? { where: { id: schoolId }, skipTenantIsolation: true } as any
+      : { where: { id: schoolId, municipalityId } });
 
     if (!school) {
       throw new NotFoundError('School configuration');
@@ -66,6 +95,34 @@ class MunicipalityAdminService {
   }
 
   async getDashboard(context: MunicipalityAdminContext): Promise<Record<string, unknown>> {
+    if (context.isSystemAccount) {
+      this.assertSystemAccount(context);
+      const [schools, users] = await Promise.all([
+        SchoolConfig.findAll({
+          attributes: ['id', 'schoolNameEn', 'schoolCode', 'isActive', 'createdAt'],
+          order: [['createdAt', 'DESC']],
+          skipTenantIsolation: true,
+        } as any),
+        User.findAll({
+          where: { role: UserRole.SCHOOL_ADMIN },
+          attributes: ['userId', 'status'],
+          skipTenantIsolation: true,
+        } as any),
+      ]);
+      const activeSchools = schools.filter((school) => school.isActive).length;
+      return {
+        municipality: { nameEn: 'All Schools', code: 'PLATFORM', district: 'Platform-wide' },
+        systemHealth: { api: 'online', database: 'online', checkedAt: new Date().toISOString() },
+        summary: {
+          totalSchools: schools.length,
+          activeSchools,
+          inactiveSchools: schools.length - activeSchools,
+          totalUsers: users.length,
+          activeSchoolAdmins: users.filter((user) => user.status === UserStatus.ACTIVE).length,
+        },
+        recentSchools: schools.slice(0, 5),
+      };
+    }
     const municipality = await this.resolveMunicipalityScope(context);
 
     const totalSchools = await SchoolConfig.count({
@@ -119,6 +176,14 @@ class MunicipalityAdminService {
     context: MunicipalityAdminContext,
     includeInactive = false
   ): Promise<SchoolConfig[]> {
+    if (context.isSystemAccount) {
+      this.assertSystemAccount(context);
+      return SchoolConfig.findAll({
+        where: includeInactive ? {} : { isActive: true },
+        order: [['schoolNameEn', 'ASC']],
+        skipTenantIsolation: true,
+      } as any);
+    }
     const municipality = await this.resolveMunicipalityScope(context);
     const whereClause: Record<string, unknown> = { municipalityId: municipality.id };
 
@@ -134,14 +199,21 @@ class MunicipalityAdminService {
 
   async createSchool(
     context: MunicipalityAdminContext,
-    data: SchoolConfigCreationAttributes
+    data: SchoolConfigCreationAttributes & { municipalityId?: string }
   ): Promise<SchoolConfig> {
-    const municipality = await this.resolveMunicipalityScope(context);
+    const municipality = context.isSystemAccount && data.municipalityId
+      ? await Municipality.findOne({
+        where: { id: data.municipalityId, isActive: true },
+        skipTenantIsolation: true,
+      } as any)
+      : await this.resolveMunicipalityScope(context);
+    if (!municipality) throw new NotFoundError('Municipality');
 
     if (data.schoolCode) {
       const existingByCode = await SchoolConfig.findOne({
         where: { schoolCode: data.schoolCode },
-      });
+        ...(context.isSystemAccount ? { skipTenantIsolation: true } : {}),
+      } as any);
 
       if (existingByCode) {
         throw new ValidationError('A school with this code already exists');
@@ -203,8 +275,8 @@ class MunicipalityAdminService {
     schoolId: string,
     data: Partial<SchoolConfigCreationAttributes>
   ): Promise<SchoolConfig> {
-    const municipality = await this.resolveMunicipalityScope(context);
-    const school = await this.findMunicipalitySchoolOrThrow(schoolId, municipality.id);
+    const municipality = context.isSystemAccount ? null : await this.resolveMunicipalityScope(context);
+    const school = await this.findMunicipalitySchoolOrThrow(schoolId, municipality?.id || '', context.isSystemAccount);
 
     if (data.schoolCode && data.schoolCode !== school.schoolCode) {
       const duplicate = await SchoolConfig.findOne({
@@ -214,7 +286,8 @@ class MunicipalityAdminService {
             [Op.ne]: school.id,
           },
         },
-      });
+        ...(context.isSystemAccount ? { skipTenantIsolation: true } : {}),
+      } as any);
 
       if (duplicate) {
         throw new ValidationError('A school with this code already exists');
@@ -222,15 +295,16 @@ class MunicipalityAdminService {
     }
 
     const oldValue = school.toJSON();
-    await school.update(data);
-
-    await auditLogger.log({
-      userId: context.userId,
-      entityType: 'school_config',
-      entityId: school.id as any,
-      action: AuditAction.UPDATE,
-      oldValue,
-      newValue: data,
+    await this.runInSchoolScope(school, context.userId, async () => {
+      await school.update(data);
+      await auditLogger.log({
+        userId: context.userId,
+        entityType: 'school_config',
+        entityId: school.id as any,
+        action: AuditAction.UPDATE,
+        oldValue,
+        newValue: data,
+      });
     });
 
     return school;
@@ -241,19 +315,20 @@ class MunicipalityAdminService {
     schoolId: string,
     isActive: boolean
   ): Promise<SchoolConfig> {
-    const municipality = await this.resolveMunicipalityScope(context);
-    const school = await this.findMunicipalitySchoolOrThrow(schoolId, municipality.id);
+    const municipality = context.isSystemAccount ? null : await this.resolveMunicipalityScope(context);
+    const school = await this.findMunicipalitySchoolOrThrow(schoolId, municipality?.id || '', context.isSystemAccount);
 
     const oldValue = school.toJSON();
-    await school.update({ isActive });
-
-    await auditLogger.log({
-      userId: context.userId,
-      entityType: 'school_config',
-      entityId: school.id as any,
-      action: AuditAction.UPDATE,
-      oldValue,
-      newValue: { isActive },
+    await this.runInSchoolScope(school, context.userId, async () => {
+      await school.update({ isActive });
+      await auditLogger.log({
+        userId: context.userId,
+        entityType: 'school_config',
+        entityId: school.id as any,
+        action: AuditAction.UPDATE,
+        oldValue,
+        newValue: { isActive },
+      });
     });
 
     return school;
@@ -263,6 +338,18 @@ class MunicipalityAdminService {
     context: MunicipalityAdminContext,
     role?: UserRole
   ): Promise<Array<Record<string, unknown>>> {
+    if (context.isSystemAccount) {
+      this.assertSystemAccount(context);
+      const where: Record<string, unknown> = {};
+      if (role) where.role = role;
+      const users = await User.findAll({
+        where,
+        order: [['createdAt', 'DESC']],
+        attributes: { exclude: ['password', 'refreshToken', 'passwordResetToken', 'passwordResetExpires'] },
+        skipTenantIsolation: true,
+      } as any);
+      return users.map((user) => user.toJSON() as unknown as Record<string, unknown>);
+    }
     const municipality = await this.resolveMunicipalityScope(context);
     const whereClause: Record<string, unknown> = { municipalityId: municipality.id };
 
@@ -282,6 +369,33 @@ class MunicipalityAdminService {
   }
 
   async getReports(context: MunicipalityAdminContext): Promise<Record<string, unknown>> {
+    if (context.isSystemAccount) {
+      this.assertSystemAccount(context);
+      const [totalSchools, activeSchools, totalUsers, activeUsers, inactiveUsers, suspendedUsers,
+        lockedUsers, schoolAdmins, teachers, students, parents, supportStaff] = await Promise.all([
+        SchoolConfig.count({ skipTenantIsolation: true } as any),
+        SchoolConfig.count({ where: { isActive: true }, skipTenantIsolation: true } as any),
+        User.count({ skipTenantIsolation: true } as any),
+        User.count({ where: { status: UserStatus.ACTIVE }, skipTenantIsolation: true } as any),
+        User.count({ where: { status: UserStatus.INACTIVE }, skipTenantIsolation: true } as any),
+        User.count({ where: { status: UserStatus.SUSPENDED }, skipTenantIsolation: true } as any),
+        User.count({ where: { status: UserStatus.LOCKED }, skipTenantIsolation: true } as any),
+        User.count({ where: { role: UserRole.SCHOOL_ADMIN }, skipTenantIsolation: true } as any),
+        User.count({ where: { role: { [Op.in]: [UserRole.CLASS_TEACHER, UserRole.SUBJECT_TEACHER, UserRole.DEPARTMENT_HEAD] } }, skipTenantIsolation: true } as any),
+        User.count({ where: { role: UserRole.STUDENT }, skipTenantIsolation: true } as any),
+        User.count({ where: { role: UserRole.PARENT }, skipTenantIsolation: true } as any),
+        User.count({ where: { role: { [Op.in]: [UserRole.ECA_COORDINATOR, UserRole.SPORTS_COORDINATOR, UserRole.LIBRARIAN, UserRole.ACCOUNTANT, UserRole.TRANSPORT_MANAGER, UserRole.HOSTEL_WARDEN, UserRole.NON_TEACHING_STAFF] } }, skipTenantIsolation: true } as any),
+      ]);
+      return {
+        municipality: { nameEn: 'All Schools', code: 'PLATFORM', district: 'Platform-wide' },
+        schoolMetrics: { totalSchools: Number(totalSchools), activeSchools: Number(activeSchools), inactiveSchools: Math.max(Number(totalSchools) - Number(activeSchools), 0) },
+        userMetrics: {
+          totalUsers,
+          byStatus: { active: activeUsers, inactive: inactiveUsers, suspended: suspendedUsers, locked: lockedUsers },
+          byRole: { schoolAdmins, teachers, students, parents, supportStaff },
+        },
+      };
+    }
     const municipality = await this.resolveMunicipalityScope(context);
 
     const [
@@ -387,19 +501,20 @@ class MunicipalityAdminService {
     context: MunicipalityAdminContext,
     limit = 20
   ): Promise<Record<string, unknown>> {
-    const municipality = await this.resolveMunicipalityScope(context);
+    const municipality = context.isSystemAccount ? null : await this.resolveMunicipalityScope(context);
     const safeLimit = Math.min(Math.max(limit, 1), 100);
 
     const [inactiveSchools, flaggedUsers] = await Promise.all([
       SchoolConfig.findAll({
-        where: { municipalityId: municipality.id, isActive: false },
+        where: { ...(municipality ? { municipalityId: municipality.id } : {}), isActive: false },
         order: [['updatedAt', 'DESC']],
         limit: safeLimit,
         attributes: ['id', 'schoolNameEn', 'schoolCode', 'updatedAt', 'createdAt'],
+        ...(context.isSystemAccount ? { skipTenantIsolation: true } : {}),
       }),
       User.findAll({
         where: {
-          municipalityId: municipality.id,
+          ...(municipality ? { municipalityId: municipality.id } : {}),
           status: {
             [Op.in]: [UserStatus.INACTIVE, UserStatus.SUSPENDED, UserStatus.LOCKED],
           },
@@ -416,6 +531,7 @@ class MunicipalityAdminService {
           'updatedAt',
           'createdAt',
         ],
+        ...(context.isSystemAccount ? { skipTenantIsolation: true } : {}),
       }),
     ]);
 
@@ -447,11 +563,11 @@ class MunicipalityAdminService {
       .slice(0, safeLimit);
 
     return {
-      municipality: {
+      municipality: municipality ? {
         id: municipality.id,
         nameEn: municipality.nameEn,
         code: municipality.code,
-      },
+      } : { nameEn: 'All Schools', code: 'PLATFORM' },
       summary: {
         totalIncidents: incidents.length,
         inactiveSchools: schoolIncidents.length,
@@ -466,38 +582,33 @@ class MunicipalityAdminService {
     schoolId: string,
     data: CreateSchoolAdminData
   ): Promise<Record<string, unknown>> {
-    const municipality = await this.resolveMunicipalityScope(context);
-    const school = await this.findMunicipalitySchoolOrThrow(schoolId, municipality.id);
+    const municipality = context.isSystemAccount ? null : await this.resolveMunicipalityScope(context);
+    const school = await this.findMunicipalitySchoolOrThrow(schoolId, municipality?.id || '', context.isSystemAccount);
 
     const existingUser = await User.findOne({
       where: {
         [Op.or]: [{ username: data.username }, { email: data.email }],
       },
-    });
+      ...(context.isSystemAccount ? { skipTenantIsolation: true } : {}),
+    } as any);
 
     if (existingUser) {
       throw new ValidationError('Username or email already exists');
     }
 
-    const user = await User.create({
+    const user = await this.runInSchoolScope(school, context.userId, () => User.create({
       username: data.username,
       email: data.email,
       password: data.password,
       role: UserRole.SCHOOL_ADMIN,
       status: UserStatus.ACTIVE,
-      municipalityId: municipality.id,
+      municipalityId: school.municipalityId,
       schoolConfigId: school.id,
       phoneNumber: data.phoneNumber,
       failedLoginAttempts: 0,
-    });
+    }));
 
-    await runWithTenantContext({
-      userId: context.userId,
-      role: UserRole.MUNICIPALITY_ADMIN,
-      municipalityId: municipality.id,
-      schoolConfigIds: [String(school.id)],
-      enforceIsolation: true,
-    }, () => auditLogger.log({
+    await this.runInSchoolScope(school, context.userId, () => auditLogger.log({
       userId: context.userId,
       entityType: 'user',
       entityId: user.userId,
@@ -521,43 +632,71 @@ class MunicipalityAdminService {
     context: MunicipalityAdminContext,
     userId: number
   ): Promise<{ userId: number; username: string; resetUrl: string; expiresAt: Date }> {
-    const municipality = await this.resolveMunicipalityScope(context);
+    this.assertSystemAccount(context);
     if (userId === context.userId) {
       throw new ValidationError('Use your own account password-change or recovery flow for this account.');
     }
 
     const user = await User.findOne({
-      where: { userId, municipalityId: municipality.id },
-    });
+      where: { userId, role: UserRole.SCHOOL_ADMIN, isSystemAccount: false },
+      skipTenantIsolation: true,
+    } as any);
     if (!user) {
-      throw new NotFoundError('Municipality user');
+      throw new NotFoundError('School administrator');
     }
+    if (!user.schoolConfigId) throw new NotFoundError('School administrator');
+    return this.issueSchoolAdminPasswordResetLink(context, user.schoolConfigId, user.userId);
+  }
 
-    const token = await user.generatePasswordResetToken();
-    const expiresAt = user.passwordResetExpires!;
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const resetUrl = frontendUrl + '/reset-password?token=' + encodeURIComponent(token);
+  async getSchoolAdmins(context: MunicipalityAdminContext, schoolId: string): Promise<Array<Record<string, unknown>>> {
+    this.assertSystemAccount(context);
+    const school = await this.findMunicipalitySchoolOrThrow(schoolId, '', true);
+    const users = await User.findAll({
+      where: { schoolConfigId: school.id, role: UserRole.SCHOOL_ADMIN, isSystemAccount: false },
+      order: [['createdAt', 'DESC']],
+      attributes: { exclude: ['password', 'refreshToken', 'passwordResetToken', 'passwordResetExpires'] },
+      skipTenantIsolation: true,
+    } as any);
+    return users.map((user) => user.toJSON() as unknown as Record<string, unknown>);
+  }
 
-    await runWithTenantContext({
-      userId: context.userId,
-      role: UserRole.MUNICIPALITY_ADMIN,
-      municipalityId: municipality.id,
-      schoolConfigIds: user.schoolConfigId ? [user.schoolConfigId] : [],
-      enforceIsolation: true,
-    }, () => auditLogger.log({
+  async issueSchoolAdminPasswordResetLink(
+    context: MunicipalityAdminContext,
+    schoolId: string,
+    userId: number
+  ): Promise<{ userId: number; username: string; resetUrl: string; expiresAt: Date }> {
+    this.assertSystemAccount(context);
+    const school = await this.findMunicipalitySchoolOrThrow(schoolId, '', true);
+    if (userId === context.userId) {
+      throw new ValidationError('Use your own account password-change or recovery flow for this account.');
+    }
+    const user = await User.findOne({
+      where: {
+        userId,
+        schoolConfigId: school.id,
+        role: UserRole.SCHOOL_ADMIN,
+        isSystemAccount: false,
+      },
+      skipTenantIsolation: true,
+    } as any);
+    if (!user) throw new NotFoundError('School administrator');
+
+    const { token, expiresAt } = await this.runInSchoolScope(school, context.userId, async () => {
+      const generatedToken = await user.generatePasswordResetToken();
+      return { token: generatedToken, expiresAt: user.passwordResetExpires! };
+    });
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+    const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
+
+    await this.runInSchoolScope(school, context.userId, () => auditLogger.log({
       userId: context.userId,
       entityType: 'user',
       entityId: user.userId,
       action: AuditAction.UPDATE,
-      newValue: { action: 'administrator_password_reset_link_issued' },
+      newValue: { action: 'school_admin_password_reset_link_issued', schoolConfigId: school.id },
     }));
 
-    return {
-      userId: user.userId,
-      username: user.username,
-      resetUrl,
-      expiresAt,
-    };
+    return { userId: user.userId, username: user.username, resetUrl, expiresAt };
   }
 }
 

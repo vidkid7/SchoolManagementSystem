@@ -11,6 +11,7 @@ import {
   listSchoolsQuerySchema,
   listUsersQuerySchema,
   municipalityUserIdParamSchema,
+  schoolAdminResetParamsSchema,
   schoolIdParamSchema,
   updateSchoolSchema,
 } from './municipalityAdmin.validation';
@@ -21,6 +22,7 @@ router.use(authenticate);
 router.use(authorize(UserRole.MUNICIPALITY_ADMIN));
 
 router.get('/dashboard', municipalityAdminController.getDashboard);
+router.get('/platform/municipalities', requireSystemAccount, municipalityAdminController.listMunicipalities);
 router.get('/reports', municipalityAdminController.getReports);
 router.get(
   '/incidents',
@@ -55,6 +57,18 @@ router.post(
   requireSystemAccount,
   validate(municipalityUserIdParamSchema, 'params'),
   municipalityAdminController.issuePasswordResetLink
+);
+router.get(
+  '/platform/schools/:schoolId/admins',
+  requireSystemAccount,
+  validate(schoolIdParamSchema, 'params'),
+  municipalityAdminController.listSchoolAdmins
+);
+router.post(
+  '/platform/schools/:schoolId/admins/:userId/reset-password-link',
+  requireSystemAccount,
+  validate(schoolAdminResetParamsSchema, 'params'),
+  municipalityAdminController.issueSchoolAdminResetLink
 );
 router.post(
   '/schools/:schoolId/admins',

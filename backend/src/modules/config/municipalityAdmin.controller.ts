@@ -5,12 +5,32 @@ import { UserRole } from '@models/User.model';
 import municipalityAdminService from './municipalityAdmin.service';
 
 class MunicipalityAdminController {
-  private getContext(req: Request): { userId: number; municipalityId?: string } {
+  private getContext(req: Request): { userId: number; municipalityId?: string; isSystemAccount: boolean } {
     return {
       userId: req.user!.userId,
       municipalityId: req.user!.municipalityId,
+      isSystemAccount: req.user!.isSystemAccount === true,
     };
   }
+
+  listMunicipalities = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const municipalities = await municipalityAdminService.getPlatformMunicipalities(this.getContext(req));
+    sendSuccess(res, municipalities, 'Municipalities retrieved');
+  });
+
+  listSchoolAdmins = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const users = await municipalityAdminService.getSchoolAdmins(this.getContext(req), req.params.schoolId);
+    sendSuccess(res, users, 'School administrators retrieved');
+  });
+
+  issueSchoolAdminResetLink = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const resetLink = await municipalityAdminService.issueSchoolAdminPasswordResetLink(
+      this.getContext(req),
+      req.params.schoolId,
+      Number(req.params.userId)
+    );
+    sendSuccess(res, resetLink, 'Password reset link generated');
+  });
 
   getDashboard = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const data = await municipalityAdminService.getDashboard(this.getContext(req));

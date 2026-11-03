@@ -1,6 +1,8 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { configureStore } from '@reduxjs/toolkit';
+import { Provider } from 'react-redux';
 import apiClient from '../../services/apiClient';
 import MunicipalityAdminPortal from './MunicipalityAdminPortal';
 
@@ -29,23 +31,43 @@ const mockReadResponses = () => {
       return { data: { data: { municipality: { nameEn: 'QA Municipality', code: 'QA', district: 'Kaski' }, summary: { totalSchools: 1, activeSchools: 1, inactiveSchools: 0, activeSchoolAdmins: 1 } } } } as never;
     }
     if (url.endsWith('/schools')) return { data: { data: [school] } } as never;
+    if (url.endsWith('/platform/municipalities')) return { data: { data: [{ id: 'muni-1', nameEn: 'Gandaki', code: 'GAN' }] } } as never;
     if (url.endsWith('/reports')) return { data: { data: { userMetrics: { totalUsers: 2, byRole: { teachers: 1, students: 1, parents: 0, supportStaff: 0 }, byStatus: {} } } } } as never;
     if (url.endsWith('/incidents')) return { data: { data: { summary: { totalIncidents: 0, inactiveSchools: 0, flaggedUsers: 0 }, incidents: [] } } } as never;
     return { data: { data: {} } } as never;
   });
 };
 
-const renderPortal = () => render(
-  <ThemeProvider theme={createTheme()}>
-    <MunicipalityAdminPortal />
-  </ThemeProvider>,
-);
+const renderPortal = (isSystemAccount = false) => {
+  const store = configureStore({
+    reducer: {
+      auth: (state = { user: { userId: 42, isSystemAccount } }) => state,
+    },
+  });
+  return render(
+    <Provider store={store}>
+      <ThemeProvider theme={createTheme()}>
+        <MunicipalityAdminPortal />
+      </ThemeProvider>
+    </Provider>,
+  );
+};
 
 describe('MunicipalityAdminPortal', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockReadResponses();
     jest.mocked(apiClient.post).mockResolvedValue({ data: { data: {} } } as never);
+  });
+
+  it('loads platform-wide controls for the protected system account', async () => {
+    renderPortal(true);
+
+    expect(await screen.findByText('QA School')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Backup' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Restore' })).toBeInTheDocument();
+    expect(screen.getByText('portal.userPasswordRecovery')).toBeInTheDocument();
+    expect(apiClient.get).toHaveBeenCalledWith('/municipality-admin/platform/municipalities');
   });
 
   it('loads municipality metrics, reports, incidents, and schools from the tenant APIs', async () => {
@@ -57,7 +79,7 @@ describe('MunicipalityAdminPortal', () => {
     expect(screen.getByText('portal.totalSchools')).toBeInTheDocument();
     expect(screen.getByText('portal.reportsOverview')).toBeInTheDocument();
     expect(screen.getByText('portal.noIncidentsFound')).toBeInTheDocument();
-    expect(apiClient.get).toHaveBeenCalledTimes(4);
+    expect(apiClient.get).toHaveBeenCalledTimes(5);
   });
 
   it('creates a school and refreshes the school list after success', async () => {
@@ -75,8 +97,8 @@ describe('MunicipalityAdminPortal', () => {
       phone: undefined,
       email: undefined,
     }));
-    expect(await screen.findByText('portal.schoolCreatedSuccess')).toBeInTheDocument();
-    expect(apiClient.get).toHaveBeenCalledTimes(8);
+    expect(await screen.findByText('portal.schoolFoundationCreatedSuccess')).toBeInTheDocument();
+    expect(apiClient.get).toHaveBeenCalledTimes(10);
   });
 
   it('prevents an invalid school email from reaching the create API', async () => {
@@ -124,7 +146,7 @@ describe('MunicipalityAdminPortal', () => {
       { username: 'qaAdmin', email: 'admin@example.test', password: 'Str0ngPass', phoneNumber: undefined },
     ));
     expect(await screen.findByText('portal.schoolAdminCreatedSuccess')).toBeInTheDocument();
-    expect(apiClient.get).toHaveBeenCalledTimes(8);
+    expect(apiClient.get).toHaveBeenCalledTimes(10);
   });
 
   it('activates and deactivates schools using the matching row action', async () => {
@@ -133,6 +155,7 @@ describe('MunicipalityAdminPortal', () => {
     await screen.findByText('QA School');
     const row = screen.getByRole('row', { name: /QA School/ });
     await user.click(within(row).getByRole('button', { name: 'portal.deactivate' }));
+    await user.click(await screen.findByRole('button', { name: 'Deactivate school' }));
 
     await waitFor(() => expect(apiClient.post).toHaveBeenCalledWith(
       `/municipality-admin/schools/${school.id}/deactivate`,
@@ -150,6 +173,6 @@ describe('MunicipalityAdminPortal', () => {
     await user.click(screen.getByRole('button', { name: 'portal.createSchool' }));
 
     expect(await screen.findByText('School code already exists')).toBeInTheDocument();
-    expect(screen.queryByText('portal.schoolCreatedSuccess')).not.toBeInTheDocument();
+    expect(screen.queryByText('portal.schoolFoundationCreatedSuccess')).not.toBeInTheDocument();
   });
 });

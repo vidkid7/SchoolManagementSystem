@@ -19,18 +19,10 @@ export function authorizeBackupAccess(
   _res: Response,
   next: NextFunction
 ): void {
-  if (req.user?.role === UserRole.SCHOOL_ADMIN) {
-    return next();
-  }
-
-  if (req.user?.role === UserRole.MUNICIPALITY_ADMIN && req.user.isSystemAccount) {
-    return next();
-  }
-
   logger.warn('Database backup access denied', {
     userId: req.user?.userId,
     role: req.user?.role,
     path: req.path,
   });
-  next(new AuthorizationError('Database backup access is not permitted for this account'));
+  next(new AuthorizationError('Whole-database backup access is disabled. Use the school-scoped backup tools.'));
 }

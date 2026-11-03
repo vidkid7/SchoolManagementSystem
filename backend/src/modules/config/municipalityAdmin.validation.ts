@@ -9,7 +9,17 @@ export const municipalityUserIdParamSchema = Joi.object({
   userId: Joi.number().integer().positive().required(),
 });
 
+export const schoolAdminResetParamsSchema = Joi.object({
+  schoolId: Joi.string().uuid().required(),
+  userId: Joi.number().integer().positive().required(),
+});
+
+export const schoolBackupPassphraseSchema = Joi.object({
+  passphrase: Joi.string().min(12).max(128).required(),
+});
+
 export const createSchoolSchema = Joi.object({
+  municipalityId: Joi.string().uuid().optional(),
   schoolNameEn: Joi.string().max(255).required(),
   schoolNameNp: Joi.string().max(255).optional().allow(''),
   schoolCode: Joi.string().max(50).optional().allow(''),

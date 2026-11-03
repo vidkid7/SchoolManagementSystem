@@ -10,6 +10,7 @@ import {
 import { AuthenticationError } from '../errorHandler';
 import authService from '@modules/auth/auth.service';
 import User, { UserRole, UserStatus } from '@models/User.model';
+import SchoolConfig from '@models/SchoolConfig.model';
 
 // Mock dependencies
 jest.mock('@modules/auth/auth.service');
@@ -29,6 +30,7 @@ describe('Authentication Middleware', () => {
     };
     mockResponse = {};
     mockNext = jest.fn();
+    jest.spyOn(SchoolConfig, 'findByPk').mockResolvedValue({ id: 'school-1', isActive: true } as never);
   });
 
   afterEach(() => {
@@ -142,6 +144,30 @@ describe('Authentication Middleware', () => {
 
       expect(mockNext).toHaveBeenCalledWith(expect.objectContaining({
         message: 'Account is missing a school assignment',
+        statusCode: 401,
+      }));
+      expect(mockRequest.user).toBeUndefined();
+    });
+
+    it('rejects school users when their school is deactivated', async () => {
+      mockRequest.headers = { authorization: 'Bearer school-disabled-token' };
+      (authService.verifyAccessToken as jest.Mock).mockReturnValue({ userId: 3 });
+      jest.spyOn(User, 'findByPk').mockResolvedValue({
+        userId: 3,
+        username: 'school-user',
+        email: 'user@example.test',
+        role: UserRole.SCHOOL_ADMIN,
+        status: UserStatus.ACTIVE,
+        municipalityId: 'municipality-1',
+        schoolConfigId: 'school-1',
+        isAccountLocked: () => false,
+      } as never);
+      jest.spyOn(SchoolConfig, 'findByPk').mockResolvedValue({ id: 'school-1', isActive: false } as never);
+
+      await authenticate(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(expect.objectContaining({
+        message: 'School is inactive',
         statusCode: 401,
       }));
       expect(mockRequest.user).toBeUndefined();
