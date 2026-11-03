@@ -157,6 +157,12 @@ function getErrorMessage(error: unknown, fallback: string): string {
     const response = (error as { response?: { data?: { message?: unknown } } }).response;
     if (typeof response?.data?.message === 'string') return response.data.message;
   }
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    const code = (error as { code?: unknown }).code;
+    if (code === 'ECONNABORTED' || code === 'ETIMEDOUT') {
+      return 'The request timed out. The operation may still have completed; refresh the list before retrying.';
+    }
+  }
   return fallback;
 }
 

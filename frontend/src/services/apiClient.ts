@@ -16,7 +16,10 @@ const API_URL = import.meta.env.VITE_API_URL || '';
 
 export const apiClient = axios.create({
   baseURL: API_URL,
-  timeout: 30000,
+  // The Render free-tier backend can take about 50 seconds to wake from sleep.
+  // Keep the client alive long enough for that first request to finish so writes
+  // don't time out in the browser after the server has already committed them.
+  timeout: 90000,
   headers: {
     'Content-Type': 'application/json',
   },
